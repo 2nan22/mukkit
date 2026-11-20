@@ -14,3 +14,13 @@
 - `.claude/vault/` 와 동기화된 skill 은 직접 고치지 않는다 — 정본은 Vault `10_llm-context`
 - 비밀파일(`.env` 등) 열람 · 커밋 금지 — `.claude/vault/CLAUDE.base.md` 보안 절
 - 커밋은 개인 계정 `2nan22` · `git push` 사용, `gh` 로 PR · 머지하지 않음
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
