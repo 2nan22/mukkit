@@ -342,6 +342,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
   const added = finished.reduce((sum, f) => sum + f.result.added, 0);
   const already = finished.reduce((sum, f) => sum + f.result.alreadySaved, 0);
   const unavailable = finished.reduce((sum, f) => sum + f.result.unavailable, 0);
+  const unratedAdded = finished.filter((f) => f.row.mode.kind === "plain").reduce((sum, f) => sum + f.result.added, 0);
 
   const groups = new Map<string, { mode: ImportMode; count: number; names: string[] }>();
   for (const { row, result } of finished) {
@@ -389,6 +390,15 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
         </p>
       )}
 
+      {unratedAdded > 0 && (
+        <div className="mx-5 mt-4 flex flex-col gap-1 rounded-btn-l bg-surface px-4 py-3.5">
+          <span className="text-body font-bold">평가 전 {unratedAdded}곳, 빠르게 평가해볼까요?</span>
+          <span className="text-meta leading-normal text-muted">
+            한 곳씩 등급만 고르면 돼요. 안 가본 곳은 &lsquo;가고 싶은 곳&rsquo;으로 옮겨져요. 중간에 그만둬도 이어서 할 수 있어요.
+          </span>
+        </div>
+      )}
+
       {failed.length > 0 && (
         <section className="mx-5 mt-4 flex flex-col gap-1 rounded-btn-l border border-line px-4 py-3">
           <h3 className="text-body font-bold">가져오지 못한 리스트</h3>
@@ -402,9 +412,20 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
 
       <div className="flex-1" />
       <div className="flex flex-col gap-2 px-5 pt-3 pb-5">
-        <Link href="/home" className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white">
-          홈으로
-        </Link>
+        {unratedAdded > 0 ? (
+          <>
+            <Link href="/rate" className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white">
+              빠르게 평가하기
+            </Link>
+            <Link href="/home" className="flex h-btn-m items-center justify-center rounded-btn-m text-body text-ink-2">
+              나중에 할게요
+            </Link>
+          </>
+        ) : (
+          <Link href="/home" className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white">
+            홈으로
+          </Link>
+        )}
         <button type="button" onClick={onRestart} className="h-btn-m rounded-btn-m text-body text-ink-2">
           다른 리스트 더 가져오기
         </button>
