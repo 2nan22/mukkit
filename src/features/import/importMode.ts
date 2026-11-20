@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TIER_LABEL, tierFromDb } from "@/domain/tier";
 
 // 가져올 때 리스트마다 묻는 것 — 등급별로 나눠 둔 리스트인가, 그냥 모아 둔 리스트인가
 export const IMPORT_TIERS = ["three", "two", "one", "not_recommended", "want_to_go"] as const;
@@ -11,13 +12,9 @@ export const ImportModeSchema = z.discriminatedUnion("kind", [
 
 export type ImportMode = z.infer<typeof ImportModeSchema>;
 
-export const IMPORT_TIER_LABEL: Record<ImportTier, string> = {
-  three: "3스타",
-  two: "2스타",
-  one: "1스타",
-  not_recommended: "추천 안 함",
-  want_to_go: "가고 싶은 곳",
-};
+export const IMPORT_TIER_LABEL = Object.fromEntries(
+  IMPORT_TIERS.map((t) => [t, TIER_LABEL[tierFromDb(t)]]),
+) as Record<ImportTier, string>;
 
 export const PLAIN_LABEL = "리스트로 · 평가 전";
 

@@ -1,14 +1,10 @@
 // @vitest-environment node
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import type { ImportedList, ImportedPlace } from "@/domain/importedPlace";
 import { saveImportedList } from "./saveImportedList";
+import { hasLocalDb, runId as run, signUpTestUser as signUp } from "@/test/localSupabase";
 
-// 로컬 Supabase 에 실제로 쓴다 — `pnpm test:import-db` 로만 돈다 (테스트용 사용자를 새로 만든다)
-const url = process.env.SUPABASE_TEST_URL;
-const key = process.env.SUPABASE_TEST_PUBLISHABLE_KEY;
-
-const run = Math.random().toString(36).slice(2, 10);
+// 로컬 Supabase 에 실제로 쓴다 — `pnpm test:local-db` 로만 돈다 (테스트용 사용자를 새로 만든다)
 
 function place(n: number, over: Partial<ImportedPlace> = {}): ImportedPlace {
   return {
@@ -31,17 +27,7 @@ function list(id: string, places: ImportedPlace[]): ImportedList {
   return { source: "naver", sourceListId: `${run}-${id}`, name: "을지로 점심", memo: "혼밥", places, expectedCount: places.length, skipped: [] };
 }
 
-async function signUp(): Promise<{ supabase: SupabaseClient; userId: string }> {
-  const supabase = createClient(url!, key!, { auth: { persistSession: false } });
-  const { data, error } = await supabase.auth.signUp({
-    email: `import-${run}-${Math.random().toString(36).slice(2, 6)}@test.local`,
-    password: `pw-${run}-long-enough`,
-  });
-  if (error || !data.user) throw error ?? new Error("가입 실패");
-  return { supabase, userId: data.user.id };
-}
-
-describe.skipIf(!url || !key)("가져오기 저장 (로컬 DB)", () => {
+describe.skipIf(!hasLocalDb)("가져오기 저장 (로컬 DB)", () => {
   it("그냥 저장한 리스트 — 리스트 · 장소 · 메모가 남고, 다시 가져와도 늘지 않는다", async () => {
     const { supabase, userId } = await signUp();
     const naver = list("plain", [place(1), place(2, { available: false }), place(1)]);

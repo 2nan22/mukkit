@@ -9,6 +9,8 @@ export const NAVER_SHARED_LIST = {
     "User-Agent":
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
     Referer: "https://map.naver.com/",
+    // 빠지면 Node fetch 가 "*" 를 보내 네이버가 가게 이름을 영어로 준다
+    "Accept-Language": "ko-KR,ko;q=0.9",
   },
   // 없는 공유 · 비공개 리스트 모두 이 코드로 온다 (둘을 구분할 수 없음)
   notSharedApiErrorCode: 1603,

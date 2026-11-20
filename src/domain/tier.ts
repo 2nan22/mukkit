@@ -25,3 +25,17 @@ export const TIER_MEANING: Record<Tier, string> = {
 export function isRated(tier: Tier): boolean {
   return tier === "three" || tier === "two" || tier === "one" || tier === "notRecommended";
 }
+
+// DB enum 값 — 화면 · 도메인은 Tier, 저장 · 조회 경계에서만 바꾼다
+export const DB_TIERS = ["three", "two", "one", "not_recommended", "want_to_go", "unrated"] as const;
+export type DbTier = (typeof DB_TIERS)[number];
+
+export function tierToDb(tier: Tier): DbTier {
+  return DB_TIERS[TIERS.indexOf(tier)];
+}
+
+export function tierFromDb(value: string): Tier {
+  const i = DB_TIERS.indexOf(value as DbTier);
+  if (i < 0) throw new Error(`알 수 없는 등급 값: ${value}`);
+  return TIERS[i];
+}
