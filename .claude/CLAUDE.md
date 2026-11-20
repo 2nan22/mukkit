@@ -40,7 +40,9 @@
 - 네이버 가져오기 — 공개 범위 '일부 공개' · '전체 공개' 리스트의 공유 링크로 로그인 없이 수집 (비공식 내부 API)
 - 음식 종류 — 네이버 `cidPath` 코드 또는 카카오 로컬 API 카테고리
 - 지도 SDK 미정 — 카카오맵 JS SDK 우선 검토 (무료 사용량)
-- 로그인 — 카카오 · 구글은 로컬 실제 왕복 확인 (2026-11-20), 네이버는 Supabase 커스텀 OAuth 로 연결 예정
+- 로그인 — 카카오 · 구글 · 네이버 로컬 실제 왕복 확인 (2026-11-20)
+    - 네이버는 커스텀 OIDC `custom:naver` — `pnpm auth:naver` 로 등록 (ADR 0002)
+    - 첫 로그인은 닉네임 정하기 화면을 거침 · 닉네임 중복 금지(대소문자 무시)
     - 카카오는 Supabase 가 account_email 을 항상 요청 — 비즈 앱 전환 + 이메일 동의항목(선택) 필수, 안 하면 KOE205
 - 로컬 Supabase 는 553xx 포트 — 다른 로컬 Supabase(티키타카)와 충돌 회피
 - 디자인 시안: https://claude.ai/artifact/WNsn9Zu7nGyQxdQxpUXc2n
