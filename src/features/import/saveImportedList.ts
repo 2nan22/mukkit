@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ImportedList, ImportedPlace } from "@/domain/importedPlace";
-import { naverCuisineOf } from "./naver/naverCuisine";
 import type { ImportMode } from "./importMode";
 
 const NOTE_MAX = 300;
@@ -65,7 +64,7 @@ async function upsertPlaces(supabase: SupabaseClient, places: ImportedPlace[]): 
       address: p.address,
       category_path: p.categoryPath,
       category_name: p.categoryName,
-      cuisine: naverCuisineOf(p.categoryPath).cuisine,
+      cuisine: p.cuisine,
       available: p.available,
     }));
     const insert = await supabase

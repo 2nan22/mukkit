@@ -1,0 +1,17 @@
+{
+  "info": {
+    "status": { "code": "SUCCESS" },
+    "folders": [{ "folderid": 1000001, "title": "예시 폴더", "memo": "예시 설명", "status": "O", "favorite_cnt": 4 }]
+  },
+  "favorites": {
+    "favorites": [
+      { "seq": 1, "type": "PLACE", "display1": "예시 국밥", "display2": "서울 중구 예시로 1", "memo": "예시 메모", "key": "111", "x": 511751, "y": 1123637, "color": "01", "folderid": 1000001, "created_at": "2025-02-26 18:42:27" },
+      { "seq": 2, "type": "PLACE", "display1": "문 닫은 가게", "display2": "서울 중구 예시로 2", "memo": null, "key": "222", "x": 511818, "y": 1123096, "color": "01", "folderid": 1000001, "created_at": "2025-03-01 09:00:00" },
+      { "seq": 3, "type": "ADDRESS", "display1": "주소로 저장한 곳", "display2": "성수동2가 1-1", "memo": "", "key": "N123", "x": 511751, "y": 1123637, "color": "07", "folderid": 1000001, "created_at": "2025-03-02 09:00:00" },
+      { "seq": 4, "type": "PLACE", "display1": "", "key": "444", "x": 1, "y": 1, "created_at": "2025-03-03 09:00:00" }
+    ]
+  },
+  "places": {
+    "111": { "summary": { "name": "예시 국밥", "category": { "name1": "음식점", "name2": "한식", "name3": "국밥" }, "point": { "lat": 37.5446, "lon": 127.0532 } } }
+  }
+}

@@ -1,4 +1,6 @@
-export type PlaceSourceName = "naver";
+import type { Cuisine } from "./cuisine";
+
+export type PlaceSourceName = "naver" | "kakao";
 
 // 출처와 무관한 가져오기 결과 정규형
 export type ImportedPlace = {
@@ -10,6 +12,8 @@ export type ImportedPlace = {
   address: string;
   categoryPath: string[];
   categoryName: string;
+  // 출처가 자기 분류로 정한 음식 종류 — 저장은 출처를 모른다
+  cuisine: Cuisine;
   memo: string;
   savedAt: Date;
   available: boolean;

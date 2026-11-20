@@ -6,6 +6,7 @@ import {
   type PlaceSource,
 } from "@/domain/importedPlace";
 import { NAVER_SHARED_LIST } from "./config";
+import { naverCuisineOf } from "./naverCuisine";
 
 type FetchLike = typeof fetch;
 
@@ -115,6 +116,8 @@ function toImportedList(
       return;
     }
     const b = item.data;
+    // 네이버가 코드 묶음을 쉼표 한 덩어리로 줄 때가 있다
+    const categoryPath = (b.cidPath ?? []).flatMap((code) => code.split(","));
     places.push({
       source: "naver",
       sourcePlaceId: b.sid,
@@ -122,8 +125,8 @@ function toImportedList(
       lat: b.py,
       lng: b.px,
       address: b.address ?? "",
-      // 네이버가 코드 묶음을 쉼표 한 덩어리로 줄 때가 있다
-      categoryPath: (b.cidPath ?? []).flatMap((code) => code.split(",")),
+      categoryPath,
+      cuisine: naverCuisineOf(categoryPath).cuisine,
       categoryName: b.mcidName ?? "",
       memo: b.memo ?? "",
       savedAt: new Date(b.creationTime),
