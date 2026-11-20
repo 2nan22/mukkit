@@ -8,8 +8,8 @@ import { NaverSharedListSource } from "./naver/naverSharedListSource";
 import { ImportModeSchema, type ImportMode } from "./importMode";
 import { ImportSaveError, saveImportedList, type ImportResult } from "./saveImportedList";
 
-export type ListPreview = { name: string; count: number; unavailable: number };
-export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type ListPreview = { listId: string; name: string; count: number; unavailable: number };
+export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string; code: ImportErrorCode | "SAVE_FAILED" };
 
 const ERROR_MESSAGE: Record<ImportErrorCode, string> = {
   INVALID_LINK: "네이버 지도 리스트의 공유 링크를 넣어 주세요.",
@@ -26,7 +26,7 @@ export async function previewNaverList(link: string): Promise<ActionResult<ListP
     const list = await new NaverSharedListSource().fetchList(link);
     return {
       ok: true,
-      data: { name: list.name, count: list.places.length, unavailable: list.places.filter((p) => !p.available).length },
+      data: { listId: list.sourceListId, name: list.name, count: list.places.length, unavailable: list.places.filter((p) => !p.available).length },
     };
   } catch (error) {
     return failure(error);
@@ -35,7 +35,7 @@ export async function previewNaverList(link: string): Promise<ActionResult<ListP
 
 export async function importNaverList(link: string, mode: ImportMode): Promise<ActionResult<ImportResult>> {
   const parsedMode = ImportModeSchema.safeParse(mode);
-  if (!parsedMode.success) return { ok: false, error: SAVE_FAILED };
+  if (!parsedMode.success) return { ok: false, error: SAVE_FAILED, code: "SAVE_FAILED" };
   const { supabase, userId } = await requireUserId();
   try {
     const list = await new NaverSharedListSource().fetchList(link);
@@ -53,8 +53,8 @@ async function requireUserId() {
   return { supabase, userId };
 }
 
-function failure(error: unknown): { ok: false; error: string } {
-  if (error instanceof ImportError) return { ok: false, error: ERROR_MESSAGE[error.code] };
-  if (error instanceof ImportSaveError) return { ok: false, error: SAVE_FAILED };
+function failure(error: unknown): Extract<ActionResult<never>, { ok: false }> {
+  if (error instanceof ImportError) return { ok: false, error: ERROR_MESSAGE[error.code], code: error.code };
+  if (error instanceof ImportSaveError) return { ok: false, error: SAVE_FAILED, code: "SAVE_FAILED" };
   throw error;
 }

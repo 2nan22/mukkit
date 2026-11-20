@@ -12,6 +12,12 @@ export default function HomePage() {
         <Greeting />
       </Suspense>
       <Link
+        href="/import"
+        className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white"
+      >
+        네이버 지도에서 가져오기
+      </Link>
+      <Link
         href="/settings/accounts"
         className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink"
       >
