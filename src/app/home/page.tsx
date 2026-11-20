@@ -19,7 +19,7 @@ export default function HomePage() {
         href="/import"
         className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white"
       >
-        네이버 지도에서 가져오기
+        저장한 장소 가져오기
       </Link>
       <Link
         href="/settings/accounts"

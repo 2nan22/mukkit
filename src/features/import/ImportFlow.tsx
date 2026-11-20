@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
-import { importNaverList, previewNaverList, type ListPreview } from "./actions";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { importList, previewList, type ListPreview } from "./actions";
+import { SOURCE_LABEL } from "./sources";
+import type { PlaceSourceName } from "@/domain/importedPlace";
 import {
   guessMode,
   IMPORT_TIER_LABEL,
@@ -34,7 +36,7 @@ export function ImportFlow() {
     setStatus(Object.fromEntries(rows.map((r) => [r.listId, { state: "waiting" }])));
     for (const row of rows) {
       setStatus((s) => ({ ...s, [row.listId]: { state: "running" } }));
-      const res = await importNaverList(row.link, row.mode);
+      const res = await importList(row.link, row.mode);
       setStatus((s) => ({
         ...s,
         [row.listId]: res.ok ? { state: "done", result: res.data } : { state: "failed", error: res.error },
@@ -61,7 +63,7 @@ export function ImportFlow() {
       <section className="flex flex-1 flex-col px-5 pt-4">
         {rows.length === 0 ? (
           <p className="text-meta leading-normal text-muted">
-            네이버 지도에 저장한 리스트의 공유 링크를 넣어 주세요. 리스트가 여러 개면 하나씩 불러오면 돼요.
+            네이버 지도 리스트나 카카오맵 즐겨찾기 폴더의 공유 링크를 넣어 주세요. 여러 개면 하나씩 불러오면 돼요.
           </p>
         ) : (
           <>
@@ -102,17 +104,17 @@ export function ImportFlow() {
 function LinkForm({ onAdd }: { onAdd: (row: Row) => void }) {
   const [link, setLink] = useState("");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<{ text: string; privateList: boolean } | null>(null);
+  const [error, setError] = useState<{ text: string; privateList: boolean; source: PlaceSourceName | null } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!link.trim()) return;
     setPending(true);
-    const res = await previewNaverList(link.trim());
+    const res = await previewList(link.trim());
     setPending(false);
     if (!res.ok) {
-      setError({ text: res.error, privateList: res.code === "LIST_NOT_FOUND_OR_PRIVATE" });
+      setError({ text: res.error, privateList: res.code === "LIST_NOT_FOUND_OR_PRIVATE", source: res.source ?? null });
       return;
     }
     setError(null);
@@ -131,7 +133,7 @@ function LinkForm({ onAdd }: { onAdd: (row: Row) => void }) {
             id="link"
             value={link}
             onChange={(e) => setLink(e.target.value)}
-            placeholder="https://naver.me/..."
+            placeholder="naver.me/… 또는 kko.to/…"
             inputMode="url"
             autoComplete="off"
             aria-invalid={Boolean(error)}
@@ -164,45 +166,78 @@ function LinkForm({ onAdd }: { onAdd: (row: Row) => void }) {
           </button>
         )}
       </form>
-      {(error?.privateList || showHelp) && <LinkHelp privateList={Boolean(error?.privateList)} />}
+      {(error?.privateList || showHelp) && (
+        <LinkHelp source={error?.privateList ? error.source : null} privateList={Boolean(error?.privateList)} />
+      )}
     </div>
   );
 }
 
-function LinkHelp({ privateList }: { privateList: boolean }) {
-  const steps = privateList
-    ? [
-        <>네이버 지도 <b>저장</b>에서 가져올 리스트의 <b>⋮</b>를 눌러요</>,
-        <><b>수정 › 공개 범위</b>를 <b>일부 공개</b>나 <b>전체 공개</b>로 바꿔요</>,
-        <>다시 <b>⋮ › 공유</b>로 받은 링크를 위 칸에 넣어요</>,
-      ]
-    : [
-        <>네이버 지도 <b>저장</b>에서 가져올 리스트의 <b>⋮</b>를 눌러요</>,
-        <><b>공유</b>를 누르고 <b>링크 복사</b>를 골라요</>,
-        <>복사한 링크를 위 칸에 붙여 넣어요. 비공개 리스트는 <b>일부 공개</b> 이상으로 바꿔야 해요</>,
-      ];
+const HELP: Record<PlaceSourceName, { app: string; url: string; find: ReactNode[]; open: ReactNode[] }> = {
+  naver: {
+    app: "네이버 지도",
+    url: "https://map.naver.com/",
+    find: [
+      <>네이버 지도 <b>저장</b>에서 가져올 리스트의 <b>⋮</b>를 눌러요</>,
+      <><b>공유</b>를 누르고 <b>링크 복사</b>를 골라요</>,
+      <>복사한 링크를 위 칸에 붙여 넣어요. 비공개 리스트는 <b>일부 공개</b> 이상으로 바꿔야 해요</>,
+    ],
+    open: [
+      <>네이버 지도 <b>저장</b>에서 가져올 리스트의 <b>⋮</b>를 눌러요</>,
+      <><b>수정 › 공개 범위</b>를 <b>일부 공개</b>나 <b>전체 공개</b>로 바꿔요</>,
+      <>다시 <b>⋮ › 공유</b>로 받은 링크를 위 칸에 넣어요</>,
+    ],
+  },
+  kakao: {
+    app: "카카오맵",
+    url: "https://map.kakao.com/",
+    find: [
+      <>카카오맵 <b>즐겨찾기</b>에서 가져올 폴더의 <b>⋮</b>를 눌러요</>,
+      <><b>공유</b>를 누르고 <b>링크 복사</b>를 골라요</>,
+      <>복사한 링크를 위 칸에 붙여 넣어요. 비공개 폴더는 <b>공개</b>로 바꿔야 해요</>,
+    ],
+    open: [
+      <>카카오맵 <b>즐겨찾기</b>에서 가져올 폴더의 <b>⋮</b>를 눌러요</>,
+      <><b>편집</b>에서 폴더를 <b>공개</b>로 바꿔요</>,
+      <>다시 <b>⋮ › 공유</b>로 받은 링크를 위 칸에 넣어요</>,
+    ],
+  },
+};
+
+function LinkHelp({ source, privateList }: { source: PlaceSourceName | null; privateList: boolean }) {
+  const shown: PlaceSourceName[] = source ? [source] : ["naver", "kakao"];
   return (
-    <section className="flex flex-col gap-3.5 px-5 pt-1 pb-5">
-      <h2 className="text-section font-bold">{privateList ? "네이버 지도에서 공개 범위 바꾸기" : "공유 링크 찾는 법"}</h2>
-      <ol className="flex flex-col gap-3.5">
-        {steps.map((step, i) => (
-          <li key={i} className="flex items-start gap-3">
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-meta font-bold text-white">
-              {i + 1}
-            </span>
-            <span className="pt-px text-body leading-normal">{step}</span>
-          </li>
-        ))}
-      </ol>
-      <a
-        href="https://map.naver.com/"
-        target="_blank"
-        rel="noreferrer"
-        className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body font-bold text-ink"
-      >
-        네이버 지도 열기
-      </a>
-    </section>
+    <div className="flex flex-col gap-6 px-5 pt-1 pb-5">
+      {shown.map((name) => {
+        const help = HELP[name];
+        const steps = privateList ? help.open : help.find;
+        return (
+          <section key={name} className="flex flex-col gap-3.5">
+            <h2 className="text-section font-bold">
+              {privateList ? `${help.app}에서 공개 범위 바꾸기` : `${help.app} 공유 링크 찾는 법`}
+            </h2>
+            <ol className="flex flex-col gap-3.5">
+              {steps.map((step, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-meta font-bold text-white">
+                    {i + 1}
+                  </span>
+                  <span className="pt-px text-body leading-normal">{step}</span>
+                </li>
+              ))}
+            </ol>
+            <a
+              href={help.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body font-bold text-ink"
+            >
+              {help.app} 열기
+            </a>
+          </section>
+        );
+      })}
+    </div>
   );
 }
 
@@ -213,7 +248,7 @@ function ListRow({ row, onChange, onRemove }: { row: Row; onChange: (mode: Impor
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-body">{row.name}</span>
         <span className="text-meta text-muted">
-          {row.count}곳{row.unavailable > 0 && ` · 정보 없는 곳 ${row.unavailable}`}
+          {SOURCE_LABEL[row.source]} · {row.count}곳{row.unavailable > 0 && ` · 정보 없는 곳 ${row.unavailable}`}
         </span>
       </span>
       <label htmlFor={selectId} className="sr-only">
@@ -386,7 +421,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
 
       {unavailable > 0 && (
         <p className="mx-5 mt-4 rounded-btn-l bg-surface px-4 py-3.5 text-meta leading-normal text-ink-2">
-          네이버에 정보가 없는 곳이 {unavailable}곳 있어요. 폐업했을 수 있어요.
+          지도에 정보가 없는 곳이 {unavailable}곳 있어요. 폐업했을 수 있어요.
         </p>
       )}
 
