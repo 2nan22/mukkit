@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 import { NICKNAME_SETUP } from "@/features/auth/paths";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { countUnrated } from "@/features/rating/rating";
+import { RatingCard } from "@/features/social/RatingCard";
+import { getFeed } from "@/features/social/social";
 
-// 로그인 확인용 임시 홈 — 대시보드로 교체 예정
+// 홈 — 평가 전 알림 · 팔로우한 사람들의 평가
 export default function HomePage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
@@ -17,9 +19,9 @@ export default function HomePage() {
         <Suspense fallback={null}>
           <UnratedCard />
         </Suspense>
-        <Link href="/import" className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white">
-          저장한 장소 가져오기
-        </Link>
+        <Suspense fallback={null}>
+          <Feed />
+        </Suspense>
       </main>
       <div className="sticky bottom-0">
         <BottomNav />
@@ -55,5 +57,35 @@ async function UnratedCard() {
       </span>
       <span className="shrink-0 text-meta font-bold text-ink">빠르게 평가하기</span>
     </Link>
+  );
+}
+
+// 팔로우한 사람의 공개 · 팔로워 공개 평가 — 아직 없으면 사람 찾기 · 가져오기로
+async function Feed() {
+  const supabase = await createSupabaseServerClient();
+  const feed = await getFeed(supabase);
+  if (feed.length === 0) {
+    return (
+      <section className="flex flex-col gap-3 rounded-btn-l bg-surface p-5">
+        <span className="text-body font-bold">팔로우한 사람들의 평가가 여기 보여요</span>
+        <span className="text-meta leading-normal text-muted">믿을 만한 사람을 팔로우하고, 내 장소도 가져와 평가해 보세요.</span>
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <Link href="/people" className="flex h-btn-m items-center justify-center rounded-btn-m bg-ink text-body font-bold text-white">
+            사람 찾기
+          </Link>
+          <Link href="/import" className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong bg-white text-body text-ink">
+            장소 가져오기
+          </Link>
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="flex flex-col">
+      <h2 className="text-section font-bold">팔로잉 소식</h2>
+      {feed.map((r) => (
+        <RatingCard key={`${r.ownerId}:${r.placeId}`} rating={r} showOwner />
+      ))}
+    </section>
   );
 }

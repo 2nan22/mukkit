@@ -26,6 +26,8 @@ export async function saveRating(_prev: RatingFormState, formData: FormData): Pr
     note: String(formData.get("note") ?? ""),
     visitedOn: formData.get("visitedOn") || null,
     sponsored: formData.get("sponsored") === "on",
+    review: String(formData.get("review") ?? ""),
+    visibility: formData.get("visibility") ?? "private",
   });
   if (!parsed.success) {
     const tierMissing = parsed.error.issues.some((i) => i.path[0] === "tier");

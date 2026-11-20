@@ -3,6 +3,9 @@ import { z } from "zod";
 import { TIERS, tierFromDb, tierToDb, type Tier } from "@/domain/tier";
 
 export const NOTE_MAX = 300;
+export const REVIEW_MAX = 200;
+export const RATING_VISIBILITIES = ["private", "followers", "public"] as const;
+export type RatingVisibility = (typeof RATING_VISIBILITIES)[number];
 
 export const RatingSchema = z.object({
   placeId: z.uuid(),
@@ -10,6 +13,8 @@ export const RatingSchema = z.object({
   note: z.string().trim().max(NOTE_MAX, `한 줄 평가는 ${NOTE_MAX}자까지 쓸 수 있어요`),
   visitedOn: z.iso.date().nullable(),
   sponsored: z.boolean(),
+  review: z.string().trim().max(REVIEW_MAX, `공개 한마디는 ${REVIEW_MAX}자까지 쓸 수 있어요`),
+  visibility: z.enum(RATING_VISIBILITIES),
 });
 export type Rating = z.infer<typeof RatingSchema>;
 
@@ -27,7 +32,14 @@ export class RatingSaveError extends Error {
   }
 }
 
-type Patch = { tier?: Tier; note?: string; visitedOn?: string | null; sponsored?: boolean };
+type Patch = {
+  tier?: Tier;
+  note?: string;
+  visitedOn?: string | null;
+  sponsored?: boolean;
+  review?: string;
+  visibility?: RatingVisibility;
+};
 
 // 내 저장 한 줄만 고친다 — 남의 줄은 RLS 가 막고, 맞는 줄이 없으면 오류
 export async function updateUserPlace(
@@ -41,6 +53,8 @@ export async function updateUserPlace(
   if (patch.note !== undefined) row.note = patch.note;
   if (patch.visitedOn !== undefined) row.visited_on = patch.visitedOn;
   if (patch.sponsored !== undefined) row.sponsored = patch.sponsored;
+  if (patch.review !== undefined) row.review = patch.review;
+  if (patch.visibility !== undefined) row.visibility = patch.visibility;
 
   const { data, error } = await supabase
     .from("user_places")
@@ -62,9 +76,11 @@ export type SavedPlace = {
   note: string;
   visitedOn: string | null;
   sponsored: boolean;
+  review: string;
+  visibility: RatingVisibility;
 };
 
-const SAVED_PLACE_COLUMNS = "place_id, tier, note, visited_on, sponsored, places(name, address, category_name, cuisine)";
+const SAVED_PLACE_COLUMNS = "place_id, tier, note, visited_on, sponsored, review, visibility, places(name, address, category_name, cuisine)";
 
 type SavedPlaceRow = {
   place_id: string;
@@ -72,6 +88,8 @@ type SavedPlaceRow = {
   note: string;
   visited_on: string | null;
   sponsored: boolean;
+  review: string;
+  visibility: RatingVisibility;
   places: { name: string; address: string; category_name: string; cuisine: string } | null;
 };
 
@@ -86,6 +104,8 @@ function toSavedPlace(row: SavedPlaceRow): SavedPlace {
     note: row.note,
     visitedOn: row.visited_on,
     sponsored: row.sponsored,
+    review: row.review,
+    visibility: row.visibility,
   };
 }
 

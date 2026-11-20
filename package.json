@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "db:start": "supabase start -x studio,edge-runtime,logflare,vector,imgproxy,realtime,storage-api",
+    "db:start": "supabase start -x studio,edge-runtime,logflare,vector,realtime",
     "db:reset": "supabase db reset && scripts/register-naver-provider.sh",
     "test:db": "supabase test db",
     "test:local-db": "scripts/test-local-db.sh",

@@ -4,12 +4,15 @@ import { useActionState } from "react";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
 import { saveRating, type RatingFormState } from "./actions";
-import { NOTE_MAX, type SavedPlace } from "./rating";
+import { NOTE_MAX, RATING_VISIBILITIES, REVIEW_MAX, type RatingVisibility, type SavedPlace } from "./rating";
+import { MediaUploader } from "./MediaUploader";
+
+const VISIBILITY_TEXT: Record<RatingVisibility, string> = { private: "나만", followers: "팔로워", public: "전체 공개" };
 
 const RATED: Tier[] = ["three", "two", "one", "notRecommended"];
 const NOT_RATED: Tier[] = ["wantToGo", "unrated"];
 
-export function RatingForm({ place, next }: { place: SavedPlace; next: string }) {
+export function RatingForm({ place, next, userId }: { place: SavedPlace; next: string; userId: string }) {
   const [state, action, pending] = useActionState<RatingFormState, FormData>(saveRating, {});
 
   return (
@@ -52,17 +55,54 @@ export function RatingForm({ place, next }: { place: SavedPlace; next: string })
       </fieldset>
 
       <div className="flex flex-col gap-2 px-5 pt-4">
-        <label htmlFor="note" className="text-meta font-bold">
+        <label htmlFor="review" className="text-meta font-bold">
           한 줄 평가
+        </label>
+        <textarea
+          id="review"
+          name="review"
+          rows={2}
+          maxLength={REVIEW_MAX}
+          defaultValue={place.review}
+          placeholder="다른 사람에게 보여줄 한마디"
+          className="w-full resize-none rounded-btn-m border border-line-strong px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink"
+        />
+      </div>
+
+      <div className="px-5 pt-4">
+        <MediaUploader userId={userId} placeId={place.placeId} />
+      </div>
+
+      <div role="radiogroup" aria-labelledby="visibility-label" className="flex flex-col gap-2 px-5 pt-5">
+        <span id="visibility-label" className="text-meta font-bold">
+          평가 공개 범위
+        </span>
+        <div className="grid grid-cols-3 gap-1 rounded-btn-l bg-surface-2 p-1">
+          {RATING_VISIBILITIES.map((v) => (
+            <label
+              key={v}
+              className="flex h-9 cursor-pointer items-center justify-center rounded-btn-s text-meta text-muted has-checked:bg-white has-checked:font-bold has-checked:text-ink has-checked:shadow-float"
+            >
+              <input type="radio" name="visibility" value={v} defaultChecked={v === place.visibility} className="sr-only" />
+              {VISIBILITY_TEXT[v]}
+            </label>
+          ))}
+        </div>
+        <span className="text-caption leading-normal text-muted">등급 · 한 줄 평가 · 사진이 이 범위로 보여요. 아래 메모는 언제나 나만 봐요.</span>
+      </div>
+
+      <div className="flex flex-col gap-2 px-5 pt-4">
+        <label htmlFor="note" className="text-meta font-bold">
+          나만 보는 메모
         </label>
         <textarea
           id="note"
           name="note"
-          rows={3}
+          rows={2}
           maxLength={NOTE_MAX}
           defaultValue={place.note}
-          placeholder="나만 보는 메모예요"
-          className="w-full resize-none rounded-btn-m border border-line-strong px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink"
+          placeholder="가져온 메모도 여기 있어요"
+          className="w-full resize-none rounded-btn-m border border-line-strong bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink"
         />
       </div>
 
