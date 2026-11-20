@@ -62,3 +62,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 예시 파일은 추적 (위 .env* 규칙 예외)
+!.env.example
