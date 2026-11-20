@@ -29,3 +29,10 @@ export const LOGIN_PROVIDER_ORDER: LoginProvider[] = ["kakao", "google", "naver"
 export function fromSupabaseProvider(value: string): LoginProvider | undefined {
   return (Object.keys(LOGIN_PROVIDERS) as LoginProvider[]).find((key) => LOGIN_PROVIDERS[key] === value);
 }
+
+// 계정 연결 때는 브라우저에 로그인된 계정을 조용히 쓰지 않고 다시 고르게 한다 (네이버는 계정 선택이 없어 재로그인)
+export const LINK_REAUTH_PARAMS: Record<LoginProvider, Record<string, string>> = {
+  kakao: { prompt: "select_account" },
+  google: { prompt: "select_account" },
+  naver: { prompt: "login" },
+};

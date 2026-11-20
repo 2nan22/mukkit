@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ACCOUNT_LINKS, SIGNED_OUT_HOME } from "@/features/auth/paths";
-import { isLoginProvider, toSupabaseProvider } from "@/features/auth/providers";
+import { isLoginProvider, LINK_REAUTH_PARAMS, toSupabaseProvider } from "@/features/auth/providers";
 
 // 로그인한 사용자에게 다른 소셜 계정을 덧붙인다 — 콜백은 로그인과 같은 /auth/callback
 export async function GET(request: NextRequest, ctx: RouteContext<"/auth/link/[provider]">) {
@@ -20,7 +20,11 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/auth/link/[p
   callback.searchParams.set("next", ACCOUNT_LINKS);
   const { data, error } = await supabase.auth.linkIdentity({
     provider: toSupabaseProvider(provider),
-    options: { redirectTo: callback.toString(), skipBrowserRedirect: true },
+    options: {
+      redirectTo: callback.toString(),
+      skipBrowserRedirect: true,
+      queryParams: LINK_REAUTH_PARAMS[provider],
+    },
   });
   if (error || !data.url) {
     back.searchParams.set("error", error?.code ?? "link_failed");

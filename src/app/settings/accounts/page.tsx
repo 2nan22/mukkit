@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { unlinkProvider } from "@/features/auth/linkActions";
+import { identityLabel } from "@/features/auth/identityLabel";
 import { linkErrorMessage } from "@/features/auth/linkErrors";
 import { fromSupabaseProvider, LOGIN_PROVIDER_LABEL, LOGIN_PROVIDER_ORDER } from "@/features/auth/providers";
 
@@ -37,7 +38,7 @@ async function AccountLinks({ searchParams }: { searchParams: Promise<{ error?: 
   const { data } = await supabase.auth.getUserIdentities();
   if (!data) redirect(SIGNED_OUT_HOME);
 
-  const linked = new Set(data.identities.map((identity) => fromSupabaseProvider(identity.provider)));
+  const linked = new Map(data.identities.map((identity) => [fromSupabaseProvider(identity.provider), identity]));
   const canUnlink = data.identities.length > 1;
 
   return (
@@ -52,7 +53,9 @@ async function AccountLinks({ searchParams }: { searchParams: Promise<{ error?: 
           <li key={provider} className="flex min-h-16 items-center gap-3 border-b border-line">
             <span className="flex flex-1 flex-col gap-0.5">
               <span className="text-body font-bold">{LOGIN_PROVIDER_LABEL[provider]}</span>
-              <span className="text-meta text-muted">{linked.has(provider) ? "연결됨" : "연결 안 됨"}</span>
+              <span className="text-meta text-muted">
+                {linked.has(provider) ? identityLabel(linked.get(provider)!) : "연결 안 됨"}
+              </span>
             </span>
             {linked.has(provider) ? (
               canUnlink && (
