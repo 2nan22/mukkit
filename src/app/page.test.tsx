@@ -13,11 +13,13 @@ describe("시작하기 화면", () => {
 });
 
 describe("LoginErrorNotice", () => {
-  it("로그인 실패로 돌아왔을 때만 안내를 보인다", async () => {
+  it("로그인 실패로 돌아오면(원인 무관) 안내를 보인다", async () => {
     const { unmount } = render(await LoginErrorNotice({ searchParams: Promise.resolve({ error: "login" }) }));
     expect(screen.getByRole("alert").textContent).toContain("로그인에 실패했어요");
     unmount();
 
     expect(await LoginErrorNotice({ searchParams: Promise.resolve({}) })).toBeNull();
+    render(await LoginErrorNotice({ searchParams: Promise.resolve({ error: "invalid_request" }) }));
+    expect(screen.getByRole("alert").textContent).toContain("로그인에 실패했어요");
   });
 });

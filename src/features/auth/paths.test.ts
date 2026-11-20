@@ -6,6 +6,7 @@ describe("isProtectedPath", () => {
     expect(isProtectedPath("/home")).toBe(true);
     expect(isProtectedPath("/home/lists")).toBe(true);
     expect(isProtectedPath("/homework")).toBe(false);
+    expect(isProtectedPath("/onboarding/nickname")).toBe(true);
     expect(isProtectedPath("/")).toBe(false);
   });
 });

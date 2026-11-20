@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { NICKNAME_SETUP } from "@/features/auth/paths";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // 로그인 확인용 임시 홈 — 대시보드로 교체 예정
@@ -26,7 +28,8 @@ async function Greeting() {
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   const { data: profile } = userId
-    ? await supabase.from("profiles").select("nickname").eq("id", userId).single()
+    ? await supabase.from("profiles").select("nickname, nickname_set_at").eq("id", userId).single()
     : { data: null };
+  if (profile && !profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
   return <h1 className="text-title font-bold tracking-tight">{profile?.nickname ?? "MY"}님, 반가워요</h1>;
 }
