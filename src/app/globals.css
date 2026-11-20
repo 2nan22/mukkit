@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* 디자인 토큰 한 층 — 값의 출처는 디자인 시안(CLAUDE.md 결정 기록 링크) */
+@theme {
+  --font-sans: var(--font-pretendard), system-ui, sans-serif;
+
+  --color-ink: #17181c;
+  --color-ink-2: #33363d;
+  --color-muted: #5b5f69;
+  --color-line: #eeeff1;
+  --color-line-strong: #dddfe3;
+  --color-surface: #f4f5f6;
+  --color-surface-2: #f1f2f4;
+  --color-map-land: #eef0ec;
+
+  --color-tier-3: #b93a06;
+  --color-tier-3-soft: #fbe6da;
+  --color-tier-2: #a33f0a;
+  --color-tier-2-soft: #fdede4;
+  --color-tier-1: #8a5a00;
+  --color-tier-1-soft: #fef4e1;
+  --color-pin-2: #e8590c;
+  --color-pin-1: #f5a524;
+  --color-pin-none: #adb1b8;
+
+  --text-title: 22px;
+  --text-section: 17px;
+  --text-body: 15px;
+  --text-meta: 13px;
+  --text-caption: 11px;
+
+  --spacing-btn-l: 52px;
+  --spacing-btn-m: 44px;
+  --spacing-btn-s: 32px;
+
+  --radius-btn-l: 12px;
+  --radius-btn-m: 10px;
+  --radius-btn-s: 8px;
+
+  --shadow-float: 0 2px 8px rgb(0 0 0 / 0.12);
+  --shadow-sheet: 0 -2px 12px rgb(0 0 0 / 0.08);
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+  font-feature-settings: "tnum";
+}

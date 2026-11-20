@@ -29,7 +29,8 @@
 ### 현재 마일스톤
 ```
 ✓ M0 저장소 · 컨텍스트 세팅
-✗ 스택 선정 · 구현 (다음 세션)
+✓ 스택 확정 (ADR 0001)
+✗ 화면 · 로그인 · 지도 연동 (02 이후)
 ✗ 외부 리뷰 본문 수집 · 표시 — 법적 위험, 원문 링크만
 ```
 
@@ -43,9 +44,10 @@
 
 ## 규칙 파일
 
-**이 프로젝트가 사용하는 언어**: 미정 → 확정 시 `context.manifest` 에 coding 파일을 추가하고 이 줄을 갱신한다.
+**이 프로젝트가 사용하는 언어**: TypeScript — Next.js(App Router) + Supabase · 네이버 지도. 결정 근거 [docs/adr/0001-stack.md](../docs/adr/0001-stack.md)
+→ `vault/rules/coding/_common.md` + `nextjs.md` + `react.md`(공통 부분) 를 읽는다. `nextjs.md` 는 Vault 미검증본이라 쓰면서 검증한다
 
-현재 동기화 대상: `vault/rules/coding/_common.md` · `vault/rules/testing.md` · `vault/rules/git_workflow.md` · `vault/rules/logging.md`
+현재 동기화 대상: `vault/rules/coding/_common.md` · `react.md` · `nextjs.md` · `vault/rules/testing.md` · `vault/rules/git_workflow.md` · `vault/rules/logging.md`
 
 ## 베이스 대비 변경 (개인 프로젝트)
 - `harvest-worklog` skill 제외 — 회사 업무일지 환원 대상 아님
