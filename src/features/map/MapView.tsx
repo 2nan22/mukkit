@@ -6,7 +6,7 @@ import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { SOURCE_LABEL } from "@/features/import/sources";
-import { NaverMap } from "./NaverMap";
+import { PlaceMap } from "./PlaceMap";
 import type { MapPlace } from "./myPlaces";
 
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
@@ -24,7 +24,7 @@ export function MapView({ places }: { places: MapPlace[] }) {
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [listOpen, setListOpen] = useState(!process.env.NEXT_PUBLIC_NAVER_MAP_KEY_ID);
+  const [listOpen, setListOpen] = useState(!process.env.NEXT_PUBLIC_KAKAO_MAP_KEY);
 
   const shown = useMemo(
     () =>
@@ -40,7 +40,7 @@ export function MapView({ places }: { places: MapPlace[] }) {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="absolute inset-0">
-        <NaverMap pins={pins} selectedId={selected?.placeId ?? null} onSelect={setSelectedId} />
+        <PlaceMap pins={pins} selectedId={selected?.placeId ?? null} onSelect={setSelectedId} />
       </div>
 
       <div className="pointer-events-none relative z-10 flex flex-col gap-1 pt-2">

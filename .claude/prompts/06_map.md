@@ -5,7 +5,7 @@
 - 규칙: `.claude/vault/rules/coding/_common.md` · `nextjs.md` · `react.md` · `testing.md` · `git_workflow.md` · `logging.md`
 - 시안: `2 · 지도`(Main) 아트보드
 - `pnpm db:start` · `pnpm test:db` 통과 확인. **`pnpm db:reset` 은 사용자에게 먼저 묻는다**
-- **사용자 준비물** — 네이버 클라우드 Maps Application(Dynamic Map, 웹 서비스 URL localhost) Client ID 를 `.env.local` 의 `NEXT_PUBLIC_NAVER_MAP_KEY_ID` 에
+- **사용자 준비물** — 카카오 개발자 앱 JavaScript 키(JavaScript SDK 도메인 localhost:3000)를 `.env.local` 의 `NEXT_PUBLIC_KAKAO_MAP_KEY` 에
 - 꼭지마다 묻지 않고 커밋 · push, 트레일러 없음, `gh` 미사용
 
 ## 1. 세션 목표 (성공 기준)
@@ -18,13 +18,13 @@
 ## 2. 추상화 전략
 - `place_sources (source, source_place_id) → place_id` 로 출처 ID 와 장소를 분리 — 한 장소에 출처 여러 개
 - 같은 가게 판정은 순수 함수 `isSamePlace` 하나 (거리 · 이름) — 저장 함수는 후보를 묻고 판정만 맡긴다
-- 지도 SDK 는 `NaverMap` 컴포넌트 하나가 감싼다 — 화면은 핀 목록 · 선택만 넘긴다
+- 지도 SDK 는 `PlaceMap` 컴포넌트 하나가 감싼다 (네이버 → 카카오 변경) — 화면은 핀 목록 · 선택만 넘긴다
 
 ## 3. 진행 현황
 ```
 ### 1. place_sources · 같은 가게 판정 · 저장 함수 반영 → 검증: 단위 검사 + 로컬 DB 에서 네이버 · 카카오 같은 가게 1곳
 ### 2. 내 장소 지도 화면 (/map) · 핀 · 거르기 · 카드 → 검증: 390px, 거르기 개수
-### 3. 네이버 지도 연결 · 키 없을 때 안내 → 검증: 실제 지도 표시
+### 3. 카카오맵 연결 · 키 없을 때 안내 → 검증: 실제 지도 표시
 ### 4. 실제 데이터로 합치기 확인 · 캡처 아티팩트 → 검증: 겹치는 가게 수
 ```
 
