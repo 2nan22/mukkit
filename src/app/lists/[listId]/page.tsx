@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
@@ -37,6 +38,8 @@ async function ListLoader({ params }: { params: Promise<{ listId: string }> }) {
   if (!userId) redirect(SIGNED_OUT_HOME);
   const list = /^[0-9a-f-]{36}$/.test(listId) ? await getMyList(supabase, userId, listId) : null;
   if (!list) notFound();
-  const places = await getPickablePlaces(supabase, userId);
-  return <ListDetail list={list} places={places} />;
+  const [places, h] = await Promise.all([getPickablePlaces(supabase, userId), headers()]);
+  // 공유 링크는 지금 접속한 주소 기준 — 배포하면 그 도메인이 된다
+  const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
+  return <ListDetail list={list} places={places} origin={origin} />;
 }

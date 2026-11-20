@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BottomNav } from "@/components/BottomNav";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { TIER_LABEL, TIERS, tierToDb, type Tier } from "@/domain/tier";
@@ -21,7 +22,7 @@ const TILE: Record<Tier, string> = {
 
 export default function ListsPage() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col pb-8">
+    <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <header className="flex h-14 items-center justify-between pr-2 pl-2">
         <Link href="/home" aria-label="홈으로" className="flex size-11 items-center justify-center">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -38,6 +39,10 @@ export default function ListsPage() {
       <Suspense fallback={null}>
         <ListsContent />
       </Suspense>
+      <div className="flex-1" />
+      <div className="sticky bottom-0 mt-8">
+        <BottomNav />
+      </div>
     </main>
   );
 }
