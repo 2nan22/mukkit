@@ -107,6 +107,9 @@ async function MyLinks() {
       <Link href="/people" className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
         사람 찾기
       </Link>
+      <Link href="/import" className="col-span-2 flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
+        저장한 장소 가져오기
+      </Link>
     </nav>
   );
 }

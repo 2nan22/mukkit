@@ -22,7 +22,7 @@ export function RatingCard({ rating, showOwner }: { rating: SharedRating; showOw
         </Link>
       )}
       {rating.media.length > 0 && (
-        <div className="-mx-5 flex snap-x snap-mandatory gap-1.5 overflow-x-auto px-5">
+        <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-1.5 overflow-x-auto px-5">
           {rating.media.map((m, i) =>
             m.kind === "image" ? (
               // eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다
