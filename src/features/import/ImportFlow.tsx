@@ -14,6 +14,8 @@ import {
   type ImportMode,
 } from "./importMode";
 import type { ImportResult } from "./saveImportedList";
+import { TierBadge } from "@/components/ui/TierBadge";
+import { tierFromDb } from "@/domain/tier";
 
 type Row = ListPreview & { link: string; mode: ImportMode };
 type RowStatus = { state: "waiting" | "running" } | { state: "done"; result: ImportResult } | { state: "failed"; error: string };
@@ -249,18 +251,10 @@ function ListRow({ row, onChange, onRemove }: { row: Row; onChange: (mode: Impor
   );
 }
 
-const CHIP_STYLE: Record<string, string> = {
-  plain: "border border-line-strong text-ink-2",
-  three: "bg-tier-3 text-white",
-  two: "bg-tier-2 text-white",
-  one: "bg-tier-1 text-white",
-  not_recommended: "border border-ink-2 text-ink-2",
-  want_to_go: "bg-surface-2 text-ink-2",
-};
-
 function ModeChip({ mode }: { mode: ImportMode }) {
+  if (mode.kind === "tier") return <TierBadge tier={tierFromDb(mode.tier)} />;
   return (
-    <span className={`flex h-5 items-center rounded px-1.5 text-caption font-bold whitespace-nowrap ${CHIP_STYLE[modeToValue(mode)]}`}>
+    <span className="flex h-5 items-center rounded border border-line-strong px-1.5 text-caption font-bold whitespace-nowrap text-ink-2">
       {modeLabel(mode)}
     </span>
   );
