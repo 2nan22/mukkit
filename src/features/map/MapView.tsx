@@ -6,6 +6,7 @@ import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { SOURCE_LABEL } from "@/features/import/sources";
+import { SourceMark } from "@/components/brand/BrandLogo";
 import { PlaceMap } from "./PlaceMap";
 import type { MapPlace } from "./myPlaces";
 
@@ -135,8 +136,9 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
             href={place.links[0].url}
             target="_blank"
             rel="noreferrer"
-            className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink"
+            className="flex h-btn-m items-center justify-center gap-2 rounded-btn-m border border-line-strong text-body text-ink"
           >
+            <SourceMark source={place.links[0].source} />
             {SOURCE_LABEL[place.links[0].source]}에서 보기
           </a>
         ) : (

@@ -19,7 +19,7 @@ export function toSupabaseProvider(provider: LoginProvider): Provider {
 
 export const LOGIN_PROVIDER_LABEL: Record<LoginProvider, string> = {
   kakao: "카카오",
-  google: "구글",
+  google: "Google",
   naver: "네이버",
 };
 

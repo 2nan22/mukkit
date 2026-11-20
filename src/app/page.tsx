@@ -1,3 +1,4 @@
+import { GoogleG, KakaoSymbol, NaverN } from "@/components/brand/BrandLogo";
 import { Suspense } from "react";
 import { LoginErrorNotice } from "@/features/onboarding/LoginErrorNotice";
 import { MapIllustration } from "@/features/onboarding/MapIllustration";
@@ -15,7 +16,7 @@ export default function StartPage({ searchParams }: PageProps<"/">) {
           맛집을 고르세요
         </h1>
         <p className="text-body leading-relaxed text-ink-2">
-          네이버 지도에 저장한 곳을 그대로 가져와
+          네이버 지도 · 카카오맵에 저장한 곳을 그대로 가져와
           <br />
           나만의 등급을 매기고 친구와 나눠요.
         </p>
@@ -28,30 +29,25 @@ export default function StartPage({ searchParams }: PageProps<"/">) {
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 로그인 라우트는 전체 이동이어야 함 (Link 프리페치가 OAuth 시작을 부르지 않게) */}
         <a
           href="/auth/login/kakao"
-          className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l bg-[#fee500] text-[16px] font-bold text-[#191919]"
+          className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l bg-[#FEE500] text-[16px] font-bold text-black/85"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 5.9L6.5 20l3.6-2.2c.6.1 1.3.2 1.9.2 5 0 9-3.1 9-7s-4-7-9-7z"
-              fill="#191919"
-            />
-          </svg>
+          <KakaoSymbol />
           카카오로 시작하기
         </a>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 로그인 라우트는 전체 이동이어야 함 (Link 프리페치가 OAuth 시작을 부르지 않게) */}
         <a
           href="/auth/login/google"
-          className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l border border-line-strong text-[16px] font-bold text-ink"
+          className="flex h-btn-l items-center justify-center gap-2.5 rounded-btn-l border border-[#747775] bg-white text-[16px] font-bold text-[#1F1F1F]"
         >
-          <span aria-hidden="true" className="text-[17px] font-bold text-[#4285f4]">G</span>
-          구글로 시작하기
+          <GoogleG />
+          Google로 계속하기
         </a>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 로그인 라우트는 전체 이동이어야 함 (Link 프리페치가 OAuth 시작을 부르지 않게) */}
         <a
           href="/auth/login/naver"
-          className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l bg-[#03c75a] text-[16px] font-bold text-white"
+          className="flex h-btn-l items-center justify-center gap-2.5 rounded-btn-l bg-[#03C75A] text-[16px] font-bold text-white"
         >
-          <span aria-hidden="true" className="text-[17px] font-bold">N</span>
+          <NaverN />
           네이버로 시작하기
         </a>
         <p className="pt-2 text-center text-caption leading-normal text-muted">
