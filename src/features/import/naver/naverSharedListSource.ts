@@ -122,7 +122,8 @@ function toImportedList(
       lat: b.py,
       lng: b.px,
       address: b.address ?? "",
-      categoryPath: b.cidPath ?? [],
+      // 네이버가 코드 묶음을 쉼표 한 덩어리로 줄 때가 있다
+      categoryPath: (b.cidPath ?? []).flatMap((code) => code.split(",")),
       categoryName: b.mcidName ?? "",
       memo: b.memo ?? "",
       savedAt: new Date(b.creationTime),

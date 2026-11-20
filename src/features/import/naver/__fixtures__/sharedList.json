@@ -11,7 +11,7 @@
       "address": "서울 중구 예시로 1",
       "memo": "국물이 깔끔함",
       "mcidName": "음식점",
-      "cidPath": ["220036", "220037", "220068"],
+      "cidPath": ["220036,220037,220068"],
       "creationTime": 1790000000000,
       "available": true
     },
