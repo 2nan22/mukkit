@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { NICKNAME_SETUP } from "@/features/auth/paths";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // 로그인 확인용 임시 홈 — 대시보드로 교체 예정
@@ -8,6 +11,18 @@ export default function HomePage() {
       <Suspense fallback={<h1 className="text-title font-bold tracking-tight">반가워요</h1>}>
         <Greeting />
       </Suspense>
+      <Link
+        href="/import"
+        className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white"
+      >
+        네이버 지도에서 가져오기
+      </Link>
+      <Link
+        href="/settings/accounts"
+        className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink"
+      >
+        로그인 연결 관리
+      </Link>
       <form action="/auth/logout" method="post">
         <button
           type="submit"
@@ -26,7 +41,8 @@ async function Greeting() {
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   const { data: profile } = userId
-    ? await supabase.from("profiles").select("nickname").eq("id", userId).single()
+    ? await supabase.from("profiles").select("nickname, nickname_set_at").eq("id", userId).single()
     : { data: null };
+  if (profile && !profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
   return <h1 className="text-title font-bold tracking-tight">{profile?.nickname ?? "MY"}님, 반가워요</h1>;
 }

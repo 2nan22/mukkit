@@ -25,6 +25,7 @@ export default function StartPage({ searchParams }: PageProps<"/">) {
         <Suspense fallback={null}>
           <LoginErrorNotice searchParams={searchParams} />
         </Suspense>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 로그인 라우트는 전체 이동이어야 함 (Link 프리페치가 OAuth 시작을 부르지 않게) */}
         <a
           href="/auth/login/kakao"
           className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l bg-[#fee500] text-[16px] font-bold text-[#191919]"
@@ -37,20 +38,22 @@ export default function StartPage({ searchParams }: PageProps<"/">) {
           </svg>
           카카오로 시작하기
         </a>
-        <button
-          type="button"
-          disabled
-          className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l border border-line-strong text-[16px] font-bold text-muted"
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 로그인 라우트는 전체 이동이어야 함 (Link 프리페치가 OAuth 시작을 부르지 않게) */}
+        <a
+          href="/auth/login/google"
+          className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l border border-line-strong text-[16px] font-bold text-ink"
         >
-          구글로 시작하기 · 준비 중
-        </button>
-        <button
-          type="button"
-          disabled
-          className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l border border-line-strong text-[16px] font-bold text-muted"
+          <span aria-hidden="true" className="text-[17px] font-bold text-[#4285f4]">G</span>
+          구글로 시작하기
+        </a>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 로그인 라우트는 전체 이동이어야 함 (Link 프리페치가 OAuth 시작을 부르지 않게) */}
+        <a
+          href="/auth/login/naver"
+          className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l bg-[#03c75a] text-[16px] font-bold text-white"
         >
-          네이버로 시작하기 · 준비 중
-        </button>
+          <span aria-hidden="true" className="text-[17px] font-bold">N</span>
+          네이버로 시작하기
+        </a>
         <p className="pt-2 text-center text-caption leading-normal text-muted">
           시작하면 이용약관과 개인정보 처리방침에 동의하게 돼요.
         </p>

@@ -8,3 +8,4 @@
 | 00 | — | 2026-11-20 | 저장소 시드 · Vault 컨텍스트 동기화 구성 | — |
 | 01 | `01_stack_naver_import.md` | 2026-11-20 | Next.js 뼈대 · 네이버 가져오기 · 음식 종류 매핑 | dev 머지 |
 | 02 | `02_supabase_auth_schema.md` | 2026-11-20 | Supabase 스키마 · RLS · 카카오 로그인 · 시작 화면 | dev 머지 |
+| 03 | `03_social_login_import_save.md` | 2026-11-21 | 세 소셜 로그인 · 계정 연결 · 네이버 가져오기 저장 | dev 머지 |
