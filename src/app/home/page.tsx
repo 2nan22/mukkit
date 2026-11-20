@@ -16,6 +16,12 @@ export default function HomePage() {
         <UnratedCard />
       </Suspense>
       <Link
+        href="/map"
+        className="flex h-btn-l items-center justify-center rounded-btn-l border border-line-strong text-[16px] font-bold text-ink"
+      >
+        내 장소 지도
+      </Link>
+      <Link
         href="/import"
         className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white"
       >

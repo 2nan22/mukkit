@@ -1,11 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ImportedList, ImportedPlace } from "@/domain/importedPlace";
+import { isSamePlace } from "@/domain/samePlace";
 import type { ImportMode } from "./importMode";
 
 const NOTE_MAX = 300;
 const LIST_NAME_MAX = 40;
 const LIST_DESCRIPTION_MAX = 200;
-const FALLBACK_LIST_NAME = "네이버 리스트";
+const FALLBACK_LIST_NAME = "가져온 리스트";
 // in() 필터가 URL 에 실리므로 나눠서 묻는다
 const CHUNK = 200;
 
@@ -34,8 +35,9 @@ export async function saveImportedList(
 ): Promise<ImportResult> {
   const places = dedupeBySourceId(list.places);
   const placeIds = await upsertPlaces(supabase, places);
+  await saveImportedItems(supabase, userId, list, places, placeIds);
   const alreadySaved = await saveUserPlaces(supabase, userId, places, placeIds, mode);
-  const listId = mode.kind === "plain" ? await saveList(supabase, userId, list, [...placeIds.values()]) : null;
+  const listId = mode.kind === "plain" ? await saveList(supabase, userId, list, [...new Set(placeIds.values())]) : null;
 
   return {
     listId,
@@ -52,35 +54,127 @@ function dedupeBySourceId(places: ImportedPlace[]): ImportedPlace[] {
 }
 
 // 장소는 모두가 함께 쓰는 줄 — 이미 있으면 건드리지 않는다 (상태 갱신은 주기 확인 작업 몫)
+// 출처 ID 가 처음이면 다른 출처에서 온 같은 가게를 먼저 찾아 붙이고, 없을 때만 새 장소
 async function upsertPlaces(supabase: SupabaseClient, places: ImportedPlace[]): Promise<Map<string, string>> {
   const ids = new Map<string, string>();
   for (const part of chunks(places)) {
-    const rows = part.map((p) => ({
-      source: p.source,
-      source_place_id: p.sourcePlaceId,
-      name: p.name,
-      lat: p.lat,
-      lng: p.lng,
-      address: p.address,
-      category_path: p.categoryPath,
-      category_name: p.categoryName,
-      cuisine: p.cuisine,
-      available: p.available,
-    }));
-    const insert = await supabase
-      .from("places")
-      .upsert(rows, { onConflict: "source,source_place_id", ignoreDuplicates: true });
-    if (insert.error) throw new ImportSaveError("places", insert.error.code);
-
-    const found = await supabase
-      .from("places")
-      .select("id, source_place_id")
-      .eq("source", part[0].source)
-      .in("source_place_id", part.map((p) => p.sourcePlaceId));
-    if (found.error) throw new ImportSaveError("places_select", found.error.code);
-    for (const row of found.data) ids.set(row.source_place_id, row.id);
+    const known = await findLinkedPlaces(supabase, part);
+    const unknown = part.filter((p) => !known.has(p.sourcePlaceId));
+    if (unknown.length > 0) await linkOrCreatePlaces(supabase, unknown);
+    const linked = unknown.length > 0 ? await findLinkedPlaces(supabase, part) : known;
+    for (const [sid, placeId] of linked) ids.set(sid, placeId);
   }
   return ids;
+}
+
+async function findLinkedPlaces(supabase: SupabaseClient, part: ImportedPlace[]): Promise<Map<string, string>> {
+  const found = await supabase
+    .from("place_sources")
+    .select("place_id, source_place_id")
+    .eq("source", part[0].source)
+    .in("source_place_id", part.map((p) => p.sourcePlaceId));
+  if (found.error) throw new ImportSaveError("place_sources_select", found.error.code);
+  return new Map(found.data.map((r) => [r.source_place_id as string, r.place_id as string]));
+}
+
+type NearRow = { idx: number; place_id: string; name: string; lat: number; lng: number; source: string };
+
+async function linkOrCreatePlaces(supabase: SupabaseClient, unknown: ImportedPlace[]): Promise<void> {
+  const near = await supabase.rpc("places_near", {
+    points: unknown.map((p, idx) => ({ idx, lat: p.lat, lng: p.lng })),
+  });
+  if (near.error) throw new ImportSaveError("places_near", near.error.code);
+  const candidates = near.data as NearRow[];
+
+  const links: { place: ImportedPlace; placeId: string }[] = [];
+  const fresh: ImportedPlace[] = [];
+  unknown.forEach((p, idx) => {
+    const match = candidates.find((c) => c.idx === idx && c.source !== p.source && isSamePlace(p, c));
+    if (match) links.push({ place: p, placeId: match.place_id });
+    else fresh.push(p);
+  });
+
+  if (fresh.length > 0) {
+    const insert = await supabase.from("places").upsert(fresh.map(toPlaceRow), {
+      onConflict: "source,source_place_id",
+      ignoreDuplicates: true,
+    });
+    if (insert.error) throw new ImportSaveError("places", insert.error.code);
+    const created = await supabase
+      .from("places")
+      .select("id, source_place_id")
+      .eq("source", fresh[0].source)
+      .in("source_place_id", fresh.map((p) => p.sourcePlaceId));
+    if (created.error) throw new ImportSaveError("places_select", created.error.code);
+    const byId = new Map(created.data.map((r) => [r.source_place_id as string, r.id as string]));
+    for (const p of fresh) {
+      const placeId = byId.get(p.sourcePlaceId);
+      if (placeId) links.push({ place: p, placeId });
+    }
+  }
+
+  const sources = await supabase.from("place_sources").upsert(
+    links.map(({ place, placeId }) => ({
+      source: place.source,
+      source_place_id: place.sourcePlaceId,
+      place_id: placeId,
+      name: place.name,
+      category_name: place.categoryName,
+      category_path: place.categoryPath,
+    })),
+    { onConflict: "source,source_place_id", ignoreDuplicates: true },
+  );
+  if (sources.error) throw new ImportSaveError("place_sources", sources.error.code);
+}
+
+function toPlaceRow(p: ImportedPlace) {
+  return {
+    source: p.source,
+    source_place_id: p.sourcePlaceId,
+    name: p.name,
+    lat: p.lat,
+    lng: p.lng,
+    address: p.address,
+    category_path: p.categoryPath,
+    category_name: p.categoryName,
+    cuisine: p.cuisine,
+    available: p.available,
+  };
+}
+
+// 출처 · 리스트별 원본 — 다시 가져오면 최신 원본으로 바꾼다 (마이슐랭에서 고친 값과는 별개)
+async function saveImportedItems(
+  supabase: SupabaseClient,
+  userId: string,
+  list: ImportedList,
+  places: ImportedPlace[],
+  placeIds: Map<string, string>,
+): Promise<void> {
+  for (const part of chunks(places)) {
+    const rows = part.flatMap((p) => {
+      const placeId = placeIds.get(p.sourcePlaceId);
+      return placeId
+        ? [{
+            user_id: userId,
+            source: p.source,
+            source_list_id: list.sourceListId,
+            source_place_id: p.sourcePlaceId,
+            place_id: placeId,
+            list_name: list.name,
+            memo: p.memo,
+            category_name: p.categoryName,
+            category_path: p.categoryPath,
+            saved_at: p.savedAt.toISOString(),
+            raw: p.raw ?? {},
+            imported_at: new Date().toISOString(),
+          }]
+        : [];
+    });
+    const res = await supabase
+      .from("imported_items")
+      .upsert(rows, { onConflict: "user_id,source,source_list_id,source_place_id" });
+    if (res.error) throw new ImportSaveError("imported_items", res.error.code);
+  }
 }
 
 async function saveUserPlaces(
