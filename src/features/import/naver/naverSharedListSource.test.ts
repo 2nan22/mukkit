@@ -44,6 +44,16 @@ describe("NaverSharedListSource.resolveShareId", () => {
 });
 
 describe("NaverSharedListSource.fetchList", () => {
+  it("한국어 이름을 받도록 언어를 지정해 요청한다", async () => {
+    let sent: Headers | undefined;
+    const source = new NaverSharedListSource((async (_input: RequestInfo | URL, init?: RequestInit) => {
+      sent = new Headers(init?.headers);
+      return Response.json(fixture);
+    }) as typeof fetch);
+    await source.fetchList(SHARE_ID);
+    expect(sent?.get("accept-language")).toMatch(/^ko/);
+  });
+
   it("정규형으로 바꾸고 못 읽은 항목은 skipped 로 센다", async () => {
     const source = new NaverSharedListSource(
       fakeFetch({ [bookmarksPrefix]: () => Response.json(fixture) }),
