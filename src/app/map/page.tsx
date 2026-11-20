@@ -4,11 +4,13 @@ import { Suspense } from "react";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { MapView } from "@/features/map/MapView";
 import { getMyMapPlaces } from "@/features/map/myPlaces";
+import { getMyList } from "@/features/lists/lists";
+import { TIERS } from "@/domain/tier";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "지도" };
 
-export default function MapPage() {
+export default function MapPage({ searchParams }: PageProps<"/map">) {
   return (
     <main className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden">
       <header className="grid h-14 shrink-0 grid-cols-[44px_1fr_44px] items-center px-2">
@@ -21,18 +23,23 @@ export default function MapPage() {
         <span />
       </header>
       <Suspense fallback={<div className="flex-1 bg-map-land" />}>
-        <MapLoader />
+        <MapLoader searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
 // 세션을 읽는 부분만 요청 시점에 그린다
-async function MapLoader() {
+async function MapLoader({ searchParams }: { searchParams: Promise<{ tier?: string | string[]; list?: string | string[] }> }) {
+  const { tier, list } = await searchParams;
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) redirect(SIGNED_OUT_HOME);
-  const places = await getMyMapPlaces(supabase, userId);
-  return <MapView places={places} />;
+  const all = await getMyMapPlaces(supabase, userId);
+  // ?list= 이면 그 리스트에 담긴 곳만, ?tier= 이면 그 등급을 미리 고른 채로
+  const only = typeof list === "string" ? await getMyList(supabase, userId, list).catch(() => null) : null;
+  const places = only ? all.filter((p) => only.placeIds.includes(p.placeId)) : all;
+  const initialTiers = TIERS.filter((t) => t === tier);
+  return <MapView places={places} initialTiers={initialTiers} />;
 }

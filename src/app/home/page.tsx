@@ -22,6 +22,12 @@ export default function HomePage() {
         내 장소 지도
       </Link>
       <Link
+        href="/lists"
+        className="flex h-btn-l items-center justify-center rounded-btn-l border border-line-strong text-[16px] font-bold text-ink"
+      >
+        리스트
+      </Link>
+      <Link
         href="/import"
         className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white"
       >

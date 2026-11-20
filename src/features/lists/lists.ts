@@ -171,3 +171,11 @@ export async function getImportedLists(supabase: SupabaseClient, userId: string)
   }
   return [...groups.values()].sort((a, b) => b.count - a.count);
 }
+
+export async function countMyTiers(supabase: SupabaseClient, userId: string): Promise<Record<string, number>> {
+  const { data, error } = await supabase.from("user_places").select("tier").eq("user_id", userId).limit(10000);
+  if (error) throw new ListWriteError("tiers", error.code);
+  const counts: Record<string, number> = {};
+  for (const r of data) counts[r.tier as string] = (counts[r.tier as string] ?? 0) + 1;
+  return counts;
+}
