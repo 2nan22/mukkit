@@ -1,0 +1,21 @@
+# Vault 10_llm-context 에서 이 저장소로 동기화할 항목
+# 정본은 Vault. 사본(.claude/vault/, 아래 skill)은 직접 고치지 않는다.
+# 형식: <종류> <버전 폴더 기준 상대경로>
+#   version  사용할 베이스 버전 (context-versions/<버전>)
+#   file     .claude/vault/<경로> 로 복사
+#   skill    .claude/skills/<이름>/ 로 복사
+
+version v1_2025H2
+
+file CLAUDE.base.md
+file prompts/_TEMPLATE.md
+file rules/coding/_common.md
+file rules/testing.md
+file rules/git_workflow.md
+file rules/logging.md
+
+# 스택 확정 후 추가 (예: react.md · nextjs.md · python.md · fastapi.md · docker.md · github-actions.md)
+
+skill code-review
+skill systematic-debugging
+skill wiki-update

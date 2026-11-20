@@ -1,0 +1,17 @@
+# 비밀 · 자격증명
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials*
+secrets*
+id_rsa*
+
+# Claude Code 개인 설정
+.claude/settings.local.json
+
+# OS · 에디터
+.DS_Store
+.idea/
+.vscode/
