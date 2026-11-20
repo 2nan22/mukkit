@@ -12,6 +12,7 @@
     "db:start": "supabase start -x studio,edge-runtime,logflare,vector,imgproxy,realtime,storage-api",
     "db:reset": "supabase db reset && scripts/register-naver-provider.sh",
     "test:db": "supabase test db",
+    "test:import-db": "scripts/test-import-db.sh",
     "auth:naver": "scripts/register-naver-provider.sh"
   },
   "dependencies": {
