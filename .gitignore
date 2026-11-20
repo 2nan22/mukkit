@@ -8,6 +8,10 @@ credentials*
 secrets*
 id_rsa*
 
+# 개인 데이터 · 공유 링크 포함 로컬 파일
+naver_places.json
+fetch_naver_folders.py
+
 # Claude Code 개인 설정
 .claude/settings.local.json
 
