@@ -49,7 +49,7 @@ async function RatePlace({
           </svg>
         </Link>
       </header>
-      <RatingForm place={place} next={back} />
+      <RatingForm place={place} next={back} userId={userId} />
     </>
   );
 }
