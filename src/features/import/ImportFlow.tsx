@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { importList, previewList, type ListPreview } from "./actions";
 import { SOURCE_LABEL } from "./sources";
+import { SourceMark } from "@/components/brand/BrandLogo";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import {
   guessMode,
@@ -213,7 +214,8 @@ function LinkHelp({ source, privateList }: { source: PlaceSourceName | null; pri
         const steps = privateList ? help.open : help.find;
         return (
           <section key={name} className="flex flex-col gap-3.5">
-            <h2 className="text-section font-bold">
+            <h2 className="flex items-center gap-2 text-section font-bold">
+              <SourceMark source={name} size={20} />
               {privateList ? `${help.app}에서 공개 범위 바꾸기` : `${help.app} 공유 링크 찾는 법`}
             </h2>
             <ol className="flex flex-col gap-3.5">
@@ -248,7 +250,10 @@ function ListRow({ row, onChange, onRemove }: { row: Row; onChange: (mode: Impor
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-body">{row.name}</span>
         <span className="text-meta text-muted">
-          {SOURCE_LABEL[row.source]} · {row.count}곳{row.unavailable > 0 && ` · 정보 없는 곳 ${row.unavailable}`}
+          <span className="inline-flex items-center gap-1.5">
+            <SourceMark source={row.source} size={14} />
+            {SOURCE_LABEL[row.source]} · {row.count}곳{row.unavailable > 0 && ` · 정보 없는 곳 ${row.unavailable}`}
+          </span>
         </span>
       </span>
       <label htmlFor={selectId} className="sr-only">

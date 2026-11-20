@@ -1,3 +1,4 @@
+import { ProviderMark } from "@/components/brand/BrandLogo";
 import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
@@ -51,6 +52,7 @@ async function AccountLinks({ searchParams }: { searchParams: Promise<{ error?: 
       <ul className="flex flex-col">
         {LOGIN_PROVIDER_ORDER.map((provider) => (
           <li key={provider} className="flex min-h-16 items-center gap-3 border-b border-line">
+            <ProviderMark provider={provider} />
             <span className="flex flex-1 flex-col gap-0.5">
               <span className="text-body font-bold">{LOGIN_PROVIDER_LABEL[provider]}</span>
               <span className="text-meta text-muted">

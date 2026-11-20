@@ -30,7 +30,7 @@ export function NewListForm({ places, initialOrigin, initialName }: { places: Pi
       {[...selected].map((id) => (
         <input key={id} type="hidden" name="placeId" value={id} />
       ))}
-      <PlacePicker places={places} selected={selected} onChange={setSelected} initialOrigin={initialOrigin} />
+      <PlacePicker places={places} selected={selected} onChange={setSelected} initialLabels={initialOrigin ? [initialOrigin] : []} />
       <div className="flex flex-col gap-2 border-t border-line px-5 pt-3 pb-5">
         {state.error && (
           <p role="alert" className="text-meta text-[#c4320a]">

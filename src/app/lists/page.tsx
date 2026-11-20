@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { TIER_LABEL, TIERS, tierToDb, type Tier } from "@/domain/tier";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { SOURCE_LABEL } from "@/features/import/sources";
+import { SourceMark } from "@/components/brand/BrandLogo";
 import { countMyTiers, getImportedLists, getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -101,7 +102,8 @@ async function ListsContent() {
             >
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate text-body">{l.name}</span>
-                <span className="text-meta text-muted">
+                <span className="inline-flex items-center gap-1.5 text-meta text-muted">
+                  <SourceMark source={l.source} size={14} />
                   {SOURCE_LABEL[l.source]} · {l.count}곳
                 </span>
               </span>
