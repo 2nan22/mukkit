@@ -12,7 +12,7 @@ export default function ImportPage() {
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </Link>
-        <h1 className="text-center text-section font-bold">네이버 지도에서 가져오기</h1>
+        <h1 className="text-center text-section font-bold">저장한 장소 가져오기</h1>
         <span />
       </header>
       <ImportFlow />

@@ -10,3 +10,4 @@
 | 02 | `02_supabase_auth_schema.md` | 2026-11-20 | Supabase 스키마 · RLS · 카카오 로그인 · 시작 화면 | dev 머지 |
 | 03 | `03_social_login_import_save.md` | 2026-11-21 | 세 소셜 로그인 · 계정 연결 · 네이버 가져오기 저장 | dev 머지 |
 | 04 | `04_rating.md` | 2026-11-21 | 평가 작성 · 빠르게 평가하기 · 영어 이름 수정 | dev 머지 |
+| 05 | `05_kakao_import.md` | 2026-11-21 | 카카오맵 폴더 가져오기 · 평가 없이 저장 | dev 머지 |

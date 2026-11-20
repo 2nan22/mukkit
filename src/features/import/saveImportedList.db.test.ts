@@ -16,6 +16,7 @@ function place(n: number, over: Partial<ImportedPlace> = {}): ImportedPlace {
     address: "서울 중구",
     categoryPath: ["220036", "220037"],
     categoryName: "국수",
+    cuisine: "korean",
     memo: `한마디 ${n}`,
     savedAt: new Date("2025-06-14T03:31:00Z"),
     available: true,
