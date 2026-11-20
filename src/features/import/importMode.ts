@@ -35,12 +35,13 @@ export function modeFromValue(value: string): ImportMode {
   return tier ? { kind: "tier", tier } : { kind: "plain" };
 }
 
+const STAR = "\\s*(?:스타|star|stars|별)";
 const NAME_HINTS: [RegExp, ImportTier][] = [
-  [/3\s*스타|★{3}|별\s*3/, "three"],
-  [/2\s*스타|★{2}|별\s*2/, "two"],
-  [/1\s*스타|★|별\s*1/, "one"],
-  [/추천\s*안|비추|별로/, "not_recommended"],
-  [/가고\s*싶|가\s*볼|가보고|위시/, "want_to_go"],
+  [new RegExp(`3${STAR}|★{3}|별\\s*3`, "i"), "three"],
+  [new RegExp(`2${STAR}|★{2}|별\\s*2`, "i"), "two"],
+  [new RegExp(`1${STAR}|★|별\\s*1`, "i"), "one"],
+  [new RegExp(`0${STAR}|추천\\s*안|비추|별로`, "i"), "not_recommended"],
+  [/가고\s*싶|가\s*볼|가보고|위시|먹킷|버킷|wish/i, "want_to_go"],
 ];
 
 // 리스트 이름으로 미리 골라 둔다 — 사용자가 바꿀 수 있다

@@ -365,7 +365,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
           <circle cx="12" cy="12" r="11" fill="var(--color-ink)" />
           <path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <h2 className="mt-2 text-title font-bold tracking-tight">{added}곳을 가져왔어요</h2>
+        <h2 className="mt-2 text-title font-bold tracking-tight">{added > 0 ? `${added}곳을 가져왔어요` : "새로 가져올 곳이 없어요"}</h2>
         {already > 0 && <p className="text-body leading-normal text-ink-2">이미 있는 {already}곳은 건너뛰었어요.</p>}
       </section>
 
@@ -391,7 +391,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
 
       {unavailable > 0 && (
         <p className="mx-5 mt-4 rounded-btn-l bg-surface px-4 py-3.5 text-meta leading-normal text-ink-2">
-          네이버에 정보가 없는 곳 {unavailable}곳도 함께 저장했어요. 폐업했을 수 있어요.
+          네이버에 정보가 없는 곳이 {unavailable}곳 있어요. 폐업했을 수 있어요.
         </p>
       )}
 
