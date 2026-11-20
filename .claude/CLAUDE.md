@@ -71,7 +71,7 @@
 - 배포 시 매일 새벽 외부 크론(Vercel Cron 또는 GitHub Actions)이 폐업 여부 확인 작업을 돌리고 실행 기록을 DB 에 남긴다 — Supabase 무료 플랜 비활성 정지 방지 겸용
 - 로컬 Supabase 는 Storage 포함해 기동 (`pnpm db:start`)
 - 로컬 Supabase 는 553xx 포트 — 다른 로컬 Supabase(티키타카)와 충돌 회피
-- 디자인 시안: https://claude.ai/artifact/WNsn9Zu7nGyQxdQxpUXc2n
+- 디자인 시안: https://claude.ai/artifact/WNsn9Zu7nGyQxdQxpUXc2n — 화면을 만들 때 해당 아트보드를 먼저 열고 그 구성을 따른다 (홈을 피드로 바꿨다가 되돌린 일 있음)
 
 ## 규칙 파일
 
