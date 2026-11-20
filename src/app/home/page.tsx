@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-// 로그인 확인용 임시 홈 — 대시보드는 다음 세션에서
+// 로그인 확인용 임시 홈 — 대시보드로 교체 예정
 export default function HomePage() {
   return (
     <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col gap-6 px-5 py-8">
