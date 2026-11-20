@@ -1,7 +1,7 @@
 -- RLS: 남의 저장 · 비공개 리스트를 읽거나 쓸 수 없는지
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(21);
+select plan(24);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'a@test.local', '{"name":"에이"}'),
@@ -37,12 +37,15 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
 
 select is(
-  (select array_agg(tier::text) from public.user_places where user_id = '11111111-1111-1111-1111-111111111111'),
-  array['three'], '남의 저장은 평가된 것만 보임 (가고 싶은 곳 숨김)');
+  (select count(*)::int from public.user_places where user_id = '11111111-1111-1111-1111-111111111111'),
+  0, '남의 저장 줄(메모 포함)은 직접 읽을 수 없음');
 update public.user_places set note = '변조' where user_id = '11111111-1111-1111-1111-111111111111';
 select is(
-  (select note from public.user_places where user_id = '11111111-1111-1111-1111-111111111111'),
-  '', '남의 평가 수정 불가');
+  (select array_agg(tier::text order by name) from public.public_list('bbbbbbbb-0000-0000-0000-000000000002')),
+  array[null::text], '공개 통로는 평가된 등급만 (가고 싶은 곳은 비움)');
+select is(
+  (select count(*)::int from public.public_list('bbbbbbbb-0000-0000-0000-000000000001')),
+  0, '비공개 리스트는 공개 통로로도 안 보임');
 select throws_ok(
   $$insert into public.user_places (user_id, place_id) values
     ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001')$$,
@@ -96,12 +99,18 @@ select throws_ok(
 
 -- 비로그인
 reset role;
+select is(
+  (select note from public.user_places where user_id = '11111111-1111-1111-1111-111111111111' and tier = 'three'),
+  '', '남의 평가 수정 불가');
 
 set local role anon;
+select is(
+  (select list_name from public.public_list('bbbbbbbb-0000-0000-0000-000000000002') limit 1),
+  '링크 공개', '비로그인도 링크 리스트는 공개 통로로 읽음');
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 
 select is((select count(*)::int from public.places where id::text like 'aaaaaaaa-%'), 2, '비로그인도 장소는 읽음');
-select is((select array_agg(name) from public.lists), array['링크 공개'], '비로그인은 공개 리스트만');
+select is((select array_agg(name) from public.lists where owner_id = '11111111-1111-1111-1111-111111111111'), array['링크 공개'], '비로그인은 공개 리스트만');
 
 select * from finish();
 rollback;
