@@ -27,7 +27,10 @@ export default function AccountLinksPage({ searchParams }: PageProps<"/settings/
       <Suspense fallback={null}>
         <AccountLinks searchParams={searchParams} />
       </Suspense>
-      <form action="/auth/logout" method="post" className="px-5 pt-8">
+      <Suspense fallback={null}>
+        <MyLinks />
+      </Suspense>
+      <form action="/auth/logout" method="post" className="px-5 pt-4">
         <button type="submit" className="h-btn-m w-full rounded-btn-m border border-line-strong text-body text-ink">
           로그아웃
         </button>
@@ -87,5 +90,23 @@ async function AccountLinks({ searchParams }: { searchParams: Promise<{ error?: 
         ))}
       </ul>
     </section>
+  );
+}
+
+async function MyLinks() {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.auth.getClaims();
+  const me = data?.claims?.sub;
+  return (
+    <nav aria-label="MY 메뉴" className="grid grid-cols-2 gap-2 px-5 pt-8">
+      {me && (
+        <Link href={`/u/${me}`} className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
+          내 프로필
+        </Link>
+      )}
+      <Link href="/people" className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
+        사람 찾기
+      </Link>
+    </nav>
   );
 }
