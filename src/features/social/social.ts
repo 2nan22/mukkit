@@ -111,3 +111,45 @@ export async function getFeed(supabase: SupabaseClient, before?: string): Promis
   if (error) throw new SocialError("feed", error.code);
   return withMedia(supabase, data as RatingRow[]);
 }
+
+export type Taste = { overlap: number; bothThree: number; similarity: number };
+export type TasteMatch = Taste & { userId: string; nickname: string };
+export type ProfileStats = { three: number; two: number; one: number; notRecommended: number; sponsored: number };
+export type ProfileList = { id: string; name: string; count: number };
+
+export async function getTasteWith(supabase: SupabaseClient, other: string): Promise<Taste | null> {
+  const { data, error } = await supabase.rpc("taste_with", { p_other: other });
+  if (error || !data?.[0]) return null;
+  const r = data[0] as { overlap: number; both_three: number; similarity: number | null };
+  return { overlap: r.overlap, bothThree: r.both_three, similarity: Number(r.similarity ?? 0) };
+}
+
+export async function getTasteMatches(supabase: SupabaseClient, limit = 10): Promise<TasteMatch[]> {
+  const { data, error } = await supabase.rpc("taste_matches", { p_limit: limit });
+  if (error) throw new SocialError("taste_matches", error.code);
+  return (data as { user_id: string; nickname: string; overlap: number; both_three: number; similarity: number }[]).map((r) => ({
+    userId: r.user_id,
+    nickname: r.nickname,
+    overlap: r.overlap,
+    bothThree: r.both_three,
+    similarity: Number(r.similarity),
+  }));
+}
+
+export async function getProfileStats(supabase: SupabaseClient, owner: string): Promise<ProfileStats> {
+  const { data, error } = await supabase.rpc("profile_stats", { p_owner: owner });
+  if (error) throw new SocialError("profile_stats", error.code);
+  const r = (data as { three: number; two: number; one: number; not_recommended: number; sponsored: number }[])[0];
+  return { three: r.three, two: r.two, one: r.one, notRecommended: r.not_recommended, sponsored: r.sponsored };
+}
+
+export async function getProfileLists(supabase: SupabaseClient, owner: string): Promise<ProfileList[]> {
+  const { data, error } = await supabase.rpc("profile_lists", { p_owner: owner });
+  if (error) throw new SocialError("profile_lists", error.code);
+  return (data as { id: string; name: string; count: number }[]).map((r) => ({ id: r.id, name: r.name, count: r.count }));
+}
+
+export async function getBio(supabase: SupabaseClient, id: string): Promise<string> {
+  const { data } = await supabase.from("profiles").select("bio").eq("id", id).maybeSingle();
+  return (data?.bio as string | null) ?? "";
+}

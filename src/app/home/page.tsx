@@ -6,7 +6,8 @@ import { NICKNAME_SETUP } from "@/features/auth/paths";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { countUnrated } from "@/features/rating/rating";
 import { RatingCard } from "@/features/social/RatingCard";
-import { getFeed } from "@/features/social/social";
+import { getFeed, getTasteMatches } from "@/features/social/social";
+import { TasteMatches } from "@/features/social/TasteMatches";
 
 // 홈 — 평가 전 알림 · 팔로우한 사람들의 평가
 export default function HomePage() {
@@ -18,6 +19,9 @@ export default function HomePage() {
         </Suspense>
         <Suspense fallback={null}>
           <UnratedCard />
+        </Suspense>
+        <Suspense fallback={null}>
+          <Matches />
         </Suspense>
         <Suspense fallback={null}>
           <Feed />
@@ -88,4 +92,9 @@ async function Feed() {
       ))}
     </section>
   );
+}
+
+async function Matches() {
+  const supabase = await createSupabaseServerClient();
+  return <TasteMatches matches={await getTasteMatches(supabase, 8)} />;
 }

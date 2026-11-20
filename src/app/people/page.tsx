@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { searchPeople } from "@/features/social/social";
+import { getTasteMatches, searchPeople } from "@/features/social/social";
+import { TasteMatches } from "@/features/social/TasteMatches";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "사람 찾기" };
@@ -9,7 +10,7 @@ export default function PeoplePage({ searchParams }: PageProps<"/people">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <header className="grid h-14 shrink-0 grid-cols-[44px_1fr_44px] items-center px-2">
-        <Link href="/settings/accounts" aria-label="MY 로" className="flex size-11 items-center justify-center">
+        <Link href="/my" aria-label="MY 로" className="flex size-11 items-center justify-center">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 5l-7 7 7 7" />
           </svg>
@@ -29,7 +30,10 @@ async function People({ searchParams }: { searchParams: Promise<{ q?: string | s
   const query = typeof q === "string" ? q : "";
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
-  const people = await searchPeople(supabase, query, data?.claims?.sub ?? null);
+  const [people, matches] = await Promise.all([
+    searchPeople(supabase, query, data?.claims?.sub ?? null),
+    query ? Promise.resolve([]) : getTasteMatches(supabase, 10),
+  ]);
 
   return (
     <div className="flex flex-col gap-3 px-5">
@@ -48,6 +52,7 @@ async function People({ searchParams }: { searchParams: Promise<{ q?: string | s
           찾기
         </button>
       </form>
+      {!query && <TasteMatches matches={matches} title="이런 사람은 어때요" />}
       <ul>
         {people.map((p) => (
           <li key={p.id}>
