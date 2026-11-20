@@ -1,7 +1,7 @@
 -- 취향 겹침 · 추천 · 프로필 통계
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(7);
+select plan(9);
 
 insert into auth.users (id, email) values
   ('41111111-1111-1111-1111-111111111111', 'taste-a@test.local'),
@@ -27,6 +27,11 @@ insert into public.user_places (user_id, place_id, tier, visibility, sponsored) 
   ('45555555-5555-5555-5555-555555555555', 'd1111111-0000-0000-0000-000000000001', 'three', 'public', true),
   ('45555555-5555-5555-5555-555555555555', 'd1111111-0000-0000-0000-000000000002', 'two', 'public', true);
 
+insert into public.lists (owner_id, name, visibility) values
+  ('42222222-2222-2222-2222-222222222222', '공개 리스트', 'public'),
+  ('42222222-2222-2222-2222-222222222222', '링크 리스트', 'link'),
+  ('41111111-1111-1111-1111-111111111111', '내 공개 리스트', 'public');
+
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"41111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 
@@ -43,6 +48,9 @@ select is((select array_agg(nickname order by similarity desc) from public.taste
         (select nickname from public.profiles where id = '43333333-3333-3333-3333-333333333333')],
   '추천은 비슷한 사람부터, 볼 수 없는 · 협찬 평가만 있는 사람은 빠짐');
 
+select is((select three_ratio from public.taste_matches() where user_id = '42222222-2222-2222-2222-222222222222'), 50, '추천 사람의 3스타 비율 (볼 수 있는 평가 기준)');
+select is((select array_agg(name) from public.recent_public_lists(20) where owner_nickname in (select nickname from public.profiles where id::text like '4%')),
+  array['공개 리스트'], '새로 공개된 리스트는 남의 공개 리스트만 (링크 · 내 것 제외)');
 insert into public.follows (follower_id, followee_id) values ('41111111-1111-1111-1111-111111111111', '42222222-2222-2222-2222-222222222222');
 select ok(not exists (select 1 from public.taste_matches() where user_id = '42222222-2222-2222-2222-222222222222'), '이미 팔로우한 사람은 추천에서 빠짐');
 select results_eq(

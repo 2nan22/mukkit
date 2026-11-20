@@ -113,7 +113,7 @@ export async function getFeed(supabase: SupabaseClient, before?: string): Promis
 }
 
 export type Taste = { overlap: number; bothThree: number; similarity: number };
-export type TasteMatch = Taste & { userId: string; nickname: string };
+export type TasteMatch = Taste & { userId: string; nickname: string; threeRatio: number };
 export type ProfileStats = { three: number; two: number; one: number; notRecommended: number; sponsored: number };
 export type ProfileList = { id: string; name: string; count: number };
 
@@ -127,12 +127,13 @@ export async function getTasteWith(supabase: SupabaseClient, other: string): Pro
 export async function getTasteMatches(supabase: SupabaseClient, limit = 10): Promise<TasteMatch[]> {
   const { data, error } = await supabase.rpc("taste_matches", { p_limit: limit });
   if (error) throw new SocialError("taste_matches", error.code);
-  return (data as { user_id: string; nickname: string; overlap: number; both_three: number; similarity: number }[]).map((r) => ({
+  return (data as { user_id: string; nickname: string; overlap: number; both_three: number; similarity: number; three_ratio: number }[]).map((r) => ({
     userId: r.user_id,
     nickname: r.nickname,
     overlap: r.overlap,
     bothThree: r.both_three,
     similarity: Number(r.similarity),
+    threeRatio: r.three_ratio,
   }));
 }
 
@@ -152,4 +153,24 @@ export async function getProfileLists(supabase: SupabaseClient, owner: string): 
 export async function getBio(supabase: SupabaseClient, id: string): Promise<string> {
   const { data } = await supabase.from("profiles").select("bio").eq("id", id).maybeSingle();
   return (data?.bio as string | null) ?? "";
+}
+
+export type RecentList = { id: string; name: string; ownerNickname: string; count: number; points: { lat: number; lng: number; tier: string | null }[] };
+
+export async function getRecentPublicLists(supabase: SupabaseClient, limit = 4): Promise<RecentList[]> {
+  const { data, error } = await supabase.rpc("recent_public_lists", { p_limit: limit });
+  if (error) throw new SocialError("recent_public_lists", error.code);
+  return (data as { id: string; name: string; owner_nickname: string; count: number; points: RecentList["points"] }[]).map((r) => ({
+    id: r.id,
+    name: r.name,
+    ownerNickname: r.owner_nickname,
+    count: r.count,
+    points: r.points,
+  }));
+}
+
+export async function getMyWantToGoPoints(supabase: SupabaseClient, me: string): Promise<{ lat: number; lng: number }[]> {
+  const { data, error } = await supabase.from("user_places").select("places(lat, lng)").eq("user_id", me).eq("tier", "want_to_go").limit(2000);
+  if (error) throw new SocialError("want_to_go", error.code);
+  return (data as unknown as { places: { lat: number; lng: number } | null }[]).flatMap((r) => (r.places ? [r.places] : []));
 }

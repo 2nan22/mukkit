@@ -88,6 +88,15 @@ async function MyContent() {
             </Link>
           ))}
         </div>
+        {(tiers.unrated ?? 0) > 0 && (
+          <Link href="/rate" className="flex items-center justify-between gap-3 rounded-btn-l bg-surface px-4 py-3.5">
+            <span className="flex flex-col gap-0.5">
+              <span className="text-body font-bold">평가 전 {tiers.unrated}곳</span>
+              <span className="text-meta text-muted">한 곳씩 등급만 고르면 돼요</span>
+            </span>
+            <span className="shrink-0 text-meta font-bold text-ink">빠르게 평가하기</span>
+          </Link>
+        )}
       </section>
 
       <section className="flex flex-col px-5 pt-3">
