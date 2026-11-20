@@ -1,13 +1,13 @@
 -- RLS: 남의 저장 · 비공개 리스트를 읽거나 쓸 수 없는지
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(19);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'a@test.local', '{"name":"에이"}'),
   ('22222222-2222-2222-2222-222222222222', 'b@test.local', '{}');
 
-select is((select count(*)::int from public.profiles), 2, '가입 시 프로필 자동 생성');
+select is((select count(*)::int from public.profiles where id in ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')), 2, '가입 시 프로필 자동 생성');
 select is(
   (select nickname from public.profiles where id = '22222222-2222-2222-2222-222222222222'),
   '사용자22222222', '가입 시 겹치지 않는 기본 닉네임 (공급자 이름은 쓰지 않음)');
@@ -81,13 +81,18 @@ select lives_ok(
   $$insert into public.user_places (user_id, place_id, tier) values
     ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-0000-0000-0000-000000000002', 'unrated')$$,
   '본인 저장은 가능');
+select throws_ok(
+  $$insert into public.lists (owner_id, name, source, source_list_id) values
+    ('22222222-2222-2222-2222-222222222222', '가져온 리스트', 'naver', 'share-1'),
+    ('22222222-2222-2222-2222-222222222222', '가져온 리스트 사본', 'naver', 'share-1')$$,
+  '23505', null, '같은 출처 리스트는 한 사람에게 하나');
 
 -- 비로그인
 reset role;
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 
-select is((select count(*)::int from public.places), 2, '비로그인도 장소는 읽음');
+select is((select count(*)::int from public.places where id::text like 'aaaaaaaa-%'), 2, '비로그인도 장소는 읽음');
 select is((select array_agg(name) from public.lists), array['링크 공개'], '비로그인은 공개 리스트만');
 
 select * from finish();
