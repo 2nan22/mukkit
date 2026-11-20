@@ -41,7 +41,7 @@ async function RatePlace({
       <header className="flex items-center justify-between pt-4 pr-2 pb-2 pl-5">
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="truncate text-meta text-muted">{place.name}</span>
-          <h1 className="text-section font-bold">등급을 골라주세요</h1>
+          <h1 className="text-section font-bold">평가 · 메모</h1>
         </div>
         <Link href={back} aria-label="닫기" className="flex size-11 shrink-0 items-center justify-center">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">

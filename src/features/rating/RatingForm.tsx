@@ -7,10 +7,10 @@ import { saveRating, type RatingFormState } from "./actions";
 import { NOTE_MAX, type SavedPlace } from "./rating";
 
 const RATED: Tier[] = ["three", "two", "one", "notRecommended"];
+const NOT_RATED: Tier[] = ["wantToGo", "unrated"];
 
 export function RatingForm({ place, next }: { place: SavedPlace; next: string }) {
   const [state, action, pending] = useActionState<RatingFormState, FormData>(saveRating, {});
-  const current = RATED.includes(place.tier) ? place.tier : undefined;
 
   return (
     <form action={action} className="flex flex-1 flex-col">
@@ -32,12 +32,23 @@ export function RatingForm({ place, next }: { place: SavedPlace; next: string })
               type="radio"
               name="tier"
               value={tier}
-              defaultChecked={tier === current}
+              defaultChecked={tier === place.tier}
               aria-label={TIER_LABEL[tier]}
               className="size-5 accent-ink"
             />
           </label>
         ))}
+        <div className="mt-1 grid grid-cols-2 gap-1.5">
+          {NOT_RATED.map((tier) => (
+            <label
+              key={tier}
+              className="flex h-btn-m cursor-pointer items-center justify-center gap-2 rounded-btn-m border border-line text-meta text-ink-2 has-checked:border-[1.5px] has-checked:border-ink has-checked:font-bold has-checked:text-ink"
+            >
+              <input type="radio" name="tier" value={tier} defaultChecked={tier === place.tier} className="sr-only" />
+              {tier === "unrated" ? "평가 안 함" : TIER_LABEL[tier]}
+            </label>
+          ))}
+        </div>
       </fieldset>
 
       <div className="flex flex-col gap-2 px-5 pt-4">
