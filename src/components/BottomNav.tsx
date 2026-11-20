@@ -41,9 +41,9 @@ const ITEMS: Item[] = [
     ),
   },
   {
-    href: "/settings/accounts",
+    href: "/my",
     label: "MY",
-    match: ["/settings"],
+    match: ["/my", "/settings", "/people"],
     icon: (a) => (
       <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="8" r="4" {...(a ? { fill: "currentColor" } : stroke)} />

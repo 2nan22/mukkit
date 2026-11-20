@@ -14,21 +14,18 @@ export default function AccountLinksPage({ searchParams }: PageProps<"/settings/
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <header className="grid h-14 grid-cols-[44px_1fr_44px] items-center px-2">
-        <Link href="/home" aria-label="뒤로 가기" className="flex size-11 items-center justify-center">
+        <Link href="/my" aria-label="MY 로" className="flex size-11 items-center justify-center">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </Link>
-        <h1 className="text-center text-section font-bold">로그인 연결</h1>
+        <h1 className="text-center text-section font-bold">설정</h1>
       </header>
       <p className="px-5 pb-4 text-meta leading-relaxed text-muted">
         연결해 두면 어느 방법으로 로그인해도 같은 계정으로 들어와요.
       </p>
       <Suspense fallback={null}>
         <AccountLinks searchParams={searchParams} />
-      </Suspense>
-      <Suspense fallback={null}>
-        <MyLinks />
       </Suspense>
       <form action="/auth/logout" method="post" className="px-5 pt-4">
         <button type="submit" className="h-btn-m w-full rounded-btn-m border border-line-strong text-body text-ink">
@@ -93,23 +90,3 @@ async function AccountLinks({ searchParams }: { searchParams: Promise<{ error?: 
   );
 }
 
-async function MyLinks() {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getClaims();
-  const me = data?.claims?.sub;
-  return (
-    <nav aria-label="MY 메뉴" className="grid grid-cols-2 gap-2 px-5 pt-8">
-      {me && (
-        <Link href={`/u/${me}`} className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
-          내 프로필
-        </Link>
-      )}
-      <Link href="/people" className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
-        사람 찾기
-      </Link>
-      <Link href="/import" className="col-span-2 flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
-        저장한 장소 가져오기
-      </Link>
-    </nav>
-  );
-}
