@@ -21,7 +21,12 @@ type KakaoMaps = {
     clickable: boolean;
   }) => KakaoOverlay;
 };
-type KakaoMapInstance = { setBounds(b: object, top?: number, right?: number, bottom?: number, left?: number): void; relayout(): void };
+type KakaoMapInstance = {
+  setBounds(b: object, top?: number, right?: number, bottom?: number, left?: number): void;
+  getLevel(): number;
+  setLevel(level: number): void;
+  panTo(p: LatLng): void;
+};
 type KakaoOverlay = { setMap(m: KakaoMapInstance | null): void };
 
 declare global {
@@ -34,6 +39,7 @@ export type Pin = { id: string; lat: number; lng: number; tier: Tier };
 
 const APP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const SEOUL = { lat: 37.5665, lng: 126.978 };
+const NEIGHBORHOOD_LEVEL = 5;
 
 const PIN_STYLE: Record<Tier, { size: number; bg: string; ring: string; text: string; label: string }> = {
   three: { size: 22, bg: "#b93a06", ring: "#ffffff", text: "#ffffff", label: "3" },
@@ -87,6 +93,15 @@ export function PlaceMap({ pins, selectedId, onSelect }: { pins: Pin[]; selected
         clickable: true,
       });
     });
+  }, [ready, pins, selectedId]);
+
+  // 고른 장소로 다가간다 — 동네가 보일 만큼만 확대
+  useEffect(() => {
+    const maps = window.kakao?.maps;
+    const pin = pins.find((p) => p.id === selectedId);
+    if (!ready || !maps || !map.current || !pin) return;
+    if (map.current.getLevel() > NEIGHBORHOOD_LEVEL) map.current.setLevel(NEIGHBORHOOD_LEVEL);
+    map.current.panTo(new maps.LatLng(pin.lat, pin.lng));
   }, [ready, pins, selectedId]);
 
   // 거르기가 바뀌면 보이는 핀이 다 들어오게
