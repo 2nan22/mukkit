@@ -10,7 +10,7 @@ repo에서 작업하며 얻은 자산(새 스택 사용법·해결한 문제)을
 프로젝트가 끝나도 지식이 휘발되지 않게 하고, 다음 프로젝트가 `seed-project-context`로 재사용한다.
 
 ## Vault 경로
-`/Users/2nan/Documents/2nan-obsidian/2nan's` — 템플릿은 `_templates/`, 규약은 `.claude/CLAUDE.md` 참조.
+`/Users/2nan/Documents/Obsidian/llm-wiki-new` — 템플릿은 `_templates/`, 규약은 `.claude/CLAUDE.md` 참조.
 
 ## 트리거
 - 의미 있는 오류를 해결한 직후
