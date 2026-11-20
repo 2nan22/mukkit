@@ -11,12 +11,13 @@ export const TIER_LABEL: Record<Tier, string> = {
   unrated: "평가 전",
 };
 
+// 얼마나 찾아갈 만한지로 설명한다 — 3스타는 멀리서도, 2스타는 남에게 권할 만큼, 1스타는 근처라면
 export const TIER_MEANING: Record<Tier, string> = {
-  three: "일부러 찾아갈 곳",
-  two: "근처라면 들를 곳",
-  one: "무난한 곳",
-  notRecommended: "다시 안 갈 곳",
-  wantToGo: "아직 안 가본 곳",
+  three: "일부러 멀리 찾아갈 만한 곳",
+  two: "자신 있게 권하는 곳",
+  one: "근처라면 가볼 만한 곳",
+  notRecommended: "다시 가지 않을 곳",
+  wantToGo: "아직 가보지 않은 곳",
   unrated: "저장만 하고 평가하지 않은 곳",
 };
 
