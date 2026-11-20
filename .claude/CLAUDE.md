@@ -51,6 +51,11 @@
 - `harvest-worklog` skill 제외 — 회사 업무일지 환원 대상 아님
 - 자막 생태계 서술 무시 — 도메인이 다르다
 - Git — 개인 계정 `2nan22` 로 커밋하고 `git push` 로 올린다. **`gh` 로 PR · 머지하지 않는다**
+    - `git_workflow.md` 의 PR 단계는 로컬 `git merge --no-ff` 후 push 로 대체 (feat → dev, dev → main)
+    - **커밋 · 머지 · push 는 묻지 않고 진행** — 꼭지마다 커밋하고 메시지는 보고에만 남긴다 (베이스의 '승인 후 다음 꼭지' 대체)
+    - 커밋 · 머지 메시지에 `Co-Authored-By` 등 트레일러를 넣지 않는다 (Vault 저장소 규칙과 동일)
+    - dev → main 은 마일스톤 단위로만, 사용자가 요청할 때
+- 비밀값뿐 아니라 개인 데이터 · 노출이 우려되는 파일(실제 장소 메모 · 공유 링크)도 커밋 금지 · `.gitignore`
 
 ## 세션 운영
 - prompt: `.claude/prompts/{NN}_{topic}.md` → 완료 시 `.claude/prompts/_complete/`
