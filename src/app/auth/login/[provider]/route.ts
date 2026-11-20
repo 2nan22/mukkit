@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/features/auth/paths";
-import { isLoginProvider } from "@/features/auth/providers";
+import { isLoginProvider, toSupabaseProvider } from "@/features/auth/providers";
 
 export async function GET(request: NextRequest, ctx: RouteContext<"/auth/login/[provider]">) {
   const { provider } = await ctx.params;
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/auth/login/[
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
+    provider: toSupabaseProvider(provider),
     options: { redirectTo: callback.toString(), skipBrowserRedirect: true },
   });
   if (error || !data.url) {

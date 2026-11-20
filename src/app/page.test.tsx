@@ -4,11 +4,11 @@ import StartPage from "./page";
 import { LoginErrorNotice } from "@/features/onboarding/LoginErrorNotice";
 
 describe("시작하기 화면", () => {
-  it("카카오 · 구글은 로그인 라우트로, 네이버는 준비 중으로 막힌다", () => {
+  it("카카오 · 구글 · 네이버 모두 로그인 라우트로 간다", () => {
     render(<StartPage params={Promise.resolve({})} searchParams={Promise.resolve({})} />);
     expect(screen.getByRole("link", { name: /카카오로 시작하기/ }).getAttribute("href")).toBe("/auth/login/kakao");
     expect(screen.getByRole("link", { name: /구글로 시작하기/ }).getAttribute("href")).toBe("/auth/login/google");
-    expect(screen.getByRole("button", { name: /네이버로 시작하기/ })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("link", { name: /네이버로 시작하기/ }).getAttribute("href")).toBe("/auth/login/naver");
   });
 });
 
