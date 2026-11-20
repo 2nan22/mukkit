@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { addPlacesToList, removeList, removePlacesFromList, saveListInfo, setListVisibility } from "./actions";
@@ -10,9 +10,9 @@ import { LIST_NAME_MAX, VISIBILITIES, VISIBILITY_LABEL, type ListSummary } from 
 import { PlacePicker } from "./PlacePicker";
 import type { PickablePlace } from "./pickablePlaces";
 
-type Props = { list: ListSummary & { placeIds: string[] }; places: PickablePlace[] };
+type Props = { list: ListSummary & { placeIds: string[] }; places: PickablePlace[]; origin: string };
 
-export function ListDetail({ list, places }: Props) {
+export function ListDetail({ list, places, origin }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +117,8 @@ export function ListDetail({ list, places }: Props) {
         </span>
       </section>
 
+      {list.visibility !== "private" && <ShareBox url={`${origin}/l/${list.id}`} name={list.name} />}
+
       <div className="grid grid-cols-2 gap-2">
         <Link href={`/map?list=${list.id}`} className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
           지도로 보기
@@ -183,3 +185,46 @@ export function ListDetail({ list, places }: Props) {
     </div>
   );
 }
+
+// 링크 복사는 언제나, 휴대폰이면 시스템 공유 창(카카오톡 등)도
+function ShareBox({ url, name }: { url: string; name: string }) {
+  const [copied, setCopied] = useState(false);
+  const canShare = useSyncExternalStore(noSubscribe, () => typeof navigator.share === "function", () => false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-2 rounded-btn-l border border-line p-4">
+      <h3 className="text-meta font-bold">공유 링크</h3>
+      <input readOnly value={url} aria-label="공유 링크" onFocus={(e) => e.currentTarget.select()} className="h-10 rounded-btn-s bg-surface px-3 text-meta text-ink-2 outline-none" />
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={copy} className="h-btn-m rounded-btn-m border border-line-strong text-body text-ink">
+          {copied ? "복사했어요" : "링크 복사"}
+        </button>
+        {canShare ? (
+          <button type="button" onClick={() => navigator.share({ title: name, url }).catch(() => undefined)} className="h-btn-m rounded-btn-m bg-ink text-body font-bold text-white">
+            공유하기
+          </button>
+        ) : (
+          <a href={url} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center rounded-btn-m bg-ink text-body font-bold text-white">
+            받는 사람 화면 보기
+          </a>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// 하이드레이션 뒤 한 번 다시 읽게 — 서버에는 주소가 없다
+const noSubscribe = (onChange: () => void) => {
+  queueMicrotask(onChange);
+  return () => undefined;
+};

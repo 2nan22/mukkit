@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BottomNav } from "@/components/BottomNav";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
@@ -25,6 +26,7 @@ export default function MapPage({ searchParams }: PageProps<"/map">) {
       <Suspense fallback={<div className="flex-1 bg-map-land" />}>
         <MapLoader searchParams={searchParams} />
       </Suspense>
+      <BottomNav />
     </main>
   );
 }

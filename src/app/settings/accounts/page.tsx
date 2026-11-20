@@ -1,5 +1,6 @@
 import { ProviderMark } from "@/components/brand/BrandLogo";
 import Link from "next/link";
+import { BottomNav } from "@/components/BottomNav";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -26,6 +27,15 @@ export default function AccountLinksPage({ searchParams }: PageProps<"/settings/
       <Suspense fallback={null}>
         <AccountLinks searchParams={searchParams} />
       </Suspense>
+      <form action="/auth/logout" method="post" className="px-5 pt-8">
+        <button type="submit" className="h-btn-m w-full rounded-btn-m border border-line-strong text-body text-ink">
+          로그아웃
+        </button>
+      </form>
+      <div className="flex-1" />
+      <div className="sticky bottom-0">
+        <BottomNav />
+      </div>
     </main>
   );
 }

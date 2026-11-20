@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BottomNav } from "@/components/BottomNav";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { NICKNAME_SETUP } from "@/features/auth/paths";
@@ -8,46 +9,22 @@ import { countUnrated } from "@/features/rating/rating";
 // 로그인 확인용 임시 홈 — 대시보드로 교체 예정
 export default function HomePage() {
   return (
-    <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col gap-6 px-5 py-8">
-      <Suspense fallback={<h1 className="text-title font-bold tracking-tight">반가워요</h1>}>
-        <Greeting />
-      </Suspense>
-      <Suspense fallback={null}>
-        <UnratedCard />
-      </Suspense>
-      <Link
-        href="/map"
-        className="flex h-btn-l items-center justify-center rounded-btn-l border border-line-strong text-[16px] font-bold text-ink"
-      >
-        내 장소 지도
-      </Link>
-      <Link
-        href="/lists"
-        className="flex h-btn-l items-center justify-center rounded-btn-l border border-line-strong text-[16px] font-bold text-ink"
-      >
-        리스트
-      </Link>
-      <Link
-        href="/import"
-        className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white"
-      >
-        저장한 장소 가져오기
-      </Link>
-      <Link
-        href="/settings/accounts"
-        className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink"
-      >
-        로그인 연결 관리
-      </Link>
-      <form action="/auth/logout" method="post">
-        <button
-          type="submit"
-          className="h-btn-m w-full rounded-btn-m border border-line-strong text-body text-ink"
-        >
-          로그아웃
-        </button>
-      </form>
-    </main>
+    <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
+      <main className="flex flex-1 flex-col gap-6 px-5 py-8">
+        <Suspense fallback={<h1 className="text-title font-bold tracking-tight">반가워요</h1>}>
+          <Greeting />
+        </Suspense>
+        <Suspense fallback={null}>
+          <UnratedCard />
+        </Suspense>
+        <Link href="/import" className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white">
+          저장한 장소 가져오기
+        </Link>
+      </main>
+      <div className="sticky bottom-0">
+        <BottomNav />
+      </div>
+    </div>
   );
 }
 
