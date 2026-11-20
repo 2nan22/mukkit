@@ -1,0 +1,40 @@
+{
+  "folder": { "name": "예시 리스트", "memo": "익명화한 테스트용 데이터", "bookmarkCount": 3 },
+  "bookmarkList": [
+    {
+      "bookmarkId": 1,
+      "name": "예시 국밥집",
+      "px": 126.9784,
+      "py": 37.5665,
+      "type": "place",
+      "sid": "1000000001",
+      "address": "서울 중구 예시로 1",
+      "memo": "국물이 깔끔함",
+      "mcidName": "음식점",
+      "cidPath": ["220036", "220037", "220068"],
+      "creationTime": 1790000000000,
+      "available": true
+    },
+    {
+      "bookmarkId": 2,
+      "name": "예시 카페",
+      "px": 126.9235,
+      "py": 37.5563,
+      "type": "place",
+      "sid": "1000000002",
+      "address": "서울 마포구 예시길 2",
+      "memo": null,
+      "mcidName": "카페",
+      "cidPath": null,
+      "creationTime": 1790000100000,
+      "available": false
+    },
+    {
+      "bookmarkId": 3,
+      "name": "좌표 없는 항목",
+      "type": "place",
+      "sid": "1000000003",
+      "creationTime": 1790000200000
+    }
+  ]
+}
