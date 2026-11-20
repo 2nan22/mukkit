@@ -1,9 +1,10 @@
 // 로그인해야 들어갈 수 있는 경로 — 새 보호 화면은 여기에만 추가한다
-const PROTECTED_PREFIXES = ["/home", "/onboarding"];
+const PROTECTED_PREFIXES = ["/home", "/onboarding", "/settings"];
 
 export const SIGNED_IN_HOME = "/home";
 export const SIGNED_OUT_HOME = "/";
 export const NICKNAME_SETUP = "/onboarding/nickname";
+export const ACCOUNT_LINKS = "/settings/accounts";
 
 export function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { NICKNAME_SETUP } from "@/features/auth/paths";
@@ -10,6 +11,12 @@ export default function HomePage() {
       <Suspense fallback={<h1 className="text-title font-bold tracking-tight">반가워요</h1>}>
         <Greeting />
       </Suspense>
+      <Link
+        href="/settings/accounts"
+        className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink"
+      >
+        로그인 연결 관리
+      </Link>
       <form action="/auth/logout" method="post">
         <button
           type="submit"

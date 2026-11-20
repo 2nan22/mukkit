@@ -16,3 +16,16 @@ export function isLoginProvider(value: string): value is LoginProvider {
 export function toSupabaseProvider(provider: LoginProvider): Provider {
   return LOGIN_PROVIDERS[provider];
 }
+
+export const LOGIN_PROVIDER_LABEL: Record<LoginProvider, string> = {
+  kakao: "카카오",
+  google: "구글",
+  naver: "네이버",
+};
+
+export const LOGIN_PROVIDER_ORDER: LoginProvider[] = ["kakao", "google", "naver"];
+
+// Supabase 가 돌려주는 identity.provider 값 → 로그인 경로 이름
+export function fromSupabaseProvider(value: string): LoginProvider | undefined {
+  return (Object.keys(LOGIN_PROVIDERS) as LoginProvider[]).find((key) => LOGIN_PROVIDERS[key] === value);
+}
