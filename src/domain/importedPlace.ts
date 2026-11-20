@@ -17,6 +17,8 @@ export type ImportedPlace = {
   memo: string;
   savedAt: Date;
   available: boolean;
+  // 출처가 준 항목 그대로 — 나중에 분류 · 리스트 만들 때 쓰는 원천 데이터
+  raw: unknown;
 };
 
 export type ImportedList = {

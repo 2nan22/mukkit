@@ -20,6 +20,7 @@ function place(n: number, over: Partial<ImportedPlace> = {}): ImportedPlace {
     memo: `한마디 ${n}`,
     savedAt: new Date("2025-06-14T03:31:00Z"),
     available: true,
+    raw: { n },
     ...over,
   };
 }
@@ -76,8 +77,34 @@ describe.skipIf(!hasLocalDb)("가져오기 저장 (로컬 DB)", () => {
   it("남의 계정으로는 저장할 수 없다", async () => {
     const owner = await signUp();
     const other = await signUp();
-    await expect(saveImportedList(other.supabase, owner.userId, list("x", [place(6)]), { kind: "plain" })).rejects.toThrow("user_places");
+    await expect(saveImportedList(other.supabase, owner.userId, list("x", [place(6)]), { kind: "plain" })).rejects.toThrow("가져오기 저장 실패");
     const ownerRows = await owner.supabase.from("user_places").select("place_id").eq("user_id", owner.userId);
     expect(ownerRows.data).toEqual([]);
+  }, 20_000);
+
+  it("네이버 · 카카오의 같은 가게는 장소 하나, 출처별 메모 · 리스트 이름은 원본으로 남는다", async () => {
+    const { supabase, userId } = await signUp();
+    const lat = 37.5 + Math.random() / 100;
+    const naver = place(7, { name: "엉터리해장국 서여의도점", lat, lng: 126.92, memo: "네이버 메모" });
+    const kakao = place(7, { source: "kakao", name: "엉터리 해장국(서여의도점)", lat: lat + 0.0001, lng: 126.92, memo: "카카오 메모" });
+    const far = place(8, { source: "kakao", name: "엉터리해장국 서여의도점", lat: lat + 0.01, lng: 126.92 });
+
+    await saveImportedList(supabase, userId, { ...list("n", [naver]), name: "난슐랭 2star" }, { kind: "tier", tier: "two" });
+    const second = await saveImportedList(supabase, userId, { ...list("k", [kakao, far]), source: "kakao", name: "먹킷리스트" }, { kind: "tier", tier: "want_to_go" });
+    expect(second).toMatchObject({ added: 1, alreadySaved: 1 });
+
+    const saved = await supabase.from("user_places").select("tier, note").eq("user_id", userId);
+    expect(saved.data).toHaveLength(2);
+    expect(saved.data).toContainEqual({ tier: "two", note: "네이버 메모" });
+
+    const items = await supabase.from("imported_items").select("source, list_name, memo, place_id").eq("user_id", userId).order("source");
+    expect(items.data?.map(({ source, list_name, memo }) => [source, list_name, memo])).toEqual([
+      ["kakao", "먹킷리스트", "카카오 메모"],
+      ["kakao", "먹킷리스트", "한마디 8"],
+      ["naver", "난슐랭 2star", "네이버 메모"],
+    ]);
+    const naverItem = items.data!.find((i) => i.memo === "네이버 메모")!;
+    const kakaoItem = items.data!.find((i) => i.memo === "카카오 메모")!;
+    expect(kakaoItem.place_id).toBe(naverItem.place_id);
   }, 20_000);
 });

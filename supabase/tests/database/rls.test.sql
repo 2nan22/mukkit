@@ -1,7 +1,7 @@
 -- RLS: 남의 저장 · 비공개 리스트를 읽거나 쓸 수 없는지
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(21);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'a@test.local', '{"name":"에이"}'),
@@ -29,6 +29,8 @@ insert into public.lists (id, owner_id, name, visibility) values
 insert into public.list_items (list_id, place_id) values
   ('bbbbbbbb-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001'),
   ('bbbbbbbb-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002');
+insert into public.imported_items (user_id, source, source_list_id, source_place_id, place_id, list_name, memo) values
+  ('11111111-1111-1111-1111-111111111111', 'naver', 'list-a', 'p1', 'aaaaaaaa-0000-0000-0000-000000000001', '난슐랭 3star', '개인 메모');
 
 -- 사용자 B 로 접속
 set local role authenticated;
@@ -86,9 +88,15 @@ select throws_ok(
     ('22222222-2222-2222-2222-222222222222', '가져온 리스트', 'naver', 'share-1'),
     ('22222222-2222-2222-2222-222222222222', '가져온 리스트 사본', 'naver', 'share-1')$$,
   '23505', null, '같은 출처 리스트는 한 사람에게 하나');
+select is((select count(*)::int from public.imported_items), 0, '남이 가져온 원본(메모 · 리스트 이름)은 안 보임');
+select throws_ok(
+  $$insert into public.imported_items (user_id, source, source_list_id, source_place_id, place_id)
+    values ('11111111-1111-1111-1111-111111111111', 'naver', 'x', 'p2', 'aaaaaaaa-0000-0000-0000-000000000002')$$,
+  '42501', null, '남의 이름으로 원본을 넣을 수 없음');
 
 -- 비로그인
 reset role;
+
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 

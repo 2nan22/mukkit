@@ -28,7 +28,7 @@ const FolderInfoSchema = z.object({
     .optional(),
 });
 
-const FavoriteSchema = z.object({
+const FavoriteSchema = z.looseObject({
   type: z.string(),
   display1: z.string().min(1),
   display2: z.string().nullable().optional(),
@@ -128,6 +128,7 @@ export class KakaoFolderSource implements PlaceSource {
       memo: f.memo ?? "",
       savedAt: parseKst(f.created_at),
       available: f.type !== "PLACE" || detail !== null,
+      raw: { favorite: f, category: category ?? null },
     };
   }
 

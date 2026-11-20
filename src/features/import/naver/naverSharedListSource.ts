@@ -131,6 +131,7 @@ function toImportedList(
       memo: b.memo ?? "",
       savedAt: new Date(b.creationTime),
       available: b.available ?? true,
+      raw,
     });
   });
 
