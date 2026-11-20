@@ -16,7 +16,7 @@ export default function StartPage({ searchParams }: PageProps<"/">) {
           맛집을 고르세요
         </h1>
         <p className="text-body leading-relaxed text-ink-2">
-          네이버 지도에 저장한 곳을 그대로 가져와
+          네이버 지도 · 카카오맵에 저장한 곳을 그대로 가져와
           <br />
           나만의 등급을 매기고 친구와 나눠요.
         </p>
