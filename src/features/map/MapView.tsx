@@ -20,8 +20,8 @@ const TIER_DOT: Record<Tier, string> = {
 };
 const CUISINE_ORDER: Cuisine[] = ["korean", "chinese", "japanese", "western", "asian", "snack", "chicken", "bar", "cafe", "other", "nonFood"];
 
-export function MapView({ places }: { places: MapPlace[] }) {
-  const [tiers, setTiers] = useState<Tier[]>([]);
+export function MapView({ places, initialTiers = [] }: { places: MapPlace[]; initialTiers?: Tier[] }) {
+  const [tiers, setTiers] = useState<Tier[]>(initialTiers);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(!process.env.NEXT_PUBLIC_KAKAO_MAP_KEY);
