@@ -183,8 +183,8 @@ function Chip({ pressed, onClick, children }: { pressed: boolean; onClick: () =>
       type="button"
       aria-pressed={pressed}
       onClick={onClick}
-      className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-meta whitespace-nowrap ${
-        pressed ? "border-ink bg-ink font-bold text-white" : "border-line-strong bg-white text-ink"
+      className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-meta font-medium whitespace-nowrap ${
+        pressed ? "bg-ink text-white" : "bg-surface text-ink-2"
       }`}
     >
       {children}

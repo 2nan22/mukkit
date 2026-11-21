@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
 import { AppHeader } from "@/components/AppHeader";
 import { Suspense } from "react";
 import { getTasteMatches, searchPeople } from "@/features/social/social";
@@ -50,9 +51,7 @@ async function People({ searchParams }: { searchParams: Promise<{ q?: string | s
         {people.map((p) => (
           <li key={p.id}>
             <Link href={`/u/${p.id}`} className="flex min-h-14 items-center gap-3 border-b border-line">
-              <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-full bg-surface-2 text-meta font-bold text-ink-2">
-                {p.nickname.slice(0, 1)}
-              </span>
+              <Avatar name={p.nickname} size={40} />
               <span className="text-body">{p.nickname}</span>
             </Link>
           </li>

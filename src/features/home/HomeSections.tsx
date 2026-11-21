@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
@@ -47,9 +48,7 @@ export function FollowingNew({ ratings }: { ratings: SharedRating[] }) {
             <li key={`${r.ownerId}:${r.placeId}`} className="shrink-0">
               <Link href={`/p/${r.placeId}`} className="flex w-[220px] flex-col gap-1.5 rounded-btn-l border border-line p-3.5">
                 <span className="flex items-center gap-1.5 text-meta text-muted">
-                  <span aria-hidden="true" className="flex size-5 items-center justify-center rounded-full bg-surface-2 text-[10px] font-bold text-ink-2">
-                    {r.ownerNickname.slice(0, 1)}
-                  </span>
+                  <Avatar name={r.ownerNickname} size={24} />
                   <span className="truncate">
                     {r.ownerNickname} · {timeAgo(r.updatedAt)}
                   </span>
@@ -81,9 +80,7 @@ export function SimilarPeople({ matches: all }: { matches: TasteMatch[] }) {
         {matches.slice(0, 4).map((m) => (
           <li key={m.userId} className="flex items-center gap-3 border-b border-line py-2.5">
             <Link href={`/u/${m.userId}`} className="flex min-w-0 flex-1 items-center gap-3">
-              <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-full bg-surface-2 text-body font-bold text-ink-2">
-                {m.nickname.slice(0, 1)}
-              </span>
+              <Avatar name={m.nickname} size={40} />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate text-body font-bold">{m.nickname}</span>
                 <span className="truncate text-meta text-muted">

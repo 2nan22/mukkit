@@ -52,7 +52,7 @@ export function PlaceBottomBar({ placeId, saved, rated, lists }: Props) {
         </ul>
       )}
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="h-btn-l rounded-btn-l border border-line-strong text-[16px] font-bold text-ink">
+        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="h-btn-l rounded-btn-l bg-surface text-[16px] font-bold text-ink">
           리스트에 담기
         </button>
         {saved ? (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
 import type { TasteMatch } from "./social";
 
 // 취향이 비슷한 사람 — 같은 가게를 둘 다 평가했을 때 등급이 얼마나 비슷한지
@@ -15,9 +16,7 @@ export function TasteMatches({ matches: all, title = "취향이 비슷한 사람
         {matches.map((m) => (
           <li key={m.userId} className="shrink-0">
             <Link href={`/u/${m.userId}`} className="flex w-36 flex-col gap-2 rounded-btn-l border border-line p-3">
-              <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-full bg-surface-2 text-body font-bold text-ink-2">
-                {m.nickname.slice(0, 1)}
-              </span>
+              <Avatar name={m.nickname} size={40} />
               <span className="truncate text-body font-bold">{m.nickname}</span>
               <span className="flex flex-col text-meta leading-snug text-muted">
                 <span>같이 평가한 곳 {m.overlap}</span>

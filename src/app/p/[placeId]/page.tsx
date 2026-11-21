@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SourceMark } from "@/components/brand/BrandLogo";
@@ -52,9 +53,7 @@ function OtherRow({ r }: { r: OtherRating }) {
     <div className="flex flex-col gap-2 border-b border-line py-3">
       <div className="flex items-center gap-2.5">
         <Link href={`/u/${r.userId}`} className="flex min-w-0 flex-1 items-center gap-2.5">
-          <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-meta font-bold text-ink-2">
-            {r.nickname.slice(0, 1)}
-          </span>
+          <Avatar name={r.nickname} size={40} />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-body font-bold">{r.nickname}</span>
             <span className="truncate text-meta text-muted">
@@ -103,14 +102,17 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         <span className="text-body text-ink-2">{place.address}</span>
         {!place.available && <span className="text-meta text-[#c4320a]">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
         <div className="grid grid-cols-3 gap-2 pt-3">
-          <a href={links.directions} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
+          <a href={links.directions} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-medium text-ink">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 11l18-8-8 18-2-8z" />
+            </svg>
             길찾기
           </a>
-          <a href={links.naver} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center gap-1.5 rounded-btn-m border border-line-strong text-body text-ink">
+          <a href={links.naver} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-medium text-ink">
             <SourceMark source="naver" size={14} />
             네이버
           </a>
-          <a href={links.kakao} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center gap-1.5 rounded-btn-m border border-line-strong text-body text-ink">
+          <a href={links.kakao} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-medium text-ink">
             <SourceMark source="kakao" size={14} />
             카카오
           </a>

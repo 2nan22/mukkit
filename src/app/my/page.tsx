@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
 import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -12,11 +13,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const metadata = { title: "MY" };
 
 const TILES: { tier: Tier; className: string; label: string }[] = [
-  { tier: "three", className: "bg-tier-3-soft text-tier-3", label: TIER_LABEL.three },
-  { tier: "two", className: "bg-tier-2-soft text-tier-2", label: TIER_LABEL.two },
-  { tier: "one", className: "bg-tier-1-soft text-tier-1", label: TIER_LABEL.one },
-  { tier: "notRecommended", className: "bg-surface-2 text-muted", label: TIER_LABEL.notRecommended },
-  { tier: "wantToGo", className: "bg-surface-2 text-muted", label: "가고 싶은" },
+  { tier: "three", className: "text-tier-3", label: TIER_LABEL.three },
+  { tier: "two", className: "text-ink", label: TIER_LABEL.two },
+  { tier: "one", className: "text-ink", label: TIER_LABEL.one },
+  { tier: "notRecommended", className: "text-ink", label: "추천 안 함" },
+  { tier: "wantToGo", className: "text-ink", label: "가고 싶은" },
 ];
 
 export default function MyPage() {
@@ -61,9 +62,7 @@ async function MyContent() {
     <>
       <section className="flex flex-col gap-4 border-b-8 border-surface px-5 pt-2 pb-5">
         <div className="flex items-center gap-4">
-          <span aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded-full bg-surface-2 text-title font-bold text-ink-2">
-            {nickname.slice(0, 1)}
-          </span>
+          <Avatar name={nickname} size={56} />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate text-section font-bold">{nickname}</span>
             <span className="text-meta text-muted">
@@ -73,18 +72,18 @@ async function MyContent() {
         </div>
         {bio && <p className="text-body leading-normal text-ink-2">{bio}</p>}
         <div className="grid grid-cols-2 gap-2">
-          <Link href="/my/edit" className="flex h-btn-m items-center justify-center rounded-btn-m bg-surface-2 text-body text-ink">
+          <Link href="/my/edit" className="flex h-10 items-center justify-center rounded-btn-m bg-surface text-[14px] font-medium text-ink">
             프로필 수정
           </Link>
-          <Link href={`/u/${me}`} className="flex h-btn-m items-center justify-center rounded-btn-m bg-surface-2 text-body text-ink">
+          <Link href={`/u/${me}`} className="flex h-10 items-center justify-center rounded-btn-m bg-surface text-[14px] font-medium text-ink">
             내 프로필 보기
           </Link>
         </div>
-        <div className="grid grid-cols-5 gap-1.5">
+        <div className="grid grid-cols-5 divide-x divide-line rounded-[16px] bg-surface py-3.5">
           {TILES.map((t) => (
-            <Link key={t.tier} href={`/map?tier=${t.tier}`} className={`flex flex-col gap-1 rounded-btn-m px-2 py-3 ${t.className}`}>
-              <span className="text-caption font-bold whitespace-nowrap">{t.label}</span>
-              <b className="text-section text-ink">{tiers[tierToDb(t.tier)] ?? 0}</b>
+            <Link key={t.tier} href={`/map?tier=${t.tier}`} className="flex flex-col items-center gap-1">
+              <b className={`text-[20px] leading-none ${t.className}`}>{tiers[tierToDb(t.tier)] ?? 0}</b>
+              <span className="text-caption whitespace-nowrap text-muted">{t.label}</span>
             </Link>
           ))}
         </div>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
@@ -15,9 +16,7 @@ export function RatingCard({ rating, showOwner }: { rating: SharedRating; showOw
     <article className="flex flex-col gap-2.5 border-b border-line py-4">
       {showOwner && (
         <Link href={`/u/${rating.ownerId}`} className="flex items-center gap-2 self-start">
-          <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-surface-2 text-meta font-bold text-ink-2">
-            {rating.ownerNickname.slice(0, 1)}
-          </span>
+          <Avatar name={rating.ownerNickname} size={24} />
           <span className="text-meta font-bold">{rating.ownerNickname}</span>
         </Link>
       )}

@@ -7,6 +7,7 @@
   --color-ink: #17181c;
   --color-ink-2: #33363d;
   --color-muted: #5b5f69;
+  --color-subtle: #868c96;
   --color-line: #eeeff1;
   --color-line-strong: #dddfe3;
   --color-surface: #f4f5f6;
@@ -24,10 +25,10 @@
   --color-pin-none: #adb1b8;
 
   --text-title: 22px;
-  --text-section: 17px;
+  --text-section: 18px;
   --text-body: 15px;
   --text-meta: 13px;
-  --text-caption: 11px;
+  --text-caption: 12px;
 
   --spacing-btn-l: 52px;
   --spacing-btn-m: 44px;
@@ -36,6 +37,7 @@
   --radius-btn-l: 12px;
   --radius-btn-m: 10px;
   --radius-btn-s: 8px;
+  --radius-card: 16px;
 
   --shadow-float: 0 2px 8px rgb(0 0 0 / 0.12);
   --shadow-sheet: 0 -2px 12px rgb(0 0 0 / 0.08);
