@@ -1,5 +1,6 @@
 import { TIER_MEANING } from "@/domain/tier";
 import Link from "next/link";
+import { AteMenus } from "@/components/ui/AteMenus";
 import { Companions } from "@/components/ui/Companions";
 import { getMyVisits } from "@/features/visit/visit";
 import { Avatar } from "@/components/ui/Avatar";
@@ -68,6 +69,7 @@ function OtherRow({ r }: { r: OtherRating }) {
         <TierBadge tier={r.tier} />
       </div>
       {r.review && <p className="text-body leading-normal text-ink-2">{r.review}</p>}
+      <AteMenus menus={r.menus} />
       <Companions people={r.companions} />
       <MediaStrip media={r.media} />
       {r.visitedOn && <span className="text-meta text-muted">{dot(r.visitedOn)}</span>}
@@ -147,6 +149,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
               {mine.visitedOn && <span className="ml-auto text-meta text-subtle">{dot(mine.visitedOn)}</span>}
             </div>
             {mine.review && <p className="text-body leading-relaxed">{mine.review}</p>}
+            <AteMenus menus={mine.menus} />
             <Companions people={myCompanions} />
             <MediaStrip media={myMedia} />
             {mine.note && (

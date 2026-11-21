@@ -20,6 +20,8 @@ export type SharedRating = {
   updatedAt: string;
   // 함께 간 사람 — 평가를 볼 수 있는 사람만 (피드는 둘 다 '피드에 보이기'를 허용했을 때만)
   companions: (Person & { isMe?: boolean })[];
+  // 먹은 메뉴 (선택)
+  menus: string[];
 };
 
 export class SocialError extends Error {
@@ -82,6 +84,7 @@ type RatingRow = {
   media: { path: string; kind: "image" | "video" }[];
   updated_at: string;
   companions?: (Person & { isMe?: boolean })[];
+  menus?: string[] | null;
 };
 
 // 사진 주소는 보는 사람 권한으로 서명한다 — 볼 수 없는 평가의 사진은 서명이 거절된다
@@ -101,6 +104,7 @@ async function withMedia(supabase: SupabaseClient, rows: RatingRow[], owner?: Pe
     media: r.media.flatMap((m) => (urlOf.get(m.path) ? [{ kind: m.kind, url: urlOf.get(m.path)! }] : [])),
     updatedAt: r.updated_at,
     companions: r.companions ?? [],
+    menus: r.menus ?? [],
   }));
 }
 
