@@ -3,6 +3,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { TIER_LABEL, TIERS, tierToDb, type Tier } from "@/domain/tier";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { SOURCE_LABEL } from "@/features/import/sources";
@@ -31,7 +32,7 @@ export default function ListsPage() {
             </svg>
           </Link>
         } />
-      <Suspense fallback={null}>
+      <Suspense fallback={<ListSkeleton />}>
         <ListsContent />
       </Suspense>
       <div className="flex-1" />

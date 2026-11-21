@@ -1,5 +1,6 @@
 import { AppHeader } from "@/components/AppHeader";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { RatingCard } from "@/features/social/RatingCard";
 import { getFeed } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -10,7 +11,7 @@ export default function FeedPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/home" title="팔로잉 새 평가" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<ListSkeleton />}>
         <Feed />
       </Suspense>
     </main>

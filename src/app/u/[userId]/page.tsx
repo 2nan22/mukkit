@@ -3,6 +3,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { AppHeader } from "@/components/AppHeader";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { FollowButton } from "@/features/social/FollowButton";
 import { RatingCard } from "@/features/social/RatingCard";
 import {
@@ -23,7 +24,7 @@ export default function ProfilePage({ params, searchParams }: PageProps<"/u/[use
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/home" title="프로필" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<ListSkeleton />}>
         <Profile params={params} searchParams={searchParams} />
       </Suspense>
     </main>

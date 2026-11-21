@@ -3,6 +3,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { BottomNav } from "@/components/BottomNav";
 import { TIER_LABEL, tierToDb, type Tier } from "@/domain/tier";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
@@ -32,7 +33,7 @@ export default function MyPage() {
           </Link>
         } />
       <main className="flex flex-1 flex-col">
-        <Suspense fallback={null}>
+        <Suspense fallback={<ListSkeleton rows={4} />}>
           <MyContent />
         </Suspense>
       </main>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { AppHeader } from "@/components/AppHeader";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { getTasteMatches, searchPeople } from "@/features/social/social";
 import { TasteMatches } from "@/features/social/TasteMatches";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -12,7 +13,7 @@ export default function PeoplePage({ searchParams }: PageProps<"/people">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/home" title="사람 찾기" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<ListSkeleton />}>
         <People searchParams={searchParams} />
       </Suspense>
     </main>

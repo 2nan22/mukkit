@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { BottomNav } from "@/components/BottomNav";
 import { NICKNAME_SETUP, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { FollowingNew, RecentLists, SimilarPeople } from "@/features/home/HomeSections";
@@ -23,7 +24,7 @@ export default function HomePage() {
           </Link>
         } />
       <main className="flex flex-1 flex-col gap-6 pt-1 pb-8">
-        <Suspense fallback={null}>
+        <Suspense fallback={<ListSkeleton hero />}>
           <HomeContent />
         </Suspense>
       </main>
