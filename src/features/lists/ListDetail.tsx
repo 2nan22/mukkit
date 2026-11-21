@@ -49,7 +49,7 @@ export function ListDetail({ list, places, origin }: Props) {
             type="button"
             disabled={pending || picked.size === 0}
             onClick={() => act(() => addPlacesToList(list.id, [...picked]), () => { setPicked(new Set()); setAdding(false); })}
-            className="h-btn-l rounded-btn-l bg-ink text-body font-bold text-white disabled:opacity-40"
+            className="h-btn-l rounded-btn-l bg-brand text-body font-bold text-white disabled:opacity-40"
           >
             {picked.size}곳 추가
           </button>
@@ -125,7 +125,7 @@ export function ListDetail({ list, places, origin }: Props) {
         <Link href={`/map?list=${list.id}`} className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
           지도로 보기
         </Link>
-        <button type="button" onClick={() => setAdding(true)} className="h-btn-m rounded-btn-m bg-ink text-body font-bold text-white">
+        <button type="button" onClick={() => setAdding(true)} className="h-btn-m rounded-btn-m bg-brand-soft text-body font-bold text-brand">
           장소 추가
         </button>
       </div>

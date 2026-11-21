@@ -148,7 +148,7 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
         )}
         <Link
           href={`/rate/${place.placeId}?next=/map`}
-          className="flex h-btn-m items-center justify-center rounded-btn-m bg-ink text-body font-bold text-white"
+          className="flex h-btn-m items-center justify-center rounded-btn-m bg-brand text-body font-bold text-white"
         >
           {["three", "two", "one", "notRecommended"].includes(place.tier) ? "평가 수정" : "평가하기"}
         </Link>

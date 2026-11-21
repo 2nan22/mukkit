@@ -87,13 +87,13 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
             <span>
               나와 겹치는 곳 <b className="text-ink">{taste.overlap}곳</b> · 그중 둘 다 3스타 <b className="text-tier-3">{taste.bothThree}곳</b>
             </span>
-            <span className="shrink-0 font-bold text-tier-3">취향 일치 {Math.round(taste.similarity * 100)}%</span>
+            <span className="shrink-0 font-bold text-brand">취향 일치 {Math.round(taste.similarity * 100)}%</span>
           </div>
         )}
 
         {me && me !== person.id && <FollowButton targetId={person.id} following={following} />}
         {!me && (
-          <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white">
+          <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white">
             마이슐랭 시작하고 팔로우하기
           </Link>
         )}

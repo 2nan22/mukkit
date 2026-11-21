@@ -26,7 +26,7 @@ export default function PublicListPage({ params }: PageProps<"/l/[listId]">) {
         <PublicListLoader params={params} />
       </Suspense>
       <div className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-[480px] bg-white px-5 pt-3 pb-5 shadow-sheet">
-        <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white">
+        <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white">
           마이슐랭에서 내 리스트 만들기
         </Link>
       </div>

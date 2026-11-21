@@ -56,7 +56,7 @@ export function PlaceBottomBar({ placeId, saved, rated, lists }: Props) {
           리스트에 담기
         </button>
         {saved ? (
-          <Link href={`/rate/${placeId}?next=/p/${placeId}`} className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white">
+          <Link href={`/rate/${placeId}?next=/p/${placeId}`} className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white">
             {rated ? "평가 수정" : "평가하기"}
           </Link>
         ) : (
@@ -64,7 +64,7 @@ export function PlaceBottomBar({ placeId, saved, rated, lists }: Props) {
             type="button"
             disabled={pending}
             onClick={() => run(() => saveWantToGo(placeId), "가고 싶은 곳에 저장했어요")}
-            className="h-btn-l rounded-btn-l bg-ink text-[16px] font-bold text-white disabled:opacity-60"
+            className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60"
           >
             가고 싶은 곳 저장
           </button>

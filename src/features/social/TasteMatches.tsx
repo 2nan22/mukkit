@@ -22,7 +22,7 @@ export function TasteMatches({ matches: all, title = "취향이 비슷한 사람
                 <span>같이 평가한 곳 {m.overlap}</span>
                 <span className="whitespace-nowrap">둘 다 3스타 {m.bothThree}곳</span>
               </span>
-              <span className="text-meta font-bold text-tier-3">취향 일치 {Math.round(m.similarity * 100)}%</span>
+              <span className="text-meta font-bold text-brand">취향 일치 {Math.round(m.similarity * 100)}%</span>
             </Link>
           </li>
         ))}
