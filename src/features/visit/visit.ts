@@ -94,3 +94,27 @@ export async function syncMyVisit(
   await supabase.rpc("set_visit_feed", { p_visit: visitId, p_show: input.showInFeed });
   return { visitId, invited };
 }
+
+export type MeetupVisit = { visitId: string; placeId: string; placeName: string; isCreator: boolean; myTier: string | null; members: VisitMember[] };
+
+// 이 약속으로 남긴 방문들 — 내가 만들었거나 나를 태그한 것만 (RLS)
+export async function getMeetupVisits(supabase: SupabaseClient, me: string, meetupId: string): Promise<MeetupVisit[]> {
+  const { data } = await supabase.from("visits").select("id, place_id, created_by, created_at, places(name)").eq("meetup_id", meetupId).order("created_at");
+  const rows = (data ?? []) as unknown as { id: string; place_id: string; created_by: string; places: { name: string } | null }[];
+  if (rows.length === 0) return [];
+  const placeIds = [...new Set(rows.map((r) => r.place_id))];
+  const [{ data: mine }, details] = await Promise.all([
+    supabase.from("user_places").select("place_id, tier").eq("user_id", me).in("place_id", placeIds),
+    Promise.all(placeIds.map((id) => getMyVisits(supabase, id))),
+  ]);
+  const tierOf = new Map(((mine ?? []) as { place_id: string; tier: string }[]).map((r) => [r.place_id, r.tier]));
+  const byVisit = new Map(details.flat().map((v) => [v.visitId, v]));
+  return rows.map((r) => ({
+    visitId: r.id,
+    placeId: r.place_id,
+    placeName: r.places?.name ?? "",
+    isCreator: r.created_by === me,
+    myTier: tierOf.get(r.place_id) ?? null,
+    members: byVisit.get(r.id)?.members ?? [],
+  }));
+}
