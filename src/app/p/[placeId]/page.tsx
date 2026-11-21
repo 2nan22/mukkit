@@ -1,5 +1,7 @@
 import { TIER_MEANING } from "@/domain/tier";
 import Link from "next/link";
+import { Companions } from "@/components/ui/Companions";
+import { getMyVisits } from "@/features/visit/visit";
 import { Avatar } from "@/components/ui/Avatar";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -66,6 +68,7 @@ function OtherRow({ r }: { r: OtherRating }) {
         <TierBadge tier={r.tier} />
       </div>
       {r.review && <p className="text-body leading-normal text-ink-2">{r.review}</p>}
+      <Companions people={r.companions} />
       <MediaStrip media={r.media} />
       {r.visitedOn && <span className="text-meta text-muted">{dot(r.visitedOn)}</span>}
     </div>
@@ -87,6 +90,16 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
     getOtherRatings(supabase, place.id),
     getMyLists(supabase, me),
   ]);
+  const myVisits = await getMyVisits(supabase, place.id);
+  const seen = new Set<string>();
+  const myCompanions = myVisits
+    .flatMap((v) => v.members.filter((m) => m.status === "accepted"))
+    .flatMap((m) => {
+      const key = m.userId ?? `g:${m.nickname}`;
+      if (seen.has(key)) return [];
+      seen.add(key);
+      return [{ id: key, nickname: m.nickname, guest: m.guest }];
+    });
   const links = sourceLinks(place);
   const kakaoSource = place.sources.find((s) => s.source === "kakao" && !s.sourcePlaceId.startsWith("N"));
   const menu = await getMenu({ name: place.name, lat: place.lat, lng: place.lng, kakaoPlaceId: kakaoSource?.sourcePlaceId ?? null });
@@ -134,6 +147,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
               {mine.visitedOn && <span className="ml-auto text-meta text-subtle">{dot(mine.visitedOn)}</span>}
             </div>
             {mine.review && <p className="text-body leading-relaxed">{mine.review}</p>}
+            <Companions people={myCompanions} />
             <MediaStrip media={myMedia} />
             {mine.note && (
               <p className="rounded-btn-s bg-white px-3 py-2.5 text-meta leading-normal text-ink-2">

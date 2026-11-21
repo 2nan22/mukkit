@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
+import { Companions } from "@/components/ui/Companions";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
@@ -44,6 +45,7 @@ export function RatingCard({ rating, showOwner }: { rating: SharedRating; showOw
         <TierBadge tier={rating.tier} />
       </div>
       {rating.review && <p className="text-body leading-normal text-ink-2">{rating.review}</p>}
+      <Companions people={rating.companions} />
     </article>
   );
 }
