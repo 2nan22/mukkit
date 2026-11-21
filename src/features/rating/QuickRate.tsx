@@ -75,9 +75,9 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
       <div className="flex flex-col gap-2 px-5 pt-1">
         <div className="flex justify-between text-meta text-muted">
           <span>
-            평가함 <b className="text-ink">{done.length}</b>
+            <b className="text-ink">{done.length}곳</b> 평가
           </span>
-          <span>남은 평가 전 {remaining}곳</span>
+          <span>{remaining}곳 남음</span>
         </div>
         <div
           role="progressbar"

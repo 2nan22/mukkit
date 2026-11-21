@@ -164,7 +164,9 @@ export function PlaceMap({
       />
       <div ref={el} className="h-full w-full bg-map-land" aria-label="내 장소 지도" role="application" />
       {!ready && (
-        <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-meta text-muted">지도를 불러오는 중이에요</p>
+        <div className="pointer-events-none absolute inset-0 animate-pulse bg-map-land">
+          <span className="sr-only">지도를 불러오는 중이에요</span>
+        </div>
       )}
     </>
   );

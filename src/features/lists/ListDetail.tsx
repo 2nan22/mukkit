@@ -4,7 +4,9 @@ import { useLeave } from "@/lib/nav/useLeave";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore, useTransition } from "react";
+import { CuisineIcon } from "@/components/ui/CuisineIcon";
 import { TierBadge } from "@/components/ui/TierBadge";
+import { Toast } from "@/components/ui/Toast";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { addPlacesToList, removeList, removePlacesFromList, saveListInfo, setListVisibility } from "./actions";
 import { LIST_NAME_MAX, VISIBILITIES, VISIBILITY_LABEL, type ListSummary } from "./lists";
@@ -22,6 +24,9 @@ export function ListDetail({ list, places, origin }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [name, setName] = useState(list.name);
+  const [visibilityOpen, setVisibilityOpen] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [undo, setUndo] = useState<{ id: string; name: string } | null>(null);
 
   const inList = new Set(list.placeIds);
   const items = list.placeIds.flatMap((id) => places.filter((p) => p.placeId === id));
@@ -71,6 +76,7 @@ export function ListDetail({ list, places, origin }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={LIST_NAME_MAX}
+              autoFocus
               className="h-12 min-w-0 flex-1 rounded-btn-m border border-line-strong px-3.5 text-body outline-none focus:border-ink"
             />
             <button
@@ -83,46 +89,64 @@ export function ListDetail({ list, places, origin }: Props) {
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
             <h2 className="min-w-0 truncate text-title font-bold tracking-tight">{list.name}</h2>
-            <button type="button" onClick={() => setEditing(true)} className="h-btn-m shrink-0 text-meta text-ink-2 underline underline-offset-[3px]">
-              이름 바꾸기
+            <button type="button" onClick={() => setEditing(true)} aria-label="이름 바꾸기" className="flex size-9 shrink-0 items-center justify-center text-muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" />
+              </svg>
             </button>
           </div>
         )}
-        <span className="text-meta text-muted">{list.count}곳</span>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <h3 className="text-meta font-bold text-muted">공개 범위</h3>
-        <div role="radiogroup" aria-label="공개 범위" className="grid grid-cols-3 gap-1 rounded-btn-l bg-surface-2 p-1">
-          {VISIBILITIES.map((v) => (
-            <button
-              key={v}
-              type="button"
-              role="radio"
-              aria-checked={list.visibility === v}
-              disabled={pending}
-              onClick={() => act(() => setListVisibility(list.id, v))}
-              className={`h-9 rounded-btn-s text-meta ${list.visibility === v ? "bg-white font-bold text-ink shadow-float" : "text-muted"}`}
-            >
-              {v === "link" ? "링크 공유" : VISIBILITY_LABEL[v]}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 text-meta text-muted">
+          <span>{list.count}곳</span>
+          <span aria-hidden="true">·</span>
+          <button
+            type="button"
+            onClick={() => setVisibilityOpen((v) => !v)}
+            aria-expanded={visibilityOpen}
+            className="flex h-7 items-center gap-1 rounded-full bg-surface px-2.5 font-medium text-ink-2"
+          >
+            {VISIBILITY_LABEL[list.visibility]}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
         </div>
-        <span className="text-meta text-muted">
-          {list.visibility === "private"
-            ? "나만 볼 수 있어요."
-            : list.visibility === "link"
-              ? "링크를 받은 사람만 볼 수 있어요."
-              : "누구나 볼 수 있어요. 메모는 공개 리스트에서도 나만 보여요."}
-        </span>
+        {visibilityOpen && (
+          <div role="radiogroup" aria-label="공개 범위" className="flex flex-col overflow-hidden rounded-[16px] border border-line">
+            {VISIBILITIES.map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="radio"
+                aria-checked={list.visibility === v}
+                disabled={pending}
+                onClick={() => act(() => setListVisibility(list.id, v), () => setVisibilityOpen(false))}
+                className="flex min-h-14 items-center justify-between gap-3 border-b border-line px-4 text-left last:border-b-0"
+              >
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-body font-semibold">{v === "link" ? "링크 공유" : VISIBILITY_LABEL[v]}</span>
+                  <span className="text-meta text-muted">{VISIBILITY_HINT[v]}</span>
+                </span>
+                {list.visibility === v && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-brand" aria-hidden="true">
+                    <path d="M5 12l5 5 9-10" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       {list.visibility !== "private" && <ShareBox url={`${origin}/l/${list.id}`} name={list.name} />}
 
       <div className="grid grid-cols-2 gap-2">
-        <Link href={`/map?list=${list.id}`} className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
+        <Link href={`/map?list=${list.id}`} className="flex h-btn-m items-center justify-center gap-1.5 rounded-btn-m bg-surface text-body font-medium text-ink">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14" />
+          </svg>
           지도로 보기
         </Link>
         <button type="button" onClick={() => setAdding(true)} className="h-btn-m rounded-btn-m bg-brand-soft text-body font-bold text-brand">
@@ -136,35 +160,47 @@ export function ListDetail({ list, places, origin }: Props) {
         </p>
       )}
 
-      <ul className="flex flex-col">
-        {items.length === 0 && <li className="py-6 text-center text-meta text-muted">아직 담은 곳이 없어요</li>}
-        {items.map((p) => (
-          <li key={p.placeId} className="flex min-h-16 items-center gap-3 border-b border-line py-2">
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="flex items-center gap-1.5">
-                <Link href={`/p/${p.placeId}`} className="truncate text-body">
-                  {p.name}
-                </Link>
-                <TierBadge tier={p.tier} />
-              </span>
-              <span className="truncate text-meta text-muted">
-                {[CUISINE_LABEL[p.cuisine], p.address.split(" ").slice(0, 2).join(" ")].filter(Boolean).join(" · ")}
-              </span>
-            </span>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => act(() => removePlacesFromList(list.id, [p.placeId]))}
-              aria-label={`${p.name} 빼기`}
-              className="flex size-11 shrink-0 items-center justify-center text-muted"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
+      <section className="flex flex-col">
+        {items.length > 0 && (
+          <div className="flex items-center justify-between">
+            <h3 className="text-meta font-bold text-muted">담은 곳</h3>
+            <button type="button" onClick={() => setRemoving((v) => !v)} className="flex h-9 items-center text-meta font-medium text-ink-2">
+              {removing ? "완료" : "편집"}
             </button>
-          </li>
-        ))}
-      </ul>
+          </div>
+        )}
+        <ul className="flex flex-col">
+          {items.length === 0 && <li className="py-10 text-center text-meta text-muted">아직 담은 곳이 없어요</li>}
+          {items.map((p, i) => (
+            <li key={p.placeId} className="flex items-center gap-3 py-2.5">
+              <span className="w-5 shrink-0 text-center text-meta text-subtle">{i + 1}</span>
+              <Link href={`/p/${p.placeId}`} className="flex min-w-0 flex-1 items-center gap-3">
+                <CuisineIcon cuisine={p.cuisine} />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-body font-semibold">{p.name}</span>
+                    <TierBadge tier={p.tier} />
+                  </span>
+                  <span className="truncate text-meta text-muted">
+                    {[CUISINE_LABEL[p.cuisine], p.address.split(" ").slice(0, 2).join(" ")].filter(Boolean).join(" · ")}
+                  </span>
+                </span>
+              </Link>
+              {removing && (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => act(() => removePlacesFromList(list.id, [p.placeId]), () => setUndo({ id: p.placeId, name: p.name }))}
+                  aria-label={`${p.name} 삭제`}
+                  className="flex h-8 shrink-0 items-center rounded-full bg-surface px-3 text-meta font-medium text-[#c4320a]"
+                >
+                  삭제
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <div className="flex flex-col items-center gap-2 pt-2">
         {confirmDelete ? (
@@ -186,9 +222,24 @@ export function ListDetail({ list, places, origin }: Props) {
           </button>
         )}
       </div>
+
+      {undo && (
+        <Toast
+          message={`'${undo.name}'을 리스트에서 뺐어요`}
+          action="되돌리기"
+          onAction={() => act(() => addPlacesToList(list.id, [undo.id]), () => setUndo(null))}
+          onClose={() => setUndo(null)}
+        />
+      )}
     </div>
   );
 }
+
+const VISIBILITY_HINT: Record<(typeof VISIBILITIES)[number], string> = {
+  private: "나만 볼 수 있어요",
+  link: "링크를 받은 사람만 볼 수 있어요",
+  public: "누구나 볼 수 있어요. 메모는 나만 봐요",
+};
 
 // 링크 복사는 언제나, 휴대폰이면 시스템 공유 창(카카오톡 등)도
 function ShareBox({ url, name }: { url: string; name: string }) {
@@ -206,24 +257,20 @@ function ShareBox({ url, name }: { url: string; name: string }) {
   }
 
   return (
-    <section className="flex flex-col gap-2 rounded-btn-l border border-line p-4">
-      <h3 className="text-meta font-bold">공유 링크</h3>
-      <input readOnly value={url} aria-label="공유 링크" onFocus={(e) => e.currentTarget.select()} className="h-10 rounded-btn-s bg-surface px-3 text-meta text-ink-2 outline-none" />
-      <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={copy} className="h-btn-m rounded-btn-m border border-line-strong text-body text-ink">
-          {copied ? "복사했어요" : "링크 복사"}
+    <div className="grid grid-cols-2 gap-2">
+      <button type="button" onClick={copy} className="flex h-btn-m items-center justify-center gap-1.5 rounded-btn-m bg-surface text-body font-medium text-ink">
+        {copied ? "복사했어요" : "링크 복사"}
+      </button>
+      {canShare ? (
+        <button type="button" onClick={() => navigator.share({ title: name, url }).catch(() => undefined)} className="h-btn-m rounded-btn-m bg-surface text-body font-medium text-ink">
+          공유하기
         </button>
-        {canShare ? (
-          <button type="button" onClick={() => navigator.share({ title: name, url }).catch(() => undefined)} className="h-btn-m rounded-btn-m bg-ink text-body font-bold text-white">
-            공유하기
-          </button>
-        ) : (
-          <a href={url} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center rounded-btn-m bg-ink text-body font-bold text-white">
-            미리보기
-          </a>
-        )}
-      </div>
-    </section>
+      ) : (
+        <a href={url} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center rounded-btn-m bg-surface text-body font-medium text-ink">
+          미리보기
+        </a>
+      )}
+    </div>
   );
 }
 
