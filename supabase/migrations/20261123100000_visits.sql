@@ -19,7 +19,7 @@ create table public.visit_members (
   user_id uuid references public.profiles (id) on delete cascade,
   guest_name text check (char_length(btrim(guest_name)) between 1 and 20),
   status text not null default 'invited' check (status in ('invited', 'accepted', 'declined')),
-  show_in_feed boolean not null default true,
+  show_in_feed boolean not null default false,
   created_at timestamptz not null default now(),
   responded_at timestamptz,
   check ((user_id is null) <> (guest_name is null)),

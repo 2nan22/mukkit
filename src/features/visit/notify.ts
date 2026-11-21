@@ -1,4 +1,5 @@
 import "server-only";
+import { honor } from "@/domain/honor";
 import { sendPush } from "@/features/push/send";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -9,5 +10,5 @@ export async function notifyVisitTag(actorId: string, userIds: string[]): Promis
   if (!admin) return;
   const { data: actor } = await admin.from("profiles").select("nickname").eq("id", actorId).maybeSingle();
   if (!actor) return;
-  await sendPush(userIds, { title: "함께 방문", body: `${actor.nickname}님이 함께 간 사람으로 추가했어요`, url: "/visits", tag: "visit-tags" });
+  await sendPush(userIds, { title: "함께 방문 요청", body: `${honor(actor.nickname as string)}이 함께 갔다고 남겼어요`, url: "/visits", tag: "visit-tags" });
 }

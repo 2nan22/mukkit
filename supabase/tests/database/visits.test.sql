@@ -43,7 +43,7 @@ select is((select count(*)::int from public.received_visit_tags()), 1, '받은 �
 select is((select members->0->>'userId' from public.my_visits('a9000000-0000-0000-0000-000000000001') where jsonb_array_length(members) = 1), '91111111-1111-1111-1111-111111111111', '태그된 사람에게는 만든 사람만 · 이름 메모는 안 보임');
 delete from public.visit_members where guest_name = '회사 동료';
 reset role;
-select is((select count(*)::int from public.visit_members where guest_name = '회사 동료'), 1, '남이 만든 이름 메모는 못 지움');
+select is((select count(*)::int from public.visit_members where visit_id = 'b9000000-0000-0000-0000-000000000001' and guest_name = '회사 동료'), 1, '남이 만든 이름 메모는 못 지움');
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"92222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
 select is(public.respond_visit('b9000000-0000-0000-0000-000000000001', true, false), 'a9000000-0000-0000-0000-000000000001'::uuid, '수락');
@@ -61,6 +61,8 @@ select set_config('request.jwt.claims', '{"sub":"93333333-3333-3333-3333-3333333
 select is(jsonb_array_length(public.visit_companions('91111111-1111-1111-1111-111111111111', 'a9000000-0000-0000-0000-000000000001')), 1, '공개면 함께 간 사람으로 보임 (이름 메모는 안 나옴)');
 select is(public.visit_companions('91111111-1111-1111-1111-111111111111', 'a9000000-0000-0000-0000-000000000001', true), '[]'::jsonb, '피드에 보이기를 끈 사람은 피드에서 빠짐');
 
+select set_config('request.jwt.claims', '{"sub":"91111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select public.set_visit_feed('b9000000-0000-0000-0000-000000000001', true);
 select set_config('request.jwt.claims', '{"sub":"92222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
 select public.set_visit_feed('b9000000-0000-0000-0000-000000000001', true);
 select set_config('request.jwt.claims', '{"sub":"93333333-3333-3333-3333-333333333333","role":"authenticated"}', true);

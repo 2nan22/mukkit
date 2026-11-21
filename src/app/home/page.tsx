@@ -88,7 +88,7 @@ async function HomeContent() {
       {visitTags ? (
         <Link href="/visits" className="mx-5 mt-3 flex min-h-12 items-center justify-between gap-3 rounded-[16px] bg-surface px-4">
           <span className="text-meta text-ink-2">
-            함께 방문 요청 <b className="font-bold text-ink">{visitTags}개</b>
+            함께 방문 요청 <b className="font-bold text-ink">{visitTags}건</b>
           </span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
             <path d="M9 6l6 6-6 6" />

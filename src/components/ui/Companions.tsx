@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { honor } from "@/domain/honor";
 
 type Person = { id: string; nickname: string; isMe?: boolean; guest?: boolean };
 
 function label(p: Person): string {
-  return p.isMe ? "나" : p.guest ? p.nickname : `${p.nickname}님`;
+  return p.isMe ? "나" : p.guest ? p.nickname : honor(p.nickname);
 }
 
 // 받침이 있으면 '과', 없으면 '와'
@@ -12,11 +13,13 @@ function withParticle(word: string): string {
   return code >= 0 && code <= 11171 && code % 28 === 0 ? "와" : "과";
 }
 
-// 함께 간 사람 한 줄 — '○○님 · 나와 함께 방문'
+// 함께 간 사람 한 줄 — '○○님 · 나와 함께 방문', 3명 이상은 '○○님 · △△님 외 n명과'
 export function Companions({ people }: { people: Person[] }) {
   if (people.length === 0) return null;
-  const sorted = [...people].sort((a, b) => Number(Boolean(b.isMe)) - Number(Boolean(a.isMe)));
-  const last = label(sorted[sorted.length - 1]);
+  const all = [...people].sort((a, b) => Number(Boolean(a.isMe)) - Number(Boolean(b.isMe)));
+  const sorted = all.slice(0, 2);
+  const extra = all.length - sorted.length;
+  const last = extra > 0 ? `외 ${extra}명` : label(sorted[sorted.length - 1]);
   return (
     <p className="flex flex-wrap items-center gap-x-1 text-meta text-ink-2">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="mr-0.5 text-muted" aria-hidden="true">
@@ -30,11 +33,11 @@ export function Companions({ people }: { people: Person[] }) {
           {p.isMe || p.guest ? (
             <span className="font-semibold text-ink">{label(p)}</span>
           ) : (
-            <Link href={`/u/${p.id}`} className="font-semibold text-ink">
+            <Link href={`/u/${p.id}`} className="-my-2 py-2 font-semibold text-ink">
               {label(p)}
             </Link>
           )}
-          {i < sorted.length - 1 ? " ·" : `${withParticle(last)} 함께 방문`}
+          {i < sorted.length - 1 ? " ·" : extra > 0 ? ` 외 ${extra}명과 함께 방문` : `${withParticle(last)} 함께 방문`}
         </span>
       ))}
     </p>
