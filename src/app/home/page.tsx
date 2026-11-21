@@ -61,7 +61,7 @@ async function HomeContent() {
             <span className="text-[20px] font-bold tracking-tight">여기서 뭐 먹지?</span>
             <span className="text-meta text-ink-2">내 기록과 팔로잉 평가에서 골라요</span>
           </span>
-          <span className="flex h-10 shrink-0 items-center rounded-full bg-brand px-4 text-meta font-bold text-white">찾아보기</span>
+          <span className="flex h-10 shrink-0 items-center rounded-full bg-brand px-4 text-meta font-bold text-white raised-brand">찾아보기</span>
         </Link>
         <NearbyWantToGo points={wantToGo} />
       </section>

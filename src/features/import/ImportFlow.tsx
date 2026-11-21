@@ -93,7 +93,7 @@ export function ImportFlow() {
           type="button"
           disabled={rows.length === 0}
           onClick={runImport}
-          className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-40"
+          className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-40 raised-brand"
         >
           {rows.length === 0 ? "가져오기" : `${total}곳 가져오기`}
         </button>
@@ -146,7 +146,7 @@ function LinkForm({ onAdd }: { onAdd: (row: Row) => void }) {
           <button
             type="submit"
             disabled={pending}
-            className="h-12 shrink-0 rounded-btn-m bg-brand px-4 text-body font-bold text-white disabled:opacity-60"
+            className="h-12 shrink-0 rounded-btn-m bg-brand px-4 text-body font-bold text-white disabled:opacity-60 raised-brand"
           >
             {pending ? "확인하는 중" : error ? "다시 시도" : "링크 확인"}
           </button>
@@ -454,7 +454,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
       <div className="flex flex-col gap-2 px-5 pt-3 pb-5">
         {unratedAdded > 0 ? (
           <>
-            <Link href="/rate" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white">
+            <Link href="/rate" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
               빠르게 평가하기
             </Link>
             <Link href="/home" className="flex h-btn-m items-center justify-center rounded-btn-m text-body text-ink-2">
@@ -462,7 +462,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
             </Link>
           </>
         ) : (
-          <Link href="/home" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white">
+          <Link href="/home" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
             홈으로
           </Link>
         )}
