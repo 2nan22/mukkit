@@ -12,7 +12,7 @@ export default function NicknamePage({ searchParams }: PageProps<"/onboarding/ni
         <h1 className="text-title font-bold leading-snug tracking-tight">
           다른 사람에게 보일
           <br />
-          닉네임을 정해주세요
+          닉네임을 정해 주세요
         </h1>
         <p className="text-body text-ink-2">평가와 리스트에 이 이름이 표시돼요. 나중에 바꿀 수 있어요.</p>
         <p className="pt-2 text-meta leading-relaxed text-muted">

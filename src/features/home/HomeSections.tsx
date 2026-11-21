@@ -34,14 +34,20 @@ function SectionHead({ title, sub, more }: { title: string; sub?: string; more?:
 }
 
 // 팔로잉 새 평가 — 가로로 넘기는 카드
-export function FollowingNew({ ratings }: { ratings: SharedRating[] }) {
+export function FollowingNew({ ratings, followingCount }: { ratings: SharedRating[]; followingCount: number }) {
+  const anyPhoto = ratings.some((r) => r.media.some((m) => m.kind === "image"));
   return (
     <section className="flex flex-col gap-2">
       <SectionHead title="팔로잉 새 평가" more={ratings.length ? "/feed" : undefined} />
       {ratings.length === 0 ? (
-        <div className="mx-5 flex flex-col gap-1 rounded-btn-l border border-line p-4">
-          <span className="text-body font-bold">아직 팔로우한 사람이 없어요</span>
-          <span className="text-meta text-muted">취향이 비슷한 사람을 팔로우해 보세요</span>
+        <div className="mx-5 flex items-center justify-between gap-3 rounded-[16px] bg-surface p-4">
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-body font-semibold">{followingCount > 0 ? "팔로잉의 새 평가가 아직 없어요" : "아직 팔로우한 사람이 없어요"}</span>
+            <span className="text-meta text-muted">{followingCount > 0 ? "새로 평가하면 여기에 보여요" : "취향이 비슷한 사람부터 찾아보세요"}</span>
+          </span>
+          <Link href="/people" className="flex h-9 shrink-0 items-center rounded-full bg-white px-3.5 text-meta font-semibold text-ink">
+            사람 찾기
+          </Link>
         </div>
       ) : (
         <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
@@ -51,11 +57,11 @@ export function FollowingNew({ ratings }: { ratings: SharedRating[] }) {
                 {r.media.find((m) => m.kind === "image") ? (
                   // eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다
                   <img src={r.media.find((m) => m.kind === "image")!.url} alt="" className="h-[120px] w-full object-cover" />
-                ) : (
-                  <span className="flex h-[120px] items-center justify-center bg-surface">
+                ) : anyPhoto ? (
+                  <span className={`flex h-[120px] items-center justify-center ${SOFT[r.tier] ?? "bg-surface"}`}>
                     <CuisineIcon cuisine={r.cuisine} />
                   </span>
-                )}
+                ) : null}
                 <span className="flex flex-1 flex-col gap-1.5 p-3.5">
                   <span className="flex items-center gap-1.5 text-meta text-muted">
                     <Avatar name={r.ownerNickname} size={24} />
@@ -89,13 +95,13 @@ export function SimilarPeople({ matches: all }: { matches: TasteMatch[] }) {
       <SectionHead title="취향이 비슷한 사람" sub="나와 평가가 비슷한 순" more="/people" />
       <ul className="px-5">
         {matches.slice(0, 4).map((m) => (
-          <li key={m.userId} className="flex items-center gap-3 border-b border-line py-2.5">
+          <li key={m.userId} className="flex items-center gap-3 border-b border-line py-2.5 last:border-b-0">
             <Link href={`/u/${m.userId}`} className="flex min-w-0 flex-1 items-center gap-3">
               <Avatar name={m.nickname} size={40} />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate text-body font-bold">{m.nickname}</span>
                 <span className="truncate text-meta text-muted">
-                  {m.bothThree > 0 ? `둘 다 3스타 ${m.bothThree}곳` : `같이 평가한 곳 ${m.overlap}`} · 취향 일치 {Math.round(m.similarity * 100)}%
+                  {m.bothThree > 0 ? `둘 다 3스타 ${m.bothThree}곳` : `같이 평가한 곳 ${m.overlap}곳`} · 취향 일치 {Math.round(m.similarity * 100)}%
                 </span>
               </span>
             </Link>
@@ -106,6 +112,12 @@ export function SimilarPeople({ matches: all }: { matches: TasteMatch[] }) {
     </section>
   );
 }
+
+const SOFT: Record<string, string> = {
+  three: "bg-tier-3-soft",
+  two: "bg-tier-2-soft",
+  one: "bg-tier-1-soft",
+};
 
 const DOT: Record<string, string> = {
   three: "bg-tier-3",

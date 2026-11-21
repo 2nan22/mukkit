@@ -2,6 +2,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { ListDetail } from "@/features/lists/ListDetail";
 import { getMyList } from "@/features/lists/lists";
@@ -14,7 +15,7 @@ export default function ListPage({ params }: PageProps<"/lists/[listId]">) {
   return (
     <main className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-y-auto">
       <AppHeader kind="back" fallback="/lists" title="리스트" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<ListSkeleton />}>
         <ListLoader params={params} />
       </Suspense>
     </main>

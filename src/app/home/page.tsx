@@ -2,12 +2,13 @@ import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { BottomNav } from "@/components/BottomNav";
 import { NICKNAME_SETUP, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { FollowingNew, RecentLists, SimilarPeople } from "@/features/home/HomeSections";
 import { needsAgreement } from "@/features/legal/legal";
 import { NearbyWantToGo } from "@/features/home/NearbyWantToGo";
-import { getFeed, getMyWantToGoPoints, getRecentPublicLists, getTasteMatches } from "@/features/social/social";
+import { getFeed, getFollowCounts, getMyWantToGoPoints, getRecentPublicLists, getTasteMatches } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // 홈 — 시안 1: 근처 가고 싶은 곳 · 팔로잉 새 평가 · 취향이 비슷한 사람 · 요즘 공개된 리스트
@@ -16,14 +17,14 @@ export default function HomePage() {
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="tab" title="마이슐랭" right={
           <Link href="/people" aria-label="사람 찾기" className="flex size-11 items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-4-4" />
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+              <circle cx="10" cy="8" r="4" />
+              <path d="M3 20c.8-3.5 3.6-5.5 7-5.5M15.5 15.5a3 3 0 1 0 4.2 4.2 3 3 0 0 0-4.2-4.2zM19.7 19.7L21 21" />
             </svg>
           </Link>
         } />
       <main className="flex flex-1 flex-col gap-6 pt-1 pb-8">
-        <Suspense fallback={null}>
+        <Suspense fallback={<ListSkeleton hero />}>
           <HomeContent />
         </Suspense>
       </main>
@@ -44,11 +45,12 @@ async function HomeContent() {
   if (profile && !profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
   if (needsAgreement(profile)) redirect("/onboarding/terms?next=/home");
 
-  const [wantToGo, feed, matches, lists] = await Promise.all([
+  const [wantToGo, feed, matches, lists, counts] = await Promise.all([
     getMyWantToGoPoints(supabase, me),
     getFeed(supabase),
     getTasteMatches(supabase, 8),
     getRecentPublicLists(supabase, 4),
+    getFollowCounts(supabase, me),
   ]);
 
   return (
@@ -63,7 +65,7 @@ async function HomeContent() {
         </Link>
         <NearbyWantToGo points={wantToGo} />
       </section>
-      <FollowingNew ratings={feed.slice(0, 10)} />
+      <FollowingNew ratings={feed.slice(0, 10)} followingCount={counts.following} />
       <SimilarPeople matches={matches} />
       <RecentLists lists={lists} />
     </>

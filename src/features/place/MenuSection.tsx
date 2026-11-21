@@ -25,13 +25,16 @@ export function MenuSection({ menu, kakaoUrl }: { menu: Menu; kakaoUrl: string }
               </span>
               {m.description && <span className="text-meta text-muted">{m.description}</span>}
             </span>
-            <span className="shrink-0 text-body font-bold tabular-nums">{m.price ? won(m.price) : "변동"}</span>
+            <span className="shrink-0 text-body font-semibold tabular-nums">{m.price ? won(m.price) : "변동"}</span>
           </li>
         ))}
       </ul>
       {menu.items.length > SHOWN && (
-        <button type="button" onClick={() => setAll((v) => !v)} className="h-btn-m rounded-btn-m border border-line-strong text-body text-ink">
+        <button type="button" onClick={() => setAll((v) => !v)} className="flex h-10 items-center justify-center gap-1 text-meta font-medium text-muted">
           {all ? "접기" : `메뉴 ${menu.items.length}개 모두 보기`}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={all ? "rotate-180" : ""} aria-hidden="true">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
         </button>
       )}
       <p className="pt-3 text-caption leading-normal text-muted">

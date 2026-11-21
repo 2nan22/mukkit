@@ -7,6 +7,7 @@
 - `git checkout dev && git pull && git checkout -b feat/13_deploy_cron`
 
 ## 1. 세션 목표 (성공 기준)
+- 호스팅 Supabase 는 서울 리전(ap-northeast-2) — 처리방침 제7조와 맞춤
 - 호스팅 Supabase 에 마이그레이션 적용 · 네이버 OIDC 등록 · Storage 버킷
 - Vercel 배포 (main 기준) · 환경 변수 · 카카오맵 JavaScript SDK 도메인 · OAuth 리다이렉트 주소 등록
 - 매일 새벽 크론: 폐업 여부 확인(네이버 · 카카오 원문 다시 읽기) → places.available · source_checked_at 갱신 → job_runs 에 실행 기록

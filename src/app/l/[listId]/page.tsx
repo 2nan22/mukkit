@@ -25,11 +25,6 @@ export default function PublicListPage({ params }: PageProps<"/l/[listId]">) {
       <Suspense fallback={null}>
         <PublicListLoader params={params} />
       </Suspense>
-      <div className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-[480px] bg-white px-5 pt-3 pb-5 shadow-sheet">
-        <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white">
-          마이슐랭에서 내 리스트 만들기
-        </Link>
-      </div>
     </main>
   );
 }
@@ -37,7 +32,9 @@ export default function PublicListPage({ params }: PageProps<"/l/[listId]">) {
 // 링크로 들어온 사람은 로그인 없이 본다 — 공개 통로(public_list)만 쓴다
 async function PublicListLoader({ params }: { params: Promise<{ listId: string }> }) {
   const { listId } = await params;
-  const list = await getPublicList(await createSupabaseServerClient(), listId);
+  const supabase = await createSupabaseServerClient();
+  const [list, { data: claims }] = await Promise.all([getPublicList(supabase, listId), supabase.auth.getClaims()]);
+  const signedIn = Boolean(claims?.claims?.sub);
 
   if (!list) {
     return (
@@ -52,13 +49,20 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
   return (
     <>
       <header className="flex flex-col gap-1 px-5 pt-5 pb-4">
-        <span className="text-meta font-bold text-muted">마이슐랭 · {list.ownerNickname}님의 리스트</span>
+        <span className="text-meta font-semibold text-muted">{list.ownerNickname}님의 리스트</span>
         <h1 className="text-title font-bold tracking-tight">{list.name}</h1>
         <span className="text-meta text-muted">
           {list.places.length}곳{list.description && ` · ${list.description}`}
         </span>
       </header>
-      <PublicListView list={list} />
+      <PublicListView list={list} signedIn={signedIn} />
+      {!signedIn && (
+        <div className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-[480px] bg-white px-5 pt-3 pb-5 shadow-sheet">
+          <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white">
+            마이슐랭에서 내 리스트 만들기
+          </Link>
+        </div>
+      )}
     </>
   );
 }

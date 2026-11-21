@@ -32,7 +32,7 @@ export function WithdrawSection() {
         className="h-12 rounded-[12px] border border-transparent bg-surface px-3.5 text-body outline-none focus:border-ink"
       />
       {state.error && (
-        <p role="alert" className="text-meta text-[#c4320a]">
+        <p role="alert" className="text-meta text-danger">
           {state.error}
         </p>
       )}
@@ -40,7 +40,7 @@ export function WithdrawSection() {
         <button type="button" onClick={() => setOpen(false)} className="h-btn-m rounded-btn-m bg-surface text-body font-medium text-ink">
           취소
         </button>
-        <button type="submit" disabled={pending} className="h-btn-m rounded-btn-m bg-[#c4320a] text-body font-bold text-white disabled:opacity-60">
+        <button type="submit" disabled={pending} className="h-btn-m rounded-btn-m bg-danger text-body font-bold text-white disabled:opacity-60">
           {pending ? "지우는 중" : "탈퇴"}
         </button>
       </div>

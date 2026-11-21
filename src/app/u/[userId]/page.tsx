@@ -3,6 +3,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { AppHeader } from "@/components/AppHeader";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { FollowButton } from "@/features/social/FollowButton";
 import { RatingCard } from "@/features/social/RatingCard";
 import {
@@ -23,7 +24,7 @@ export default function ProfilePage({ params, searchParams }: PageProps<"/u/[use
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/home" title="프로필" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<ListSkeleton />}>
         <Profile params={params} searchParams={searchParams} />
       </Suspense>
     </main>
@@ -83,15 +84,15 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
         )}
 
         {taste && taste.overlap > 0 && (
-          <div className="flex items-center justify-between gap-3 rounded-btn-m bg-tier-3-soft px-3.5 py-3 text-meta text-ink-2">
-            <span>
-              나와 겹치는 곳 <b className="text-ink">{taste.overlap}곳</b> · 그중 둘 다 3스타 <b className="text-tier-3">{taste.bothThree}곳</b>
+          <div className="flex flex-col gap-1 rounded-[16px] bg-brand-soft px-4 py-3.5">
+            <span className="text-body font-bold text-brand">취향 일치 {Math.round(taste.similarity * 100)}%</span>
+            <span className="text-meta text-ink-2">
+              같이 평가한 곳 <b className="whitespace-nowrap text-ink">{taste.overlap}곳</b> · 둘 다 3스타 <b className="whitespace-nowrap text-ink">{taste.bothThree}곳</b>
             </span>
-            <span className="shrink-0 font-bold text-brand">취향 일치 {Math.round(taste.similarity * 100)}%</span>
           </div>
         )}
 
-        {me && me !== person.id && <FollowButton targetId={person.id} following={following} />}
+        {me && me !== person.id && <FollowButton targetId={person.id} following={following} primary />}
         {!me && (
           <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white">
             마이슐랭 시작하고 팔로우하기
@@ -100,10 +101,10 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
       </section>
 
       <div role="tablist" className="grid grid-cols-2 border-b border-line">
-        <Link role="tab" aria-selected={!showLists} href={`/u/${person.id}`} replace className={`flex h-11 items-center justify-center text-body ${!showLists ? "border-b-2 border-ink font-bold" : "text-muted"}`}>
+        <Link role="tab" aria-selected={!showLists} href={`/u/${person.id}`} replace className={`flex h-11 items-center justify-center text-body ${!showLists ? "border-b-2 border-ink font-bold" : "text-subtle"}`}>
           평가 {ratings.length}
         </Link>
-        <Link role="tab" aria-selected={showLists} href={`/u/${person.id}?tab=lists`} replace className={`flex h-11 items-center justify-center text-body ${showLists ? "border-b-2 border-ink font-bold" : "text-muted"}`}>
+        <Link role="tab" aria-selected={showLists} href={`/u/${person.id}?tab=lists`} replace className={`flex h-11 items-center justify-center text-body ${showLists ? "border-b-2 border-ink font-bold" : "text-subtle"}`}>
           리스트 {lists.length}
         </Link>
       </div>
@@ -111,7 +112,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
       <div className="px-5">
         {showLists ? (
           lists.length === 0 ? (
-            <p className="py-10 text-center text-meta text-muted">공개한 리스트가 아직 없어요.</p>
+            <p className="py-10 text-center text-meta text-muted">공개한 리스트가 아직 없어요</p>
           ) : (
             lists.map((l) => (
               <Link key={l.id} href={`/l/${l.id}`} className="flex min-h-16 flex-col justify-center gap-0.5 border-b border-line py-2">
@@ -122,7 +123,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
           )
         ) : ratings.length === 0 ? (
           <p className="py-10 text-center text-meta text-muted">
-            {me === person.id ? "공개하거나 팔로워에게 보여준 평가가 아직 없어요. 평가 화면에서 공개 범위를 바꿔 보세요." : "볼 수 있는 평가가 아직 없어요."}
+            {me === person.id ? "공개한 평가가 아직 없어요. 평가할 때 공개 범위를 바꿀 수 있어요." : "볼 수 있는 평가가 아직 없어요."}
           </p>
         ) : (
           ratings.map((r) => <RatingCard key={r.placeId} rating={r} showOwner={false} />)

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
+import { regionOf } from "@/domain/region";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { SOURCE_LABEL } from "@/features/import/sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
@@ -21,7 +22,38 @@ const TIER_DOT: Record<Tier, string> = {
 };
 const CUISINE_ORDER: Cuisine[] = ["korean", "chinese", "japanese", "western", "asian", "snack", "chicken", "bar", "cafe", "other", "nonFood"];
 
-export function MapView({ places, initialTiers = [] }: { places: MapPlace[]; initialTiers?: Tier[] }) {
+type Focus = { lat: number; lng: number; level: number };
+const AREA_LEVEL = 6;
+const HERE_LEVEL = 5;
+
+// 처음 열 때 — 가장 많이 저장한 지역(시 · 구)의 가운데
+function busiestArea(places: MapPlace[]): Focus | null {
+  const byRegion = new Map<string, MapPlace[]>();
+  for (const p of places) {
+    const r = regionOf(p.address);
+    if (r) byRegion.set(r, [...(byRegion.get(r) ?? []), p]);
+  }
+  const top = [...byRegion.values()].sort((a, b) => b.length - a.length)[0];
+  if (!top) return null;
+  return { lat: top.reduce((n, p) => n + p.lat, 0) / top.length, lng: top.reduce((n, p) => n + p.lng, 0) / top.length, level: AREA_LEVEL };
+}
+
+export function MapView({ places, initialTiers = [], at = null }: { places: MapPlace[]; initialTiers?: Tier[]; at?: { lat: number; lng: number } | null }) {
+  // 리스트 하나만 볼 때는 전체 맞춤, 아니면 위치 · 많이 저장한 지역에서 시작
+  const [focus, setFocus] = useState<Focus | null>(() => (at ? { ...at, level: HERE_LEVEL } : places.length > 30 ? busiestArea(places) : null));
+  const [locating, setLocating] = useState(false);
+  function goHere() {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLocating(false);
+        setFocus({ lat: coords.latitude, lng: coords.longitude, level: HERE_LEVEL });
+      },
+      () => setLocating(false),
+      { maximumAge: 5 * 60 * 1000, timeout: 10_000 },
+    );
+  }
   const [tiers, setTiers] = useState<Tier[]>(initialTiers);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -42,7 +74,21 @@ export function MapView({ places, initialTiers = [] }: { places: MapPlace[]; ini
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="absolute inset-0">
-        <PlaceMap pins={pins} selectedId={selected?.placeId ?? null} onSelect={setSelectedId} cluster />
+        <PlaceMap pins={pins} selectedId={selected?.placeId ?? null} onSelect={setSelectedId} cluster focus={focus} />
+      </div>
+      <div className="absolute right-4 bottom-28 z-10">
+        <button
+          type="button"
+          onClick={goHere}
+          disabled={locating}
+          aria-label="현재 위치로"
+          className="flex size-11 items-center justify-center rounded-full bg-white text-ink shadow-float disabled:opacity-60"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+          </svg>
+        </button>
       </div>
 
       <div className="pointer-events-none relative z-10 flex flex-col gap-1 pt-2">
@@ -95,7 +141,7 @@ export function MapView({ places, initialTiers = [] }: { places: MapPlace[]; ini
                 </button>
               ))}
             </div>
-            <button type="button" onClick={() => setFilterOpen(false)} className="h-btn-l rounded-btn-l bg-ink text-[16px] font-bold text-white">
+            <button type="button" onClick={() => setFilterOpen(false)} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white">
               {shown.length}곳 보기
             </button>
           </section>
@@ -222,5 +268,5 @@ function toggle<T>(list: T[], item: T): T[] {
 
 function placeMeta(p: MapPlace): string {
   const region = p.address.split(" ").slice(0, 2).join(" ");
-  return [...new Set([CUISINE_LABEL[p.cuisine], p.categoryName, region])].filter(Boolean).join(" · ");
+  return [...new Set([CUISINE_LABEL[p.cuisine], p.categoryName, region])].filter((v) => v && v !== "음식점").join(" · ");
 }

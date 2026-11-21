@@ -12,7 +12,7 @@ export function AgreeForm({ next }: { next: string }) {
       <div className="flex-1" />
       <AgreeCheck />
       {state.error && (
-        <p role="alert" className="text-meta text-[#c4320a]">
+        <p role="alert" className="text-meta text-danger">
           {state.error}
         </p>
       )}

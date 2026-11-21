@@ -72,7 +72,7 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex flex-col gap-2 px-5 pt-1">
+      <div className={`flex flex-col gap-2 px-5 pt-1 ${scale === 0 ? "hidden" : ""}`}>
         <div className="flex justify-between text-meta text-muted">
           <span>
             <b className="text-ink">{done.length}곳</b> 평가
@@ -128,7 +128,7 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
               아직 안 가봤어요
             </button>
             {error && (
-              <p role="alert" className="text-meta text-[#c4320a]">
+              <p role="alert" className="text-meta text-danger">
                 {error}
               </p>
             )}
@@ -153,12 +153,17 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
           </div>
         </>
       ) : (
-        <section className="flex flex-1 flex-col gap-3 px-5 pt-10">
+        <section className="flex flex-1 flex-col gap-3 px-5 pt-16 text-center">
+          <span aria-hidden="true" className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-soft text-brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12l5 5 9-10" />
+            </svg>
+          </span>
           <h2 className="text-title font-bold tracking-tight">
-            {skipped.length > 0 ? `건너뛴 ${skipped.length}곳이 남았어요` : "다 평가했어요"}
+            {skipped.length > 0 ? `건너뛴 ${skipped.length}곳이 남았어요` : done.length > 0 ? `${done.length}곳을 평가했어요` : "평가 전인 곳이 없어요"}
           </h2>
           <p className="text-body leading-normal text-ink-2">
-            {done.length > 0 ? `이번에 ${done.length}곳을 평가했어요.` : "평가할 곳이 없어요."}
+            {skipped.length > 0 ? "다시 보거나 나중에 이어서 할 수 있어요." : "장소를 가져오면 여기서 이어서 평가할 수 있어요."}
           </p>
           <div className="flex-1" />
           <div className="flex flex-col gap-2 pb-5">

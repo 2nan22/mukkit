@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { PlaceMap } from "@/features/map/PlaceMap";
 import type { Tier } from "@/domain/tier";
-import { CuisineIcon } from "@/components/ui/CuisineIcon";
-import { TierBadge } from "@/components/ui/TierBadge";
+import { PlaceRow } from "@/components/ui/PlaceRow";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import type { CuisineGroup } from "@/domain/eatScore";
 import { findEats } from "./actions";
@@ -13,6 +11,11 @@ import type { Region } from "./eat";
 
 const RADII = [500, 1000, 3000] as const;
 type Where = { label: string; lat: number; lng: number };
+
+// 내 등급은 배지로 이미 보이니 이유에서는 남의 평가 · 취향만
+function othersReasons(reasons: string[]): string {
+  return reasons.filter((r) => !r.startsWith("내 ") && !r.startsWith("내가 ")).join(" · ");
+}
 
 function km(m: number): string {
   return m < 1000 ? `${Math.round(m / 10) * 10}m` : `${(m / 1000).toFixed(1)}km`;
@@ -76,7 +79,7 @@ export function EatView({ regions }: { regions: Region[] }) {
         </button>
         {regions.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <span className="text-meta text-muted">또는 저장한 지역에서</span>
+            <span className="text-meta text-muted">자주 저장한 지역</span>
             <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
               {regions.map((r) => (
                 <button
@@ -112,7 +115,7 @@ export function EatView({ regions }: { regions: Region[] }) {
       </section>
 
       {error && (
-        <p role="alert" className="text-meta text-[#c4320a]">
+        <p role="alert" className="text-meta text-danger">
           {error}
         </p>
       )}
@@ -133,7 +136,7 @@ export function EatView({ regions }: { regions: Region[] }) {
           </p>
           {groups.length === 0 && (
             <p className="rounded-btn-l bg-surface p-4 text-meta leading-normal text-ink-2">
-              이 근처엔 아직 없어요. 반경을 넓혀 보세요.
+              이 범위에는 저장하거나 평가한 곳이 없어요. 범위를 넓혀 보세요.
             </p>
           )}
           {groups.map((g) => (
@@ -142,23 +145,17 @@ export function EatView({ regions }: { regions: Region[] }) {
                 {CUISINE_LABEL[g.cuisine]} <span className="text-meta font-normal text-subtle">{g.places.length}곳</span>
               </h2>
               {g.places.map((p) => (
-                <Link
+                <PlaceRow
                   key={p.placeId}
                   id={`eat-${p.placeId}`}
                   href={`/p/${p.placeId}`}
-                  className={`-mx-2 flex items-center gap-3 rounded-btn-m px-2 py-3 ${selected === p.placeId ? "bg-surface" : ""}`}
-                >
-                  <CuisineIcon cuisine={p.cuisine} />
-                  <span className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="flex items-center gap-1.5">
-                    <span className="truncate text-body font-semibold">{p.name}</span>
-                    {p.myTier && <TierBadge tier={p.myTier} />}
-                    <span className="ml-auto shrink-0 text-meta text-subtle">{km(p.distance)}</span>
-                  </span>
-                  {p.categoryName && !["음식점", CUISINE_LABEL[p.cuisine]].includes(p.categoryName) && <span className="text-meta text-muted">{p.categoryName}</span>}
-                  <span className="text-meta text-ink-2">{p.reasons.join(" · ")}</span>
-                  </span>
-                </Link>
+                  selected={selected === p.placeId}
+                  name={p.name}
+                  cuisine={p.cuisine}
+                  tier={p.myTier}
+                  meta={[km(p.distance), p.categoryName && !["음식점", CUISINE_LABEL[p.cuisine]].includes(p.categoryName) ? p.categoryName : null].filter(Boolean).join(" · ")}
+                  note={othersReasons(p.reasons) || undefined}
+                />
               ))}
             </div>
           ))}

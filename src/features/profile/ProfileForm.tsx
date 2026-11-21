@@ -28,7 +28,7 @@ export function ProfileForm({ nickname, bio }: { nickname: string; bio: string }
         <textarea id="bio" name="bio" defaultValue={bio} maxLength={150} rows={3} placeholder="예: 을지로 노포 위주로 다녀요" className="resize-none rounded-btn-m border border-line-strong px-3.5 py-3 text-body leading-normal outline-none focus:border-ink" />
       </div>
       {state.error && (
-        <p role="alert" className="text-meta text-[#c4320a]">
+        <p role="alert" className="text-meta text-danger">
           {state.error}
         </p>
       )}

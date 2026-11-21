@@ -27,7 +27,7 @@ export async function saveNickname(_prev: NicknameFormState, formData: FormData)
     .eq("id", userId);
   if (error) {
     return {
-      error: error.code === UNIQUE_VIOLATION ? "이미 쓰는 닉네임이에요" : "저장하지 못했어요. 다시 시도해주세요.",
+      error: error.code === UNIQUE_VIOLATION ? "이미 쓰는 닉네임이에요" : "저장하지 못했어요. 다시 시도해 주세요.",
       value: parsed.data,
     };
   }

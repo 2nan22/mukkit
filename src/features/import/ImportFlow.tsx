@@ -24,7 +24,7 @@ type Row = ListPreview & { link: string; mode: ImportMode };
 type RowStatus = { state: "waiting" | "running" } | { state: "done"; result: ImportResult } | { state: "failed"; error: string };
 type Phase = "select" | "running" | "done";
 
-const ERROR_TEXT = "text-[#c4320a]";
+const ERROR_TEXT = "text-danger";
 
 export function ImportFlow() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -146,9 +146,9 @@ function LinkForm({ onAdd }: { onAdd: (row: Row) => void }) {
           <button
             type="submit"
             disabled={pending}
-            className="h-12 shrink-0 rounded-btn-m bg-ink px-4 text-body font-bold text-white disabled:opacity-60"
+            className="h-12 shrink-0 rounded-btn-m bg-brand px-4 text-body font-bold text-white disabled:opacity-60"
           >
-            {pending ? "불러오는 중" : error ? "다시 시도" : "불러오기"}
+            {pending ? "확인하는 중" : error ? "다시 시도" : "링크 확인"}
           </button>
         </div>
         {error && (
@@ -270,10 +270,10 @@ function ListRow({ row, onChange, onRemove }: { row: Row; onChange: (mode: Impor
           onChange={(e) => onChange(modeFromValue(e.target.value))}
           className="absolute inset-0 cursor-pointer opacity-0"
         >
-          <optgroup label="그냥 저장한 리스트">
+          <optgroup label="리스트 그대로">
             <option value="plain">{PLAIN_LABEL}</option>
           </optgroup>
-          <optgroup label="등급 리스트">
+          <optgroup label="등급으로 가져오기">
             {IMPORT_TIERS.map((tier) => (
               <option key={tier} value={tier}>
                 {IMPORT_TIER_LABEL[tier]}
@@ -432,7 +432,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
 
       {unratedAdded > 0 && (
         <div className="mx-5 mt-4 flex flex-col gap-1 rounded-btn-l bg-surface px-4 py-3.5">
-          <span className="text-body font-bold">평가 전 {unratedAdded}곳, 빠르게 평가해볼까요?</span>
+          <span className="text-body font-bold">평가 전 {unratedAdded}곳이 있어요</span>
           <span className="text-meta leading-normal text-muted">
             등급만 고르면 끝나요. 중간에 그만둬도 이어서 할 수 있어요.
           </span>

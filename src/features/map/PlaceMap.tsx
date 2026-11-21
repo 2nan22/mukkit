@@ -59,10 +59,10 @@ const CLUSTER_STYLE = {
   height: "36px",
   lineHeight: "36px",
   borderRadius: "50%",
-  background: "#17181c",
-  border: "2px solid #ffffff",
+  background: "#ffffff",
+  border: "1px solid #dddfe3",
   boxShadow: "0 2px 8px rgba(0,0,0,.2)",
-  color: "#ffffff",
+  color: "#17181c",
   textAlign: "center",
   font: "700 13px/36px system-ui",
 };
@@ -97,6 +97,7 @@ export function PlaceMap({
   onSelect,
   padding = SHEET_PADDING,
   cluster = false,
+  focus = null,
 }: {
   pins: Pin[];
   selectedId: string | null;
@@ -104,6 +105,8 @@ export function PlaceMap({
   padding?: readonly [number, number, number, number];
   // 핀이 많은 지도에서 멀리 볼 때 개수 원으로 묶기
   cluster?: boolean;
+  // 이 자리 · 확대 수준으로 연다 (처음 열 때 · 현재 위치 버튼) — 없으면 핀 전체에 맞춘다
+  focus?: { lat: number; lng: number; level: number } | null;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<KakaoMapInstance | null>(null);
@@ -181,6 +184,17 @@ export function PlaceMap({
       m.setBounds(bounds, top, right, bottom, left);
     });
   }, [ready, pins, top, right, bottom, left]);
+
+  // 핀 맞춤보다 뒤에 돌도록 아래에 둔다 — 같은 프레임이면 이 위치가 이긴다
+  useEffect(() => {
+    const maps = window.kakao?.maps;
+    if (!ready || !maps || !map.current || !focus) return;
+    const m = map.current;
+    requestAnimationFrame(() => {
+      m.setLevel(focus.level);
+      m.setCenter(new maps.LatLng(focus.lat, focus.lng));
+    });
+  }, [ready, focus]);
 
   if (!APP_KEY || failed) {
     return (

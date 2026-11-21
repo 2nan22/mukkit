@@ -23,6 +23,9 @@ const PICKED: Partial<Record<Tier, string>> = {
 
 export function RatingForm({ place, next, userId }: { place: SavedPlace; next: string; userId: string }) {
   const [state, action, pending] = useActionState<RatingFormState, FormData>(saveRating, {});
+  // 안 가본 곳(가고 싶은 곳 · 평가 전)이면 방문 관련 칸을 숨긴다 — 값은 그대로 보낸다
+  const [tier, setTier] = useState<Tier>(place.tier);
+  const visited = RATED.includes(tier);
   const leave = useLeave(next);
   useEffect(() => {
     if (state.saved) leave();
@@ -34,7 +37,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
       <input type="hidden" name="placeId" value={place.placeId} />
       <input type="hidden" name="next" value={next} />
 
-      <fieldset className="flex flex-col gap-2 px-5 pt-2 pb-1">
+      <fieldset onChange={(e) => setTier((e.target as unknown as HTMLInputElement).value as Tier)} className="flex flex-col gap-2 px-5 pt-2 pb-1">
         <legend className="sr-only">등급</legend>
         {RATED.map((tier) => (
           <label
@@ -62,13 +65,13 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
               className="flex h-btn-m cursor-pointer items-center justify-center gap-2 rounded-full bg-surface text-meta font-medium text-ink-2 has-checked:bg-ink has-checked:text-white"
             >
               <input type="radio" name="tier" value={tier} defaultChecked={tier === place.tier} className="sr-only" />
-              {tier === "unrated" ? "평가 안 함" : TIER_LABEL[tier]}
+              {tier === "unrated" ? "평가 전" : TIER_LABEL[tier]}
             </label>
           ))}
         </div>
       </fieldset>
 
-      <div className="flex flex-col gap-2 px-5 pt-6">
+      <div className={`flex flex-col gap-2 px-5 pt-6 ${visited ? "" : "hidden"}`}>
         <label htmlFor="review" className="text-body font-semibold">
           한 줄 평가
         </label>
@@ -78,16 +81,16 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
           rows={2}
           maxLength={REVIEW_MAX}
           defaultValue={place.review}
-          placeholder="한 줄로 남겨 보세요"
+          placeholder="예: 점심 정식이 좋아요"
           className="w-full resize-none rounded-[12px] border border-transparent bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink focus:bg-white"
         />
       </div>
 
-      <div className="px-5 pt-6">
+      <div className={`px-5 pt-6 ${visited ? "" : "hidden"}`}>
         <MediaUploader userId={userId} placeId={place.placeId} />
       </div>
 
-      <div role="radiogroup" aria-labelledby="visibility-label" className="flex flex-col gap-2 px-5 pt-6">
+      <div role="radiogroup" aria-labelledby="visibility-label" className={`flex flex-col gap-2 px-5 pt-6 ${visited ? "" : "hidden"}`}>
         <span id="visibility-label" className="text-body font-semibold">
           평가 공개 범위
         </span>
@@ -102,7 +105,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
             </label>
           ))}
         </div>
-        <span className="text-caption leading-normal text-muted">메모는 공개 범위와 상관없이 나만 볼 수 있어요.</span>
+        <span className="text-caption leading-normal text-muted">팔로워 이상으로 공개하면 팔로잉의 홈에 보여요. 메모는 언제나 나만 봐요.</span>
       </div>
 
       <div className="flex flex-col gap-2 px-5 pt-6">
@@ -124,9 +127,9 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
         />
       </div>
 
-      <VisitedOn initial={place.visitedOn} />
+      <VisitedOn initial={place.visitedOn} hidden={!visited} />
 
-      <label className="flex min-h-11 items-start gap-2.5 px-5 pt-6">
+      <label className={`flex min-h-11 items-start gap-2.5 px-5 pt-6 ${visited ? "" : "hidden"}`}>
         <input
           type="checkbox"
           name="sponsored"
@@ -135,14 +138,14 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
         />
         <span className="flex flex-col gap-0.5">
           <span className="text-body">협찬이나 이벤트로 방문했어요</span>
-          <span className="text-meta text-muted">통계에서 빠져요</span>
+          <span className="text-meta text-muted">협찬 표시가 붙고 등급 통계와 추천에서 빠져요</span>
         </span>
       </label>
 
       <div className="flex-1" />
       <div className="sticky bottom-0 mt-6 flex flex-col gap-2 border-t border-line bg-white px-5 pt-3 pb-5">
         {state.error && (
-          <p role="alert" className="text-meta text-[#c4320a]">
+          <p role="alert" className="text-meta text-danger">
             {state.error}
           </p>
         )}
@@ -165,12 +168,12 @@ function isoDay(offset: number): string {
 }
 
 // 방문일 — 대부분 오늘 · 어제라 칩으로, 그 밖은 날짜 고르기
-function VisitedOn({ initial }: { initial: string | null }) {
+function VisitedOn({ initial, hidden }: { initial: string | null; hidden: boolean }) {
   const [value, setValue] = useState(initial ?? "");
   const [picking, setPicking] = useState(Boolean(initial) && initial !== isoDay(0) && initial !== isoDay(-1));
   const chip = (on: boolean) => `h-8 rounded-full px-3 text-meta font-medium ${on ? "bg-ink text-white" : "bg-surface text-ink-2"}`;
   return (
-    <div role="group" aria-labelledby="visited-label" className="flex flex-col gap-2 px-5 pt-6">
+    <div role="group" aria-labelledby="visited-label" className={`flex flex-col gap-2 px-5 pt-6 ${hidden ? "hidden" : ""}`}>
       <span id="visited-label" className="text-body font-semibold">
         방문일
       </span>
