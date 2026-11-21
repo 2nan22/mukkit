@@ -20,8 +20,9 @@ Vercel(앱) + Supabase 호스팅(DB · 인증 · 사진). 둘 다 **서울** —
    - Google: 웹 클라이언트 ID · Secret
    - 네이버(커스텀 OIDC): 로컬과 같은 스크립트를 호스팅 주소로
      ```bash
-     NAVER_TARGET_URL=https://<프로젝트 ref>.supabase.co NAVER_TARGET_SECRET=<secret 키> pnpm auth:naver
+     NAVER_TARGET_URL=https://<프로젝트 ref>.supabase.co NAVER_TARGET_SECRET=<service_role 키> pnpm auth:naver
      ```
+     - 인증 관리 API 는 새 `sb_secret_` 키를 Bearer 로 받지 않는다 — API Keys › Legacy 의 **service_role** 키를 쓴다 (401 no_authorization)
 
 ## 2. 로그인 · 지도 콘솔에 운영 주소 등록
 
