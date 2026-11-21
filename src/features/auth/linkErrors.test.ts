@@ -8,7 +8,7 @@ describe("linkErrorMessage", () => {
   });
 
   it("모르는 코드는 일반 문구, 없으면 null", () => {
-    expect(linkErrorMessage("something_else")).toBe("연결하지 못했어요. 다시 시도해주세요.");
+    expect(linkErrorMessage("something_else")).toBe("연결하지 못했어요. 다시 시도해 주세요.");
     expect(linkErrorMessage(undefined)).toBeNull();
   });
 });

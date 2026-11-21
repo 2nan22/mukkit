@@ -6,14 +6,14 @@ import { getMyTasteBasis } from "@/features/eat/eat";
 import { EatView } from "@/features/eat/EatView";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "여기서 뭐 먹지" };
+export const metadata = { title: "여기서 뭐 먹지?" };
 
 export default function EatPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <AppHeader kind="back" fallback="/home" title="여기서 뭐 먹지" />
+      <AppHeader kind="back" fallback="/home" title="여기서 뭐 먹지?" />
       <p className="px-5 pb-4 text-meta leading-normal text-muted">
-        내 기록과 팔로잉 · 취향 비슷한 사람의 평가에서만 골라요.
+        내 기록과 믿는 사람의 평가에서만 골라요.
       </p>
       <Suspense fallback={null}>
         <EatLoader />

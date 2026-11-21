@@ -73,12 +73,12 @@ export function PlacePicker({ places, selected, onChange, initialLabels = [], ex
           ))}
           {regions.length > REGIONS_SHOWN && (
             <button type="button" onClick={() => setAllRegions((v) => !v)} className="h-9 px-1 text-meta text-ink-2 underline underline-offset-[3px]">
-              {allRegions ? "접기" : `지역 ${regions.length - REGIONS_SHOWN}곳 더`}
+              {allRegions ? "접기" : `지역 ${regions.length - REGIONS_SHOWN}개 더 보기`}
             </button>
           )}
         </Group>
 
-        <Group title="업종">
+        <Group title="음식 종류">
           {cuisines.map(([c, n]) => (
             <Chip key={c} pressed={criteria.cuisines.includes(c)} onClick={() => toggleIn("cuisines", c)}>
               {CUISINE_LABEL[c]} <Count n={n} />
@@ -87,7 +87,7 @@ export function PlacePicker({ places, selected, onChange, initialLabels = [], ex
         </Group>
 
         {labels.length > 0 && (
-          <Group title="라벨" hint="네이버 · 카카오에 저장해 둔 리스트예요. 여러 개 고르면 섞어서 보여줘요.">
+          <Group title="가져온 리스트" hint="네이버 · 카카오에서 가져온 리스트로 고를 수 있어요.">
             {labels.map((l) => (
               <Chip key={l.key} pressed={criteria.labels.includes(l.key)} onClick={() => toggleIn("labels", l.key)}>
                 <SourceMark source={l.source} size={14} />
@@ -113,7 +113,7 @@ export function PlacePicker({ places, selected, onChange, initialLabels = [], ex
             id="pick-keyword"
             value={criteria.keyword}
             onChange={(e) => setCriteria((c) => ({ ...c, keyword: e.target.value }))}
-            placeholder="예: 혼밥, 웨이팅, 데이트 — 이름 · 메모에서 찾아요"
+            placeholder="가게 이름이나 메모로 찾기"
             className="h-11 rounded-btn-m border border-line-strong px-3.5 text-body outline-none focus:border-ink"
           />
         </div>
@@ -121,7 +121,7 @@ export function PlacePicker({ places, selected, onChange, initialLabels = [], ex
 
       <div className="sticky top-0 z-10 flex items-center justify-between border-y border-line bg-white px-5 py-2 text-meta">
         <span className="text-muted">
-          {active ? "추천" : "저장한 곳 전체"} {shown.length}곳 · <b className="text-ink">{selected.size}곳 선택</b>
+          {active ? "조건에 맞는 곳" : "저장한 곳 전체"} {shown.length}곳 · <b className="text-ink">{selected.size}곳 선택</b>
         </span>
         <span className="flex items-center gap-3">
           {active && (

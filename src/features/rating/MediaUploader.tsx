@@ -142,7 +142,7 @@ export function MediaUploader({ userId, placeId }: { userId: string; placeId: st
           </label>
         )}
       </div>
-      <span className="text-caption text-muted">사진은 줄여서 올리고 촬영 위치 정보는 지워요. 영상은 30MB 까지.</span>
+      <span className="text-caption text-muted">사진의 촬영 위치 정보는 지우고 올려요. 영상은 30MB까지 올릴 수 있어요.</span>
       {error && (
         <p role="alert" className="text-meta text-danger">
           {error}

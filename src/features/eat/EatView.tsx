@@ -79,7 +79,7 @@ export function EatView({ regions }: { regions: Region[] }) {
         </button>
         {regions.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <span className="text-meta text-muted">또는 저장한 지역에서</span>
+            <span className="text-meta text-muted">자주 저장한 지역</span>
             <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
               {regions.map((r) => (
                 <button
@@ -136,7 +136,7 @@ export function EatView({ regions }: { regions: Region[] }) {
           </p>
           {groups.length === 0 && (
             <p className="rounded-btn-l bg-surface p-4 text-meta leading-normal text-ink-2">
-              이 근처엔 아직 없어요. 반경을 넓혀 보세요.
+              이 범위에는 저장하거나 평가한 곳이 없어요. 범위를 넓혀 보세요.
             </p>
           )}
           {groups.map((g) => (
