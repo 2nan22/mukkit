@@ -3,14 +3,17 @@
 import { useState, useTransition } from "react";
 import { PURPOSE_LABEL, PURPOSES, type Purpose } from "@/domain/meetup";
 import { createMeetup } from "./actions";
+import { DateCalendar, offsetToDate } from "./DateCalendar";
 
 const DAY_NAMES = ["오늘", "내일", "모레"];
 const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
 
 // '오늘 21일(토)' — 한국 시간 기준
 function dayLabel(offset: number): string {
-  const d = new Date(Date.now() + 9 * 3600_000 + offset * 86_400_000);
-  return `${DAY_NAMES[offset]} ${d.getUTCDate()}일(${WEEK[d.getUTCDay()]})`;
+  const d = offsetToDate(offset);
+  return offset < DAY_NAMES.length
+    ? `${DAY_NAMES[offset]} ${d.getUTCDate()}일(${WEEK[d.getUTCDay()]})`
+    : `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일(${WEEK[d.getUTCDay()]})`;
 }
 
 function nowMinutesKst(): number {
@@ -35,6 +38,7 @@ function toIso(dayOffset: number, minutes: number): string {
 export function MeetupForm() {
   const [purpose, setPurpose] = useState<Purpose>("meal");
   const [day, setDay] = useState(0);
+  const [calendar, setCalendar] = useState(false);
   const [start, setStart] = useState(19 * 60);
   const [end, setEnd] = useState(21 * 60 + 30);
   const [error, setError] = useState<string | null>(null);
@@ -71,13 +75,29 @@ export function MeetupForm() {
 
       <section className="flex flex-col gap-2">
         <h2 className="text-body font-semibold">언제 만나나요</h2>
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {[0, 1, 2].map((d) => (
-            <button key={d} type="button" aria-pressed={day === d} onClick={() => setDay(d)} className={chip(day === d)}>
+            <button key={d} type="button" aria-pressed={!calendar && day === d} onClick={() => { setDay(d); setCalendar(false); }} className={chip(!calendar && day === d)}>
               {dayLabel(d)}
             </button>
           ))}
+          <button type="button" aria-pressed={calendar || day > 2} aria-expanded={calendar} onClick={() => setCalendar((v) => !v)} className={`flex items-center gap-1 ${chip(calendar || day > 2)}`}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path d="M3 10h18M8 3v4M16 3v4" />
+            </svg>
+            {day > 2 ? dayLabel(day) : "다른 날"}
+          </button>
         </div>
+        {calendar && (
+          <DateCalendar
+            value={day}
+            onChange={(d) => {
+              setDay(d);
+              setCalendar(false);
+            }}
+          />
+        )}
         <div className="grid grid-cols-2 gap-2 pt-1">
           <label className="flex flex-col gap-1">
             <span className="text-meta text-muted">만나는 시간</span>

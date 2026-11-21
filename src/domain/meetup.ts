@@ -37,29 +37,45 @@ export function planAreaShops(
   area: { lat: number; lng: number },
   purpose: Purpose,
   pref: Partial<Record<Cuisine, number>>,
-  partner: { id: string; nickname: string } | null,
+  companions: { id: string; nickname: string }[],
 ): Scored[] {
+  const names = new Map(companions.map((c) => [c.id, c.nickname]));
   return candidates
     .flatMap((c) => {
       const fit = purposeFit(purpose, c.cuisine);
       if (fit < MIN_FIT) return [];
       const s = scoreCandidate(c, area, AREA_RADIUS, pref);
       if (!s) return [];
-      const byPartner = partner ? c.raters.find((r) => r.userId === partner.id) : undefined;
-      const reasons = byPartner
-        ? [`같이 가는 ${partner!.nickname}님 ${byPartner.tier === "three" ? "3스타" : "2스타"}`, ...s.reasons.filter((r) => !r.startsWith(`${partner!.nickname} `))]
+      const byCompanions = c.raters.filter((r) => names.has(r.userId));
+      const reasons = byCompanions.length
+        ? [
+            `같이 가는 ${byCompanions.map((r) => `${r.nickname}님 ${r.tier === "three" ? "3스타" : "2스타"}`).join(" · ")}`,
+            ...s.reasons.filter((r) => !byCompanions.some((x) => r.startsWith(`${x.nickname} `))),
+          ]
         : s.reasons;
-      return [{ ...s, score: s.score * fit * (byPartner ? PARTNER_BOOST : 1), reasons }];
+      return [{ ...s, score: s.score * fit * (byCompanions.length ? PARTNER_BOOST : 1), reasons }];
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, PER_AREA);
 }
 
-// 지역 이유 — 둘의 예상 이동 시간 (5분 단위)
-export function areaReason(myMinutes: number, partnerMinutes: number, partnerNickname: string): string {
-  const r5 = (m: number) => Math.round(m / 5) * 5;
-  if (Math.abs(myMinutes - partnerMinutes) <= 10) return `두 사람 모두 ${r5((myMinutes + partnerMinutes) / 2)}분쯤`;
-  return `나 ${r5(myMinutes)}분쯤 · ${partnerNickname}님 ${r5(partnerMinutes)}분쯤`;
+// 지역 이유 — 참여자 예상 이동 시간 (5분 단위)
+export type AreaPerson = { id: string; nickname: string; isMe: boolean; minutes: number; return: number | null };
+const r5 = (m: number) => Math.round(m / 5) * 5;
+
+export function areaReason(people: AreaPerson[]): string {
+  if (people.length === 0) return "";
+  const mins = people.map((p) => p.minutes);
+  const max = Math.max(...mins);
+  const avg = mins.reduce((a, b) => a + b, 0) / mins.length;
+  if (max - Math.min(...mins) <= 10) return `${people.length === 2 ? "두 사람" : `${people.length}명`} 모두 ${r5(avg)}분쯤`;
+  const name = (p: AreaPerson) => (p.isMe ? "나" : `${p.nickname}님`);
+  if (people.length === 2) {
+    const [a, b] = [...people].sort((x, y) => Number(y.isMe) - Number(x.isMe));
+    return `${name(a)} ${r5(a.minutes)}분쯤 · ${name(b)} ${r5(b.minutes)}분쯤`;
+  }
+  const far = people.find((p) => p.minutes === max)!;
+  return `가장 먼 ${name(far)} ${r5(max)}분쯤 · 평균 ${r5(avg)}분`;
 }
 
 // '23:50' → '밤 11:50' · '00:20' → '밤 12:20'
@@ -93,25 +109,21 @@ export function endMinutesKst(endsAt: Date): number {
   return m < 4 * 60 ? m + 24 * 60 : m;
 }
 
-export type AreaScore = { name: string; lat: number; lng: number; myMinutes: number; partnerMinutes: number; myReturn: number | null; partnerReturn: number | null; recent: number };
-export type RankedArea = AreaScore & { myLate: boolean; partnerLate: boolean; myLast: string | null; partnerLast: string | null };
+export type AreaScore = { name: string; lat: number; lng: number; people: AreaPerson[]; maxMinutes: number; avgMinutes: number; recent: number };
+export type RankedPerson = AreaPerson & { last: string | null; late: boolean };
+export type RankedArea = Omit<AreaScore, "people"> & { people: RankedPerson[]; lateCount: number };
 
-// 끝나는 시각이 있으면 막차를 넘기는 사람이 적은 지역부터, 그다음 더 먼 쪽이 짧은 순
+// 헤어지는 시각이 있으면 막차를 넘기는 사람이 적은 지역부터, 그다음 가장 먼 사람이 짧은 순 · 평균
 export function rankAreas(areas: AreaScore[], endsAt: Date | null, limit = 3): RankedArea[] {
   const end = endsAt ? endMinutesKst(endsAt) : null;
-  const ranked = areas.map((a) => {
-    const myLastAt = a.myReturn !== null ? lastDepartureMinutes(a.myReturn) : null;
-    const partnerLastAt = a.partnerReturn !== null ? lastDepartureMinutes(a.partnerReturn) : null;
-    return {
-      ...a,
-      myLast: myLastAt !== null ? clock(myLastAt) : null,
-      partnerLast: partnerLastAt !== null ? clock(partnerLastAt) : null,
-      myLate: end !== null && myLastAt !== null && end > myLastAt,
-      partnerLate: end !== null && partnerLastAt !== null && end > partnerLastAt,
-    };
-  });
-  const lateCount = (a: RankedArea) => Number(a.myLate) + Number(a.partnerLate);
-  return ranked
-    .sort((a, b) => lateCount(a) - lateCount(b) || Math.max(a.myMinutes, a.partnerMinutes) - Math.max(b.myMinutes, b.partnerMinutes) || b.recent - a.recent)
+  return areas
+    .map((a) => {
+      const people = a.people.map((p) => {
+        const lastAt = p.return !== null ? lastDepartureMinutes(p.return) : null;
+        return { ...p, last: lastAt !== null ? clock(lastAt) : null, late: end !== null && lastAt !== null && end > lastAt };
+      });
+      return { ...a, people, lateCount: people.filter((p) => p.late).length };
+    })
+    .sort((a, b) => a.lateCount - b.lateCount || a.maxMinutes - b.maxMinutes || a.avgMinutes - b.avgMinutes || b.recent - a.recent)
     .slice(0, limit);
 }

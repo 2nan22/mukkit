@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AppHeader } from "@/components/AppHeader";
+import { Avatar } from "@/components/ui/Avatar";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { PURPOSE_LABEL } from "@/domain/meetup";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
@@ -9,7 +10,7 @@ import { CloseMeetup } from "@/features/meetup/CloseMeetup";
 import { InviteAnswer } from "@/features/meetup/InviteAnswer";
 import { InvitePicker } from "@/features/meetup/InvitePicker";
 import { InviteShare } from "@/features/meetup/InviteShare";
-import { getMeetupStatus, getMyPoints, planMeetup } from "@/features/meetup/meetup";
+import { getMeetupStatus, getMyPoints, planMeetup, type MeetupMember } from "@/features/meetup/meetup";
 import { MeetupRefresher } from "@/features/meetup/MeetupRefresher";
 import { MeetupResults } from "@/features/meetup/MeetupResults";
 import { PointEditor } from "@/features/meetup/PointEditor";
@@ -41,6 +42,33 @@ function Step({ n, title, hint, children }: { n: number; title: string; hint?: s
   );
 }
 
+// 참여자 · 위치 입력 현황 (위치 값은 보이지 않음)
+function Members({ members, max }: { members: MeetupMember[]; max: number }) {
+  const ready = members.filter((m) => m.ready).length;
+  return (
+    <section className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between">
+        <h3 className="text-[16px] font-bold">참여 {members.length}명</h3>
+        <span className="text-meta text-muted">
+          {ready}명 위치 입력 · 최대 {max}명
+        </span>
+      </div>
+      <ul className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+        {members.map((m) => (
+          <li key={m.id} className="flex w-14 shrink-0 flex-col items-center gap-1">
+            <span className="relative">
+              <Avatar name={m.nickname} size={40} />
+              <span aria-hidden="true" className={`absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full border-2 border-white ${m.ready ? "bg-[#1f9d55]" : "bg-line-strong"}`} />
+            </span>
+            <span className="w-full truncate text-center text-caption text-ink-2">{m.isMe ? "나" : m.nickname}</span>
+            <span className="sr-only">{m.ready ? "위치 입력함" : "위치 입력 전"}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export default function MeetPage({ params }: PageProps<"/meet/[meetupId]">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
@@ -61,27 +89,37 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
   if (!me) redirect(SIGNED_OUT_HOME);
   const status = await getMeetupStatus(supabase, meetupId);
   if (!status) notFound();
-  const purposeLabel = PURPOSE_LABEL[status.purpose];
-  if (status.isInvitee) {
+  const purpose = PURPOSE_LABEL[status.purpose];
+
+  if (!status.isMember && status.isInvitee) {
     return (
       <div className="flex flex-col gap-6 px-5 pb-10">
-        <InviteAnswer meetupId={status.id} hostNickname={status.hostNickname} purposeLabel={purposeLabel} when={range(status.startsAt, status.endsAt)} />
+        <InviteAnswer meetupId={status.id} hostNickname={status.hostNickname} purposeLabel={purpose} when={range(status.startsAt, status.endsAt)} />
       </div>
     );
   }
+
   const points = await getMyPoints(supabase, meetupId);
   const label = (k: "origin" | "return") => points.find((p) => p.kind === k)?.label ?? null;
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
-  const ready = Boolean(status.meReady && status.partnerReady && status.partner);
+  const readyCount = status.members.filter((m) => m.ready).length;
+  const others = status.members.filter((m) => !m.isMe);
+  const ready = status.meReady && readyCount >= 2;
   const plans = ready ? await planMeetup(supabase, me, status) : [];
-  const purpose = PURPOSE_LABEL[status.purpose];
-  const title = status.partner ? `${status.partner.nickname}님과 ${purpose}` : `${purpose} 약속`;
+  const title = others.length === 0 ? `${purpose} 약속` : others.length === 1 ? `${others[0].nickname}님과 ${purpose}` : `${others.length + 1}명 ${purpose}`;
+  const canInvite = status.isHost && status.status === "open" && status.members.length < status.maxMembers;
 
   const editors = (
     <>
       <PointEditor meetupId={status.id} kind="origin" current={label("origin")} />
       <PointEditor meetupId={status.id} kind="return" current={label("return")} />
+    </>
+  );
+  const invite = canInvite && status.inviteToken && (
+    <>
+      <InvitePicker meetupId={status.id} invited={status.invitees} memberIds={status.members.map((m) => m.id)} />
+      <InviteShare url={`${origin}/m/${status.inviteToken}`} title={`${purpose} 약속`} />
     </>
   );
 
@@ -92,13 +130,15 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
         <h2 className="text-title font-bold tracking-tight">{title}</h2>
         <span className="text-meta text-muted">
           {range(status.startsAt, status.endsAt)}
-          {!status.partner && (status.inviteeNickname ? ` · ${status.inviteeNickname}님의 수락을 기다리는 중` : " · 상대를 기다리는 중이에요")}
+          {others.length === 0 && " · 함께할 분을 기다리는 중이에요"}
         </span>
       </section>
 
+      {status.members.length > 1 && <Members members={status.members} max={status.maxMembers} />}
+
       {ready ? (
         <>
-          <MeetupResults plans={plans} partnerNickname={status.partner!.nickname} meetupUrl={`${origin}/meet/${status.id}`} />
+          <MeetupResults plans={plans} meetupUrl={`${origin}/meet/${status.id}`} waitingCount={status.members.length - readyCount} />
           <details className="group rounded-[16px] bg-surface">
             <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-meta">
               <span className="truncate text-ink-2">
@@ -108,28 +148,36 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
             </summary>
             <div className="flex flex-col gap-2 px-2 pb-2">{editors}</div>
           </details>
+          {invite && (
+            <details className="rounded-[16px] border border-line">
+              <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-meta">
+                <span className="text-ink-2">더 초대하기</span>
+                <span className="font-semibold text-ink">열기</span>
+              </summary>
+              <div className="flex flex-col gap-2 px-2 pb-2">{invite}</div>
+            </details>
+          )}
         </>
       ) : (
         <>
-          {status.isHost && !status.partner && status.inviteToken && (
-            <Step n={1} title="같이 갈 분 초대">
-              <InvitePicker meetupId={status.id} pendingNickname={status.inviteeNickname} />
-              <InviteShare url={`${origin}/m/${status.inviteToken}`} title={`${purpose} 약속`} />
+          {invite && (
+            <Step n={1} title="같이 갈 분 초대" hint={`최대 ${status.maxMembers}명까지 함께할 수 있어요`}>
+              {invite}
             </Step>
           )}
-          <Step n={status.isHost && !status.partner ? 2 : 1} title="내 위치 넣기" hint="하나만 넣어도 돼요. 동네 정도로만 저장하고, 상대에게는 보이지 않아요.">
+          <Step n={invite ? 2 : 1} title="내 위치 넣기" hint="하나만 넣어도 돼요. 동네 정도로만 저장하고, 다른 분에게는 보이지 않아요.">
             {editors}
           </Step>
-          {status.partner && !status.partnerReady && status.meReady && (
-            <p className="rounded-[16px] bg-surface p-4 text-meta leading-normal text-ink-2">{status.partner.nickname}님이 위치를 넣는 중이에요. 넣으면 바로 추천이 나와요.</p>
+          {others.length > 0 && status.meReady && readyCount < 2 && (
+            <p className="rounded-[16px] bg-surface p-4 text-meta leading-normal text-ink-2">다른 분이 위치를 넣으면 바로 추천이 나와요.</p>
           )}
-          {status.partner && status.partnerReady && !status.meReady && (
-            <p className="rounded-[16px] bg-brand-soft p-4 text-meta leading-normal text-ink-2">{status.partner.nickname}님은 위치를 넣었어요. 내 위치만 넣으면 추천이 나와요.</p>
+          {others.length > 0 && !status.meReady && readyCount >= 1 && (
+            <p className="rounded-[16px] bg-brand-soft p-4 text-meta leading-normal text-ink-2">{readyCount}명이 위치를 넣었어요. 내 위치만 넣으면 추천이 나와요.</p>
           )}
         </>
       )}
 
-      <CloseMeetup meetupId={status.id} mode={ready ? "done" : status.isHost && !status.partner ? "cancel" : null} />
+      <CloseMeetup meetupId={status.id} mode={ready ? "done" : status.isHost ? "cancel" : null} />
     </div>
   );
 }

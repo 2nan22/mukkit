@@ -6,46 +6,34 @@ import { Avatar } from "@/components/ui/Avatar";
 import { findInvitees, inviteUser, type InviteCandidate } from "./actions";
 
 // 마이슐랭 사용자 초대 — 팔로잉 먼저, 닉네임으로 찾기
-export function InvitePicker({ meetupId, pendingNickname }: { meetupId: string; pendingNickname: string | null }) {
+export function InvitePicker({ meetupId, invited, memberIds }: { meetupId: string; invited: { id: string; nickname: string }[]; memberIds: string[] }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [people, setPeople] = useState<InviteCandidate[] | null>(null);
-  const [open, setOpen] = useState(!pendingNickname);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   useEffect(() => {
-    if (!open) return;
     const t = setTimeout(() => start(async () => setPeople(await findInvitees(query))), query ? 300 : 0);
     return () => clearTimeout(t);
-  }, [query, open]);
+  }, [query]);
 
   function invite(p: InviteCandidate) {
     start(async () => {
       const res = await inviteUser(meetupId, p.id);
       if (res.error) return setError(res.error);
-      setOpen(false);
+      setError(null);
       router.refresh();
     });
   }
 
-  if (pendingNickname && !open) {
-    return (
-      <div className="flex items-center justify-between gap-3 rounded-[16px] bg-surface p-4">
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-body font-semibold">{pendingNickname}님에게 초대를 보냈어요</span>
-          <span className="text-meta text-muted">수락하면 바로 함께 정할 수 있어요</span>
-        </span>
-        <button type="button" onClick={() => setOpen(true)} className="h-8 shrink-0 rounded-full bg-white px-3.5 text-meta font-semibold text-ink raised-soft">
-          다른 분
-        </button>
-      </div>
-    );
-  }
+  const invitedIds = new Set(invited.map((i) => i.id));
+  const joined = new Set(memberIds);
 
   return (
     <div className="flex flex-col gap-2 rounded-[16px] bg-surface p-4">
       <span className="text-body font-semibold">마이슐랭에서 찾기</span>
+      {invited.length > 0 && <span className="text-meta text-ink-2">초대 보냄 · {invited.map((i) => i.nickname).join(", ")} — 수락을 기다리는 중</span>}
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -61,9 +49,15 @@ export function InvitePicker({ meetupId, pendingNickname }: { meetupId: string; 
               <Avatar name={p.nickname} size={24} />
               <span className="flex-1 truncate text-body">{p.nickname}</span>
               {p.following && query && <span className="text-caption text-muted">팔로잉</span>}
-              <button type="button" disabled={pending} onClick={() => invite(p)} className="h-8 shrink-0 rounded-full bg-brand-soft px-3 text-meta font-bold text-brand">
-                초대
-              </button>
+              {joined.has(p.id) ? (
+                <span className="shrink-0 text-meta text-muted">참여 중</span>
+              ) : invitedIds.has(p.id) ? (
+                <span className="shrink-0 text-meta text-muted">보냄</span>
+              ) : (
+                <button type="button" disabled={pending} onClick={() => invite(p)} className="h-8 shrink-0 rounded-full bg-brand-soft px-3 text-meta font-bold text-brand">
+                  초대
+                </button>
+              )}
             </li>
           ))}
         </ul>
