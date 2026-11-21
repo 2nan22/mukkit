@@ -43,7 +43,12 @@ export async function searchKakaoKeyword(query: string, near?: Near, size = 15):
     if (near.radius) params.set("radius", String(near.radius));
   }
   const res = await fetch(`${SEARCH_URL}?${params}`, { headers: { Authorization: `KakaoAK ${key}` } }).catch(() => null);
-  if (!res?.ok) return [];
+  if (!res?.ok) {
+    // 키는 남기지 않는다 — 상태 코드와 카카오 오류 종류만
+    const body = res ? await res.json().catch(() => null) : null;
+    console.warn("[kakao local] 검색 실패", res?.status ?? "network", body?.errorType ?? "", body?.message ?? "");
+    return [];
+  }
   const parsed = ResponseSchema.safeParse(await res.json().catch(() => null));
   if (!parsed.success) return [];
   return parsed.data.documents.map(toHit);
