@@ -14,13 +14,22 @@ type KakaoMaps = {
   CustomOverlay: new (opts: {
     position: LatLng;
     content: HTMLElement;
-    map: KakaoMapInstance;
+    map?: KakaoMapInstance;
     xAnchor: number;
     yAnchor: number;
     zIndex: number;
     clickable: boolean;
   }) => KakaoOverlay;
+  MarkerClusterer?: new (opts: {
+    map: KakaoMapInstance;
+    averageCenter: boolean;
+    minLevel: number;
+    gridSize: number;
+    minClusterSize: number;
+    styles: Record<string, string>[];
+  }) => KakaoClusterer;
 };
+type KakaoClusterer = { addMarkers(m: KakaoOverlay[]): void; clear(): void };
 type KakaoMapInstance = {
   setBounds(b: object, top?: number, right?: number, bottom?: number, left?: number): void;
   getLevel(): number;
@@ -43,6 +52,20 @@ const APP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const SEOUL = { lat: 37.5665, lng: 126.978 };
 const NEIGHBORHOOD_LEVEL = 5;
 const SINGLE_LEVEL = 3;
+// 이 레벨부터 멀리 볼 때만 묶는다 — 동네 단위에선 핀을 그대로
+const CLUSTER_LEVEL = 7;
+const CLUSTER_STYLE = {
+  width: "36px",
+  height: "36px",
+  lineHeight: "36px",
+  borderRadius: "50%",
+  background: "#17181c",
+  border: "2px solid #ffffff",
+  boxShadow: "0 2px 8px rgba(0,0,0,.2)",
+  color: "#ffffff",
+  textAlign: "center",
+  font: "700 13px/36px system-ui",
+};
 
 const PIN_STYLE: Record<Tier, { size: number; bg: string; ring: string; text: string; label: string }> = {
   three: { size: 22, bg: "#b42330", ring: "#ffffff", text: "#ffffff", label: "3" },
@@ -73,15 +96,19 @@ export function PlaceMap({
   selectedId,
   onSelect,
   padding = SHEET_PADDING,
+  cluster = false,
 }: {
   pins: Pin[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   padding?: readonly [number, number, number, number];
+  // 핀이 많은 지도에서 멀리 볼 때 개수 원으로 묶기
+  cluster?: boolean;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<KakaoMapInstance | null>(null);
   const overlays = useRef<KakaoOverlay[]>([]);
+  const clusterer = useRef<KakaoClusterer | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const onSelectRef = useRef(onSelect);
@@ -99,20 +126,33 @@ export function PlaceMap({
       requestAnimationFrame(() => m0.relayout());
     }
     const m = map.current;
+    clusterer.current?.clear();
     overlays.current.forEach((o) => o.setMap(null));
+    const useCluster = cluster && Boolean(maps.MarkerClusterer);
+    if (useCluster && !clusterer.current && maps.MarkerClusterer) {
+      clusterer.current = new maps.MarkerClusterer({
+        map: m,
+        averageCenter: true,
+        minLevel: CLUSTER_LEVEL,
+        gridSize: 64,
+        minClusterSize: 3,
+        styles: [CLUSTER_STYLE],
+      });
+    }
     overlays.current = pins.map((p) => {
       const selected = p.id === selectedId;
       return new maps.CustomOverlay({
         position: new maps.LatLng(p.lat, p.lng),
         content: pinElement(p.tier, selected, () => onSelectRef.current(p.id)),
-        map: m,
+        map: useCluster ? undefined : m,
         xAnchor: 0.5,
         yAnchor: 0.5,
         zIndex: selected ? 1000 : p.tier === "three" ? 300 : p.tier === "two" ? 200 : 100,
         clickable: true,
       });
     });
-  }, [ready, pins, selectedId]);
+    if (useCluster) clusterer.current?.addMarkers(overlays.current);
+  }, [ready, pins, selectedId, cluster]);
 
   // 고른 장소로 다가간다 — 동네가 보일 만큼만 확대
   useEffect(() => {
@@ -154,7 +194,7 @@ export function PlaceMap({
   return (
     <>
       <Script
-        src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${APP_KEY}&autoload=false`}
+        src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${APP_KEY}&autoload=false&libraries=clusterer`}
         strategy="afterInteractive"
         onReady={() => {
           if (!window.kakao?.maps) return setFailed(true);
