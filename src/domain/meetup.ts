@@ -61,3 +61,50 @@ export function areaReason(myMinutes: number, partnerMinutes: number): string {
   if (gap <= 10) return `두 분 모두 약 ${Math.round((myMinutes + partnerMinutes) / 2 / 5) * 5}분`;
   return `나 약 ${Math.round(myMinutes / 5) * 5}분 · 상대 약 ${Math.round(partnerMinutes / 5) * 5}분`;
 }
+
+// 막차 어림 — 대중교통 API 없이 '귀가가 길수록 일찍 출발'로 어림한다 (분 단위, 자정 넘으면 24*60 이상)
+const LAST_DEPARTURE: { maxReturn: number; at: number }[] = [
+  { maxReturn: 30, at: 24 * 60 + 20 }, // 0:20
+  { maxReturn: 60, at: 23 * 60 + 50 },
+  { maxReturn: 90, at: 23 * 60 + 20 },
+  { maxReturn: Infinity, at: 22 * 60 + 50 },
+];
+
+export function lastDepartureMinutes(returnMinutes: number): number {
+  return LAST_DEPARTURE.find((r) => returnMinutes <= r.maxReturn)!.at;
+}
+
+export function clock(minutes: number): string {
+  const m = ((minutes % (24 * 60)) + 24 * 60) % (24 * 60);
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
+// 끝나는 시각을 한국 시간 '그날 0시부터 분'으로 — 새벽 0~4시는 전날 밤의 연장으로 본다
+export function endMinutesKst(endsAt: Date): number {
+  const kst = new Date(endsAt.getTime() + 9 * 60 * 60 * 1000);
+  const m = kst.getUTCHours() * 60 + kst.getUTCMinutes();
+  return m < 4 * 60 ? m + 24 * 60 : m;
+}
+
+export type AreaScore = { name: string; lat: number; lng: number; myMinutes: number; partnerMinutes: number; myReturn: number | null; partnerReturn: number | null; recent: number };
+export type RankedArea = AreaScore & { myLate: boolean; partnerLate: boolean; myLast: string | null; partnerLast: string | null };
+
+// 끝나는 시각이 있으면 막차를 넘기는 사람이 적은 지역부터, 그다음 더 먼 쪽이 짧은 순
+export function rankAreas(areas: AreaScore[], endsAt: Date | null, limit = 3): RankedArea[] {
+  const end = endsAt ? endMinutesKst(endsAt) : null;
+  const ranked = areas.map((a) => {
+    const myLastAt = a.myReturn !== null ? lastDepartureMinutes(a.myReturn) : null;
+    const partnerLastAt = a.partnerReturn !== null ? lastDepartureMinutes(a.partnerReturn) : null;
+    return {
+      ...a,
+      myLast: myLastAt !== null ? clock(myLastAt) : null,
+      partnerLast: partnerLastAt !== null ? clock(partnerLastAt) : null,
+      myLate: end !== null && myLastAt !== null && end > myLastAt,
+      partnerLate: end !== null && partnerLastAt !== null && end > partnerLastAt,
+    };
+  });
+  const lateCount = (a: RankedArea) => Number(a.myLate) + Number(a.partnerLate);
+  return ranked
+    .sort((a, b) => lateCount(a) - lateCount(b) || Math.max(a.myMinutes, a.partnerMinutes) - Math.max(b.myMinutes, b.partnerMinutes) || b.recent - a.recent)
+    .slice(0, limit);
+}

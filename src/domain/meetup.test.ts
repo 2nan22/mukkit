@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Candidate } from "./eatScore";
-import { areaReason, planAreaShops, purposeFit } from "./meetup";
+import { areaReason, clock, endMinutesKst, lastDepartureMinutes, planAreaShops, purposeFit, rankAreas } from "./meetup";
 
 const area = { lat: 37.5, lng: 127.0 };
 function cand(id: string, cuisine: Candidate["cuisine"], extra: Partial<Candidate> = {}): Candidate {
@@ -41,5 +41,32 @@ describe("purposeFit · areaReason", () => {
   it("시간이 비슷하면 '두 분 모두', 차이가 크면 각자", () => {
     expect(areaReason(28, 33)).toBe("두 분 모두 약 30분");
     expect(areaReason(15, 45)).toBe("나 약 15분 · 상대 약 45분");
+  });
+});
+
+describe("막차 어림 · rankAreas", () => {
+  const base = { lat: 0, lng: 0, recent: 0 };
+  it("귀가가 길수록 일찍", () => {
+    expect(clock(lastDepartureMinutes(20))).toBe("00:20");
+    expect(clock(lastDepartureMinutes(50))).toBe("23:50");
+    expect(clock(lastDepartureMinutes(120))).toBe("22:50");
+  });
+  it("새벽 0시 30분 종료는 전날 밤의 연장 (24:30)", () => {
+    expect(endMinutesKst(new Date("2026-11-21T15:30:00Z"))).toBe(24 * 60 + 30);
+  });
+  it("늦게 끝나면 막차를 넘기는 사람이 적은 지역이 먼저", () => {
+    const far = { ...base, name: "먼 곳", myMinutes: 20, partnerMinutes: 20, myReturn: 80, partnerReturn: 80 };
+    const near = { ...base, name: "귀가 가까운 곳", myMinutes: 30, partnerMinutes: 30, myReturn: 25, partnerReturn: 25 };
+    const endsAt = new Date("2026-11-21T14:40:00Z"); // 23:40 KST
+    const [first] = rankAreas([far, near], endsAt);
+    expect(first.name).toBe("귀가 가까운 곳");
+    const farRanked = rankAreas([far], endsAt)[0];
+    expect(farRanked.myLate).toBe(true);
+    expect(farRanked.myLast).toBe("23:20");
+  });
+  it("끝나는 시각이 없으면 더 먼 쪽이 짧은 순", () => {
+    const a = { ...base, name: "a", myMinutes: 40, partnerMinutes: 10, myReturn: null, partnerReturn: null };
+    const b = { ...base, name: "b", myMinutes: 25, partnerMinutes: 25, myReturn: null, partnerReturn: null };
+    expect(rankAreas([a, b], null)[0].name).toBe("b");
   });
 });
