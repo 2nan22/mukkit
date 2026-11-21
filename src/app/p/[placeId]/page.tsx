@@ -1,5 +1,6 @@
 import { TIER_MEANING } from "@/domain/tier";
 import Link from "next/link";
+import { Companions } from "@/components/ui/Companions";
 import { Avatar } from "@/components/ui/Avatar";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -66,6 +67,7 @@ function OtherRow({ r }: { r: OtherRating }) {
         <TierBadge tier={r.tier} />
       </div>
       {r.review && <p className="text-body leading-normal text-ink-2">{r.review}</p>}
+      <Companions people={r.companions} />
       <MediaStrip media={r.media} />
       {r.visitedOn && <span className="text-meta text-muted">{dot(r.visitedOn)}</span>}
     </div>
