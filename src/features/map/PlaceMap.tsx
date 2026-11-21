@@ -48,9 +48,9 @@ const PIN_STYLE: Record<Tier, { size: number; bg: string; ring: string; text: st
   three: { size: 22, bg: "#b42330", ring: "#ffffff", text: "#ffffff", label: "3" },
   two: { size: 22, bg: "#e8590c", ring: "#ffffff", text: "#ffffff", label: "2" },
   one: { size: 22, bg: "#f5a524", ring: "#ffffff", text: "#3d2800", label: "1" },
-  notRecommended: { size: 14, bg: "#adb1b8", ring: "#ffffff", text: "#ffffff", label: "" },
-  wantToGo: { size: 16, bg: "#ffffff", ring: "#5b5f69", text: "#5b5f69", label: "" },
-  unrated: { size: 14, bg: "#ffffff", ring: "#adb1b8", text: "#5b5f69", label: "" },
+  notRecommended: { size: 10, bg: "#adb1b8", ring: "#ffffff", text: "#ffffff", label: "" },
+  wantToGo: { size: 12, bg: "#ffffff", ring: "#5b5f69", text: "#5b5f69", label: "" },
+  unrated: { size: 10, bg: "#ffffff", ring: "#adb1b8", text: "#5b5f69", label: "" },
 };
 
 function pinElement(tier: Tier, selected: boolean, onClick: () => void): HTMLElement {
@@ -164,7 +164,9 @@ export function PlaceMap({
       />
       <div ref={el} className="h-full w-full bg-map-land" aria-label="내 장소 지도" role="application" />
       {!ready && (
-        <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-meta text-muted">지도를 불러오는 중이에요</p>
+        <div className="pointer-events-none absolute inset-0 animate-pulse bg-map-land">
+          <span className="sr-only">지도를 불러오는 중이에요</span>
+        </div>
       )}
     </>
   );

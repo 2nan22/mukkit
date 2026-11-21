@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useLeave } from "@/lib/nav/useLeave";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
@@ -12,6 +12,14 @@ const VISIBILITY_TEXT: Record<RatingVisibility, string> = { private: "나만", f
 
 const RATED: Tier[] = ["three", "two", "one", "notRecommended"];
 const NOT_RATED: Tier[] = ["wantToGo", "unrated"];
+
+// 고른 등급은 그 등급의 옅은 색으로
+const PICKED: Partial<Record<Tier, string>> = {
+  three: "has-checked:border-tier-3 has-checked:bg-tier-3-soft",
+  two: "has-checked:border-tier-2 has-checked:bg-tier-2-soft",
+  one: "has-checked:border-tier-1 has-checked:bg-tier-1-soft",
+  notRecommended: "has-checked:border-ink has-checked:bg-surface",
+};
 
 export function RatingForm({ place, next, userId }: { place: SavedPlace; next: string; userId: string }) {
   const [state, action, pending] = useActionState<RatingFormState, FormData>(saveRating, {});
@@ -26,24 +34,24 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
       <input type="hidden" name="placeId" value={place.placeId} />
       <input type="hidden" name="next" value={next} />
 
-      <fieldset className="flex flex-col gap-1.5 px-5 pt-2 pb-1">
+      <fieldset className="flex flex-col gap-2 px-5 pt-2 pb-1">
         <legend className="sr-only">등급</legend>
         {RATED.map((tier) => (
           <label
             key={tier}
-            className="flex h-btn-l cursor-pointer items-center gap-3 rounded-btn-l border border-line px-3.5 has-checked:border-[1.5px] has-checked:border-ink"
+            className={`flex h-14 cursor-pointer items-center gap-3 rounded-[14px] border border-line px-3.5 has-checked:border-[1.5px] ${PICKED[tier]}`}
           >
             <span className="w-16 shrink-0">
               <TierBadge tier={tier} />
             </span>
-            <span className="flex-1 text-body">{TIER_MEANING[tier]}</span>
+            <span className="flex-1 text-body font-medium">{TIER_MEANING[tier]}</span>
             <input
               type="radio"
               name="tier"
               value={tier}
               defaultChecked={tier === place.tier}
               aria-label={TIER_LABEL[tier]}
-              className="size-5 accent-ink"
+              className="size-5 accent-brand"
             />
           </label>
         ))}
@@ -51,7 +59,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
           {NOT_RATED.map((tier) => (
             <label
               key={tier}
-              className="flex h-btn-m cursor-pointer items-center justify-center gap-2 rounded-btn-m border border-line text-meta text-ink-2 has-checked:border-[1.5px] has-checked:border-ink has-checked:font-bold has-checked:text-ink"
+              className="flex h-btn-m cursor-pointer items-center justify-center gap-2 rounded-full bg-surface text-meta font-medium text-ink-2 has-checked:bg-ink has-checked:text-white"
             >
               <input type="radio" name="tier" value={tier} defaultChecked={tier === place.tier} className="sr-only" />
               {tier === "unrated" ? "평가 안 함" : TIER_LABEL[tier]}
@@ -60,8 +68,8 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
         </div>
       </fieldset>
 
-      <div className="flex flex-col gap-2 px-5 pt-4">
-        <label htmlFor="review" className="text-meta font-bold">
+      <div className="flex flex-col gap-2 px-5 pt-6">
+        <label htmlFor="review" className="text-body font-semibold">
           한 줄 평가
         </label>
         <textarea
@@ -71,23 +79,23 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
           maxLength={REVIEW_MAX}
           defaultValue={place.review}
           placeholder="한 줄로 남겨 보세요"
-          className="w-full resize-none rounded-btn-m border border-line-strong px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink"
+          className="w-full resize-none rounded-[12px] border border-transparent bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink focus:bg-white"
         />
       </div>
 
-      <div className="px-5 pt-4">
+      <div className="px-5 pt-6">
         <MediaUploader userId={userId} placeId={place.placeId} />
       </div>
 
-      <div role="radiogroup" aria-labelledby="visibility-label" className="flex flex-col gap-2 px-5 pt-5">
-        <span id="visibility-label" className="text-meta font-bold">
+      <div role="radiogroup" aria-labelledby="visibility-label" className="flex flex-col gap-2 px-5 pt-6">
+        <span id="visibility-label" className="text-body font-semibold">
           평가 공개 범위
         </span>
-        <div className="grid grid-cols-3 gap-1 rounded-btn-l bg-surface-2 p-1">
+        <div className="grid grid-cols-3 gap-1 rounded-btn-l bg-surface p-1">
           {RATING_VISIBILITIES.map((v) => (
             <label
               key={v}
-              className="flex h-9 cursor-pointer items-center justify-center rounded-btn-s text-meta text-muted has-checked:bg-white has-checked:font-bold has-checked:text-ink has-checked:shadow-float"
+              className="flex h-9 cursor-pointer items-center justify-center rounded-btn-s text-meta text-muted has-checked:bg-white has-checked:font-bold has-checked:text-ink has-checked:shadow-[0_1px_3px_rgb(0_0_0/0.1)]"
             >
               <input type="radio" name="visibility" value={v} defaultChecked={v === place.visibility} className="sr-only" />
               {VISIBILITY_TEXT[v]}
@@ -97,8 +105,12 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
         <span className="text-caption leading-normal text-muted">메모는 공개 범위와 상관없이 나만 볼 수 있어요.</span>
       </div>
 
-      <div className="flex flex-col gap-2 px-5 pt-4">
-        <label htmlFor="note" className="text-meta font-bold">
+      <div className="flex flex-col gap-2 px-5 pt-6">
+        <label htmlFor="note" className="flex items-center gap-1.5 text-body font-semibold">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" className="text-muted" aria-hidden="true">
+            <rect x="5" y="11" width="14" height="10" rx="2" />
+            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+          </svg>
           나만 보는 메모
         </label>
         <textarea
@@ -107,30 +119,19 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
           rows={2}
           maxLength={NOTE_MAX}
           defaultValue={place.note}
-          placeholder="나만 보는 메모"
-          className="w-full resize-none rounded-btn-m border border-line-strong bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink"
+          placeholder="다음에 갈 때 참고할 것"
+          className="w-full resize-none rounded-[12px] border border-transparent bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink focus:bg-white"
         />
       </div>
 
-      <div className="flex flex-col gap-2 px-5 pt-4">
-        <label htmlFor="visitedOn" className="text-meta font-bold">
-          방문일
-        </label>
-        <input
-          id="visitedOn"
-          name="visitedOn"
-          type="date"
-          defaultValue={place.visitedOn ?? ""}
-          className="h-12 w-full rounded-btn-m border border-line-strong bg-white px-3.5 text-body text-ink outline-none focus:border-ink"
-        />
-      </div>
+      <VisitedOn initial={place.visitedOn} />
 
-      <label className="flex min-h-11 items-start gap-2.5 px-5 pt-4">
+      <label className="flex min-h-11 items-start gap-2.5 px-5 pt-6">
         <input
           type="checkbox"
           name="sponsored"
           defaultChecked={place.sponsored}
-          className="mt-0.5 size-5 shrink-0 accent-ink"
+          className="mt-0.5 size-5 shrink-0 accent-brand"
         />
         <span className="flex flex-col gap-0.5">
           <span className="text-body">협찬이나 이벤트로 방문했어요</span>
@@ -139,7 +140,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
       </label>
 
       <div className="flex-1" />
-      <div className="flex flex-col gap-2 p-5">
+      <div className="sticky bottom-0 mt-6 flex flex-col gap-2 border-t border-line bg-white px-5 pt-3 pb-5">
         {state.error && (
           <p role="alert" className="text-meta text-[#c4320a]">
             {state.error}
@@ -154,5 +155,47 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
         </button>
       </div>
     </form>
+  );
+}
+
+function isoDay(offset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// 방문일 — 대부분 오늘 · 어제라 칩으로, 그 밖은 날짜 고르기
+function VisitedOn({ initial }: { initial: string | null }) {
+  const [value, setValue] = useState(initial ?? "");
+  const [picking, setPicking] = useState(Boolean(initial) && initial !== isoDay(0) && initial !== isoDay(-1));
+  const chip = (on: boolean) => `h-8 rounded-full px-3 text-meta font-medium ${on ? "bg-ink text-white" : "bg-surface text-ink-2"}`;
+  return (
+    <div role="group" aria-labelledby="visited-label" className="flex flex-col gap-2 px-5 pt-6">
+      <span id="visited-label" className="text-body font-semibold">
+        방문일
+      </span>
+      <input type="hidden" name="visitedOn" value={value} />
+      <div className="flex flex-wrap gap-1.5">
+        <button type="button" aria-pressed={!picking && value === isoDay(0)} onClick={() => { setPicking(false); setValue(value === isoDay(0) ? "" : isoDay(0)); }} className={chip(!picking && value === isoDay(0))}>
+          오늘
+        </button>
+        <button type="button" aria-pressed={!picking && value === isoDay(-1)} onClick={() => { setPicking(false); setValue(value === isoDay(-1) ? "" : isoDay(-1)); }} className={chip(!picking && value === isoDay(-1))}>
+          어제
+        </button>
+        <button type="button" aria-pressed={picking} onClick={() => setPicking(true)} className={chip(picking)}>
+          날짜 선택
+        </button>
+      </div>
+      {picking && (
+        <input
+          type="date"
+          aria-label="방문일 선택"
+          value={value}
+          max={isoDay(0)}
+          onChange={(e) => setValue(e.target.value)}
+          className="h-12 w-full rounded-[12px] border border-transparent bg-surface px-3.5 text-body text-ink outline-none focus:border-ink"
+        />
+      )}
+    </div>
   );
 }

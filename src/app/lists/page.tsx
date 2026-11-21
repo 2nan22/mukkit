@@ -62,11 +62,16 @@ async function ListsContent() {
           {TIERS.map((t) => (
             <Link key={t} href={`/map?tier=${t}`} className={`flex h-btn-l items-center justify-between rounded-btn-m px-3.5 ${TILE[t]}`}>
               <span className="text-body font-bold">{TIER_LABEL[t]}</span>
-              <span className="text-body font-bold text-ink">{tiers[tierToDb(t)] ?? 0}곳</span>
+              <span className="flex items-center gap-1.5 text-body font-bold text-ink">
+                {tiers[tierToDb(t)] ?? 0}곳
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" className="opacity-50" aria-label="지도로 보기">
+                  <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14" />
+                </svg>
+              </span>
             </Link>
           ))}
         </div>
-        <span className="text-meta text-muted">평가하면 등급별로 모여요</span>
+        <span className="text-meta text-muted">평가하면 등급별로 모여요. 누르면 지도로 열려요</span>
       </section>
 
       <section className="flex flex-col">
@@ -80,14 +85,15 @@ async function ListsContent() {
             </span>
           </Link>
         ))}
-        <Link href="/lists/new" className="flex min-h-14 items-center gap-3 text-body text-ink-2">
-          <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-btn-m bg-surface">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </span>
-          새 리스트 만들기
-        </Link>
+        {lists.length === 0 && (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <span className="text-body font-semibold">아직 만든 리스트가 없어요</span>
+            <span className="text-meta text-muted">지역 · 업종 · 테마로 저장한 곳을 묶어 보세요</span>
+            <Link href="/lists/new" className="flex h-10 items-center rounded-btn-m bg-brand-soft px-4 text-body font-bold text-brand">
+              새 리스트 만들기
+            </Link>
+          </div>
+        )}
       </section>
 
       {imported.length > 0 && (

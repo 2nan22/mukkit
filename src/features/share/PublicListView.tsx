@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { BackButton } from "@/components/BackButton";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
@@ -17,6 +18,7 @@ export function PublicListView({ list }: { list: PublicList }) {
         <div className="absolute inset-0">
           <PlaceMap pins={pins} selectedId={selectedId} onSelect={setSelectedId} />
         </div>
+        <BackButton fallback="/" className="absolute top-3 left-3 z-10 rounded-full bg-white shadow-float" />
       </div>
       <ul className="flex flex-col px-5">
         {list.places.map((p) => (
