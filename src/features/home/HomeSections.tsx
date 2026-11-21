@@ -45,7 +45,7 @@ export function FollowingNew({ ratings }: { ratings: SharedRating[] }) {
         <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1">
           {ratings.map((r) => (
             <li key={`${r.ownerId}:${r.placeId}`} className="shrink-0">
-              <Link href={`/u/${r.ownerId}`} className="flex w-[220px] flex-col gap-1.5 rounded-btn-l border border-line p-3.5">
+              <Link href={`/p/${r.placeId}`} className="flex w-[220px] flex-col gap-1.5 rounded-btn-l border border-line p-3.5">
                 <span className="flex items-center gap-1.5 text-meta text-muted">
                   <span aria-hidden="true" className="flex size-5 items-center justify-center rounded-full bg-surface-2 text-[10px] font-bold text-ink-2">
                     {r.ownerNickname.slice(0, 1)}
