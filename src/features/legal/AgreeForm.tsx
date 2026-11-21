@@ -16,7 +16,7 @@ export function AgreeForm({ next }: { next: string }) {
           {state.error}
         </p>
       )}
-      <button type="submit" disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60">
+      <button type="submit" disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
         {pending ? "저장하는 중" : "동의하고 계속하기"}
       </button>
     </form>

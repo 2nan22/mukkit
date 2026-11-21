@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ACCOUNT_LINKS, NICKNAME_SETUP, safeNextPath } from "@/features/auth/paths";
+import { isLoginProvider, LAST_LOGIN_COOKIE } from "@/features/auth/providers";
 
 // 소셜 공급자 → Supabase → 여기로 돌아온 code 를 세션으로 바꾼다 (로그인 · 계정 연결 공용)
 export async function GET(request: NextRequest) {
@@ -20,6 +21,13 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) return failed(error.code ?? "exchange_failed");
 
+  // 로그인이 성공한 방법을 이 기기에 기억 — 시작 화면에서 '최근 로그인' 으로 보여 준다
+  const via = params.get("via");
+  const remember = (res: NextResponse) => {
+    if (via && isLoginProvider(via)) res.cookies.set(LAST_LOGIN_COOKIE, via, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+    return res;
+  };
+
   // 닉네임을 아직 직접 정하지 않았으면 정하기 화면을 먼저 거친다
   const { data: profile } = await supabase
     .from("profiles")
@@ -29,7 +37,7 @@ export async function GET(request: NextRequest) {
   if (!profile?.nickname_set_at) {
     const setup = new URL(NICKNAME_SETUP, request.url);
     setup.searchParams.set("next", next);
-    return NextResponse.redirect(setup);
+    return remember(NextResponse.redirect(setup));
   }
-  return NextResponse.redirect(new URL(next, request.url));
+  return remember(NextResponse.redirect(new URL(next, request.url)));
 }

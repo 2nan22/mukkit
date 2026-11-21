@@ -45,7 +45,7 @@ export function NewListForm({ places, initialOrigin, initialName, addPlaceId }: 
             {state.error}
           </p>
         )}
-        <button type="submit" disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60">
+        <button type="submit" disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
           {pending ? "만드는 중" : selected.size > 0 ? `${selected.size}곳으로 만들기` : "리스트 만들기"}
         </button>
       </div>

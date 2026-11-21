@@ -20,6 +20,17 @@ const ITEMS: Item[] = [
     ),
   },
   {
+    href: "/feed",
+    label: "피드",
+    match: ["/feed"],
+    icon: (a) => (
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4" y="4" width="16" height="16" rx="3" {...(a ? { fill: "currentColor" } : stroke)} />
+        <path d="M8 9h8M8 13h8M8 17h5" stroke={a ? "#ffffff" : "currentColor"} strokeWidth={1.6} strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/map",
     label: "지도",
     match: ["/map"],
@@ -53,11 +64,11 @@ const ITEMS: Item[] = [
   },
 ];
 
-// 로그인 뒤 큰 화면(홈 · 지도 · 리스트 · MY) 아래에 공통으로
+// 로그인 뒤 큰 화면(홈 · 피드 · 지도 · 리스트 · MY) 아래에 공통으로
 export function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav aria-label="하단 메뉴" className="grid h-15 shrink-0 grid-cols-4 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label="하단 메뉴" className="grid h-15 shrink-0 grid-cols-5 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
       {ITEMS.map((item) => {
         const active = item.match.some((m) => pathname === m || pathname.startsWith(`${m}/`));
         return (

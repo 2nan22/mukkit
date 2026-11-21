@@ -141,7 +141,7 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
                 </button>
               ))}
             </div>
-            <button type="button" onClick={() => setFilterOpen(false)} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white">
+            <button type="button" onClick={() => setFilterOpen(false)} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
               {shown.length}곳 보기
             </button>
           </section>
@@ -231,7 +231,7 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
         )}
         <Link
           href={`/rate/${place.placeId}?next=/map`}
-          className="flex h-btn-m items-center justify-center rounded-btn-m bg-brand text-body font-bold text-white"
+          className="flex h-btn-m items-center justify-center rounded-btn-m bg-brand text-body font-bold text-white raised-brand"
         >
           {["three", "two", "one", "notRecommended"].includes(place.tier) ? "평가 수정" : "평가하기"}
         </Link>
