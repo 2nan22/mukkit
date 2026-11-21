@@ -9,6 +9,8 @@ import { getMyLists } from "@/features/lists/lists";
 import { getMyMedia, getOtherRatings, getPlace, sourceLinks, type OtherRating } from "@/features/place/place";
 import { PlaceBottomBar } from "@/features/place/PlaceBottomBar";
 import { PlaceHeaderMap } from "@/features/place/PlaceHeaderMap";
+import { getMenu } from "@/features/place/menu";
+import { MenuSection } from "@/features/place/MenuSection";
 import { getSavedPlace } from "@/features/rating/rating";
 import type { MediaRef } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -86,6 +88,8 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
     getMyLists(supabase, me),
   ]);
   const links = sourceLinks(place);
+  const kakaoSource = place.sources.find((s) => s.source === "kakao" && !s.sourcePlaceId.startsWith("N"));
+  const menu = await getMenu({ name: place.name, lat: place.lat, lng: place.lng, kakaoPlaceId: kakaoSource?.sourcePlaceId ?? null });
   const following = others.filter((o) => o.followed);
   const rest = others.filter((o) => !o.followed);
 
@@ -112,6 +116,8 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
           </a>
         </div>
       </section>
+
+      {menu && <MenuSection menu={menu} kakaoUrl={`https://place.map.kakao.com/${menu.kakaoPlaceId}`} />}
 
       <section className="flex flex-col gap-2 border-b-8 border-surface px-5 pt-4 pb-5">
         <div className="flex items-center justify-between">
