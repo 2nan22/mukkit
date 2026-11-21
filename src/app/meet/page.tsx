@@ -3,18 +3,13 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { ListSkeleton } from "@/components/ui/Skeleton";
-import { PURPOSE_LABEL } from "@/domain/meetup";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getMyMeetups } from "@/features/meetup/meetup";
+import { MeetupCalendar } from "@/features/meetup/MeetupCalendar";
 import { PushToggle } from "@/features/push/PushToggle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "약속" };
-
-function when(iso: string | null): string {
-  if (!iso) return "시간 미정";
-  return new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso));
-}
 
 export default function MeetListPage() {
   return (
@@ -53,30 +48,8 @@ async function MeetList() {
   }
   return (
     <>
-    <ul className="flex flex-col px-5">
-      {meetups.map((m) => (
-        <li key={m.id}>
-          <Link href={`/meet/${m.id}`} className="flex min-h-16 items-center gap-3 border-b border-line py-2.5">
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="truncate text-body font-semibold">
-                {m.invited
-                  ? `${m.hostNickname}님의 ${PURPOSE_LABEL[m.purpose]} 초대`
-                  : `${PURPOSE_LABEL[m.purpose]} · ${m.others.length === 0 ? "함께할 분을 기다리는 중" : m.others.length === 1 ? `${m.others[0]}님과` : `${m.others[0]}님 외 ${m.others.length - 1}명`}`}
-              </span>
-              <span className="text-meta text-muted">
-                {when(m.startsAt)}
-                {m.status !== "open" && ` · ${m.status === "done" ? "끝남" : "취소"}`}
-                {m.invited && " · 수락 기다리는 중"}
-              </span>
-            </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-subtle" aria-hidden="true">
-              <path d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </li>
-      ))}
-    </ul>
-    {strip}
+      <MeetupCalendar meetups={meetups} />
+      {strip}
     </>
   );
 }
