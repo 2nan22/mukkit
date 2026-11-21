@@ -82,7 +82,8 @@ export async function closeMeetup(meetupId: string, status: "done" | "cancelled"
   // 끝낸 약속의 위치는 바로 지운다 (새벽 정리 작업은 남은 것 정리용)
   await supabase.from("meetup_points").delete().eq("meetup_id", meetupId);
   revalidatePath("/meet");
-  redirect("/meet", RedirectType.replace);
+  // 끝낸 약속은 어디서 만났는지 기록하러
+  redirect(status === "done" ? `/meet/${meetupId}/visit` : "/meet", RedirectType.replace);
 }
 
 export async function inviteUser(meetupId: string, userId: string): Promise<Result> {
