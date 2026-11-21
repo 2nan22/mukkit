@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { PlaceMap } from "@/features/map/PlaceMap";
+import type { Tier } from "@/domain/tier";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import type { CuisineGroup } from "@/domain/eatScore";
@@ -21,6 +23,24 @@ export function EatView({ regions }: { regions: Region[] }) {
   const [groups, setGroups] = useState<CuisineGroup[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [selected, setSelected] = useState<string | null>(null);
+  const pins = useMemo(
+    () =>
+      (groups ?? []).flatMap((g) =>
+        g.places.map((p) => ({
+          id: p.placeId,
+          lat: p.lat,
+          lng: p.lng,
+          tier: (p.myTier ?? (p.raters.some((r) => r.tier === "three") ? "three" : "two")) as Tier,
+        })),
+      ),
+    [groups],
+  );
+
+  function pick(id: string) {
+    setSelected(id);
+    document.getElementById(`eat-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
   function search(w: Where, r = radius) {
     setWhere(w);
@@ -97,6 +117,14 @@ export function EatView({ regions }: { regions: Region[] }) {
       )}
       {pending && <p className="text-meta text-muted">내 기록과 팔로잉 평가를 살펴보는 중이에요</p>}
 
+      {groups && where && pins.length > 0 && (
+        <div className="relative -mx-5 h-[38dvh] min-h-60 overflow-hidden border-y border-line">
+          <div className="absolute inset-0">
+            <PlaceMap pins={pins} selectedId={selected} onSelect={pick} />
+          </div>
+        </div>
+      )}
+
       {!pending && groups && where && (
         <section className="flex flex-col gap-6">
           <p className="text-meta text-muted">
@@ -113,7 +141,12 @@ export function EatView({ regions }: { regions: Region[] }) {
                 {CUISINE_LABEL[g.cuisine]} <span className="text-meta font-normal text-muted">{g.places.length}곳</span>
               </h2>
               {g.places.map((p) => (
-                <Link key={p.placeId} href={`/p/${p.placeId}`} className="flex flex-col gap-1 border-b border-line py-3">
+                <Link
+                  key={p.placeId}
+                  id={`eat-${p.placeId}`}
+                  href={`/p/${p.placeId}`}
+                  className={`-mx-2 flex flex-col gap-1 rounded-btn-m border-b border-line px-2 py-3 ${selected === p.placeId ? "bg-surface" : ""}`}
+                >
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-body font-bold">{p.name}</span>
                     {p.myTier && <TierBadge tier={p.myTier} />}
