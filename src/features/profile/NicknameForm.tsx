@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { saveNickname, type NicknameFormState } from "./actions";
+import { AgreeCheck } from "@/features/legal/AgreeCheck";
 import { NICKNAME_RULE } from "./nickname";
 
 export function NicknameForm({ suggestion, next }: { suggestion: string; next: string }) {
@@ -37,6 +38,9 @@ export function NicknameForm({ suggestion, next }: { suggestion: string; next: s
 
       <div className="flex-1" />
 
+      <div className="pb-3">
+        <AgreeCheck />
+      </div>
       <button
         type="submit"
         disabled={pending}

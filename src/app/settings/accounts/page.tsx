@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { WithdrawSection } from "@/features/auth/WithdrawSection";
 import { ProviderMark } from "@/components/brand/BrandLogo";
 import { AppHeader } from "@/components/AppHeader";
 import { Suspense } from "react";
@@ -24,6 +26,18 @@ export default function AccountLinksPage({ searchParams }: PageProps<"/settings/
           로그아웃
         </button>
       </form>
+      <div className="flex-1" />
+      <div className="flex flex-col gap-3 px-5 pt-10 pb-8">
+        <div className="flex justify-center gap-4 text-meta text-muted">
+          <Link href="/terms" className="underline underline-offset-2">
+            이용약관
+          </Link>
+          <Link href="/privacy" className="underline underline-offset-2">
+            개인정보 처리방침
+          </Link>
+        </div>
+        <WithdrawSection />
+      </div>
     </main>
   );
 }

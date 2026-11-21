@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { NICKNAME_SETUP, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { FollowingNew, RecentLists, SimilarPeople } from "@/features/home/HomeSections";
+import { needsAgreement } from "@/features/legal/legal";
 import { NearbyWantToGo } from "@/features/home/NearbyWantToGo";
 import { getFeed, getMyWantToGoPoints, getRecentPublicLists, getTasteMatches } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -39,8 +40,9 @@ async function HomeContent() {
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
-  const { data: profile } = await supabase.from("profiles").select("nickname_set_at").eq("id", me).single();
+  const { data: profile } = await supabase.from("profiles").select("nickname_set_at, terms_version").eq("id", me).single();
   if (profile && !profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
+  if (needsAgreement(profile)) redirect("/onboarding/terms?next=/home");
 
   const [wantToGo, feed, matches, lists] = await Promise.all([
     getMyWantToGoPoints(supabase, me),
