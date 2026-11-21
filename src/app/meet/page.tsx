@@ -6,6 +6,7 @@ import { ListSkeleton } from "@/components/ui/Skeleton";
 import { PURPOSE_LABEL } from "@/domain/meetup";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getMyMeetups } from "@/features/meetup/meetup";
+import { PushToggle } from "@/features/push/PushToggle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "약속" };
@@ -37,10 +38,21 @@ async function MeetList() {
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
   const meetups = await getMyMeetups(supabase, me);
+  const strip = (
+    <div className="px-5 pt-6">
+      <PushToggle variant="strip" text="초대가 오면 알림으로 알려 드려요" />
+    </div>
+  );
   if (meetups.length === 0) {
-    return <p className="px-8 py-10 text-center text-meta leading-normal text-muted">약속을 만들고 링크를 보내 보세요. 두 사람 모두 가기 편한 곳을 추천해 드려요.</p>;
+    return (
+      <>
+        <p className="px-8 py-10 text-center text-meta leading-normal text-muted">약속을 만들고 링크를 보내 보세요. 모두 가기 편한 곳을 추천해 드려요.</p>
+        {strip}
+      </>
+    );
   }
   return (
+    <>
     <ul className="flex flex-col px-5">
       {meetups.map((m) => (
         <li key={m.id}>
@@ -64,5 +76,7 @@ async function MeetList() {
         </li>
       ))}
     </ul>
+    {strip}
+    </>
   );
 }
