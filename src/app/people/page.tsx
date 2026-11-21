@@ -40,9 +40,9 @@ async function People({ searchParams }: { searchParams: Promise<{ q?: string | s
           name="q"
           defaultValue={query}
           placeholder="닉네임으로 찾기"
-          className="h-12 min-w-0 flex-1 rounded-btn-m border border-line-strong px-3.5 text-body outline-none focus:border-ink"
+          className="h-12 min-w-0 flex-1 rounded-[12px] border border-transparent bg-surface px-3.5 text-body outline-none focus:border-ink focus:bg-white"
         />
-        <button type="submit" className="h-12 shrink-0 rounded-btn-m bg-ink px-4 text-body font-bold text-white">
+        <button type="submit" className="h-12 shrink-0 rounded-[12px] bg-surface px-4 text-body font-semibold text-ink">
           찾기
         </button>
       </form>
@@ -52,7 +52,10 @@ async function People({ searchParams }: { searchParams: Promise<{ q?: string | s
           <li key={p.id}>
             <Link href={`/u/${p.id}`} className="flex min-h-14 items-center gap-3 border-b border-line">
               <Avatar name={p.nickname} size={40} />
-              <span className="text-body">{p.nickname}</span>
+              <span className="flex-1 truncate text-body font-semibold">{p.nickname}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="text-subtle" aria-hidden="true">
+                <path d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           </li>
         ))}

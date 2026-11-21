@@ -16,13 +16,13 @@ export default function AccountLinksPage({ searchParams }: PageProps<"/settings/
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/my" title="계정" />
       <p className="px-5 pb-4 text-meta leading-relaxed text-muted">
-        연결해 두면 어느 방법으로 로그인해도 같은 계정으로 들어와요.
+        로그인 방법을 연결하면 어느 것으로 로그인해도 같은 계정이에요.
       </p>
       <Suspense fallback={null}>
         <AccountLinks searchParams={searchParams} />
       </Suspense>
       <form action="/auth/logout" method="post" className="px-5 pt-4">
-        <button type="submit" className="h-btn-m w-full rounded-btn-m border border-line-strong text-body text-ink">
+        <button type="submit" className="h-btn-m w-full rounded-btn-m bg-surface text-body font-medium text-ink">
           로그아웃
         </button>
       </form>
@@ -81,7 +81,7 @@ async function AccountLinks({ searchParams }: { searchParams: Promise<{ error?: 
                 </form>
               )
             ) : (
-              <a href={`/auth/link/${provider}`} className="flex h-btn-m items-center rounded-btn-m bg-ink px-4 text-meta font-bold text-white">
+              <a href={`/auth/link/${provider}`} className="flex h-9 items-center rounded-btn-s border border-line-strong bg-white px-3.5 text-meta font-semibold text-ink">
                 연결하기
               </a>
             )}

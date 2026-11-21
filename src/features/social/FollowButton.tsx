@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { setFollow } from "./actions";
 
-export function FollowButton({ targetId, following, compact = false }: { targetId: string; following: boolean; compact?: boolean }) {
+export function FollowButton({ targetId, following, compact = false, primary = false }: { targetId: string; following: boolean; compact?: boolean; primary?: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   return (
-    <div className="flex flex-col gap-1">
+    <div className={`flex flex-col gap-1 ${primary ? "w-full [&>button]:w-full" : ""}`}>
       <button
         type="button"
         disabled={pending}
@@ -21,7 +21,7 @@ export function FollowButton({ targetId, following, compact = false }: { targetI
           })
         }
         className={`${compact ? "h-8 rounded-btn-s px-3.5 text-meta" : "h-btn-m rounded-btn-m px-5 text-body"} font-bold disabled:opacity-60 ${
-          following ? "border border-line-strong bg-white text-ink" : "bg-brand-soft font-semibold text-brand"
+          following ? "bg-surface text-ink" : primary ? "bg-brand text-white" : "bg-brand-soft font-semibold text-brand"
         }`}
       >
         {following ? "팔로잉" : "팔로우"}

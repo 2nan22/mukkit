@@ -146,7 +146,7 @@ function LinkForm({ onAdd }: { onAdd: (row: Row) => void }) {
           <button
             type="submit"
             disabled={pending}
-            className="h-12 shrink-0 rounded-btn-m bg-ink px-4 text-body font-bold text-white disabled:opacity-60"
+            className="h-12 shrink-0 rounded-btn-m bg-brand px-4 text-body font-bold text-white disabled:opacity-60"
           >
             {pending ? "불러오는 중" : error ? "다시 시도" : "불러오기"}
           </button>

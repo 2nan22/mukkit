@@ -211,7 +211,7 @@ export function ListDetail({ list, places, origin }: Props) {
         {confirmDelete ? (
           <div className="flex w-full flex-col gap-2 rounded-btn-l bg-surface p-4">
             <span className="text-body font-bold">리스트를 삭제할까요?</span>
-            <span className="text-meta text-muted">담긴 장소와 평가는 그대로 남아요. 리스트만 삭제돼요.</span>
+            <span className="text-meta text-muted">저장한 곳과 평가는 그대로 남아요.</span>
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button type="button" onClick={() => setConfirmDelete(false)} className="h-btn-m rounded-btn-m border border-line-strong bg-white text-body">
                 취소
@@ -230,7 +230,7 @@ export function ListDetail({ list, places, origin }: Props) {
 
       {undo && (
         <Toast
-          message={`'${undo.name}'을 리스트에서 뺐어요`}
+          message={`${undo.name} 삭제됨`}
           action="되돌리기"
           onAction={() => act(() => restorePlacesToList(list.id, undo.items), () => setUndo(null))}
           onClose={() => setUndo(null)}
@@ -246,34 +246,39 @@ const VISIBILITY_HINT: Record<(typeof VISIBILITIES)[number], string> = {
   public: "누구나 볼 수 있어요. 메모는 나만 봐요",
 };
 
-// 링크 복사는 언제나, 휴대폰이면 시스템 공유 창(카카오톡 등)도
+// 공유 하나로 — 휴대폰이면 시스템 공유 창, 아니면 링크 복사. 미리보기는 옆에 작게
 function ShareBox({ url, name }: { url: string; name: string }) {
-  const [copied, setCopied] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const canShare = useSyncExternalStore(noSubscribe, () => typeof navigator.share === "function", () => false);
 
-  async function copy() {
+  async function share() {
+    if (canShare) return navigator.share({ title: name, url }).catch(() => undefined);
     try {
       await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setMessage("링크를 복사했어요");
     } catch {
-      setCopied(false);
+      setMessage("복사하지 못했어요. 미리보기에서 주소를 복사해 주세요.");
     }
+    setTimeout(() => setMessage(null), 2500);
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <button type="button" onClick={copy} className="flex h-btn-m items-center justify-center gap-1.5 rounded-btn-m bg-surface text-body font-medium text-ink">
-        {copied ? "복사했어요" : "링크 복사"}
-      </button>
-      {canShare ? (
-        <button type="button" onClick={() => navigator.share({ title: name, url }).catch(() => undefined)} className="h-btn-m rounded-btn-m bg-surface text-body font-medium text-ink">
-          공유하기
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={share} className="flex h-btn-m flex-1 items-center justify-center gap-1.5 rounded-btn-m bg-surface text-body font-semibold text-ink">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6" />
+          </svg>
+          {canShare ? "공유하기" : "링크 복사"}
         </button>
-      ) : (
-        <a href={url} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center rounded-btn-m bg-surface text-body font-medium text-ink">
+        <a href={url} target="_blank" rel="noreferrer" className="flex h-btn-m shrink-0 items-center px-3 text-meta font-medium text-muted">
           미리보기
         </a>
+      </div>
+      {message && (
+        <p role="status" className="text-meta text-muted">
+          {message}
+        </p>
       )}
     </div>
   );

@@ -40,8 +40,8 @@ async function RatePlace({
     <>
       <header className="flex items-center justify-between pt-4 pr-2 pb-2 pl-5">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="truncate text-meta text-muted">{place.name}</span>
-          <h1 className="text-section font-bold">평가</h1>
+          <h1 className="truncate text-section font-bold">{place.name}</h1>
+          <span className="text-meta text-muted">평가 · 메모</span>
         </div>
         <BackButton fallback={back} kind="close" />
       </header>
