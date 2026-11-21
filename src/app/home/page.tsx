@@ -51,6 +51,15 @@ async function HomeContent() {
 
   return (
     <>
+      <Link href="/eat" className="mx-5 flex items-center justify-between gap-3 rounded-btn-l bg-ink px-4 py-4 text-white">
+        <span className="flex flex-col gap-0.5">
+          <span className="text-body font-bold">여기서 뭐 먹지?</span>
+          <span className="text-meta text-white/70">내 기록과 믿는 사람들의 평가로 골라 드려요</span>
+        </span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </Link>
       <NearbyWantToGo points={wantToGo} />
       <FollowingNew ratings={feed.slice(0, 10)} />
       <SimilarPeople matches={matches} />
