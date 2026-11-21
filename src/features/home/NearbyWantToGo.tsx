@@ -46,7 +46,7 @@ export function NearbyWantToGo({ points }: { points: { lat: number; lng: number 
         ? "지금 위치를 찾는 중이에요"
         : state.kind === "denied"
           ? "위치를 쓸 수 없어요"
-          : "근처에 가고 싶은 곳이 있는지 볼까요";
+          : "근처 가고 싶은 곳 보기";
   const sub =
     state.kind === "found"
       ? "지금 위치에서 1km 안"

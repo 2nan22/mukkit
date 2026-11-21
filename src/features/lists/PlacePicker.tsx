@@ -107,7 +107,7 @@ export function PlacePicker({ places, selected, onChange, initialLabels = [], ex
 
         <div className="flex flex-col gap-2">
           <label htmlFor="pick-keyword" className="text-meta font-bold">
-            테마 낱말
+            키워드
           </label>
           <input
             id="pick-keyword"
@@ -121,16 +121,16 @@ export function PlacePicker({ places, selected, onChange, initialLabels = [], ex
 
       <div className="sticky top-0 z-10 flex items-center justify-between border-y border-line bg-white px-5 py-2 text-meta">
         <span className="text-muted">
-          {active ? "추천" : "저장한 곳 전체"} {shown.length}곳 · <b className="text-ink">{selected.size}곳 고름</b>
+          {active ? "추천" : "저장한 곳 전체"} {shown.length}곳 · <b className="text-ink">{selected.size}곳 선택</b>
         </span>
         <span className="flex items-center gap-3">
           {active && (
             <button type="button" onClick={() => setCriteria(EMPTY_CRITERIA)} className="h-9 text-muted">
-              조건 지우기
+              초기화
             </button>
           )}
           <button type="button" onClick={toggleAllShown} disabled={shown.length === 0} className="h-9 font-bold text-ink disabled:text-muted">
-            {allShownSelected ? "모두 빼기" : "모두 고르기"}
+            {allShownSelected ? "전체 해제" : "전체 선택"}
           </button>
         </span>
       </div>
@@ -183,8 +183,8 @@ function Chip({ pressed, onClick, children }: { pressed: boolean; onClick: () =>
       type="button"
       aria-pressed={pressed}
       onClick={onClick}
-      className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-meta whitespace-nowrap ${
-        pressed ? "border-ink bg-ink font-bold text-white" : "border-line-strong bg-white text-ink"
+      className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-meta font-medium whitespace-nowrap ${
+        pressed ? "bg-ink text-white" : "bg-surface text-ink-2"
       }`}
     >
       {children}

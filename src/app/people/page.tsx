@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
+import { AppHeader } from "@/components/AppHeader";
 import { Suspense } from "react";
 import { getTasteMatches, searchPeople } from "@/features/social/social";
 import { TasteMatches } from "@/features/social/TasteMatches";
@@ -9,15 +11,7 @@ export const metadata = { title: "사람 찾기" };
 export default function PeoplePage({ searchParams }: PageProps<"/people">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <header className="grid h-14 shrink-0 grid-cols-[44px_1fr_44px] items-center px-2">
-        <Link href="/my" aria-label="MY 로" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </Link>
-        <h1 className="text-center text-section font-bold">사람 찾기</h1>
-        <span />
-      </header>
+      <AppHeader kind="back" fallback="/home" title="사람 찾기" />
       <Suspense fallback={null}>
         <People searchParams={searchParams} />
       </Suspense>
@@ -52,19 +46,17 @@ async function People({ searchParams }: { searchParams: Promise<{ q?: string | s
           찾기
         </button>
       </form>
-      {!query && <TasteMatches matches={matches} title="이런 사람은 어때요" />}
+      {!query && <TasteMatches matches={matches} title="취향이 비슷한 사람" />}
       <ul>
         {people.map((p) => (
           <li key={p.id}>
             <Link href={`/u/${p.id}`} className="flex min-h-14 items-center gap-3 border-b border-line">
-              <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-full bg-surface-2 text-meta font-bold text-ink-2">
-                {p.nickname.slice(0, 1)}
-              </span>
+              <Avatar name={p.nickname} size={40} />
               <span className="text-body">{p.nickname}</span>
             </Link>
           </li>
         ))}
-        {query && people.length === 0 && <li className="py-8 text-center text-meta text-muted">그 닉네임을 쓰는 사람이 없어요.</li>}
+        {query && people.length === 0 && <li className="py-8 text-center text-meta text-muted">검색 결과가 없어요</li>}
       </ul>
     </div>
   );

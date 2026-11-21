@@ -1,5 +1,6 @@
 "use client";
 
+import { useLeave } from "@/lib/nav/useLeave";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore, useTransition } from "react";
@@ -25,6 +26,7 @@ export function ListDetail({ list, places, origin }: Props) {
   const inList = new Set(list.placeIds);
   const items = list.placeIds.flatMap((id) => places.filter((p) => p.placeId === id));
 
+  const leave = useLeave("/lists");
   function act(fn: () => Promise<{ error?: string }>, after?: () => void) {
     start(async () => {
       const res = await fn();
@@ -49,7 +51,7 @@ export function ListDetail({ list, places, origin }: Props) {
             onClick={() => act(() => addPlacesToList(list.id, [...picked]), () => { setPicked(new Set()); setAdding(false); })}
             className="h-btn-l rounded-btn-l bg-ink text-body font-bold text-white disabled:opacity-40"
           >
-            {picked.size}곳 넣기
+            {picked.size}곳 추가
           </button>
         </div>
       </div>
@@ -112,7 +114,7 @@ export function ListDetail({ list, places, origin }: Props) {
           {list.visibility === "private"
             ? "나만 볼 수 있어요."
             : list.visibility === "link"
-              ? "링크가 있는 사람만 볼 수 있어요. 공유 화면은 다음에 붙어요."
+              ? "링크를 받은 사람만 볼 수 있어요."
               : "누구나 볼 수 있어요. 메모는 공개 리스트에서도 나만 보여요."}
         </span>
       </section>
@@ -124,7 +126,7 @@ export function ListDetail({ list, places, origin }: Props) {
           지도로 보기
         </Link>
         <button type="button" onClick={() => setAdding(true)} className="h-btn-m rounded-btn-m bg-ink text-body font-bold text-white">
-          장소 넣기
+          장소 추가
         </button>
       </div>
 
@@ -135,7 +137,7 @@ export function ListDetail({ list, places, origin }: Props) {
       )}
 
       <ul className="flex flex-col">
-        {items.length === 0 && <li className="py-6 text-center text-meta text-muted">아직 담은 곳이 없어요. 장소 넣기로 골라 보세요.</li>}
+        {items.length === 0 && <li className="py-6 text-center text-meta text-muted">아직 담은 곳이 없어요</li>}
         {items.map((p) => (
           <li key={p.placeId} className="flex min-h-16 items-center gap-3 border-b border-line py-2">
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -167,20 +169,20 @@ export function ListDetail({ list, places, origin }: Props) {
       <div className="flex flex-col items-center gap-2 pt-2">
         {confirmDelete ? (
           <div className="flex w-full flex-col gap-2 rounded-btn-l bg-surface p-4">
-            <span className="text-body font-bold">리스트를 지울까요?</span>
-            <span className="text-meta text-muted">담긴 장소와 평가는 그대로 남아요. 리스트만 지워져요.</span>
+            <span className="text-body font-bold">리스트를 삭제할까요?</span>
+            <span className="text-meta text-muted">담긴 장소와 평가는 그대로 남아요. 리스트만 삭제돼요.</span>
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button type="button" onClick={() => setConfirmDelete(false)} className="h-btn-m rounded-btn-m border border-line-strong bg-white text-body">
                 취소
               </button>
-              <button type="button" disabled={pending} onClick={() => act(() => removeList(list.id))} className="h-btn-m rounded-btn-m bg-[#c4320a] text-body font-bold text-white">
-                지우기
+              <button type="button" disabled={pending} onClick={() => act(() => removeList(list.id), leave)} className="h-btn-m rounded-btn-m bg-[#c4320a] text-body font-bold text-white">
+                삭제
               </button>
             </div>
           </div>
         ) : (
           <button type="button" onClick={() => setConfirmDelete(true)} className="h-btn-m text-meta text-muted underline underline-offset-[3px]">
-            리스트 지우기
+            리스트 삭제
           </button>
         )}
       </div>
@@ -217,7 +219,7 @@ function ShareBox({ url, name }: { url: string; name: string }) {
           </button>
         ) : (
           <a href={url} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center rounded-btn-m bg-ink text-body font-bold text-white">
-            받는 사람 화면 보기
+            미리보기
           </a>
         )}
       </div>

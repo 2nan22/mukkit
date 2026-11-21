@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { TIERS, type Tier } from "@/domain/tier";
@@ -14,7 +15,7 @@ import {
   type SavedPlace,
 } from "./rating";
 
-export type RatingFormState = { error?: string };
+export type RatingFormState = { error?: string; saved?: boolean };
 
 const SAVE_FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
 const NOT_SAVED = "저장한 장소가 아니에요.";
@@ -38,7 +39,9 @@ export async function saveRating(_prev: RatingFormState, formData: FormData): Pr
   const { placeId, ...rating } = parsed.data;
   const result = await runUpdate(() => updateUserPlace(supabase, userId, placeId, rating));
   if (result) return { error: result };
-  redirect(String(formData.get("next") || "/home"));
+  // 돌아갈 화면이 새 평가를 보이게 — 이동은 화면이 뒤로가기로 한다
+  revalidatePath("/", "layout");
+  return { saved: true };
 }
 
 const TierInput = z.object({ placeId: z.uuid(), tier: z.enum(TIERS) });

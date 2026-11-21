@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -23,19 +24,13 @@ const TILE: Record<Tier, string> = {
 export default function ListsPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <header className="flex h-14 items-center justify-between pr-2 pl-2">
-        <Link href="/home" aria-label="홈으로" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </Link>
-        <h1 className="text-section font-bold">리스트</h1>
-        <Link href="/lists/new" aria-label="새 리스트 만들기" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </Link>
-      </header>
+      <AppHeader kind="tab" title="리스트" right={
+          <Link href="/lists/new" aria-label="새 리스트 만들기" className="flex size-11 items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </Link>
+        } />
       <Suspense fallback={null}>
         <ListsContent />
       </Suspense>
@@ -71,7 +66,7 @@ async function ListsContent() {
             </Link>
           ))}
         </div>
-        <span className="text-meta text-muted">등급별 리스트는 평가하면 자동으로 채워져요. 누르면 지도로 봐요.</span>
+        <span className="text-meta text-muted">평가하면 등급별로 모여요</span>
       </section>
 
       <section className="flex flex-col">
@@ -97,8 +92,7 @@ async function ListsContent() {
 
       {imported.length > 0 && (
         <section className="flex flex-col">
-          <h2 className="text-meta font-bold text-muted">가져온 원본 리스트</h2>
-          <p className="mb-1 text-meta leading-normal text-muted">네이버 · 카카오에서 가져온 그대로예요. 골라서 새 리스트를 만들 수 있어요.</p>
+          <h2 className="text-meta font-bold text-muted">가져온 리스트</h2>
           {imported.map((l) => (
             <Link
               key={`${l.source}:${l.sourceListId}`}
@@ -112,7 +106,7 @@ async function ListsContent() {
                   {SOURCE_LABEL[l.source]} · {l.count}곳
                 </span>
               </span>
-              <span className="shrink-0 text-meta font-bold text-ink">골라서 만들기</span>
+              <span className="shrink-0 text-meta font-bold text-ink">리스트로 만들기</span>
             </Link>
           ))}
         </section>

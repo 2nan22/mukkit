@@ -14,7 +14,7 @@ const ITEMS: Item[] = [
     label: "홈",
     match: ["/home"],
     icon: (a) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" {...(a ? { fill: "currentColor" } : stroke)}>
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" {...(a ? { fill: "currentColor" } : stroke)}>
         <path d="M4 10.5l8-6.5 8 6.5V20H14v-5h-4v5H4z" />
       </svg>
     ),
@@ -24,7 +24,7 @@ const ITEMS: Item[] = [
     label: "지도",
     match: ["/map"],
     icon: (a) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" {...(a ? { fill: "currentColor" } : stroke)} />
         <path d="M9 4v14M15 6v14" stroke={a ? "#ffffff" : "currentColor"} strokeWidth={a ? 1.4 : 1.6} />
       </svg>
@@ -35,7 +35,7 @@ const ITEMS: Item[] = [
     label: "리스트",
     match: ["/lists"],
     icon: (a) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" {...(a ? { fill: "currentColor" } : stroke)}>
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" {...(a ? { fill: "currentColor" } : stroke)}>
         <path d="M6 3h12v18l-6-4-6 4z" />
       </svg>
     ),
@@ -45,7 +45,7 @@ const ITEMS: Item[] = [
     label: "MY",
     match: ["/my", "/settings", "/people"],
     icon: (a) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="8" r="4" {...(a ? { fill: "currentColor" } : stroke)} />
         <path d="M4 21c1-4 4-6 8-6s7 2 8 6" {...stroke} />
       </svg>
@@ -65,7 +65,7 @@ export function BottomNav() {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`flex flex-col items-center justify-center gap-0.5 text-caption ${active ? "font-bold text-ink" : "text-muted"}`}
+            className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium ${active ? "text-ink" : "text-subtle"}`}
           >
             {item.icon(active)}
             {item.label}

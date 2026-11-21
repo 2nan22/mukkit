@@ -1,11 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useLeave } from "@/lib/nav/useLeave";
 import { NICKNAME_RULE } from "./nickname";
 import { saveProfile, type ProfileFormState } from "./profileActions";
 
 export function ProfileForm({ nickname, bio }: { nickname: string; bio: string }) {
   const [state, action, pending] = useActionState<ProfileFormState, FormData>(saveProfile, {});
+  const leave = useLeave("/my");
+  useEffect(() => {
+    if (state.saved) leave();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 저장된 순간 한 번만
+  }, [state]);
   return (
     <form action={action} className="flex flex-1 flex-col gap-5 px-5">
       <div className="flex flex-col gap-2">

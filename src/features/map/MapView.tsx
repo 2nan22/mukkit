@@ -150,7 +150,7 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
           href={`/rate/${place.placeId}?next=/map`}
           className="flex h-btn-m items-center justify-center rounded-btn-m bg-ink text-body font-bold text-white"
         >
-          평가 · 메모
+          {["three", "two", "one", "notRecommended"].includes(place.tier) ? "평가 수정" : "평가하기"}
         </Link>
       </div>
     </div>

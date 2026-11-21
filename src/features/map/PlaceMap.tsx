@@ -65,7 +65,20 @@ function pinElement(tier: Tier, selected: boolean, onClick: () => void): HTMLEle
   return el;
 }
 
-export function PlaceMap({ pins, selectedId, onSelect }: { pins: Pin[]; selectedId: string | null; onSelect: (id: string) => void }) {
+// padding: 핀을 다 넣을 때 위 · 오른쪽 · 아래 · 왼쪽 여백 — 지도 위에 겹치는 칩 · 시트만큼
+const SHEET_PADDING = [160, 40, 220, 40] as const;
+
+export function PlaceMap({
+  pins,
+  selectedId,
+  onSelect,
+  padding = SHEET_PADDING,
+}: {
+  pins: Pin[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  padding?: readonly [number, number, number, number];
+}) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<KakaoMapInstance | null>(null);
   const overlays = useRef<KakaoOverlay[]>([]);
@@ -111,6 +124,7 @@ export function PlaceMap({ pins, selectedId, onSelect }: { pins: Pin[]; selected
   }, [ready, pins, selectedId]);
 
   // 거르기가 바뀌면 보이는 핀이 다 들어오게
+  const [top, right, bottom, left] = padding;
   useEffect(() => {
     const maps = window.kakao?.maps;
     if (!ready || !maps || !map.current || pins.length === 0) return;
@@ -124,19 +138,15 @@ export function PlaceMap({ pins, selectedId, onSelect }: { pins: Pin[]; selected
       }
       const bounds = new maps.LatLngBounds();
       pins.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
-      m.setBounds(bounds, 160, 40, 220, 40);
+      m.setBounds(bounds, top, right, bottom, left);
     });
-  }, [ready, pins]);
+  }, [ready, pins, top, right, bottom, left]);
 
   if (!APP_KEY || failed) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 bg-map-land px-8 text-center">
         <p className="text-body font-bold">지도를 불러오지 못했어요</p>
-        <p className="text-meta leading-normal text-muted">
-          {APP_KEY
-            ? "카카오맵 인증에 실패했어요. 카카오 개발자 콘솔의 JavaScript SDK 도메인에 지금 주소가 있는지 확인해 주세요."
-            : "카카오맵 키(NEXT_PUBLIC_KAKAO_MAP_KEY)가 아직 없어요. 아래 목록으로 볼 수 있어요."}
-        </p>
+        <p className="text-meta leading-normal text-muted">잠시 후 다시 열어 주세요.</p>
       </div>
     );
   }

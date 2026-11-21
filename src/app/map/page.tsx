@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -14,15 +14,7 @@ export const metadata = { title: "지도" };
 export default function MapPage({ searchParams }: PageProps<"/map">) {
   return (
     <main className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden">
-      <header className="grid h-14 shrink-0 grid-cols-[44px_1fr_44px] items-center px-2">
-        <Link href="/home" aria-label="홈으로" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </Link>
-        <h1 className="text-center text-section font-bold">내 장소 지도</h1>
-        <span />
-      </header>
+      <AppHeader kind="tab" title="지도" />
       <Suspense fallback={<div className="flex-1 bg-map-land" />}>
         <MapLoader searchParams={searchParams} />
       </Suspense>

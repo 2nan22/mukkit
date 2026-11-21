@@ -16,7 +16,7 @@ export default function NicknamePage({ searchParams }: PageProps<"/onboarding/ni
         </h1>
         <p className="text-body text-ink-2">평가와 리스트에 이 이름이 표시돼요. 나중에 바꿀 수 있어요.</p>
         <p className="pt-2 text-meta leading-relaxed text-muted">
-          다른 방법으로 가입한 적 있다면, 그 방법으로 로그인한 뒤 설정의 &lsquo;로그인 연결&rsquo;에서 묶을 수 있어요.
+          이미 가입했다면 그때 쓴 방법으로 로그인해 주세요.
         </p>
       </div>
       <Suspense fallback={null}>

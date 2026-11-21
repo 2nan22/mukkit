@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SourceMark } from "@/components/brand/BrandLogo";
@@ -9,6 +10,8 @@ import { getMyLists } from "@/features/lists/lists";
 import { getMyMedia, getOtherRatings, getPlace, sourceLinks, type OtherRating } from "@/features/place/place";
 import { PlaceBottomBar } from "@/features/place/PlaceBottomBar";
 import { PlaceHeaderMap } from "@/features/place/PlaceHeaderMap";
+import { getMenu } from "@/features/place/menu";
+import { MenuSection } from "@/features/place/MenuSection";
 import { getSavedPlace } from "@/features/rating/rating";
 import type { MediaRef } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -50,9 +53,7 @@ function OtherRow({ r }: { r: OtherRating }) {
     <div className="flex flex-col gap-2 border-b border-line py-3">
       <div className="flex items-center gap-2.5">
         <Link href={`/u/${r.userId}`} className="flex min-w-0 flex-1 items-center gap-2.5">
-          <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-meta font-bold text-ink-2">
-            {r.nickname.slice(0, 1)}
-          </span>
+          <Avatar name={r.nickname} size={40} />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-body font-bold">{r.nickname}</span>
             <span className="truncate text-meta text-muted">
@@ -60,7 +61,7 @@ function OtherRow({ r }: { r: OtherRating }) {
             </span>
           </span>
         </Link>
-        {r.sponsored && <span className="rounded border border-line-strong px-1.5 text-caption text-muted">협찬 표시</span>}
+        {r.sponsored && <span className="rounded border border-line-strong px-1.5 text-caption text-muted">협찬</span>}
         <TierBadge tier={r.tier} />
       </div>
       {r.review && <p className="text-body leading-normal text-ink-2">{r.review}</p>}
@@ -86,6 +87,8 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
     getMyLists(supabase, me),
   ]);
   const links = sourceLinks(place);
+  const kakaoSource = place.sources.find((s) => s.source === "kakao" && !s.sourcePlaceId.startsWith("N"));
+  const menu = await getMenu({ name: place.name, lat: place.lat, lng: place.lng, kakaoPlaceId: kakaoSource?.sourcePlaceId ?? null });
   const following = others.filter((o) => o.followed);
   const rest = others.filter((o) => !o.followed);
 
@@ -99,28 +102,28 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         <span className="text-body text-ink-2">{place.address}</span>
         {!place.available && <span className="text-meta text-[#c4320a]">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
         <div className="grid grid-cols-3 gap-2 pt-3">
-          <a href={links.directions} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center rounded-btn-m border border-line-strong text-body text-ink">
+          <a href={links.directions} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-medium text-ink">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 11l18-8-8 18-2-8z" />
+            </svg>
             길찾기
           </a>
-          <a href={links.naver} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center gap-1.5 rounded-btn-m border border-line-strong text-body text-ink">
+          <a href={links.naver} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-medium text-ink">
             <SourceMark source="naver" size={14} />
             네이버
           </a>
-          <a href={links.kakao} target="_blank" rel="noreferrer" className="flex h-btn-m items-center justify-center gap-1.5 rounded-btn-m border border-line-strong text-body text-ink">
+          <a href={links.kakao} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-medium text-ink">
             <SourceMark source="kakao" size={14} />
             카카오
           </a>
         </div>
       </section>
 
+      {menu && <MenuSection menu={menu} kakaoUrl={`https://place.map.kakao.com/${menu.kakaoPlaceId}`} />}
+
       <section className="flex flex-col gap-2 border-b-8 border-surface px-5 pt-4 pb-5">
         <div className="flex items-center justify-between">
           <h2 className="text-section font-bold">내 평가</h2>
-          {mine && (
-            <Link href={`/rate/${place.id}?next=/p/${place.id}`} className="flex h-btn-m items-center text-meta text-muted">
-              수정
-            </Link>
-          )}
         </div>
         {mine ? (
           <>
@@ -137,13 +140,13 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             )}
           </>
         ) : (
-          <p className="text-meta text-muted">아직 저장하지 않은 곳이에요. 아래에서 가고 싶은 곳으로 저장할 수 있어요.</p>
+          <p className="text-meta text-muted">아직 저장하지 않은 곳이에요</p>
         )}
       </section>
 
       <section className="flex flex-1 flex-col px-5 pt-4 pb-4">
         <h2 className="text-section font-bold">팔로잉 평가</h2>
-        {following.length === 0 && <p className="py-3 text-meta text-muted">팔로우한 사람 중 이곳을 평가한 사람이 없어요.</p>}
+        {following.length === 0 && <p className="py-3 text-meta text-muted">팔로잉 중에는 아직 평가한 사람이 없어요</p>}
         {following.map((r) => (
           <OtherRow key={r.userId} r={r} />
         ))}
@@ -157,7 +160,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         )}
       </section>
 
-      <PlaceBottomBar placeId={place.id} saved={Boolean(mine)} lists={lists.map((l) => ({ id: l.id, name: l.name }))} />
+      <PlaceBottomBar placeId={place.id} saved={Boolean(mine)} rated={Boolean(mine && ["three", "two", "one", "notRecommended"].includes(mine.tier))} lists={lists.map((l) => ({ id: l.id, name: l.name }))} />
     </>
   );
 }

@@ -7,7 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { NicknameSchema } from "./nickname";
 
-export type ProfileFormState = { error?: string };
+export type ProfileFormState = { error?: string; saved?: boolean };
 
 const BIO_MAX = 150;
 const ProfileSchema = z.object({
@@ -27,6 +27,6 @@ export async function saveProfile(_prev: ProfileFormState, formData: FormData): 
     .update({ nickname: parsed.data.nickname, bio: parsed.data.bio || null, nickname_set_at: new Date().toISOString() })
     .eq("id", me);
   if (error) return { error: error.code === "23505" ? "이미 쓰는 닉네임이에요" : "저장하지 못했어요. 다시 시도해 주세요." };
-  revalidatePath("/my");
-  redirect("/my");
+  revalidatePath("/", "layout");
+  return { saved: true };
 }

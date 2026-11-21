@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BottomNav } from "@/components/BottomNav";
@@ -12,15 +13,14 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export default function HomePage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <header className="flex h-14 shrink-0 items-center justify-between pr-2 pl-5">
-        <span className="text-section font-bold tracking-tight">마이슐랭</span>
-        <Link href="/people" aria-label="사람 찾기" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-4-4" />
-          </svg>
-        </Link>
-      </header>
+      <AppHeader kind="tab" title="마이슐랭" right={
+          <Link href="/people" aria-label="사람 찾기" className="flex size-11 items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-4-4" />
+            </svg>
+          </Link>
+        } />
       <main className="flex flex-1 flex-col gap-6 pt-1 pb-8">
         <Suspense fallback={null}>
           <HomeContent />
@@ -54,7 +54,7 @@ async function HomeContent() {
       <Link href="/eat" className="mx-5 flex items-center justify-between gap-3 rounded-btn-l bg-ink px-4 py-4 text-white">
         <span className="flex flex-col gap-0.5">
           <span className="text-body font-bold">여기서 뭐 먹지?</span>
-          <span className="text-meta text-white/70">내 기록과 믿는 사람들의 평가로 골라 드려요</span>
+          <span className="text-meta text-white/70">내 기록과 팔로잉 평가에서 골라요</span>
         </span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M9 6l6 6-6 6" />

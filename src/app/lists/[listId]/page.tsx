@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -13,15 +13,7 @@ export const metadata = { title: "리스트" };
 export default function ListPage({ params }: PageProps<"/lists/[listId]">) {
   return (
     <main className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-y-auto">
-      <header className="grid h-14 shrink-0 grid-cols-[44px_1fr_44px] items-center px-2">
-        <Link href="/lists" aria-label="리스트로" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </Link>
-        <h1 className="text-center text-section font-bold">내 리스트</h1>
-        <span />
-      </header>
+      <AppHeader kind="back" fallback="/lists" title="리스트" />
       <Suspense fallback={null}>
         <ListLoader params={params} />
       </Suspense>

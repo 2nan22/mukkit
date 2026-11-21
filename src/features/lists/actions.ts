@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -16,7 +16,7 @@ import {
   VISIBILITIES,
 } from "./lists";
 
-export type ListFormState = { error?: string };
+export type ListFormState = { error?: string; created?: boolean };
 type Result = { error?: string };
 
 const FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
@@ -37,8 +37,9 @@ export async function createListWithPlaces(_prev: ListFormState, formData: FormD
   } catch {
     return { error: FAILED };
   }
-  revalidatePath("/lists");
-  redirect(`/lists/${listId}`);
+  revalidatePath("/", "layout");
+  if (formData.get("stay")) return { created: true };
+  redirect(`/lists/${listId}`, RedirectType.replace);
 }
 
 export async function saveListInfo(listId: string, name: string, description: string): Promise<Result> {
@@ -67,8 +68,8 @@ export async function removePlacesFromList(listId: string, placeIds: string[]): 
 
 export async function removeList(listId: string): Promise<Result> {
   const result = await run(listId, (s, u) => deleteList(s, u, listId));
-  if (result.error) return result;
-  redirect("/lists");
+  if (!result.error) revalidatePath("/lists");
+  return result;
 }
 
 async function run(

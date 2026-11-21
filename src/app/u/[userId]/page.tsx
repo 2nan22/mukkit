@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
+import { AppHeader } from "@/components/AppHeader";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { FollowButton } from "@/features/social/FollowButton";
@@ -20,15 +22,7 @@ export const metadata = { title: "프로필" };
 export default function ProfilePage({ params, searchParams }: PageProps<"/u/[userId]">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <header className="grid h-14 shrink-0 grid-cols-[44px_1fr_44px] items-center px-2">
-        <Link href="/home" aria-label="홈으로" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </Link>
-        <h1 className="text-center text-section font-bold">프로필</h1>
-        <span />
-      </header>
+      <AppHeader kind="back" fallback="/home" title="프로필" />
       <Suspense fallback={null}>
         <Profile params={params} searchParams={searchParams} />
       </Suspense>
@@ -61,9 +55,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
     <div className="flex flex-col">
       <section className="flex flex-col gap-4 border-b-8 border-surface px-5 pb-5">
         <div className="flex items-center gap-4">
-          <span aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded-full bg-surface-2 text-title font-bold text-ink-2">
-            {person.nickname.slice(0, 1)}
-          </span>
+          <Avatar name={person.nickname} size={56} />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate text-section font-bold">{person.nickname}</span>
             <span className="text-meta text-muted">
@@ -95,7 +87,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
             <span>
               나와 겹치는 곳 <b className="text-ink">{taste.overlap}곳</b> · 그중 둘 다 3스타 <b className="text-tier-3">{taste.bothThree}곳</b>
             </span>
-            <span className="shrink-0 font-bold text-tier-3">비슷함 {Math.round(taste.similarity * 100)}%</span>
+            <span className="shrink-0 font-bold text-tier-3">취향 일치 {Math.round(taste.similarity * 100)}%</span>
           </div>
         )}
 

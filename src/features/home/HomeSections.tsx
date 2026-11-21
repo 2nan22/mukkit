@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
@@ -38,18 +39,16 @@ export function FollowingNew({ ratings }: { ratings: SharedRating[] }) {
       <SectionHead title="팔로잉 새 평가" more={ratings.length ? "/feed" : undefined} />
       {ratings.length === 0 ? (
         <div className="mx-5 flex flex-col gap-1 rounded-btn-l border border-line p-4">
-          <span className="text-body font-bold">팔로우한 사람의 평가가 여기 보여요</span>
-          <span className="text-meta text-muted">아래 취향이 비슷한 사람부터 팔로우해 보세요.</span>
+          <span className="text-body font-bold">아직 팔로우한 사람이 없어요</span>
+          <span className="text-meta text-muted">취향이 비슷한 사람을 팔로우해 보세요</span>
         </div>
       ) : (
-        <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1">
+        <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
           {ratings.map((r) => (
             <li key={`${r.ownerId}:${r.placeId}`} className="shrink-0">
               <Link href={`/p/${r.placeId}`} className="flex w-[220px] flex-col gap-1.5 rounded-btn-l border border-line p-3.5">
                 <span className="flex items-center gap-1.5 text-meta text-muted">
-                  <span aria-hidden="true" className="flex size-5 items-center justify-center rounded-full bg-surface-2 text-[10px] font-bold text-ink-2">
-                    {r.ownerNickname.slice(0, 1)}
-                  </span>
+                  <Avatar name={r.ownerNickname} size={24} />
                   <span className="truncate">
                     {r.ownerNickname} · {timeAgo(r.updatedAt)}
                   </span>
@@ -70,22 +69,22 @@ export function FollowingNew({ ratings }: { ratings: SharedRating[] }) {
 }
 
 // 취향이 비슷한 사람 — 줄마다 팔로우
-export function SimilarPeople({ matches }: { matches: TasteMatch[] }) {
+export function SimilarPeople({ matches: all }: { matches: TasteMatch[] }) {
+  // 같이 평가한 곳이 없으면 비슷하다고 할 근거가 없다
+  const matches = all.filter((m) => m.overlap > 0);
   if (matches.length === 0) return null;
   return (
     <section className="flex flex-col">
-      <SectionHead title="취향이 비슷한 사람" sub="내 평가와 등급이 비슷한 순이에요" more="/people" />
+      <SectionHead title="취향이 비슷한 사람" sub="나와 평가가 비슷한 순" more="/people" />
       <ul className="px-5">
         {matches.slice(0, 4).map((m) => (
           <li key={m.userId} className="flex items-center gap-3 border-b border-line py-2.5">
             <Link href={`/u/${m.userId}`} className="flex min-w-0 flex-1 items-center gap-3">
-              <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-full bg-surface-2 text-body font-bold text-ink-2">
-                {m.nickname.slice(0, 1)}
-              </span>
+              <Avatar name={m.nickname} size={40} />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate text-body font-bold">{m.nickname}</span>
                 <span className="truncate text-meta text-muted">
-                  겹치는 3스타 {m.bothThree}곳 · 3스타 비율 {m.threeRatio}%
+                  {m.bothThree > 0 ? `둘 다 3스타 ${m.bothThree}곳` : `같이 평가한 곳 ${m.overlap}`} · 취향 일치 {Math.round(m.similarity * 100)}%
                 </span>
               </span>
             </Link>
@@ -130,7 +129,7 @@ export function RecentLists({ lists }: { lists: RecentList[] }) {
   if (lists.length === 0) return null;
   return (
     <section className="flex flex-col gap-2.5">
-      <SectionHead title="요즘 공개된 리스트" />
+      <SectionHead title="새로 올라온 리스트" />
       <div className="grid grid-cols-2 gap-2.5 px-5">
         {lists.slice(0, 4).map((l) => (
           <Link key={l.id} href={`/l/${l.id}`} className="flex min-w-0 flex-col gap-1.5">
