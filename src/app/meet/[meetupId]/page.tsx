@@ -14,6 +14,7 @@ import { getMeetupStatus, getMyPoints, planMeetup, type MeetupMember } from "@/f
 import { MeetupRefresher } from "@/features/meetup/MeetupRefresher";
 import { MeetupResults } from "@/features/meetup/MeetupResults";
 import { PointEditor } from "@/features/meetup/PointEditor";
+import { PushToggle } from "@/features/push/PushToggle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "약속" };
@@ -176,6 +177,8 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
           )}
         </>
       )}
+
+      {status.status === "open" && !ready && (status.invitees.length > 0 || others.length > 0 || status.meReady) && <PushToggle variant="strip" />}
 
       <CloseMeetup meetupId={status.id} mode={ready ? "done" : status.isHost ? "cancel" : null} />
     </div>

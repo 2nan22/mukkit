@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { redirect, RedirectType } from "next/navigation";
 import { z } from "zod";
 import { PURPOSES } from "@/domain/meetup";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { searchKakaoKeyword } from "@/features/search/kakaoLocal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { notifyMeetup } from "./notify";
 
 type Result = { error?: string };
 const FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
@@ -31,9 +33,10 @@ export async function createMeetup(input: z.input<typeof CreateInput>): Promise<
 
 export async function joinMeetup(token: string): Promise<Result> {
   if (!/^[0-9a-f]{24}$/.test(token)) return { error: "열 수 없는 약속이에요" };
-  const { supabase } = await requireUser();
+  const { supabase, me } = await requireUser();
   const { data, error } = await supabase.rpc("join_meetup", { p_token: token });
   if (error) return { error: error.code === "P0001" ? "정원이 다 찬 약속이에요" : "참여할 수 없는 약속이에요. 링크를 다시 받아 주세요." };
+  after(() => notifyMeetup(data as string, me, { kind: "joined" }));
   redirect(`/meet/${data}`, RedirectType.replace);
 }
 
@@ -51,10 +54,13 @@ export async function setMeetupPoint(input: z.input<typeof PointInput>): Promise
   if (!parsed.success) return { error: FAILED };
   const { supabase, me } = await requireUser();
   const p = parsed.data;
+  const { count: before } = await supabase.from("meetup_points").select("kind", { count: "exact", head: true }).eq("meetup_id", p.meetupId).eq("user_id", me);
   const { error } = await supabase
     .from("meetup_points")
     .upsert({ meetup_id: p.meetupId, user_id: me, kind: p.kind, label: p.label, lat: p.lat, lng: p.lng }, { onConflict: "meetup_id,user_id,kind" });
   if (error) return { error: FAILED };
+  // 처음 위치를 넣을 때만 알림 — 고칠 때마다 울리지 않게
+  if (!before) after(() => notifyMeetup(p.meetupId, me, { kind: "located" }));
   revalidatePath(`/meet/${p.meetupId}`);
   return {};
 }
@@ -81,18 +87,20 @@ export async function closeMeetup(meetupId: string, status: "done" | "cancelled"
 
 export async function inviteUser(meetupId: string, userId: string): Promise<Result> {
   if (!z.uuid().safeParse(meetupId).success || !z.uuid().safeParse(userId).success) return { error: FAILED };
-  const { supabase } = await requireUser();
+  const { supabase, me } = await requireUser();
   const { error } = await supabase.rpc("invite_to_meetup", { p_meetup: meetupId, p_user: userId });
   if (error) return { error: "초대하지 못했어요. 다시 시도해 주세요." };
+  after(() => notifyMeetup(meetupId, me, { kind: "invited", to: userId }));
   revalidatePath(`/meet/${meetupId}`);
   return {};
 }
 
 export async function respondInvite(meetupId: string, accept: boolean): Promise<Result> {
   if (!z.uuid().safeParse(meetupId).success) return { error: FAILED };
-  const { supabase } = await requireUser();
+  const { supabase, me } = await requireUser();
   const { error } = await supabase.rpc("respond_meetup_invite", { p_meetup: meetupId, p_accept: accept });
   if (error) return { error: error.code === "P0001" ? "정원이 다 찬 약속이에요" : FAILED };
+  if (accept) after(() => notifyMeetup(meetupId, me, { kind: "joined" }));
   revalidatePath("/meet");
   if (!accept) redirect("/meet", RedirectType.replace);
   revalidatePath(`/meet/${meetupId}`);
