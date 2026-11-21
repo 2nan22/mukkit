@@ -120,7 +120,7 @@ $$;
 create function public.visit_companions(p_owner uuid, p_place uuid, p_feed boolean default false)
 returns jsonb
 language sql stable security definer set search_path = '' as $$
-  select coalesce(jsonb_agg(distinct jsonb_build_object('id', p.id, 'nickname', p.nickname)), '[]'::jsonb)
+  select coalesce(jsonb_agg(distinct jsonb_build_object('id', p.id, 'nickname', p.nickname, 'isMe', p.id = (select auth.uid()))), '[]'::jsonb)
   from public.visits v
   join public.visit_members mo on mo.visit_id = v.id and mo.user_id = p_owner and mo.status = 'accepted'
   join public.visit_members mm on mm.visit_id = v.id and mm.user_id is not null and mm.user_id <> p_owner and mm.status = 'accepted'

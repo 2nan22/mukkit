@@ -1,10 +1,22 @@
 import Link from "next/link";
 
-type Person = { id: string; nickname: string };
+type Person = { id: string; nickname: string; isMe?: boolean; guest?: boolean };
 
-// 함께 간 사람 한 줄 — '○○님 · △△님과 함께 방문'
+function label(p: Person): string {
+  return p.isMe ? "나" : p.guest ? p.nickname : `${p.nickname}님`;
+}
+
+// 받침이 있으면 '과', 없으면 '와'
+function withParticle(word: string): string {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  return code >= 0 && code <= 11171 && code % 28 === 0 ? "와" : "과";
+}
+
+// 함께 간 사람 한 줄 — '○○님 · 나와 함께 방문'
 export function Companions({ people }: { people: Person[] }) {
   if (people.length === 0) return null;
+  const sorted = [...people].sort((a, b) => Number(Boolean(b.isMe)) - Number(Boolean(a.isMe)));
+  const last = label(sorted[sorted.length - 1]);
   return (
     <p className="flex flex-wrap items-center gap-x-1 text-meta text-ink-2">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="mr-0.5 text-muted" aria-hidden="true">
@@ -13,12 +25,16 @@ export function Companions({ people }: { people: Person[] }) {
         <circle cx="16.5" cy="9" r="2.6" />
         <path d="M15.5 14.4c2.2.1 4 1.5 4.8 4.1" />
       </svg>
-      {people.map((p, i) => (
+      {sorted.map((p, i) => (
         <span key={p.id}>
-          <Link href={`/u/${p.id}`} className="font-semibold text-ink">
-            {p.nickname}님
-          </Link>
-          {i < people.length - 1 ? " ·" : "과 함께 방문"}
+          {p.isMe || p.guest ? (
+            <span className="font-semibold text-ink">{label(p)}</span>
+          ) : (
+            <Link href={`/u/${p.id}`} className="font-semibold text-ink">
+              {label(p)}
+            </Link>
+          )}
+          {i < sorted.length - 1 ? " ·" : `${withParticle(last)} 함께 방문`}
         </span>
       ))}
     </p>

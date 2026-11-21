@@ -19,7 +19,7 @@ export type SharedRating = {
   media: MediaRef[];
   updatedAt: string;
   // 함께 간 사람 — 평가를 볼 수 있는 사람만 (피드는 둘 다 '피드에 보이기'를 허용했을 때만)
-  companions: Person[];
+  companions: (Person & { isMe?: boolean })[];
 };
 
 export class SocialError extends Error {
@@ -81,7 +81,7 @@ type RatingRow = {
   review: string;
   media: { path: string; kind: "image" | "video" }[];
   updated_at: string;
-  companions?: Person[];
+  companions?: (Person & { isMe?: boolean })[];
 };
 
 // 사진 주소는 보는 사람 권한으로 서명한다 — 볼 수 없는 평가의 사진은 서명이 거절된다

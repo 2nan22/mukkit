@@ -54,6 +54,7 @@ async function HomeContent() {
     getRecentPublicLists(supabase, 4),
     getFollowCounts(supabase, me),
   ]);
+  const { count: visitTags } = await supabase.from("visit_members").select("id", { count: "exact", head: true }).eq("user_id", me).eq("status", "invited");
   const { count: invites } = await supabase.from("meetup_invites").select("meetup_id, meetups!inner(status)", { count: "exact", head: true }).eq("user_id", me).eq("meetups.status", "open");
 
   return (
@@ -77,13 +78,23 @@ async function HomeContent() {
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="text-body font-semibold">친구와 약속 잡기</span>
-            <span className={`text-meta ${invites ? "font-semibold text-brand" : "text-muted"}`}>{invites ? `받은 약속 초대 ${invites}개` : "둘 다 오가기 편한 곳을 찾아 드려요"}</span>
+            <span className={`text-meta ${invites ? "font-semibold text-brand" : "text-muted"}`}>{invites ? `받은 약속 초대 ${invites}개` : "모두 오가기 편한 곳을 찾아 드려요"}</span>
           </span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
             <path d="M9 6l6 6-6 6" />
           </svg>
         </Link>
       </section>
+      {visitTags ? (
+        <Link href="/visits" className="mx-5 mt-3 flex min-h-12 items-center justify-between gap-3 rounded-[16px] bg-surface px-4">
+          <span className="text-meta text-ink-2">
+            함께 방문 요청 <b className="font-bold text-ink">{visitTags}개</b>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </Link>
+      ) : null}
       <FollowingNew ratings={feed.slice(0, 10)} followingCount={counts.following} />
       <SimilarPeople matches={matches} />
       <RecentLists lists={lists} />

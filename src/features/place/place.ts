@@ -29,7 +29,7 @@ export type OtherRating = {
   media: MediaRef[];
   ratedCount: number;
   threeRatio: number;
-  companions: { id: string; nickname: string }[];
+  companions: { id: string; nickname: string; isMe?: boolean }[];
 };
 
 export async function getPlace(supabase: SupabaseClient, id: string): Promise<PlaceInfo | null> {
@@ -71,7 +71,7 @@ export function sourceLinks(p: PlaceInfo): { naver: string; kakao: string; direc
 type Row = {
   user_id: string; nickname: string; followed: boolean; tier: string; review: string; visited_on: string | null;
   sponsored: boolean; media: { path: string; kind: "image" | "video" }[]; rated_count: number; three_ratio: number;
-  companions: { id: string; nickname: string }[];
+  companions: { id: string; nickname: string; isMe?: boolean }[];
 };
 
 export async function getOtherRatings(supabase: SupabaseClient, placeId: string): Promise<OtherRating[]> {
