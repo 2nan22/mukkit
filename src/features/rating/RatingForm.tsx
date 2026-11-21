@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useLeave } from "@/lib/nav/useLeave";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
 import { saveRating, type RatingFormState } from "./actions";
@@ -14,6 +15,11 @@ const NOT_RATED: Tier[] = ["wantToGo", "unrated"];
 
 export function RatingForm({ place, next, userId }: { place: SavedPlace; next: string; userId: string }) {
   const [state, action, pending] = useActionState<RatingFormState, FormData>(saveRating, {});
+  const leave = useLeave(next);
+  useEffect(() => {
+    if (state.saved) leave();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 저장된 순간 한 번만
+  }, [state]);
 
   return (
     <form action={action} className="flex flex-1 flex-col">

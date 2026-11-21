@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -23,19 +24,13 @@ const TILE: Record<Tier, string> = {
 export default function ListsPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <header className="flex h-14 items-center justify-between pr-2 pl-2">
-        <Link href="/home" aria-label="홈으로" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </Link>
-        <h1 className="text-section font-bold">리스트</h1>
-        <Link href="/lists/new" aria-label="새 리스트 만들기" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </Link>
-      </header>
+      <AppHeader kind="tab" title="리스트" right={
+          <Link href="/lists/new" aria-label="새 리스트 만들기" className="flex size-11 items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </Link>
+        } />
       <Suspense fallback={null}>
         <ListsContent />
       </Suspense>

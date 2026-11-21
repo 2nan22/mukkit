@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 import { Suspense } from "react";
 import { getTasteMatches, searchPeople } from "@/features/social/social";
 import { TasteMatches } from "@/features/social/TasteMatches";
@@ -9,15 +10,7 @@ export const metadata = { title: "사람 찾기" };
 export default function PeoplePage({ searchParams }: PageProps<"/people">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <header className="grid h-14 shrink-0 grid-cols-[44px_1fr_44px] items-center px-2">
-        <Link href="/my" aria-label="MY 로" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </Link>
-        <h1 className="text-center text-section font-bold">사람 찾기</h1>
-        <span />
-      </header>
+      <AppHeader kind="back" fallback="/home" title="사람 찾기" />
       <Suspense fallback={null}>
         <People searchParams={searchParams} />
       </Suspense>

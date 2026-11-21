@@ -1,6 +1,5 @@
 import { ProviderMark } from "@/components/brand/BrandLogo";
-import Link from "next/link";
-import { BottomNav } from "@/components/BottomNav";
+import { AppHeader } from "@/components/AppHeader";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -13,14 +12,7 @@ import { fromSupabaseProvider, LOGIN_PROVIDER_LABEL, LOGIN_PROVIDER_ORDER } from
 export default function AccountLinksPage({ searchParams }: PageProps<"/settings/accounts">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <header className="grid h-14 grid-cols-[44px_1fr_44px] items-center px-2">
-        <Link href="/my" aria-label="MY 로" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </Link>
-        <h1 className="text-center text-section font-bold">설정</h1>
-      </header>
+      <AppHeader kind="back" fallback="/my" title="계정" />
       <p className="px-5 pb-4 text-meta leading-relaxed text-muted">
         연결해 두면 어느 방법으로 로그인해도 같은 계정으로 들어와요.
       </p>
@@ -32,10 +24,6 @@ export default function AccountLinksPage({ searchParams }: PageProps<"/settings/
           로그아웃
         </button>
       </form>
-      <div className="flex-1" />
-      <div className="sticky bottom-0">
-        <BottomNav />
-      </div>
     </main>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { FollowButton } from "@/features/social/FollowButton";
@@ -20,15 +21,7 @@ export const metadata = { title: "프로필" };
 export default function ProfilePage({ params, searchParams }: PageProps<"/u/[userId]">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <header className="grid h-14 shrink-0 grid-cols-[44px_1fr_44px] items-center px-2">
-        <Link href="/home" aria-label="홈으로" className="flex size-11 items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </Link>
-        <h1 className="text-center text-section font-bold">프로필</h1>
-        <span />
-      </header>
+      <AppHeader kind="back" fallback="/home" title="프로필" />
       <Suspense fallback={null}>
         <Profile params={params} searchParams={searchParams} />
       </Suspense>

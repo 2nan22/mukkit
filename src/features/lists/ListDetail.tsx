@@ -1,5 +1,6 @@
 "use client";
 
+import { useLeave } from "@/lib/nav/useLeave";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore, useTransition } from "react";
@@ -25,6 +26,7 @@ export function ListDetail({ list, places, origin }: Props) {
   const inList = new Set(list.placeIds);
   const items = list.placeIds.flatMap((id) => places.filter((p) => p.placeId === id));
 
+  const leave = useLeave("/lists");
   function act(fn: () => Promise<{ error?: string }>, after?: () => void) {
     start(async () => {
       const res = await fn();
@@ -173,7 +175,7 @@ export function ListDetail({ list, places, origin }: Props) {
               <button type="button" onClick={() => setConfirmDelete(false)} className="h-btn-m rounded-btn-m border border-line-strong bg-white text-body">
                 취소
               </button>
-              <button type="button" disabled={pending} onClick={() => act(() => removeList(list.id))} className="h-btn-m rounded-btn-m bg-[#c4320a] text-body font-bold text-white">
+              <button type="button" disabled={pending} onClick={() => act(() => removeList(list.id), leave)} className="h-btn-m rounded-btn-m bg-[#c4320a] text-body font-bold text-white">
                 지우기
               </button>
             </div>
