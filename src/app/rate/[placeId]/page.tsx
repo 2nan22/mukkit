@@ -5,6 +5,8 @@ import { safeNextPath, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { RatingForm } from "@/features/rating/RatingForm";
 import { getSavedPlace } from "@/features/rating/rating";
 import { getMyVisits } from "@/features/visit/visit";
+import { getMenu } from "@/features/place/menu";
+import { getPlace } from "@/features/place/place";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "평가 작성" };
@@ -35,7 +37,11 @@ async function RatePlace({
 
   const place = /^[0-9a-f-]{36}$/.test(placeId) ? await getSavedPlace(supabase, userId, placeId) : null;
   if (!place) notFound();
-  const visits = await getMyVisits(supabase, placeId);
+  const [visits, detail] = await Promise.all([getMyVisits(supabase, placeId), getPlace(supabase, placeId)]);
+  const kakao = detail?.sources.find((s) => s.source === "kakao" && !s.sourcePlaceId.startsWith("N"));
+  const menu = detail ? await getMenu({ name: detail.name, lat: detail.lat, lng: detail.lng, kakaoPlaceId: kakao?.sourcePlaceId ?? null }).catch(() => null) : null;
+  // 대표 메뉴 먼저
+  const menuOptions = (menu?.items ?? []).sort((a, b) => Number(b.recommended) - Number(a.recommended)).map((m) => m.name.trim().slice(0, 30)).filter(Boolean);
   const back = safeNextPath(typeof next === "string" ? next : null);
 
   return (
@@ -47,7 +53,7 @@ async function RatePlace({
         </div>
         <BackButton fallback={back} kind="close" />
       </header>
-      <RatingForm place={place} next={back} userId={userId} visits={visits} />
+      <RatingForm place={place} next={back} userId={userId} visits={visits} menuOptions={menuOptions} />
     </>
   );
 }

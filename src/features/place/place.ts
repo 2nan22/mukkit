@@ -30,6 +30,7 @@ export type OtherRating = {
   ratedCount: number;
   threeRatio: number;
   companions: { id: string; nickname: string; isMe?: boolean }[];
+  menus: string[];
 };
 
 export async function getPlace(supabase: SupabaseClient, id: string): Promise<PlaceInfo | null> {
@@ -72,6 +73,7 @@ type Row = {
   user_id: string; nickname: string; followed: boolean; tier: string; review: string; visited_on: string | null;
   sponsored: boolean; media: { path: string; kind: "image" | "video" }[]; rated_count: number; three_ratio: number;
   companions: { id: string; nickname: string; isMe?: boolean }[];
+  menus: string[] | null;
 };
 
 export async function getOtherRatings(supabase: SupabaseClient, placeId: string): Promise<OtherRating[]> {
@@ -93,6 +95,7 @@ export async function getOtherRatings(supabase: SupabaseClient, placeId: string)
     ratedCount: r.rated_count,
     threeRatio: r.three_ratio,
     companions: r.companions ?? [],
+    menus: r.menus ?? [],
   }));
 }
 

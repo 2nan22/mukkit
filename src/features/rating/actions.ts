@@ -48,6 +48,7 @@ export async function saveRating(_prev: RatingFormState, formData: FormData): Pr
     sponsored: formData.get("sponsored") === "on",
     review: String(formData.get("review") ?? ""),
     visibility: formData.get("visibility") ?? "private",
+    menus: formData.getAll("menus").map(String).filter(Boolean),
   });
   if (!parsed.success) {
     const tierMissing = parsed.error.issues.some((i) => i.path[0] === "tier");
