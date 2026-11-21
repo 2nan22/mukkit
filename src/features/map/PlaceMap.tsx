@@ -48,9 +48,9 @@ const PIN_STYLE: Record<Tier, { size: number; bg: string; ring: string; text: st
   three: { size: 22, bg: "#b42330", ring: "#ffffff", text: "#ffffff", label: "3" },
   two: { size: 22, bg: "#e8590c", ring: "#ffffff", text: "#ffffff", label: "2" },
   one: { size: 22, bg: "#f5a524", ring: "#ffffff", text: "#3d2800", label: "1" },
-  notRecommended: { size: 14, bg: "#adb1b8", ring: "#ffffff", text: "#ffffff", label: "" },
-  wantToGo: { size: 16, bg: "#ffffff", ring: "#5b5f69", text: "#5b5f69", label: "" },
-  unrated: { size: 14, bg: "#ffffff", ring: "#adb1b8", text: "#5b5f69", label: "" },
+  notRecommended: { size: 10, bg: "#adb1b8", ring: "#ffffff", text: "#ffffff", label: "" },
+  wantToGo: { size: 12, bg: "#ffffff", ring: "#5b5f69", text: "#5b5f69", label: "" },
+  unrated: { size: 10, bg: "#ffffff", ring: "#adb1b8", text: "#5b5f69", label: "" },
 };
 
 function pinElement(tier: Tier, selected: boolean, onClick: () => void): HTMLElement {

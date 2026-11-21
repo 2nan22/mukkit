@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { PlaceMap } from "@/features/map/PlaceMap";
 import type { Tier } from "@/domain/tier";
+import { CuisineIcon } from "@/components/ui/CuisineIcon";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import type { CuisineGroup } from "@/domain/eatScore";
@@ -145,8 +146,10 @@ export function EatView({ regions }: { regions: Region[] }) {
                   key={p.placeId}
                   id={`eat-${p.placeId}`}
                   href={`/p/${p.placeId}`}
-                  className={`-mx-2 flex flex-col gap-1 rounded-btn-m border-b border-line px-2 py-3.5 ${selected === p.placeId ? "bg-surface" : ""}`}
+                  className={`-mx-2 flex items-center gap-3 rounded-btn-m px-2 py-3 ${selected === p.placeId ? "bg-surface" : ""}`}
                 >
+                  <CuisineIcon cuisine={p.cuisine} />
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-body font-semibold">{p.name}</span>
                     {p.myTier && <TierBadge tier={p.myTier} />}
@@ -154,6 +157,7 @@ export function EatView({ regions }: { regions: Region[] }) {
                   </span>
                   {p.categoryName && !["음식점", CUISINE_LABEL[p.cuisine]].includes(p.categoryName) && <span className="text-meta text-muted">{p.categoryName}</span>}
                   <span className="text-meta text-ink-2">{p.reasons.join(" · ")}</span>
+                  </span>
                 </Link>
               ))}
             </div>

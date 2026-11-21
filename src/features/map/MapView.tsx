@@ -25,6 +25,7 @@ export function MapView({ places, initialTiers = [] }: { places: MapPlace[]; ini
   const [tiers, setTiers] = useState<Tier[]>(initialTiers);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [listOpen, setListOpen] = useState(!process.env.NEXT_PUBLIC_KAKAO_MAP_KEY);
 
   const shown = useMemo(
@@ -55,15 +56,51 @@ export function MapView({ places, initialTiers = [] }: { places: MapPlace[]; ini
               {TIER_LABEL[t]}
             </Chip>
           ))}
-        </ChipRow>
-        <ChipRow label="음식 종류">
-          {presentCuisines.map((c) => (
-            <Chip key={c} pressed={cuisines.includes(c)} onClick={() => setCuisines(toggle(cuisines, c))}>
-              {CUISINE_LABEL[c]}
-            </Chip>
-          ))}
+          <Chip pressed={cuisines.length > 0} onClick={() => setFilterOpen(true)}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M4 6h16M7 12h10M10 18h4" />
+            </svg>
+            {cuisines.length > 0 ? `음식 종류 ${cuisines.length}` : "음식 종류"}
+          </Chip>
         </ChipRow>
       </div>
+
+      {filterOpen && (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/30" onClick={() => setFilterOpen(false)}>
+          <section
+            role="dialog"
+            aria-label="음식 종류"
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-full max-w-[480px] flex-col gap-4 rounded-t-[20px] bg-white px-5 pt-3 pb-6"
+          >
+            <span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-line-strong" />
+            <div className="flex items-center justify-between">
+              <h2 className="text-section font-bold">음식 종류</h2>
+              {cuisines.length > 0 && (
+                <button type="button" onClick={() => setCuisines([])} className="h-9 text-meta text-muted">
+                  초기화
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {presentCuisines.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-pressed={cuisines.includes(c)}
+                  onClick={() => setCuisines(toggle(cuisines, c))}
+                  className={`h-9 rounded-full px-3.5 text-meta font-medium ${cuisines.includes(c) ? "bg-ink text-white" : "bg-surface text-ink-2"}`}
+                >
+                  {CUISINE_LABEL[c]} <span className="opacity-60">{places.filter((p) => p.cuisine === c).length}</span>
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={() => setFilterOpen(false)} className="h-btn-l rounded-btn-l bg-ink text-[16px] font-bold text-white">
+              {shown.length}곳 보기
+            </button>
+          </section>
+        </div>
+      )}
 
       <div className="flex-1" />
 

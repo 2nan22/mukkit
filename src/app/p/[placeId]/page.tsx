@@ -1,3 +1,4 @@
+import { TIER_MEANING } from "@/domain/tier";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { notFound, redirect } from "next/navigation";
@@ -125,20 +126,36 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         <div className="flex items-center justify-between">
           <h2 className="text-section font-bold">내 평가</h2>
         </div>
-        {mine ? (
-          <>
+        {mine && ["three", "two", "one", "notRecommended"].includes(mine.tier) ? (
+          <div className="flex flex-col gap-2.5 rounded-[16px] bg-surface p-4">
             <div className="flex items-center gap-2">
               <TierBadge tier={mine.tier} />
-              {mine.visitedOn && <span className="text-meta text-muted">{dot(mine.visitedOn)}</span>}
+              <span className="text-meta font-medium text-ink-2">{TIER_MEANING[mine.tier]}</span>
+              {mine.visitedOn && <span className="ml-auto text-meta text-subtle">{dot(mine.visitedOn)} 방문</span>}
             </div>
             {mine.review && <p className="text-body leading-relaxed">{mine.review}</p>}
             <MediaStrip media={myMedia} />
+            {mine.note && (
+              <p className="rounded-btn-s bg-white px-3 py-2.5 text-meta leading-normal text-ink-2">
+                <span className="text-muted">나만 보는 메모</span> · {mine.note}
+              </p>
+            )}
+          </div>
+        ) : mine ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <TierBadge tier={mine.tier} />
+            </div>
             {mine.note && (
               <p className="rounded-btn-s bg-surface px-3 py-2.5 text-meta leading-normal text-ink-2">
                 <span className="text-muted">나만 보는 메모</span> · {mine.note}
               </p>
             )}
-          </>
+            <Link href={`/rate/${place.id}?next=/p/${place.id}`} className="flex items-center justify-between rounded-[16px] bg-brand-soft px-4 py-3.5">
+              <span className="text-body font-semibold text-ink">다녀오셨나요?</span>
+              <span className="text-meta font-bold text-brand">평가 남기기</span>
+            </Link>
+          </div>
         ) : (
           <p className="text-meta text-muted">아직 저장하지 않은 곳이에요</p>
         )}
