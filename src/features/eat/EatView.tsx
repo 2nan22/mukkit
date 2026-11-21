@@ -120,7 +120,7 @@ export function EatView({ regions }: { regions: Region[] }) {
       {groups && where && pins.length > 0 && (
         <div className="relative -mx-5 h-[38dvh] min-h-60 overflow-hidden border-y border-line">
           <div className="absolute inset-0">
-            <PlaceMap pins={pins} selectedId={selected} onSelect={pick} />
+            <PlaceMap pins={pins} selectedId={selected} onSelect={pick} padding={[36, 36, 36, 36]} />
           </div>
         </div>
       )}

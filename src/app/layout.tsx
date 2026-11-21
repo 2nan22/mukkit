@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Suspense } from "react";
 import { NavTracker } from "@/lib/nav/NavTracker";
 
 const pretendard = localFont({
@@ -24,7 +25,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={`${pretendard.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">
-        <NavTracker />
+        <Suspense fallback={null}>
+          <NavTracker />
+        </Suspense>
         {children}
       </body>
     </html>

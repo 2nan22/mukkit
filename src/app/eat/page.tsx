@@ -13,7 +13,7 @@ export default function EatPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/home" title="여기서 뭐 먹지" />
       <p className="px-5 pb-4 text-meta leading-normal text-muted">
-        내가 저장한 곳과 팔로잉 · 취향이 비슷한 사람이 평가한 곳만 보여드려요.
+        내 기록과 팔로잉 · 취향 비슷한 사람의 평가에서만 골라요.
       </p>
       <Suspense fallback={null}>
         <EatLoader />

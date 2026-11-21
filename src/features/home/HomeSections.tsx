@@ -43,7 +43,7 @@ export function FollowingNew({ ratings }: { ratings: SharedRating[] }) {
           <span className="text-meta text-muted">취향이 비슷한 사람을 팔로우해 보세요</span>
         </div>
       ) : (
-        <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1">
+        <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
           {ratings.map((r) => (
             <li key={`${r.ownerId}:${r.placeId}`} className="shrink-0">
               <Link href={`/p/${r.placeId}`} className="flex w-[220px] flex-col gap-1.5 rounded-btn-l border border-line p-3.5">

@@ -65,7 +65,20 @@ function pinElement(tier: Tier, selected: boolean, onClick: () => void): HTMLEle
   return el;
 }
 
-export function PlaceMap({ pins, selectedId, onSelect }: { pins: Pin[]; selectedId: string | null; onSelect: (id: string) => void }) {
+// padding: 핀을 다 넣을 때 위 · 오른쪽 · 아래 · 왼쪽 여백 — 지도 위에 겹치는 칩 · 시트만큼
+const SHEET_PADDING = [160, 40, 220, 40] as const;
+
+export function PlaceMap({
+  pins,
+  selectedId,
+  onSelect,
+  padding = SHEET_PADDING,
+}: {
+  pins: Pin[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  padding?: readonly [number, number, number, number];
+}) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<KakaoMapInstance | null>(null);
   const overlays = useRef<KakaoOverlay[]>([]);
@@ -111,6 +124,7 @@ export function PlaceMap({ pins, selectedId, onSelect }: { pins: Pin[]; selected
   }, [ready, pins, selectedId]);
 
   // 거르기가 바뀌면 보이는 핀이 다 들어오게
+  const [top, right, bottom, left] = padding;
   useEffect(() => {
     const maps = window.kakao?.maps;
     if (!ready || !maps || !map.current || pins.length === 0) return;
@@ -124,9 +138,9 @@ export function PlaceMap({ pins, selectedId, onSelect }: { pins: Pin[]; selected
       }
       const bounds = new maps.LatLngBounds();
       pins.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
-      m.setBounds(bounds, 160, 40, 220, 40);
+      m.setBounds(bounds, top, right, bottom, left);
     });
-  }, [ready, pins]);
+  }, [ready, pins, top, right, bottom, left]);
 
   if (!APP_KEY || failed) {
     return (
