@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
+import { CuisineIcon } from "@/components/ui/CuisineIcon";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
@@ -45,20 +46,30 @@ export function FollowingNew({ ratings }: { ratings: SharedRating[] }) {
       ) : (
         <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
           {ratings.map((r) => (
-            <li key={`${r.ownerId}:${r.placeId}`} className="shrink-0">
-              <Link href={`/p/${r.placeId}`} className="flex w-[220px] flex-col gap-1.5 rounded-btn-l border border-line p-3.5">
-                <span className="flex items-center gap-1.5 text-meta text-muted">
-                  <Avatar name={r.ownerNickname} size={24} />
-                  <span className="truncate">
-                    {r.ownerNickname} · {timeAgo(r.updatedAt)}
+            <li key={`${r.ownerId}:${r.placeId}`} className="flex shrink-0">
+              <Link href={`/p/${r.placeId}`} className="flex w-[260px] flex-col overflow-hidden rounded-[16px] border border-line">
+                {r.media.find((m) => m.kind === "image") ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다
+                  <img src={r.media.find((m) => m.kind === "image")!.url} alt="" className="h-[120px] w-full object-cover" />
+                ) : (
+                  <span className="flex h-[120px] items-center justify-center bg-surface">
+                    <CuisineIcon cuisine={r.cuisine} />
                   </span>
+                )}
+                <span className="flex flex-1 flex-col gap-1.5 p-3.5">
+                  <span className="flex items-center gap-1.5 text-meta text-muted">
+                    <Avatar name={r.ownerNickname} size={24} />
+                    <span className="truncate">
+                      {r.ownerNickname} · {timeAgo(r.updatedAt)}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-[16px] font-semibold">{r.placeName}</span>
+                    <TierBadge tier={r.tier} />
+                  </span>
+                  <span className="truncate text-meta text-muted">{[CUISINE_LABEL[r.cuisine], regionOf(r.address)].filter(Boolean).join(" · ")}</span>
+                  {r.review && <span className="line-clamp-2 text-meta leading-normal text-ink-2">{r.review}</span>}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="truncate text-body font-bold">{r.placeName}</span>
-                  <TierBadge tier={r.tier} />
-                </span>
-                <span className="truncate text-meta text-muted">{[CUISINE_LABEL[r.cuisine], regionOf(r.address)].filter(Boolean).join(" · ")}</span>
-                {r.review && <span className="line-clamp-2 text-meta leading-normal text-ink-2">{r.review}</span>}
               </Link>
             </li>
           ))}
@@ -104,23 +115,27 @@ const DOT: Record<string, string> = {
 };
 
 // 리스트의 실제 장소 위치로 찍은 작은 미리보기 — 지도 타일 없이 점만
-function MiniMap({ points }: { points: RecentList["points"] }) {
-  if (points.length === 0) return <span aria-hidden="true" className="block h-24 rounded-btn-m bg-map-land" />;
+function MiniMap({ points, count }: { points: RecentList["points"]; count: number }) {
   const lats = points.map((p) => p.lat);
   const lngs = points.map((p) => p.lng);
   const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)];
-  const pos = (v: number, lo: number, hi: number) => (hi - lo < 1e-6 ? 50 : 12 + ((v - lo) / (hi - lo)) * 76);
+  const pos = (v: number, lo: number, hi: number) => (hi - lo < 1e-6 ? 50 : 14 + ((v - lo) / (hi - lo)) * 72);
   return (
-    <span aria-hidden="true" className="relative block h-24 overflow-hidden rounded-btn-m bg-map-land">
-      <span className="absolute inset-x-0 top-[46%] h-1.5 bg-white" />
-      <span className="absolute inset-y-0 left-[38%] w-1.5 bg-white" />
+    <span aria-hidden="true" className="relative block h-28 overflow-hidden rounded-[14px] bg-[#eef1ee]">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full">
+        <path d="M70 -5c-8 18 6 30 -4 48s10 30 2 62h40v-110z" fill="#d6e6ef" />
+        <path d="M-5 58c22-6 40 4 60-6s30-8 50-2" fill="none" stroke="#ffffff" strokeWidth="3" />
+        <path d="M30 -5c4 30 -6 60 4 110" fill="none" stroke="#ffffff" strokeWidth="2" />
+        <path d="M-5 24c30 6 50-4 105 10" fill="none" stroke="#ffffff" strokeWidth="1.5" />
+      </svg>
       {points.map((p, i) => (
         <span
           key={i}
-          className={`absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white ${p.tier ? DOT[tierFromDb(p.tier)] : "bg-pin-none"}`}
+          className={`absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-sm ${p.tier ? DOT[tierFromDb(p.tier)] : "bg-pin-none"}`}
           style={{ left: `${pos(p.lng, minLng, maxLng)}%`, top: `${100 - pos(p.lat, minLat, maxLat)}%` }}
         />
       ))}
+      <span className="absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-caption font-semibold text-ink">{count}곳</span>
     </span>
   );
 }
@@ -133,11 +148,9 @@ export function RecentLists({ lists }: { lists: RecentList[] }) {
       <div className="grid grid-cols-2 gap-2.5 px-5">
         {lists.slice(0, 4).map((l) => (
           <Link key={l.id} href={`/l/${l.id}`} className="flex min-w-0 flex-col gap-1.5">
-            <MiniMap points={l.points} />
+            <MiniMap points={l.points} count={l.count} />
             <span className="truncate text-body font-bold">{l.name}</span>
-            <span className="truncate text-meta text-muted">
-              {l.ownerNickname} · {l.count}곳
-            </span>
+            <span className="truncate text-meta text-muted">{l.ownerNickname}</span>
           </Link>
         ))}
       </div>
