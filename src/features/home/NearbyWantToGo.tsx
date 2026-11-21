@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { distanceMeters } from "@/domain/samePlace";
 
 const RADIUS_METERS = 1000;
-type State = { kind: "idle" } | { kind: "locating" } | { kind: "found"; count: number } | { kind: "denied" };
+type State = { kind: "idle" } | { kind: "locating" } | { kind: "found"; count: number; at: string } | { kind: "denied" };
 
 // 위치는 이미 허락한 경우에만 바로 쓰고, 아니면 누를 때 묻는다
 export function NearbyWantToGo({ points }: { points: { lat: number; lng: number }[] }) {
@@ -18,7 +18,7 @@ export function NearbyWantToGo({ points }: { points: { lat: number; lng: number 
       ({ coords }) => {
         const here = { name: "", lat: coords.latitude, lng: coords.longitude };
         const count = points.filter((p) => distanceMeters(here, { name: "", ...p }) <= RADIUS_METERS).length;
-        setState({ kind: "found", count });
+        setState({ kind: "found", count, at: `${coords.latitude.toFixed(5)},${coords.longitude.toFixed(5)}` });
       },
       () => setState({ kind: "denied" }),
       { maximumAge: 5 * 60 * 1000, timeout: 10_000 },
@@ -73,8 +73,8 @@ export function NearbyWantToGo({ points }: { points: { lat: number; lng: number 
   );
   const cls = "flex items-center gap-3 border-t border-[#f5dccb] px-5 py-3.5";
 
-  return state.kind === "found" ? (
-    <Link href="/map?tier=wantToGo" className={cls}>
+  return state.kind === "found" && state.count > 0 ? (
+    <Link href={`/map?tier=wantToGo&at=${state.at}`} className={cls}>
       {body}
     </Link>
   ) : (

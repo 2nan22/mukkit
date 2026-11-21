@@ -103,17 +103,17 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         <span className="text-body text-ink-2">{place.address}</span>
         {!place.available && <span className="text-meta text-danger">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
         <div className="grid grid-cols-3 gap-2 pt-3">
-          <a href={links.directions} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-medium text-ink">
+          <a href={links.directions} target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
               <path d="M3 11l18-8-8 18-2-8z" />
             </svg>
             길찾기
           </a>
-          <a href={links.naver} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-medium text-ink">
+          <a href={links.naver} target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <SourceMark source="naver" size={14} />
             네이버
           </a>
-          <a href={links.kakao} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-medium text-ink">
+          <a href={links.kakao} target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <SourceMark source="kakao" size={14} />
             카카오
           </a>

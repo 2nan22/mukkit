@@ -24,8 +24,8 @@ export default function MapPage({ searchParams }: PageProps<"/map">) {
 }
 
 // 세션을 읽는 부분만 요청 시점에 그린다
-async function MapLoader({ searchParams }: { searchParams: Promise<{ tier?: string | string[]; list?: string | string[] }> }) {
-  const { tier, list } = await searchParams;
+async function MapLoader({ searchParams }: { searchParams: Promise<{ tier?: string | string[]; list?: string | string[]; at?: string | string[] }> }) {
+  const { tier, list, at } = await searchParams;
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
@@ -35,5 +35,8 @@ async function MapLoader({ searchParams }: { searchParams: Promise<{ tier?: stri
   const only = typeof list === "string" ? await getMyList(supabase, userId, list).catch(() => null) : null;
   const places = only ? all.filter((p) => only.placeIds.includes(p.placeId)) : all;
   const initialTiers = TIERS.filter((t) => t === tier);
-  return <MapView places={places} initialTiers={initialTiers} />;
+  // ?at=위도,경도 — 홈 '근처 가고 싶은 곳'에서 그 위치로
+  const [lat, lng] = typeof at === "string" ? at.split(",").map(Number) : [];
+  const atPoint = Number.isFinite(lat) && Number.isFinite(lng) && lat > 33 && lat < 39 && lng > 124 && lng < 132 ? { lat, lng } : null;
+  return <MapView places={places} initialTiers={initialTiers} at={only ? null : atPoint} />;
 }
