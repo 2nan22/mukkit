@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { GoogleG, KakaoSymbol, NaverN } from "@/components/brand/BrandLogo";
 import { Suspense } from "react";
 import { LoginErrorNotice } from "@/features/onboarding/LoginErrorNotice";
@@ -51,7 +52,15 @@ export default function StartPage({ searchParams }: PageProps<"/">) {
           네이버로 시작하기
         </a>
         <p className="pt-2 text-center text-caption leading-normal text-muted">
-          시작하면 이용약관과 개인정보 처리방침에 동의하게 돼요.
+          시작하기 전에{" "}
+          <Link href="/terms" className="underline underline-offset-2">
+            이용약관
+          </Link>
+          과{" "}
+          <Link href="/privacy" className="underline underline-offset-2">
+            개인정보 처리방침
+          </Link>
+          을 확인해 주세요.
         </p>
       </div>
     </main>

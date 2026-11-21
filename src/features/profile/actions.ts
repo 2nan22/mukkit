@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { safeNextPath, SIGNED_OUT_HOME } from "@/features/auth/paths";
+import { TERMS_VERSION } from "@/features/legal/legal";
 import { NicknameSchema } from "./nickname";
 
 export type NicknameFormState = { error?: string; value?: string };
@@ -13,6 +14,7 @@ export async function saveNickname(_prev: NicknameFormState, formData: FormData)
   const raw = String(formData.get("nickname") ?? "");
   const parsed = NicknameSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message, value: raw };
+  if (formData.get("agree") !== "on") return { error: "이용약관과 개인정보 처리방침에 동의해 주세요", value: raw };
 
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
@@ -21,7 +23,7 @@ export async function saveNickname(_prev: NicknameFormState, formData: FormData)
 
   const { error } = await supabase
     .from("profiles")
-    .update({ nickname: parsed.data, nickname_set_at: new Date().toISOString() })
+    .update({ nickname: parsed.data, nickname_set_at: new Date().toISOString(), terms_agreed_at: new Date().toISOString(), terms_version: TERMS_VERSION })
     .eq("id", userId);
   if (error) {
     return {
