@@ -4,11 +4,19 @@ import { useState, useTransition } from "react";
 import { PURPOSE_LABEL, PURPOSES, type Purpose } from "@/domain/meetup";
 import { createMeetup } from "./actions";
 
-const DAYS = [
-  { key: 0, label: "오늘" },
-  { key: 1, label: "내일" },
-  { key: 2, label: "모레" },
-];
+const DAY_NAMES = ["오늘", "내일", "모레"];
+const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
+
+// '오늘 21일(토)' — 한국 시간 기준
+function dayLabel(offset: number): string {
+  const d = new Date(Date.now() + 9 * 3600_000 + offset * 86_400_000);
+  return `${DAY_NAMES[offset]} ${d.getUTCDate()}일(${WEEK[d.getUTCDay()]})`;
+}
+
+function nowMinutesKst(): number {
+  const d = new Date(Date.now() + 9 * 3600_000);
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
+}
 // 30분 단위 · 오전 11시 ~ 새벽 2시
 const TIMES = Array.from({ length: 31 }, (_, i) => 11 * 60 + i * 30);
 
@@ -31,11 +39,16 @@ export function MeetupForm() {
   const [end, setEnd] = useState(21 * 60 + 30);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // 오늘이면 이미 지난 시각은 빼고 고른다
+  const startOptions = TIMES.slice(0, -2).filter((t) => day > 0 || t > nowMinutesKst());
+  // 고른 시각이 목록에 없으면(오늘 이미 지남) 첫 시각으로 — 화면과 값이 어긋나지 않게
+  const startAt = startOptions.includes(start) ? start : (startOptions[0] ?? start);
+  const endAt = end > startAt ? end : Math.min(startAt + 150, TIMES.at(-1)!);
 
   function submit() {
-    if (end <= start) return setError("끝나는 시간이 시작보다 뒤여야 해요");
+    if (endAt <= startAt) return setError("헤어지는 시간을 만나는 시간보다 늦게 골라 주세요");
     startTransition(async () => {
-      const res = await createMeetup({ purpose, startsAt: toIso(day, start), endsAt: toIso(day, end) });
+      const res = await createMeetup({ purpose, startsAt: toIso(day, startAt), endsAt: toIso(day, endAt) });
       if (res?.error) setError(res.error);
     });
   }
@@ -59,17 +72,26 @@ export function MeetupForm() {
       <section className="flex flex-col gap-2">
         <h2 className="text-body font-semibold">언제 만나나요</h2>
         <div className="flex gap-1.5">
-          {DAYS.map((d) => (
-            <button key={d.key} type="button" aria-pressed={day === d.key} onClick={() => setDay(d.key)} className={chip(day === d.key)}>
-              {d.label}
+          {[0, 1, 2].map((d) => (
+            <button key={d} type="button" aria-pressed={day === d} onClick={() => setDay(d)} className={chip(day === d)}>
+              {dayLabel(d)}
             </button>
           ))}
         </div>
         <div className="grid grid-cols-2 gap-2 pt-1">
           <label className="flex flex-col gap-1">
-            <span className="text-meta text-muted">시작 (대략)</span>
-            <select value={start} onChange={(e) => setStart(Number(e.target.value))} className={select}>
-              {TIMES.slice(0, -2).map((t) => (
+            <span className="text-meta text-muted">만나는 시간</span>
+            <select
+              value={startAt}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setStart(v);
+                // 헤어지는 시간이 앞서게 되면 2시간 반 뒤로 맞춘다
+                if (endAt <= v) setEnd(Math.min(v + 150, TIMES.at(-1)!));
+              }}
+              className={select}
+            >
+              {startOptions.map((t) => (
                 <option key={t} value={t}>
                   {hhmm(t)}
                 </option>
@@ -77,9 +99,9 @@ export function MeetupForm() {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-meta text-muted">끝 (대략)</span>
-            <select value={end} onChange={(e) => setEnd(Number(e.target.value))} className={select}>
-              {TIMES.filter((t) => t > start).map((t) => (
+            <span className="text-meta text-muted">헤어지는 시간</span>
+            <select value={endAt} onChange={(e) => setEnd(Number(e.target.value))} className={select}>
+              {TIMES.filter((t) => t > startAt).map((t) => (
                 <option key={t} value={t}>
                   {t >= 24 * 60 ? `새벽 ${hhmm(t).replace("오전 ", "")}` : hhmm(t)}
                 </option>
@@ -87,7 +109,7 @@ export function MeetupForm() {
             </select>
           </label>
         </div>
-        <p className="text-meta text-muted">끝나는 시간으로 각자 막차를 어림해 귀가가 편한 지역을 골라요.</p>
+        <p className="text-meta text-muted">정확하지 않아도 돼요. 헤어지는 시간에 맞춰 막차 걱정 없는 지역을 먼저 추천해요.</p>
       </section>
 
       <div className="flex-1" />
@@ -97,7 +119,7 @@ export function MeetupForm() {
         </p>
       )}
       <button type="button" onClick={submit} disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
-        {pending ? "만드는 중" : "약속 만들고 링크 받기"}
+        {pending ? "만드는 중" : "약속 만들기"}
       </button>
     </div>
   );

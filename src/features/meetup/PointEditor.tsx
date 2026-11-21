@@ -5,7 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { regionNameAt, removeMeetupPoint, searchMeetupPlace, setMeetupPoint, type PlaceOption } from "./actions";
 
 const KIND_LABEL = { origin: "출발지", return: "귀가지" } as const;
-const KIND_HINT = { origin: "약속 전에 있을 곳", return: "약속 끝나고 돌아갈 곳" } as const;
+const KIND_HINT = { origin: "약속 전에 있는 곳 (회사, 집 등)", return: "끝나고 돌아갈 곳" } as const;
 
 // 출발지 · 귀가지 한 칸 — 역 · 동 검색 또는 현재 위치. 상대에게는 보이지 않는다
 export function PointEditor({ meetupId, kind, current }: { meetupId: string; kind: "origin" | "return"; current: string | null }) {
@@ -62,8 +62,8 @@ export function PointEditor({ meetupId, kind, current }: { meetupId: string; kin
                 지우기
               </button>
             )}
-            <button type="button" onClick={() => setEditing(true)} className="h-8 rounded-full bg-white px-3.5 text-meta font-semibold text-ink">
-              {current ? "바꾸기" : "넣기"}
+            <button type="button" onClick={() => setEditing(true)} className="h-8 rounded-full bg-white px-3.5 text-meta font-semibold text-ink raised-soft">
+              {current ? "바꾸기" : "입력"}
             </button>
           </span>
         )}
@@ -83,7 +83,7 @@ export function PointEditor({ meetupId, kind, current }: { meetupId: string; kin
               <circle cx="12" cy="12" r="4" />
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
             </svg>
-            현재 위치로
+            현재 위치 사용
           </button>
           {options.length > 0 && (
             <ul className="flex flex-col overflow-hidden rounded-[12px] bg-white">

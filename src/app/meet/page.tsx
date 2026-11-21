@@ -38,7 +38,7 @@ async function MeetList() {
   if (!me) redirect(SIGNED_OUT_HOME);
   const meetups = await getMyMeetups(supabase, me);
   if (meetups.length === 0) {
-    return <p className="px-8 py-10 text-center text-meta leading-normal text-muted">약속을 만들어 링크를 보내면, 두 분의 출발지 · 귀가지로 만나기 좋은 곳을 찾아 드려요.</p>;
+    return <p className="px-8 py-10 text-center text-meta leading-normal text-muted">약속을 만들고 링크를 보내 보세요. 두 사람 모두 가기 편한 곳을 추천해 드려요.</p>;
   }
   return (
     <ul className="flex flex-col px-5">
@@ -47,7 +47,7 @@ async function MeetList() {
           <Link href={`/meet/${m.id}`} className="flex min-h-16 items-center gap-3 border-b border-line py-2.5">
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-body font-semibold">
-                {PURPOSE_LABEL[m.purpose]} · {m.partnerNickname ? `${m.partnerNickname}님과` : "상대 기다리는 중"}
+                {PURPOSE_LABEL[m.purpose]} · {m.partnerNickname ? `${m.partnerNickname}님과` : "상대를 기다리는 중"}
               </span>
               <span className="text-meta text-muted">
                 {when(m.startsAt)}

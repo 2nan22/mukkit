@@ -55,11 +55,18 @@ export function planAreaShops(
     .slice(0, PER_AREA);
 }
 
-// 지역 이유 — 둘의 어림 이동 시간
-export function areaReason(myMinutes: number, partnerMinutes: number): string {
-  const gap = Math.abs(myMinutes - partnerMinutes);
-  if (gap <= 10) return `두 분 모두 약 ${Math.round((myMinutes + partnerMinutes) / 2 / 5) * 5}분`;
-  return `나 약 ${Math.round(myMinutes / 5) * 5}분 · 상대 약 ${Math.round(partnerMinutes / 5) * 5}분`;
+// 지역 이유 — 둘의 예상 이동 시간 (5분 단위)
+export function areaReason(myMinutes: number, partnerMinutes: number, partnerNickname: string): string {
+  const r5 = (m: number) => Math.round(m / 5) * 5;
+  if (Math.abs(myMinutes - partnerMinutes) <= 10) return `두 사람 모두 ${r5((myMinutes + partnerMinutes) / 2)}분쯤`;
+  return `나 ${r5(myMinutes)}분쯤 · ${partnerNickname}님 ${r5(partnerMinutes)}분쯤`;
+}
+
+// '23:50' → '밤 11:50' · '00:20' → '밤 12:20'
+export function nightClock(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h >= 18 || h < 4 ? "밤" : "오후"} ${h12}:${String(m).padStart(2, "0")}`;
 }
 
 // 막차 어림 — 대중교통 API 없이 '귀가가 길수록 일찍 출발'로 어림한다 (분 단위, 자정 넘으면 24*60 이상)

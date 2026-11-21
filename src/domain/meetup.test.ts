@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Candidate } from "./eatScore";
-import { areaReason, clock, endMinutesKst, lastDepartureMinutes, planAreaShops, purposeFit, rankAreas } from "./meetup";
+import { areaReason, clock, endMinutesKst, lastDepartureMinutes, nightClock, planAreaShops, purposeFit, rankAreas } from "./meetup";
 
 const area = { lat: 37.5, lng: 127.0 };
 function cand(id: string, cuisine: Candidate["cuisine"], extra: Partial<Candidate> = {}): Candidate {
@@ -38,9 +38,13 @@ describe("purposeFit · areaReason", () => {
     expect(purposeFit("drinks", "bar")).toBe(1);
     expect(purposeFit("drinks", "cafe")).toBeLessThan(0.3);
   });
-  it("시간이 비슷하면 '두 분 모두', 차이가 크면 각자", () => {
-    expect(areaReason(28, 33)).toBe("두 분 모두 약 30분");
-    expect(areaReason(15, 45)).toBe("나 약 15분 · 상대 약 45분");
+  it("시간이 비슷하면 '두 사람 모두', 차이가 크면 각자 (닉네임)", () => {
+    expect(areaReason(28, 33, "단골")).toBe("두 사람 모두 30분쯤");
+    expect(areaReason(15, 45, "단골")).toBe("나 15분쯤 · 단골님 45분쯤");
+  });
+  it("막차 시각을 밤 표기로", () => {
+    expect(nightClock("23:50")).toBe("밤 11:50");
+    expect(nightClock("00:20")).toBe("밤 12:20");
   });
 });
 

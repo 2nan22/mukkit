@@ -76,7 +76,7 @@ async function HomeContent() {
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="text-body font-semibold">친구와 약속 잡기</span>
-            <span className="text-meta text-muted">두 사람 출발 · 귀가가 편한 곳으로</span>
+            <span className="text-meta text-muted">둘 다 오가기 편한 곳을 찾아 드려요</span>
           </span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
             <path d="M9 6l6 6-6 6" />
