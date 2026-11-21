@@ -20,8 +20,8 @@
 
 ## 3. 진행 현황
 ```
-### 1. job_runs · 폐업 확인 서비스 · 로컬 검사
-### 2. 크론 라우트 · Vercel Cron(또는 GitHub Actions) 설정
+### 1. job_runs · 폐업 확인 서비스 · 로컬 검사 ✓
+### 2. 크론 라우트 · Vercel Cron(또는 GitHub Actions) 설정 ✓
 ### 3. 호스팅 Supabase · Vercel 배포 · 콘솔 주소 등록 (사용자와 함께)
 ### 4. 실기기 확인 · 캡처 아티팩트
 ```
