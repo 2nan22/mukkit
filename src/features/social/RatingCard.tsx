@@ -35,7 +35,9 @@ export function RatingCard({ rating, showOwner }: { rating: SharedRating; showOw
       )}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="truncate text-body font-bold">{rating.placeName}</span>
+          <Link href={`/p/${rating.placeId}`} className="truncate text-body font-bold">
+            {rating.placeName}
+          </Link>
           <span className="truncate text-meta text-muted">
             {[CUISINE_LABEL[rating.cuisine], regionOf(rating.address), dateLabel(rating.updatedAt)].filter(Boolean).join(" · ")}
           </span>

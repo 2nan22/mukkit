@@ -26,6 +26,8 @@ type KakaoMapInstance = {
   getLevel(): number;
   setLevel(level: number): void;
   panTo(p: LatLng): void;
+  setCenter(p: LatLng): void;
+  relayout(): void;
 };
 type KakaoOverlay = { setMap(m: KakaoMapInstance | null): void };
 
@@ -40,6 +42,7 @@ export type Pin = { id: string; lat: number; lng: number; tier: Tier };
 const APP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const SEOUL = { lat: 37.5665, lng: 126.978 };
 const NEIGHBORHOOD_LEVEL = 5;
+const SINGLE_LEVEL = 3;
 
 const PIN_STYLE: Record<Tier, { size: number; bg: string; ring: string; text: string; label: string }> = {
   three: { size: 22, bg: "#b93a06", ring: "#ffffff", text: "#ffffff", label: "3" },
@@ -78,6 +81,9 @@ export function PlaceMap({ pins, selectedId, onSelect }: { pins: Pin[]; selected
     if (!ready || !maps || !el.current) return;
     if (!map.current) {
       map.current = new maps.Map(el.current, { center: new maps.LatLng(SEOUL.lat, SEOUL.lng), level: 8 });
+      // 컨테이너 크기가 그려진 뒤에 지도 크기를 다시 맞춘다 — 안 하면 타일이 반만 깔린다
+      const m0 = map.current;
+      requestAnimationFrame(() => m0.relayout());
     }
     const m = map.current;
     overlays.current.forEach((o) => o.setMap(null));
@@ -108,9 +114,18 @@ export function PlaceMap({ pins, selectedId, onSelect }: { pins: Pin[]; selected
   useEffect(() => {
     const maps = window.kakao?.maps;
     if (!ready || !maps || !map.current || pins.length === 0) return;
-    const bounds = new maps.LatLngBounds();
-    pins.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
-    map.current.setBounds(bounds, 160, 40, 220, 40);
+    const m = map.current;
+    requestAnimationFrame(() => {
+      m.relayout();
+      if (pins.length === 1) {
+        m.setLevel(SINGLE_LEVEL);
+        m.setCenter(new maps.LatLng(pins[0].lat, pins[0].lng));
+        return;
+      }
+      const bounds = new maps.LatLngBounds();
+      pins.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
+      m.setBounds(bounds, 160, 40, 220, 40);
+    });
   }, [ready, pins]);
 
   if (!APP_KEY || failed) {

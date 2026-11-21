@@ -1,10 +1,10 @@
-# 11_deploy_cron — 배포 · 새벽 폐업 확인 작업
+# 13_deploy_cron — 배포 · 새벽 폐업 확인 작업
 
 ## 0. 진입 전 필수
 - `scripts/sync-context.sh` · 규칙 파일(`github-actions.md` 포함 — 배포 자동화)
 - Vercel · Supabase 호스팅 · 카카오 / 구글 / 네이버 콘솔 최신 문서 (날짜 기준 검색)
 - **사용자 준비물** — Supabase 호스팅 프로젝트, Vercel 계정, 도메인(선택), 각 로그인 앱의 운영 주소 등록
-- `git checkout dev && git pull && git checkout -b feat/11_deploy_cron`
+- `git checkout dev && git pull && git checkout -b feat/13_deploy_cron`
 
 ## 1. 세션 목표 (성공 기준)
 - 호스팅 Supabase 에 마이그레이션 적용 · 네이버 OIDC 등록 · Storage 버킷

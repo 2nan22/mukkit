@@ -111,7 +111,9 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-1">
           <span className="flex items-center gap-2">
-            <span className="truncate text-section font-bold">{place.name}</span>
+            <Link href={`/p/${place.placeId}`} className="truncate text-section font-bold underline-offset-[3px] hover:underline">
+              {place.name}
+            </Link>
             <TierBadge tier={place.tier} />
           </span>
           <span className="text-meta text-muted">

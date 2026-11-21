@@ -140,7 +140,9 @@ export function ListDetail({ list, places, origin }: Props) {
           <li key={p.placeId} className="flex min-h-16 items-center gap-3 border-b border-line py-2">
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="flex items-center gap-1.5">
-                <span className="truncate text-body">{p.name}</span>
+                <Link href={`/p/${p.placeId}`} className="truncate text-body">
+                  {p.name}
+                </Link>
                 <TierBadge tier={p.tier} />
               </span>
               <span className="truncate text-meta text-muted">
