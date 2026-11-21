@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { safeNextPath, SIGNED_OUT_HOME } from "@/features/auth/paths";
+import { safeNextPath, SESSION_ENDED, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { AgreeForm } from "@/features/legal/AgreeForm";
 import { needsAgreement } from "@/features/legal/legal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -34,6 +34,7 @@ async function Loader({ searchParams }: { searchParams: Promise<{ next?: string 
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
   const { data: profile } = await supabase.from("profiles").select("terms_version").eq("id", me).single();
+  if (!profile) redirect(SESSION_ENDED);
   if (!needsAgreement(profile)) redirect(nextPath);
   return <AgreeForm next={nextPath} />;
 }
