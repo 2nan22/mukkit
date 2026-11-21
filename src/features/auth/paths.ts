@@ -5,6 +5,8 @@ export const SIGNED_IN_HOME = "/home";
 export const SIGNED_OUT_HOME = "/";
 export const NICKNAME_SETUP = "/onboarding/nickname";
 export const ACCOUNT_LINKS = "/settings/accounts";
+// 로그인은 남았는데 계정이 없을 때 — 로그아웃 후 시작 화면
+export const SESSION_ENDED = "/auth/session-ended";
 
 export function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
