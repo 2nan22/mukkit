@@ -16,10 +16,10 @@ export default function HomePage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="tab" title="마이슐랭" right={
-          <Link href="/people" aria-label="사람 찾기" className="flex size-11 items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-              <circle cx="10" cy="8" r="4" />
-              <path d="M3 20c.8-3.5 3.6-5.5 7-5.5M15.5 15.5a3 3 0 1 0 4.2 4.2 3 3 0 0 0-4.2-4.2zM19.7 19.7L21 21" />
+          <Link href="/search" aria-label="검색" className="flex size-11 items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-4-4" />
             </svg>
           </Link>
         } />
