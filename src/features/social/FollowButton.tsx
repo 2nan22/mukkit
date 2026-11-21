@@ -21,7 +21,7 @@ export function FollowButton({ targetId, following, compact = false }: { targetI
           })
         }
         className={`${compact ? "h-8 rounded-btn-s px-3.5 text-meta" : "h-btn-m rounded-btn-m px-5 text-body"} font-bold disabled:opacity-60 ${
-          following ? "border border-line-strong bg-white text-ink" : "bg-ink text-white"
+          following ? "border border-line-strong bg-white text-ink" : "bg-brand-soft font-semibold text-brand"
         }`}
       >
         {following ? "팔로잉" : "팔로우"}

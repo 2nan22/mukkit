@@ -66,7 +66,7 @@ export function EatView({ regions }: { regions: Region[] }) {
   return (
     <div className="flex flex-col gap-5 px-5 pb-10">
       <section className="flex flex-col gap-3">
-        <button type="button" onClick={useHere} disabled={pending} className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l bg-ink text-[16px] font-bold text-white disabled:opacity-60">
+        <button type="button" onClick={useHere} disabled={pending} className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
             <circle cx="12" cy="12" r="4" />
             <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />

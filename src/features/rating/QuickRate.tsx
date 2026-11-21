@@ -172,7 +172,7 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
                 건너뛴 곳 다시 보기
               </button>
             )}
-            <button type="button" onClick={leave} className="h-btn-l rounded-btn-l bg-ink text-[16px] font-bold text-white">
+            <button type="button" onClick={leave} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white">
               완료
             </button>
           </div>

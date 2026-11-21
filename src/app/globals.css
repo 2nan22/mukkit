@@ -4,6 +4,8 @@
 @theme {
   --font-sans: var(--font-pretendard), system-ui, sans-serif;
 
+  --color-brand: #c8410b;
+  --color-brand-soft: #fff1e8;
   --color-ink: #17181c;
   --color-ink-2: #33363d;
   --color-muted: #5b5f69;

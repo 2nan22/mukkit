@@ -33,7 +33,7 @@ export function ProfileForm({ nickname, bio }: { nickname: string; bio: string }
         </p>
       )}
       <div className="flex-1" />
-      <button type="submit" disabled={pending} className="mb-5 h-btn-l rounded-btn-l bg-ink text-[16px] font-bold text-white disabled:opacity-60">
+      <button type="submit" disabled={pending} className="mb-5 h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60">
         {pending ? "저장하는 중" : "저장"}
       </button>
     </form>
