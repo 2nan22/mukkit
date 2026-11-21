@@ -88,10 +88,24 @@ export async function addPlaces(supabase: SupabaseClient, userId: string, listId
   await touch(supabase, listId);
 }
 
-export async function removePlaces(supabase: SupabaseClient, userId: string, listId: string, placeIds: string[]): Promise<void> {
+export type RemovedItem = { placeId: string; addedAt: string };
+
+// 뺀 장소의 담은 시각을 돌려준다 — 되돌리기 때 원래 자리로 넣으려고
+export async function removePlaces(supabase: SupabaseClient, userId: string, listId: string, placeIds: string[]): Promise<RemovedItem[]> {
   await assertOwnList(supabase, userId, listId);
-  const { error } = await supabase.from("list_items").delete().eq("list_id", listId).in("place_id", placeIds);
+  const { data, error } = await supabase.from("list_items").delete().eq("list_id", listId).in("place_id", placeIds).select("place_id, added_at");
   if (error) throw new ListWriteError("remove", error.code);
+  await touch(supabase, listId);
+  return (data ?? []).map((r) => ({ placeId: r.place_id as string, addedAt: r.added_at as string }));
+}
+
+export async function restorePlaces(supabase: SupabaseClient, userId: string, listId: string, items: RemovedItem[]): Promise<void> {
+  await assertOwnList(supabase, userId, listId);
+  if (items.length === 0) return;
+  const { error } = await supabase
+    .from("list_items")
+    .upsert(items.map((i) => ({ list_id: listId, place_id: i.placeId, added_at: i.addedAt })), { onConflict: "list_id,place_id", ignoreDuplicates: true });
+  if (error) throw new ListWriteError("add", error.code);
   await touch(supabase, listId);
 }
 

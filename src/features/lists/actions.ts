@@ -12,6 +12,8 @@ import {
   ListInputSchema,
   ListNotFoundError,
   removePlaces,
+  restorePlaces,
+  type RemovedItem,
   updateList,
   VISIBILITIES,
 } from "./lists";
@@ -60,10 +62,22 @@ export async function addPlacesToList(listId: string, placeIds: string[]): Promi
   return run(listId, (s, u) => addPlaces(s, u, listId, ids.data));
 }
 
-export async function removePlacesFromList(listId: string, placeIds: string[]): Promise<Result> {
+export async function removePlacesFromList(listId: string, placeIds: string[]): Promise<Result & { removed?: RemovedItem[] }> {
   const ids = Ids.safeParse(placeIds);
   if (!ids.success) return { error: FAILED };
-  return run(listId, (s, u) => removePlaces(s, u, listId, ids.data));
+  let removed: RemovedItem[] = [];
+  const res = await run(listId, async (s, u) => {
+    removed = await removePlaces(s, u, listId, ids.data);
+  });
+  return res.error ? res : { removed };
+}
+
+const Removed = z.array(z.object({ placeId: z.uuid(), addedAt: z.iso.datetime({ offset: true }) })).max(2000);
+
+export async function restorePlacesToList(listId: string, items: RemovedItem[]): Promise<Result> {
+  const parsed = Removed.safeParse(items);
+  if (!parsed.success) return { error: FAILED };
+  return run(listId, (s, u) => restorePlaces(s, u, listId, parsed.data));
 }
 
 export async function removeList(listId: string): Promise<Result> {

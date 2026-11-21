@@ -8,7 +8,8 @@ import { CuisineIcon } from "@/components/ui/CuisineIcon";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { Toast } from "@/components/ui/Toast";
 import { CUISINE_LABEL } from "@/domain/cuisine";
-import { addPlacesToList, removeList, removePlacesFromList, saveListInfo, setListVisibility } from "./actions";
+import { addPlacesToList, removeList, removePlacesFromList, restorePlacesToList, saveListInfo, setListVisibility } from "./actions";
+import type { RemovedItem } from "./lists";
 import { LIST_NAME_MAX, VISIBILITIES, VISIBILITY_LABEL, type ListSummary } from "./lists";
 import { PlacePicker } from "./PlacePicker";
 import type { PickablePlace } from "./pickablePlaces";
@@ -26,7 +27,7 @@ export function ListDetail({ list, places, origin }: Props) {
   const [name, setName] = useState(list.name);
   const [visibilityOpen, setVisibilityOpen] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const [undo, setUndo] = useState<{ id: string; name: string } | null>(null);
+  const [undo, setUndo] = useState<{ name: string; items: RemovedItem[] } | null>(null);
 
   const inList = new Set(list.placeIds);
   const items = list.placeIds.flatMap((id) => places.filter((p) => p.placeId === id));
@@ -190,7 +191,15 @@ export function ListDetail({ list, places, origin }: Props) {
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => act(() => removePlacesFromList(list.id, [p.placeId]), () => setUndo({ id: p.placeId, name: p.name }))}
+                  onClick={() =>
+                    start(async () => {
+                      const res = await removePlacesFromList(list.id, [p.placeId]);
+                      if (res.error) return setError(res.error);
+                      setError(null);
+                      setUndo({ name: p.name, items: res.removed ?? [] });
+                      router.refresh();
+                    })
+                  }
                   aria-label={`${p.name} 삭제`}
                   className="flex h-8 shrink-0 items-center rounded-full bg-surface px-3 text-meta font-medium text-[#c4320a]"
                 >
@@ -227,7 +236,7 @@ export function ListDetail({ list, places, origin }: Props) {
         <Toast
           message={`'${undo.name}'을 리스트에서 뺐어요`}
           action="되돌리기"
-          onAction={() => act(() => addPlacesToList(list.id, [undo.id]), () => setUndo(null))}
+          onAction={() => act(() => restorePlacesToList(list.id, undo.items), () => setUndo(null))}
           onClose={() => setUndo(null)}
         />
       )}
