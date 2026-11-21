@@ -14,7 +14,7 @@ export const metadata = { title: "지도" };
 export default function MapPage({ searchParams }: PageProps<"/map">) {
   return (
     <main className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden">
-      <AppHeader kind="tab" title="내 장소 지도" />
+      <AppHeader kind="tab" title="지도" />
       <Suspense fallback={<div className="flex-1 bg-map-land" />}>
         <MapLoader searchParams={searchParams} />
       </Suspense>

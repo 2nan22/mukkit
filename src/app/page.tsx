@@ -40,7 +40,7 @@ export default function StartPage({ searchParams }: PageProps<"/">) {
           className="flex h-btn-l items-center justify-center gap-2.5 rounded-btn-l border border-[#747775] bg-white text-[16px] font-bold text-[#1F1F1F]"
         >
           <GoogleG />
-          Google로 계속하기
+          Google로 시작하기
         </a>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 로그인 라우트는 전체 이동이어야 함 (Link 프리페치가 OAuth 시작을 부르지 않게) */}
         <a

@@ -114,7 +114,7 @@ export function MediaUploader({ userId, placeId }: { userId: string; placeId: st
               type="button"
               onClick={() => remove(m)}
               disabled={busy}
-              aria-label="사진 · 영상 지우기"
+              aria-label="사진 · 영상 삭제"
               className="absolute top-0.5 right-0.5 flex size-6 items-center justify-center rounded-full bg-black/60 text-white"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">

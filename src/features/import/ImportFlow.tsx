@@ -336,7 +336,7 @@ function ImportRunning({ rows, status, total }: { rows: Row[]; status: Record<st
           );
         })}
       </ul>
-      <p className="px-5 pt-3 pb-5 text-center text-meta leading-normal text-muted">끝날 때까지 이 화면을 열어 두세요.</p>
+      <p className="px-5 pt-3 pb-5 text-center text-meta leading-normal text-muted">화면을 닫지 말고 잠시만 기다려 주세요</p>
     </div>
   );
 }
@@ -434,7 +434,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
         <div className="mx-5 mt-4 flex flex-col gap-1 rounded-btn-l bg-surface px-4 py-3.5">
           <span className="text-body font-bold">평가 전 {unratedAdded}곳, 빠르게 평가해볼까요?</span>
           <span className="text-meta leading-normal text-muted">
-            한 곳씩 등급만 고르면 돼요. 안 가본 곳은 &lsquo;가고 싶은 곳&rsquo;으로 옮겨져요. 중간에 그만둬도 이어서 할 수 있어요.
+            등급만 고르면 끝나요. 중간에 그만둬도 이어서 할 수 있어요.
           </span>
         </div>
       )}
@@ -467,7 +467,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
           </Link>
         )}
         <button type="button" onClick={onRestart} className="h-btn-m rounded-btn-m text-body text-ink-2">
-          다른 리스트 더 가져오기
+          리스트 더 가져오기
         </button>
       </div>
     </div>

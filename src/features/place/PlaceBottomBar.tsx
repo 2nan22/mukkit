@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { saveWantToGo, savePlaceToList } from "./actions";
 
-type Props = { placeId: string; saved: boolean; lists: { id: string; name: string }[] };
+type Props = { placeId: string; saved: boolean; rated: boolean; lists: { id: string; name: string }[] };
 
-export function PlaceBottomBar({ placeId, saved, lists }: Props) {
+export function PlaceBottomBar({ placeId, saved, rated, lists }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -45,7 +45,7 @@ export function PlaceBottomBar({ placeId, saved, lists }: Props) {
             </li>
           ))}
           <li>
-            <Link href="/lists/new" className="flex min-h-12 items-center px-4 text-meta text-ink-2">
+            <Link href={`/lists/new?add=${placeId}`} className="flex min-h-12 items-center px-4 text-meta text-ink-2">
               새 리스트 만들기
             </Link>
           </li>
@@ -53,11 +53,11 @@ export function PlaceBottomBar({ placeId, saved, lists }: Props) {
       )}
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="h-btn-l rounded-btn-l border border-line-strong text-[16px] font-bold text-ink">
-          리스트에 저장
+          리스트에 담기
         </button>
         {saved ? (
           <Link href={`/rate/${placeId}?next=/p/${placeId}`} className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white">
-            평가 · 메모
+            {rated ? "평가 수정" : "평가하기"}
           </Link>
         ) : (
           <button

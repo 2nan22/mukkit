@@ -70,7 +70,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
           rows={2}
           maxLength={REVIEW_MAX}
           defaultValue={place.review}
-          placeholder="다른 사람에게 보여줄 한마디"
+          placeholder="한 줄로 남겨 보세요"
           className="w-full resize-none rounded-btn-m border border-line-strong px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink"
         />
       </div>
@@ -94,7 +94,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
             </label>
           ))}
         </div>
-        <span className="text-caption leading-normal text-muted">등급 · 한 줄 평가 · 사진이 이 범위로 보여요. 아래 메모는 언제나 나만 봐요.</span>
+        <span className="text-caption leading-normal text-muted">메모는 공개 범위와 상관없이 나만 볼 수 있어요.</span>
       </div>
 
       <div className="flex flex-col gap-2 px-5 pt-4">
@@ -107,7 +107,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
           rows={2}
           maxLength={NOTE_MAX}
           defaultValue={place.note}
-          placeholder="가져온 메모도 여기 있어요"
+          placeholder="나만 보는 메모"
           className="w-full resize-none rounded-btn-m border border-line-strong bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink"
         />
       </div>
@@ -134,7 +134,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
         />
         <span className="flex flex-col gap-0.5">
           <span className="text-body">협찬이나 이벤트로 방문했어요</span>
-          <span className="text-meta text-muted">체크하면 등급 통계에 들어가지 않아요</span>
+          <span className="text-meta text-muted">통계에서 빠져요</span>
         </span>
       </label>
 

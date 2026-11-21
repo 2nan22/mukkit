@@ -115,7 +115,7 @@ export function EatView({ regions }: { regions: Region[] }) {
           {error}
         </p>
       )}
-      {pending && <p className="text-meta text-muted">내 기록과 팔로잉 평가를 살펴보는 중이에요</p>}
+      {pending && <p className="text-meta text-muted">찾는 중이에요</p>}
 
       {groups && where && pins.length > 0 && (
         <div className="relative -mx-5 h-[38dvh] min-h-60 overflow-hidden border-y border-line">
@@ -128,11 +128,11 @@ export function EatView({ regions }: { regions: Region[] }) {
       {!pending && groups && where && (
         <section className="flex flex-col gap-6">
           <p className="text-meta text-muted">
-            {where.label} {km(radius)} 안 · 추천 {total}곳 — 내 기록 · 팔로잉 · 취향이 비슷한 사람의 평가로 골랐어요
+            {where.label} {km(radius)} 안 · {total}곳
           </p>
           {groups.length === 0 && (
             <p className="rounded-btn-l bg-surface p-4 text-meta leading-normal text-ink-2">
-              이 근처엔 추천할 곳이 아직 없어요. 반경을 넓히거나, 이 지역을 평가한 사람을 팔로우해 보세요.
+              이 근처엔 아직 없어요. 반경을 넓혀 보세요.
             </p>
           )}
           {groups.map((g) => (

@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
+import { useLeave } from "@/lib/nav/useLeave";
 import { loadNextUnrated, setTier } from "./actions";
 import type { SavedPlace } from "./rating";
 
@@ -21,6 +21,7 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
   const [remaining, setRemaining] = useState(total);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const leave = useLeave("/my");
 
   function loadNext(skip: string[]) {
     return loadNextUnrated(skip).then((res) => {
@@ -147,17 +148,17 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
               되돌리기
             </button>
             <button type="button" onClick={skip} disabled={pending} className="h-btn-m text-meta text-muted">
-              잘 모르겠어요 · 건너뛰기
+              건너뛰기
             </button>
           </div>
         </>
       ) : (
         <section className="flex flex-1 flex-col gap-3 px-5 pt-10">
           <h2 className="text-title font-bold tracking-tight">
-            {skipped.length > 0 ? `건너뛴 ${skipped.length}곳이 남았어요` : "평가 전인 곳을 다 봤어요"}
+            {skipped.length > 0 ? `건너뛴 ${skipped.length}곳이 남았어요` : "다 평가했어요"}
           </h2>
           <p className="text-body leading-normal text-ink-2">
-            {done.length > 0 ? `이번에 ${done.length}곳을 평가했어요.` : "평가할 곳이 없어요."} 평가는 언제든 장소에서 바꿀 수 있어요.
+            {done.length > 0 ? `이번에 ${done.length}곳을 평가했어요.` : "평가할 곳이 없어요."}
           </p>
           <div className="flex-1" />
           <div className="flex flex-col gap-2 pb-5">
@@ -171,9 +172,9 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
                 건너뛴 곳 다시 보기
               </button>
             )}
-            <Link href="/home" className="flex h-btn-l items-center justify-center rounded-btn-l bg-ink text-[16px] font-bold text-white">
-              홈으로
-            </Link>
+            <button type="button" onClick={leave} className="h-btn-l rounded-btn-l bg-ink text-[16px] font-bold text-white">
+              완료
+            </button>
           </div>
         </section>
       )}

@@ -62,7 +62,7 @@ function OtherRow({ r }: { r: OtherRating }) {
             </span>
           </span>
         </Link>
-        {r.sponsored && <span className="rounded border border-line-strong px-1.5 text-caption text-muted">협찬 표시</span>}
+        {r.sponsored && <span className="rounded border border-line-strong px-1.5 text-caption text-muted">협찬</span>}
         <TierBadge tier={r.tier} />
       </div>
       {r.review && <p className="text-body leading-normal text-ink-2">{r.review}</p>}
@@ -122,11 +122,6 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
       <section className="flex flex-col gap-2 border-b-8 border-surface px-5 pt-4 pb-5">
         <div className="flex items-center justify-between">
           <h2 className="text-section font-bold">내 평가</h2>
-          {mine && (
-            <Link href={`/rate/${place.id}?next=/p/${place.id}`} className="flex h-btn-m items-center text-meta text-muted">
-              수정
-            </Link>
-          )}
         </div>
         {mine ? (
           <>
@@ -143,13 +138,13 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             )}
           </>
         ) : (
-          <p className="text-meta text-muted">아직 저장하지 않은 곳이에요. 아래에서 가고 싶은 곳으로 저장할 수 있어요.</p>
+          <p className="text-meta text-muted">아직 저장하지 않은 곳이에요</p>
         )}
       </section>
 
       <section className="flex flex-1 flex-col px-5 pt-4 pb-4">
         <h2 className="text-section font-bold">팔로잉 평가</h2>
-        {following.length === 0 && <p className="py-3 text-meta text-muted">팔로우한 사람 중 이곳을 평가한 사람이 없어요.</p>}
+        {following.length === 0 && <p className="py-3 text-meta text-muted">팔로잉 중에는 아직 평가한 사람이 없어요</p>}
         {following.map((r) => (
           <OtherRow key={r.userId} r={r} />
         ))}
@@ -163,7 +158,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         )}
       </section>
 
-      <PlaceBottomBar placeId={place.id} saved={Boolean(mine)} lists={lists.map((l) => ({ id: l.id, name: l.name }))} />
+      <PlaceBottomBar placeId={place.id} saved={Boolean(mine)} rated={Boolean(mine && ["three", "two", "one", "notRecommended"].includes(mine.tier))} lists={lists.map((l) => ({ id: l.id, name: l.name }))} />
     </>
   );
 }

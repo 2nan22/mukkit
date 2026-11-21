@@ -77,7 +77,7 @@ async function MyContent() {
             프로필 수정
           </Link>
           <Link href={`/u/${me}`} className="flex h-btn-m items-center justify-center rounded-btn-m bg-surface-2 text-body text-ink">
-            남에게 보이는 내 프로필
+            내 프로필 보기
           </Link>
         </div>
         <div className="grid grid-cols-5 gap-1.5">
@@ -92,7 +92,7 @@ async function MyContent() {
           <Link href="/rate" className="flex items-center justify-between gap-3 rounded-btn-l bg-surface px-4 py-3.5">
             <span className="flex flex-col gap-0.5">
               <span className="text-body font-bold">평가 전 {tiers.unrated}곳</span>
-              <span className="text-meta text-muted">한 곳씩 등급만 고르면 돼요</span>
+              <span className="text-meta text-muted">등급만 고르면 끝나요</span>
             </span>
             <span className="shrink-0 text-meta font-bold text-ink">빠르게 평가하기</span>
           </Link>
@@ -129,7 +129,6 @@ async function MyContent() {
         {[
           { href: "/people", label: "사람 찾기" },
           { href: "/import", label: "저장한 장소 가져오기" },
-          { href: "/settings/accounts", label: "로그인 연결 · 로그아웃" },
         ].map((l) => (
           <Link key={l.href} href={l.href} className="flex min-h-12 items-center justify-between border-b border-line text-body">
             {l.label}

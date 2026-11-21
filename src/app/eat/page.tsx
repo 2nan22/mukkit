@@ -13,7 +13,7 @@ export default function EatPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/home" title="여기서 뭐 먹지" />
       <p className="px-5 pb-4 text-meta leading-normal text-muted">
-        내 평가와 가고 싶은 곳, 팔로우한 사람과 취향이 비슷한 사람의 평가를 모아 업종별로 골라 드려요. 가게 평균 점수는 쓰지 않아요.
+        내가 저장한 곳과 팔로잉 · 취향이 비슷한 사람이 평가한 곳만 보여드려요.
       </p>
       <Suspense fallback={null}>
         <EatLoader />

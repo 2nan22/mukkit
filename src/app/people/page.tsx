@@ -45,7 +45,7 @@ async function People({ searchParams }: { searchParams: Promise<{ q?: string | s
           찾기
         </button>
       </form>
-      {!query && <TasteMatches matches={matches} title="이런 사람은 어때요" />}
+      {!query && <TasteMatches matches={matches} title="취향이 비슷한 사람" />}
       <ul>
         {people.map((p) => (
           <li key={p.id}>
@@ -57,7 +57,7 @@ async function People({ searchParams }: { searchParams: Promise<{ q?: string | s
             </Link>
           </li>
         ))}
-        {query && people.length === 0 && <li className="py-8 text-center text-meta text-muted">그 닉네임을 쓰는 사람이 없어요.</li>}
+        {query && people.length === 0 && <li className="py-8 text-center text-meta text-muted">검색 결과가 없어요</li>}
       </ul>
     </div>
   );

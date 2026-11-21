@@ -66,7 +66,7 @@ async function ListsContent() {
             </Link>
           ))}
         </div>
-        <span className="text-meta text-muted">등급별 리스트는 평가하면 자동으로 채워져요. 누르면 지도로 봐요.</span>
+        <span className="text-meta text-muted">평가하면 등급별로 모여요</span>
       </section>
 
       <section className="flex flex-col">
@@ -92,8 +92,7 @@ async function ListsContent() {
 
       {imported.length > 0 && (
         <section className="flex flex-col">
-          <h2 className="text-meta font-bold text-muted">가져온 원본 리스트</h2>
-          <p className="mb-1 text-meta leading-normal text-muted">네이버 · 카카오에서 가져온 그대로예요. 골라서 새 리스트를 만들 수 있어요.</p>
+          <h2 className="text-meta font-bold text-muted">가져온 리스트</h2>
           {imported.map((l) => (
             <Link
               key={`${l.source}:${l.sourceListId}`}
@@ -107,7 +106,7 @@ async function ListsContent() {
                   {SOURCE_LABEL[l.source]} · {l.count}곳
                 </span>
               </span>
-              <span className="shrink-0 text-meta font-bold text-ink">골라서 만들기</span>
+              <span className="shrink-0 text-meta font-bold text-ink">리스트로 만들기</span>
             </Link>
           ))}
         </section>

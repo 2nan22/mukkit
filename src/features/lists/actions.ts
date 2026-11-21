@@ -16,7 +16,7 @@ import {
   VISIBILITIES,
 } from "./lists";
 
-export type ListFormState = { error?: string };
+export type ListFormState = { error?: string; created?: boolean };
 type Result = { error?: string };
 
 const FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
@@ -37,7 +37,8 @@ export async function createListWithPlaces(_prev: ListFormState, formData: FormD
   } catch {
     return { error: FAILED };
   }
-  revalidatePath("/lists");
+  revalidatePath("/", "layout");
+  if (formData.get("stay")) return { created: true };
   redirect(`/lists/${listId}`, RedirectType.replace);
 }
 

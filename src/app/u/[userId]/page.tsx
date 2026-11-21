@@ -88,7 +88,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
             <span>
               나와 겹치는 곳 <b className="text-ink">{taste.overlap}곳</b> · 그중 둘 다 3스타 <b className="text-tier-3">{taste.bothThree}곳</b>
             </span>
-            <span className="shrink-0 font-bold text-tier-3">비슷함 {Math.round(taste.similarity * 100)}%</span>
+            <span className="shrink-0 font-bold text-tier-3">취향 일치 {Math.round(taste.similarity * 100)}%</span>
           </div>
         )}
 

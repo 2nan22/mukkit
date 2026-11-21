@@ -2,13 +2,14 @@ import Link from "next/link";
 import type { TasteMatch } from "./social";
 
 // 취향이 비슷한 사람 — 같은 가게를 둘 다 평가했을 때 등급이 얼마나 비슷한지
-export function TasteMatches({ matches, title = "취향이 비슷한 사람" }: { matches: TasteMatch[]; title?: string }) {
+export function TasteMatches({ matches: all, title = "취향이 비슷한 사람" }: { matches: TasteMatch[]; title?: string }) {
+  const matches = all.filter((m) => m.overlap > 0);
   if (matches.length === 0) return null;
   return (
     <section className="flex flex-col gap-2">
       <div className="flex flex-col gap-0.5">
         <h2 className="text-section font-bold">{title}</h2>
-        <span className="text-meta text-muted">같은 가게를 평가한 사람 중 등급이 비슷한 순이에요.</span>
+        <span className="text-meta text-muted">나와 평가가 비슷한 순</span>
       </div>
       <ul className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
         {matches.map((m) => (
@@ -19,10 +20,10 @@ export function TasteMatches({ matches, title = "취향이 비슷한 사람" }: 
               </span>
               <span className="truncate text-body font-bold">{m.nickname}</span>
               <span className="flex flex-col text-meta leading-snug text-muted">
-                <span>겹침 {m.overlap}곳</span>
+                <span>같이 평가한 곳 {m.overlap}</span>
                 <span className="whitespace-nowrap">둘 다 3스타 {m.bothThree}곳</span>
               </span>
-              <span className="text-meta font-bold text-tier-3">비슷함 {Math.round(m.similarity * 100)}%</span>
+              <span className="text-meta font-bold text-tier-3">취향 일치 {Math.round(m.similarity * 100)}%</span>
             </Link>
           </li>
         ))}

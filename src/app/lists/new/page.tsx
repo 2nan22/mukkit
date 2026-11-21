@@ -20,8 +20,8 @@ export default function NewListPage({ searchParams }: PageProps<"/lists/new">) {
 }
 
 // 세션을 읽는 부분만 요청 시점에 그린다
-async function NewListLoader({ searchParams }: { searchParams: Promise<{ from?: string | string[] }> }) {
-  const { from } = await searchParams;
+async function NewListLoader({ searchParams }: { searchParams: Promise<{ from?: string | string[]; add?: string | string[] }> }) {
+  const { from, add } = await searchParams;
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
@@ -29,5 +29,5 @@ async function NewListLoader({ searchParams }: { searchParams: Promise<{ from?: 
   const places = await getPickablePlaces(supabase, userId);
   const origin = typeof from === "string" ? from : undefined;
   const originName = origin ? places.flatMap((p) => p.origins).find((o) => o.listKey === origin)?.listName : undefined;
-  return <NewListForm places={places} initialOrigin={originName ? origin : undefined} initialName={originName} />;
+  return <NewListForm places={places} initialOrigin={originName ? origin : undefined} initialName={originName} addPlaceId={typeof add === "string" && places.some((p) => p.placeId === add) ? add : undefined} />;
 }

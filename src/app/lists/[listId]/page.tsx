@@ -13,7 +13,7 @@ export const metadata = { title: "리스트" };
 export default function ListPage({ params }: PageProps<"/lists/[listId]">) {
   return (
     <main className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-y-auto">
-      <AppHeader kind="back" fallback="/lists" title="내 리스트" />
+      <AppHeader kind="back" fallback="/lists" title="리스트" />
       <Suspense fallback={null}>
         <ListLoader params={params} />
       </Suspense>

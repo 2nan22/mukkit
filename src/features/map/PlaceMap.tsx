@@ -132,11 +132,7 @@ export function PlaceMap({ pins, selectedId, onSelect }: { pins: Pin[]; selected
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 bg-map-land px-8 text-center">
         <p className="text-body font-bold">지도를 불러오지 못했어요</p>
-        <p className="text-meta leading-normal text-muted">
-          {APP_KEY
-            ? "카카오맵 인증에 실패했어요. 카카오 개발자 콘솔의 JavaScript SDK 도메인에 지금 주소가 있는지 확인해 주세요."
-            : "카카오맵 키(NEXT_PUBLIC_KAKAO_MAP_KEY)가 아직 없어요. 아래 목록으로 볼 수 있어요."}
-        </p>
+        <p className="text-meta leading-normal text-muted">잠시 후 다시 열어 주세요.</p>
       </div>
     );
   }
