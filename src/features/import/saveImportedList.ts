@@ -55,7 +55,7 @@ function dedupeBySourceId(places: ImportedPlace[]): ImportedPlace[] {
 
 // 장소는 모두가 함께 쓰는 줄 — 이미 있으면 건드리지 않는다 (상태 갱신은 주기 확인 작업 몫)
 // 출처 ID 가 처음이면 다른 출처에서 온 같은 가게를 먼저 찾아 붙이고, 없을 때만 새 장소
-async function upsertPlaces(supabase: SupabaseClient, places: ImportedPlace[]): Promise<Map<string, string>> {
+export async function upsertPlaces(supabase: SupabaseClient, places: ImportedPlace[]): Promise<Map<string, string>> {
   const ids = new Map<string, string>();
   for (const part of chunks(places)) {
     const known = await findLinkedPlaces(supabase, part);
