@@ -14,9 +14,15 @@ if [ -z "$NAVER_LOGIN_CLIENT_ID" ] || [ -z "$NAVER_LOGIN_CLIENT_SECRET" ]; then
   exit 0
 fi
 
-status_env="$(cd "$ROOT" && supabase status -o env 2>/dev/null)"
-API_URL="$(printf '%s\n' "$status_env" | grep '^API_URL=' | cut -d= -f2- | tr -d '"')"
-SECRET_KEY="$(printf '%s\n' "$status_env" | grep '^SECRET_KEY=' | cut -d= -f2- | tr -d '"')"
+# 호스팅에 등록할 때는 NAVER_TARGET_URL · NAVER_TARGET_SECRET 을 넘긴다 (없으면 로컬)
+if [ -n "${NAVER_TARGET_URL:-}" ]; then
+  API_URL="$NAVER_TARGET_URL"
+  SECRET_KEY="${NAVER_TARGET_SECRET:-}"
+else
+  status_env="$(cd "$ROOT" && supabase status -o env 2>/dev/null)"
+  API_URL="$(printf '%s\n' "$status_env" | grep '^API_URL=' | cut -d= -f2- | tr -d '"')"
+  SECRET_KEY="$(printf '%s\n' "$status_env" | grep '^SECRET_KEY=' | cut -d= -f2- | tr -d '"')"
+fi
 if [ -z "$API_URL" ] || [ -z "$SECRET_KEY" ]; then
   echo "[naver] 로컬 Supabase 가 꺼져 있음 — pnpm db:start 후 다시 실행" >&2
   exit 1
