@@ -1,7 +1,7 @@
 -- 약속 잡기 — 당사자만, 상대 위치는 상대도 못 읽음, 링크 참여, 1km 깎기
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(14);
 
 insert into auth.users (id, email) values
   ('71111111-1111-1111-1111-111111111111', 'mt-host@test.local'),
@@ -30,6 +30,8 @@ insert into public.meetup_points (meetup_id, user_id, kind, label, lat, lng)
   values ('d1111111-0000-0000-0000-000000000001', '72222222-2222-2222-2222-222222222222', 'origin', '잠실', 37.5133, 127.1001);
 select is((select count(*)::int from public.meetup_points), 1, '상대(만든 사람) 위치는 못 읽음 — 내 것 1줄만');
 select is((select count(*)::int from public.meetup_area_scores('d1111111-0000-0000-0000-000000000001', 3)), 3, '둘 다 넣으면 지역 3곳');
+select is((select partner_ready from public.meetup_status('d1111111-0000-0000-0000-000000000001')), true, '상대가 넣었는지만 앎');
+select is((select invite_token from public.meetup_status('d1111111-0000-0000-0000-000000000001')), null, '초대 토큰은 만든 사람에게만');
 select ok((select bool_and(my_minutes > 0 and partner_minutes > 0) from public.meetup_area_scores('d1111111-0000-0000-0000-000000000001')), '지역마다 둘의 어림 시간');
 select throws_ok(
   $$insert into public.meetup_points (meetup_id, user_id, kind, label, lat, lng) values ('d1111111-0000-0000-0000-000000000001', '71111111-1111-1111-1111-111111111111', 'origin', '가짜', 37.5, 127.0)$$,
