@@ -45,7 +45,7 @@ const NEIGHBORHOOD_LEVEL = 5;
 const SINGLE_LEVEL = 3;
 
 const PIN_STYLE: Record<Tier, { size: number; bg: string; ring: string; text: string; label: string }> = {
-  three: { size: 22, bg: "#b93a06", ring: "#ffffff", text: "#ffffff", label: "3" },
+  three: { size: 22, bg: "#b42330", ring: "#ffffff", text: "#ffffff", label: "3" },
   two: { size: 22, bg: "#e8590c", ring: "#ffffff", text: "#ffffff", label: "2" },
   one: { size: 22, bg: "#f5a524", ring: "#ffffff", text: "#3d2800", label: "1" },
   notRecommended: { size: 14, bg: "#adb1b8", ring: "#ffffff", text: "#ffffff", label: "" },

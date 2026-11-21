@@ -21,7 +21,7 @@ export default async function Image({ params }: { params: Promise<{ listId: stri
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 80, background: "#ffffff", color: "#17181c", fontFamily: "Pretendard" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 22, background: "#b93a06", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24 }}>3</div>
+          <div style={{ width: 44, height: 44, borderRadius: 22, background: "#b42330", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24 }}>3</div>
           <div style={{ fontSize: 32 }}>마이슐랭</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
