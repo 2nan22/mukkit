@@ -62,7 +62,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
           {NOT_RATED.map((tier) => (
             <label
               key={tier}
-              className="flex h-btn-m cursor-pointer items-center justify-center gap-2 rounded-full bg-surface text-meta font-medium text-ink-2 has-checked:bg-ink has-checked:text-white"
+              className="flex h-btn-m cursor-pointer items-center justify-center gap-2 rounded-full bg-surface text-meta font-medium text-ink-2 has-checked:bg-ink has-checked:text-white raised"
             >
               <input type="radio" name="tier" value={tier} defaultChecked={tier === place.tier} className="sr-only" />
               {tier === "unrated" ? "평가 전" : TIER_LABEL[tier]}
@@ -152,7 +152,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
         <button
           type="submit"
           disabled={pending}
-          className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60"
+          className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand"
         >
           {pending ? "저장하는 중" : "저장"}
         </button>

@@ -44,7 +44,7 @@ export function NicknameForm({ suggestion, next }: { suggestion: string; next: s
       <button
         type="submit"
         disabled={pending}
-        className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60"
+        className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand"
       >
         {pending ? "저장하는 중" : "시작하기"}
       </button>

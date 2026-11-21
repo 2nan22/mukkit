@@ -30,6 +30,16 @@ export function fromSupabaseProvider(value: string): LoginProvider | undefined {
   return (Object.keys(LOGIN_PROVIDERS) as LoginProvider[]).find((key) => LOGIN_PROVIDERS[key] === value);
 }
 
+// 로그인할 때도 계정을 고르게 한다 — 한 기기에서 다른 계정으로 바꿔 들어올 수 있게 (네이버는 계정 선택이 없어 그대로)
+export const LOGIN_PICKER_PARAMS: Record<LoginProvider, Record<string, string>> = {
+  kakao: { prompt: "select_account" },
+  google: { prompt: "select_account" },
+  naver: {},
+};
+
+// 이 기기에서 마지막으로 로그인한 방법 — 시작 화면 '최근 로그인' 표시용 (로그인 판정에는 쓰지 않는다)
+export const LAST_LOGIN_COOKIE = "last_login";
+
 // 계정 연결 때는 브라우저에 로그인된 계정을 조용히 쓰지 않고 다시 고르게 한다 (네이버는 계정 선택이 없어 재로그인)
 export const LINK_REAUTH_PARAMS: Record<LoginProvider, Record<string, string>> = {
   kakao: { prompt: "select_account" },

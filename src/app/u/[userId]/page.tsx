@@ -94,7 +94,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
 
         {me && me !== person.id && <FollowButton targetId={person.id} following={following} primary />}
         {!me && (
-          <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white">
+          <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
             마이슐랭 시작하고 팔로우하기
           </Link>
         )}

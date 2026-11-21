@@ -54,7 +54,7 @@ export function ListDetail({ list, places, origin }: Props) {
             type="button"
             disabled={pending || picked.size === 0}
             onClick={() => act(() => addPlacesToList(list.id, [...picked]), () => { setPicked(new Set()); setAdding(false); })}
-            className="h-btn-l rounded-btn-l bg-brand text-body font-bold text-white disabled:opacity-40"
+            className="h-btn-l rounded-btn-l bg-brand text-body font-bold text-white disabled:opacity-40 raised-brand"
           >
             {picked.size}곳 추가
           </button>
@@ -83,7 +83,7 @@ export function ListDetail({ list, places, origin }: Props) {
               type="button"
               disabled={pending}
               onClick={() => act(() => saveListInfo(list.id, name, list.description), () => setEditing(false))}
-              className="h-12 shrink-0 rounded-btn-m bg-ink px-4 text-body font-bold text-white"
+              className="h-12 shrink-0 rounded-btn-m bg-ink px-4 text-body font-bold text-white raised"
             >
               저장
             </button>

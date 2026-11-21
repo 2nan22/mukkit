@@ -58,7 +58,7 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
       <PublicListView list={list} signedIn={signedIn} />
       {!signedIn && (
         <div className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-[480px] bg-white px-5 pt-3 pb-5 shadow-sheet">
-          <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white">
+          <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
             마이슐랭에서 내 리스트 만들기
           </Link>
         </div>
