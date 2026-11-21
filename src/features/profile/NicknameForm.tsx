@@ -28,10 +28,10 @@ export function NicknameForm({ suggestion, next }: { suggestion: string; next: s
           aria-invalid={Boolean(state.error)}
           aria-describedby="nickname-help"
           className={`h-12 rounded-btn-m border px-3.5 text-body text-ink outline-none focus:border-ink ${
-            state.error ? "border-[#c4320a]" : "border-line-strong"
+            state.error ? "border-danger" : "border-line-strong"
           }`}
         />
-        <p id="nickname-help" role={state.error ? "alert" : undefined} className={`text-meta ${state.error ? "text-[#c4320a]" : "text-muted"}`}>
+        <p id="nickname-help" role={state.error ? "alert" : undefined} className={`text-meta ${state.error ? "text-danger" : "text-muted"}`}>
           {state.error ?? NICKNAME_RULE}
         </p>
       </div>

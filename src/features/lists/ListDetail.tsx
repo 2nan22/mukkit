@@ -4,8 +4,7 @@ import { useLeave } from "@/lib/nav/useLeave";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore, useTransition } from "react";
-import { CuisineIcon } from "@/components/ui/CuisineIcon";
-import { TierBadge } from "@/components/ui/TierBadge";
+import { PlaceRow } from "@/components/ui/PlaceRow";
 import { Toast } from "@/components/ui/Toast";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { addPlacesToList, removeList, removePlacesFromList, restorePlacesToList, saveListInfo, setListVisibility } from "./actions";
@@ -156,7 +155,7 @@ export function ListDetail({ list, places, origin }: Props) {
       </div>
 
       {error && (
-        <p role="alert" className="text-meta text-[#c4320a]">
+        <p role="alert" className="text-meta text-danger">
           {error}
         </p>
       )}
@@ -173,21 +172,16 @@ export function ListDetail({ list, places, origin }: Props) {
         <ul className="flex flex-col">
           {items.length === 0 && <li className="py-10 text-center text-meta text-muted">아직 담은 곳이 없어요</li>}
           {items.map((p, i) => (
-            <li key={p.placeId} className="flex items-center gap-3 py-2.5">
-              <span className="w-5 shrink-0 text-center text-meta text-subtle">{i + 1}</span>
-              <Link href={`/p/${p.placeId}`} className="flex min-w-0 flex-1 items-center gap-3">
-                <CuisineIcon cuisine={p.cuisine} />
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="flex items-center gap-1.5">
-                    <span className="truncate text-body font-semibold">{p.name}</span>
-                    <TierBadge tier={p.tier} />
-                  </span>
-                  <span className="truncate text-meta text-muted">
-                    {[CUISINE_LABEL[p.cuisine], p.address.split(" ").slice(0, 2).join(" ")].filter(Boolean).join(" · ")}
-                  </span>
-                </span>
-              </Link>
-              {removing && (
+            <li key={p.placeId}>
+              <PlaceRow
+                index={i + 1}
+                href={`/p/${p.placeId}`}
+                name={p.name}
+                cuisine={p.cuisine}
+                tier={p.tier}
+                meta={[CUISINE_LABEL[p.cuisine], p.address.split(" ").slice(0, 2).join(" ")].filter(Boolean).join(" · ")}
+                action={
+                  removing && (
                 <button
                   type="button"
                   disabled={pending}
@@ -201,11 +195,13 @@ export function ListDetail({ list, places, origin }: Props) {
                     })
                   }
                   aria-label={`${p.name} 삭제`}
-                  className="flex h-8 shrink-0 items-center rounded-full bg-surface px-3 text-meta font-medium text-[#c4320a]"
+                  className="flex h-8 shrink-0 items-center rounded-full bg-surface px-3 text-meta font-medium text-danger"
                 >
                   삭제
                 </button>
-              )}
+                  )
+                }
+              />
             </li>
           ))}
         </ul>
@@ -220,7 +216,7 @@ export function ListDetail({ list, places, origin }: Props) {
               <button type="button" onClick={() => setConfirmDelete(false)} className="h-btn-m rounded-btn-m border border-line-strong bg-white text-body">
                 취소
               </button>
-              <button type="button" disabled={pending} onClick={() => act(() => removeList(list.id), leave)} className="h-btn-m rounded-btn-m bg-[#c4320a] text-body font-bold text-white">
+              <button type="button" disabled={pending} onClick={() => act(() => removeList(list.id), leave)} className="h-btn-m rounded-btn-m bg-danger text-body font-bold text-white">
                 삭제
               </button>
             </div>

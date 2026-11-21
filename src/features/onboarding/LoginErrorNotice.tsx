@@ -6,7 +6,7 @@ export async function LoginErrorNotice({ searchParams }: { searchParams: Promise
   // 우리 쪽 실패(login)든 인증 서버가 돌려보낸 실패(invalid_request 등)든 같은 안내 — 원인은 서버 로그에
   if (!error) return null;
   return (
-    <p role="alert" className="pb-1 text-center text-meta text-[#c4320a]">
+    <p role="alert" className="pb-1 text-center text-meta text-danger">
       {LOGIN_ERROR_MESSAGE}
     </p>
   );

@@ -41,7 +41,7 @@ export function NewListForm({ places, initialOrigin, initialName, addPlaceId }: 
       <PlacePicker places={places} selected={selected} onChange={setSelected} initialLabels={initialOrigin ? [initialOrigin] : []} />
       <div className="flex flex-col gap-2 border-t border-line px-5 pt-3 pb-5">
         {state.error && (
-          <p role="alert" className="text-meta text-[#c4320a]">
+          <p role="alert" className="text-meta text-danger">
             {state.error}
           </p>
         )}

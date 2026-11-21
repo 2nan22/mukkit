@@ -57,7 +57,7 @@ async function AccountLinks({ searchParams }: { searchParams: Promise<{ error?: 
   return (
     <section className="flex flex-col px-5">
       {message && (
-        <p role="alert" className="mb-3 rounded-btn-m bg-surface px-4 py-3 text-meta leading-relaxed text-[#c4320a]">
+        <p role="alert" className="mb-3 rounded-btn-m bg-surface px-4 py-3 text-meta leading-relaxed text-danger">
           {message}
         </p>
       )}

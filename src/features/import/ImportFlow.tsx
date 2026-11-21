@@ -24,7 +24,7 @@ type Row = ListPreview & { link: string; mode: ImportMode };
 type RowStatus = { state: "waiting" | "running" } | { state: "done"; result: ImportResult } | { state: "failed"; error: string };
 type Phase = "select" | "running" | "done";
 
-const ERROR_TEXT = "text-[#c4320a]";
+const ERROR_TEXT = "text-danger";
 
 export function ImportFlow() {
   const [rows, setRows] = useState<Row[]>([]);

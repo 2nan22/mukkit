@@ -98,10 +98,10 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
       <PlaceHeaderMap id={place.id} lat={place.lat} lng={place.lng} tier={mine?.tier ?? "unrated"} />
 
       <section className="flex flex-col gap-1 border-b-8 border-surface px-5 pt-4 pb-5">
-        <span className="text-meta text-muted">{[CUISINE_LABEL[place.cuisine], place.categoryName].filter((v, i, a) => v && a.indexOf(v) === i).join(" · ")}</span>
+        <span className="text-meta text-muted">{[CUISINE_LABEL[place.cuisine], place.categoryName].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i).join(" · ")}</span>
         <h1 className="text-title font-bold tracking-tight">{place.name}</h1>
         <span className="text-body text-ink-2">{place.address}</span>
-        {!place.available && <span className="text-meta text-[#c4320a]">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
+        {!place.available && <span className="text-meta text-danger">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
         <div className="grid grid-cols-3 gap-2 pt-3">
           <a href={links.directions} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-medium text-ink">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
@@ -131,7 +131,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <div className="flex items-center gap-2">
               <TierBadge tier={mine.tier} />
               <span className="text-meta font-medium text-ink-2">{TIER_MEANING[mine.tier]}</span>
-              {mine.visitedOn && <span className="ml-auto text-meta text-subtle">{dot(mine.visitedOn)} 방문</span>}
+              {mine.visitedOn && <span className="ml-auto text-meta text-subtle">{dot(mine.visitedOn)}</span>}
             </div>
             {mine.review && <p className="text-body leading-relaxed">{mine.review}</p>}
             <MediaStrip media={myMedia} />
@@ -151,10 +151,6 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
                 <span className="text-muted">나만 보는 메모</span> · {mine.note}
               </p>
             )}
-            <Link href={`/rate/${place.id}?next=/p/${place.id}`} className="flex items-center justify-between rounded-[16px] bg-brand-soft px-4 py-3.5">
-              <span className="text-body font-semibold text-ink">다녀오셨나요?</span>
-              <span className="text-meta font-bold text-brand">평가 남기기</span>
-            </Link>
           </div>
         ) : (
           <p className="text-meta text-muted">아직 저장하지 않은 곳이에요</p>

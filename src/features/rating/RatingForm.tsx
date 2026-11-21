@@ -142,7 +142,7 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
       <div className="flex-1" />
       <div className="sticky bottom-0 mt-6 flex flex-col gap-2 border-t border-line bg-white px-5 pt-3 pb-5">
         {state.error && (
-          <p role="alert" className="text-meta text-[#c4320a]">
+          <p role="alert" className="text-meta text-danger">
             {state.error}
           </p>
         )}

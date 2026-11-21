@@ -27,7 +27,7 @@ export function FollowButton({ targetId, following, compact = false }: { targetI
         {following ? "팔로잉" : "팔로우"}
       </button>
       {error && (
-        <p role="alert" className="text-caption text-[#c4320a]">
+        <p role="alert" className="text-caption text-danger">
           {error}
         </p>
       )}

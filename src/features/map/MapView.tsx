@@ -95,7 +95,7 @@ export function MapView({ places, initialTiers = [] }: { places: MapPlace[]; ini
                 </button>
               ))}
             </div>
-            <button type="button" onClick={() => setFilterOpen(false)} className="h-btn-l rounded-btn-l bg-ink text-[16px] font-bold text-white">
+            <button type="button" onClick={() => setFilterOpen(false)} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white">
               {shown.length}곳 보기
             </button>
           </section>
@@ -222,5 +222,5 @@ function toggle<T>(list: T[], item: T): T[] {
 
 function placeMeta(p: MapPlace): string {
   const region = p.address.split(" ").slice(0, 2).join(" ");
-  return [...new Set([CUISINE_LABEL[p.cuisine], p.categoryName, region])].filter(Boolean).join(" · ");
+  return [...new Set([CUISINE_LABEL[p.cuisine], p.categoryName, region])].filter((v) => v && v !== "음식점").join(" · ");
 }

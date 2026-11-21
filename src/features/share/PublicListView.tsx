@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { BackButton } from "@/components/BackButton";
-import { TierBadge } from "@/components/ui/TierBadge";
+import { PlaceRow } from "@/components/ui/PlaceRow";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
 import { PlaceMap } from "@/features/map/PlaceMap";
@@ -20,23 +20,17 @@ export function PublicListView({ list }: { list: PublicList }) {
         </div>
         <BackButton fallback="/" className="absolute top-3 left-3 z-10 rounded-full bg-white shadow-float" />
       </div>
-      <ul className="flex flex-col px-5">
+      <ul className="flex flex-col px-5 pt-2">
         {list.places.map((p) => (
           <li key={p.placeId}>
-            <button
-              type="button"
+            <PlaceRow
               onClick={() => setSelectedId(p.placeId)}
-              aria-pressed={p.placeId === selectedId}
-              className={`flex min-h-16 w-full items-center gap-3 border-b border-line py-2 text-left ${p.placeId === selectedId ? "bg-surface" : ""}`}
-            >
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="truncate text-body">{p.name}</span>
-                <span className="truncate text-meta text-muted">
-                  {[CUISINE_LABEL[p.cuisine], p.categoryName, regionOf(p.address)].filter((v, i, a) => v && a.indexOf(v) === i).join(" · ")}
-                </span>
-              </span>
-              {p.tier && <TierBadge tier={p.tier} />}
-            </button>
+              selected={p.placeId === selectedId}
+              name={p.name}
+              cuisine={p.cuisine}
+              tier={p.tier}
+              meta={[CUISINE_LABEL[p.cuisine], p.categoryName, regionOf(p.address)].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i).join(" · ")}
+            />
           </li>
         ))}
       </ul>
