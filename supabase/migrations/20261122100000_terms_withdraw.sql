@@ -24,3 +24,7 @@ $$;
 
 revoke all on function public.delete_my_account() from public, anon;
 grant execute on function public.delete_my_account() to authenticated;
+
+-- 내 폴더의 파일은 내가 볼 수 있다 — 평가에 아직 안 붙은 파일까지 탈퇴 때 찾아 지우려고
+create policy "미디어 내 폴더는 내가 봄" on storage.objects for select to authenticated
+  using (bucket_id = 'rating-media' and (storage.foldername(name))[1] = (select auth.uid())::text);
