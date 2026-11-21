@@ -54,7 +54,7 @@ async function HomeContent() {
     getRecentPublicLists(supabase, 4),
     getFollowCounts(supabase, me),
   ]);
-  const { count: invites } = await supabase.from("meetups").select("id", { count: "exact", head: true }).eq("invitee_id", me).eq("status", "open");
+  const { count: invites } = await supabase.from("meetup_invites").select("meetup_id, meetups!inner(status)", { count: "exact", head: true }).eq("user_id", me).eq("meetups.status", "open");
 
   return (
     <>

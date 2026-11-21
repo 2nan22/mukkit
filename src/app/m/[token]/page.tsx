@@ -18,7 +18,7 @@ export default function InvitePage({ params }: PageProps<"/m/[token]">) {
   );
 }
 
-type InviteRow = { meetup_id: string; host_nickname: string; purpose: Purpose; status: string; starts_at: string | null; ends_at: string | null; joined: boolean; is_host: boolean; full: boolean };
+type InviteRow = { meetup_id: string; host_nickname: string; purpose: Purpose; status: string; starts_at: string | null; ends_at: string | null; member_count: number; joined: boolean; is_host: boolean; full: boolean };
 
 async function Invite({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -53,15 +53,16 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
           {PURPOSE_LABEL[invite.purpose]} 약속에 초대했어요
         </h1>
         {when && <p className="text-body text-ink-2">{when}</p>}
+        {invite.member_count > 1 && <p className="text-meta text-muted">지금 {invite.member_count}명 참여 중</p>}
         <ol className="mt-3 flex flex-col gap-2.5 rounded-[16px] bg-surface p-4 text-meta leading-normal text-ink-2">
           <li className="flex gap-2"><b className="text-ink">1</b>로그인하고 약속에 참여해요</li>
           <li className="flex gap-2"><b className="text-ink">2</b>출발지나 귀가지를 넣어요 — 동네 정도로만 저장하고 상대에게는 보이지 않아요</li>
-          <li className="flex gap-2"><b className="text-ink">3</b>두 사람 모두 가기 편한 지역 3곳과 가게를 추천해 드려요</li>
+          <li className="flex gap-2"><b className="text-ink">3</b>모두 가기 편한 지역 3곳과 가게를 추천해 드려요</li>
         </ol>
       </section>
       <div className="flex flex-col gap-2.5">
         {invite.full ? (
-          <p className="text-center text-meta text-danger">이미 다른 분이 참여한 약속이에요.</p>
+          <p className="text-center text-meta text-danger">정원이 다 찬 약속이에요.</p>
         ) : signedIn ? (
           <JoinButton token={token} />
         ) : (

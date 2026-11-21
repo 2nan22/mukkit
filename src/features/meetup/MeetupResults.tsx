@@ -17,15 +17,19 @@ const noSubscribe = (onChange: () => void) => {
   return () => undefined;
 };
 
-function lateWarning(plan: AreaPlan, nickname: string): string | null {
-  if (plan.myLate && plan.partnerLate) return "헤어지는 시간이 두 사람 모두의 막차보다 늦어요";
-  if (plan.myLate) return "헤어지는 시간이 내 막차보다 늦어요";
-  if (plan.partnerLate) return `헤어지는 시간이 ${nickname}님 막차보다 늦어요`;
-  return null;
+function who(p: { isMe: boolean; nickname: string }): string {
+  return p.isMe ? "나" : `${p.nickname}님`;
+}
+
+function lateWarning(plan: AreaPlan): string | null {
+  const late = plan.people.filter((p) => p.late);
+  if (late.length === 0) return null;
+  if (late.length === plan.people.length) return "헤어지는 시간이 모두의 막차보다 늦어요";
+  return `헤어지는 시간이 ${late.map(who).join(" · ")} 막차보다 늦어요`;
 }
 
 // 두 사람 모두 가기 편한 지역 3곳 · 지역마다 가게 — 고른 지역을 상대에게 보내기
-export function MeetupResults({ plans, partnerNickname, meetupUrl }: { plans: AreaPlan[]; partnerNickname: string; meetupUrl: string }) {
+export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaPlan[]; meetupUrl: string; waitingCount: number }) {
   const [active, setActive] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -38,11 +42,11 @@ export function MeetupResults({ plans, partnerNickname, meetupUrl }: { plans: Ar
   );
 
   if (plans.length === 0) {
-    return <p className="rounded-[16px] bg-surface p-4 text-meta leading-normal text-muted">두 사람 사이에서 추천할 지역을 찾지 못했어요. 위치를 다른 역이나 동으로 바꿔 보세요.</p>;
+    return <p className="rounded-[16px] bg-surface p-4 text-meta leading-normal text-muted">추천할 지역을 찾지 못했어요. 위치를 다른 역이나 동으로 바꿔 보세요.</p>;
   }
 
   async function sendArea() {
-    const text = `${plan.name} 어때요? ${areaReason(plan.myMinutes, plan.partnerMinutes, partnerNickname)}`;
+    const text = `${plan.name} 어때요? ${areaReason(plan.people)}`;
     if (canShare) return navigator.share({ title: "약속 장소", text, url: meetupUrl }).catch(() => undefined);
     try {
       await navigator.clipboard.writeText(`${text}\n${meetupUrl}`);
@@ -52,11 +56,14 @@ export function MeetupResults({ plans, partnerNickname, meetupUrl }: { plans: Ar
     }
   }
 
-  const warning = lateWarning(plan, partnerNickname);
+  const warning = lateWarning(plan);
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-section font-bold">두 사람 모두 가기 편한 곳</h2>
+      <div className="flex flex-col gap-0.5">
+        <h2 className="text-section font-bold">{plan.people.length === 2 ? "두 사람 모두" : "모두"} 가기 편한 곳</h2>
+        {waitingCount > 0 && <span className="text-meta text-muted">아직 위치를 안 넣은 {waitingCount}명은 빼고 계산했어요</span>}
+      </div>
       <div role="tablist" aria-label="추천 지역" className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
         {plans.map((p, i) => (
           <button
@@ -79,11 +86,15 @@ export function MeetupResults({ plans, partnerNickname, meetupUrl }: { plans: Ar
 
       <div className="flex flex-col gap-2 rounded-[16px] bg-surface p-4">
         {active === 0 && <span className="w-fit rounded-full bg-white px-2 py-0.5 text-caption font-semibold text-brand">가장 공평한 곳</span>}
-        <span className="text-body font-semibold">{areaReason(plan.myMinutes, plan.partnerMinutes, partnerNickname)}</span>
-        <span className="flex flex-col gap-0.5 text-meta text-ink-2">
-          <span>{plan.myLast ? `내 막차: 늦어도 ${nightClock(plan.myLast)}쯤 여기서 출발` : "내 귀가지를 넣으면 막차도 알려 드려요"}</span>
-          <span>{plan.partnerLast ? `${partnerNickname}님 막차: 늦어도 ${nightClock(plan.partnerLast)}쯤 출발` : `${partnerNickname}님은 귀가지를 넣지 않았어요`}</span>
-        </span>
+        <span className="text-body font-semibold">{areaReason(plan.people)}</span>
+        <ul className="flex flex-col gap-0.5 text-meta text-ink-2">
+          {plan.people.map((p) => (
+            <li key={p.id} className={p.late ? "font-medium text-danger" : ""}>
+              {who(p)} {Math.round(p.minutes / 5) * 5}분쯤
+              {p.last ? ` · 막차 늦어도 ${nightClock(p.last)}쯤 출발` : p.isMe ? " · 귀가지를 넣으면 막차도 알려 드려요" : ""}
+            </li>
+          ))}
+        </ul>
         {warning && <span className="text-meta font-medium text-danger">{warning}</span>}
         {plan.recent > 0 && <span className="text-meta text-muted">최근 한 달 새 평가된 가게 {plan.recent}곳</span>}
         <button type="button" onClick={sendArea} className="mt-1 h-btn-m rounded-btn-m bg-brand text-body font-bold text-white raised-brand">

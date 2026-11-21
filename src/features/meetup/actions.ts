@@ -33,7 +33,7 @@ export async function joinMeetup(token: string): Promise<Result> {
   if (!/^[0-9a-f]{24}$/.test(token)) return { error: "열 수 없는 약속이에요" };
   const { supabase } = await requireUser();
   const { data, error } = await supabase.rpc("join_meetup", { p_token: token });
-  if (error) return { error: error.code === "P0001" ? "이미 다른 분이 참여한 약속이에요" : "참여할 수 없는 약속이에요. 링크를 다시 받아 주세요." };
+  if (error) return { error: error.code === "P0001" ? "정원이 다 찬 약속이에요" : "참여할 수 없는 약속이에요. 링크를 다시 받아 주세요." };
   redirect(`/meet/${data}`, RedirectType.replace);
 }
 
@@ -92,7 +92,7 @@ export async function respondInvite(meetupId: string, accept: boolean): Promise<
   if (!z.uuid().safeParse(meetupId).success) return { error: FAILED };
   const { supabase } = await requireUser();
   const { error } = await supabase.rpc("respond_meetup_invite", { p_meetup: meetupId, p_accept: accept });
-  if (error) return { error: error.code === "P0001" ? "이미 다른 분이 참여한 약속이에요" : FAILED };
+  if (error) return { error: error.code === "P0001" ? "정원이 다 찬 약속이에요" : FAILED };
   revalidatePath("/meet");
   if (!accept) redirect("/meet", RedirectType.replace);
   revalidatePath(`/meet/${meetupId}`);
