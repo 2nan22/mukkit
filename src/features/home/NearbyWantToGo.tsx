@@ -56,14 +56,14 @@ export function NearbyWantToGo({ points }: { points: { lat: number; lng: number 
 
   const body = (
     <>
-      <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white">
+      <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-brand">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
           <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" />
           <circle cx="12" cy="9.5" r="2.5" />
         </svg>
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
-        <span className="text-body font-bold">{title}</span>
+        <span className="text-body font-semibold">{title}</span>
         <span className="text-meta text-muted">{sub}</span>
       </span>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
@@ -71,7 +71,7 @@ export function NearbyWantToGo({ points }: { points: { lat: number; lng: number 
       </svg>
     </>
   );
-  const cls = "mx-5 flex items-center gap-3 rounded-btn-l bg-surface px-4 py-3.5";
+  const cls = "flex items-center gap-3 border-t border-[#f5dccb] px-5 py-3.5";
 
   return state.kind === "found" ? (
     <Link href="/map?tier=wantToGo" className={cls}>

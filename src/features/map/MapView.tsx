@@ -42,7 +42,7 @@ export function MapView({ places, initialTiers = [] }: { places: MapPlace[]; ini
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="absolute inset-0">
-        <PlaceMap pins={pins} selectedId={selected?.placeId ?? null} onSelect={setSelectedId} />
+        <PlaceMap pins={pins} selectedId={selected?.placeId ?? null} onSelect={setSelectedId} cluster />
       </div>
 
       <div className="pointer-events-none relative z-10 flex flex-col gap-1 pt-2">
