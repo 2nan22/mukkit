@@ -1,0 +1,176 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Cuisine } from "@/domain/cuisine";
+import { tierFromDb, type Tier } from "@/domain/tier";
+
+const MEDIA_BUCKET = "rating-media";
+const SIGNED_SECONDS = 3600;
+
+export type Person = { id: string; nickname: string };
+export type MediaRef = { kind: "image" | "video"; url: string };
+export type SharedRating = {
+  ownerId: string;
+  ownerNickname: string;
+  placeId: string;
+  placeName: string;
+  address: string;
+  cuisine: Cuisine;
+  tier: Tier;
+  review: string;
+  media: MediaRef[];
+  updatedAt: string;
+};
+
+export class SocialError extends Error {
+  constructor(readonly step: string, readonly code?: string) {
+    super(`팔로우 처리 실패: ${step}`);
+    this.name = "SocialError";
+  }
+}
+
+export async function follow(supabase: SupabaseClient, me: string, target: string): Promise<void> {
+  if (me === target) return;
+  const { error } = await supabase.from("follows").upsert({ follower_id: me, followee_id: target }, { ignoreDuplicates: true });
+  if (error) throw new SocialError("follow", error.code);
+}
+
+export async function unfollow(supabase: SupabaseClient, me: string, target: string): Promise<void> {
+  const { error } = await supabase.from("follows").delete().eq("follower_id", me).eq("followee_id", target);
+  if (error) throw new SocialError("unfollow", error.code);
+}
+
+export async function getPerson(supabase: SupabaseClient, id: string): Promise<Person | null> {
+  if (!/^[0-9a-f-]{36}$/.test(id)) return null;
+  const { data } = await supabase.from("profiles").select("id, nickname").eq("id", id).maybeSingle();
+  return data ? { id: data.id as string, nickname: data.nickname as string } : null;
+}
+
+export async function getFollowCounts(supabase: SupabaseClient, id: string): Promise<{ followers: number; following: number }> {
+  const [a, b] = await Promise.all([
+    supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("followee_id", id),
+    supabase.from("follows").select("followee_id", { count: "exact", head: true }).eq("follower_id", id),
+  ]);
+  return { followers: a.count ?? 0, following: b.count ?? 0 };
+}
+
+export async function isFollowing(supabase: SupabaseClient, me: string, target: string): Promise<boolean> {
+  const { data } = await supabase.from("follows").select("followee_id").eq("follower_id", me).eq("followee_id", target).maybeSingle();
+  return Boolean(data);
+}
+
+// 닉네임 일부로 찾기 — 닉네임 말고는 아무것도 돌려주지 않는다
+export async function searchPeople(supabase: SupabaseClient, query: string, me: string | null): Promise<Person[]> {
+  const q = query.trim().replace(/[%_,()]/g, "");
+  if (q.length < 1) return [];
+  let req = supabase.from("profiles").select("id, nickname").ilike("nickname", `%${q}%`).limit(30);
+  if (me) req = req.neq("id", me);
+  const { data, error } = await req;
+  if (error) throw new SocialError("search", error.code);
+  return data.map((r) => ({ id: r.id as string, nickname: r.nickname as string }));
+}
+
+type RatingRow = {
+  owner_id?: string;
+  owner_nickname?: string;
+  place_id: string;
+  place_name: string;
+  address: string;
+  cuisine: string;
+  tier: string;
+  review: string;
+  media: { path: string; kind: "image" | "video" }[];
+  updated_at: string;
+};
+
+// 사진 주소는 보는 사람 권한으로 서명한다 — 볼 수 없는 평가의 사진은 서명이 거절된다
+async function withMedia(supabase: SupabaseClient, rows: RatingRow[], owner?: Person): Promise<SharedRating[]> {
+  const paths = rows.flatMap((r) => r.media.map((m) => m.path));
+  const signed = paths.length ? (await supabase.storage.from(MEDIA_BUCKET).createSignedUrls(paths, SIGNED_SECONDS)).data ?? [] : [];
+  const urlOf = new Map(signed.flatMap((s) => (s.path && s.signedUrl ? [[s.path, s.signedUrl] as const] : [])));
+  return rows.map((r) => ({
+    ownerId: r.owner_id ?? owner?.id ?? "",
+    ownerNickname: r.owner_nickname ?? owner?.nickname ?? "",
+    placeId: r.place_id,
+    placeName: r.place_name,
+    address: r.address,
+    cuisine: r.cuisine as Cuisine,
+    tier: tierFromDb(r.tier),
+    review: r.review,
+    media: r.media.flatMap((m) => (urlOf.get(m.path) ? [{ kind: m.kind, url: urlOf.get(m.path)! }] : [])),
+    updatedAt: r.updated_at,
+  }));
+}
+
+export async function getProfileRatings(supabase: SupabaseClient, owner: Person): Promise<SharedRating[]> {
+  const { data, error } = await supabase.rpc("profile_ratings", { p_owner: owner.id });
+  if (error) throw new SocialError("profile_ratings", error.code);
+  return withMedia(supabase, data as RatingRow[], owner);
+}
+
+export async function getFeed(supabase: SupabaseClient, before?: string): Promise<SharedRating[]> {
+  const { data, error } = await supabase.rpc("feed", { p_before: before ?? null, p_limit: 20 });
+  if (error) throw new SocialError("feed", error.code);
+  return withMedia(supabase, data as RatingRow[]);
+}
+
+export type Taste = { overlap: number; bothThree: number; similarity: number };
+export type TasteMatch = Taste & { userId: string; nickname: string; threeRatio: number };
+export type ProfileStats = { three: number; two: number; one: number; notRecommended: number; sponsored: number };
+export type ProfileList = { id: string; name: string; count: number };
+
+export async function getTasteWith(supabase: SupabaseClient, other: string): Promise<Taste | null> {
+  const { data, error } = await supabase.rpc("taste_with", { p_other: other });
+  if (error || !data?.[0]) return null;
+  const r = data[0] as { overlap: number; both_three: number; similarity: number | null };
+  return { overlap: r.overlap, bothThree: r.both_three, similarity: Number(r.similarity ?? 0) };
+}
+
+export async function getTasteMatches(supabase: SupabaseClient, limit = 10): Promise<TasteMatch[]> {
+  const { data, error } = await supabase.rpc("taste_matches", { p_limit: limit });
+  if (error) throw new SocialError("taste_matches", error.code);
+  return (data as { user_id: string; nickname: string; overlap: number; both_three: number; similarity: number; three_ratio: number }[]).map((r) => ({
+    userId: r.user_id,
+    nickname: r.nickname,
+    overlap: r.overlap,
+    bothThree: r.both_three,
+    similarity: Number(r.similarity),
+    threeRatio: r.three_ratio,
+  }));
+}
+
+export async function getProfileStats(supabase: SupabaseClient, owner: string): Promise<ProfileStats> {
+  const { data, error } = await supabase.rpc("profile_stats", { p_owner: owner });
+  if (error) throw new SocialError("profile_stats", error.code);
+  const r = (data as { three: number; two: number; one: number; not_recommended: number; sponsored: number }[])[0];
+  return { three: r.three, two: r.two, one: r.one, notRecommended: r.not_recommended, sponsored: r.sponsored };
+}
+
+export async function getProfileLists(supabase: SupabaseClient, owner: string): Promise<ProfileList[]> {
+  const { data, error } = await supabase.rpc("profile_lists", { p_owner: owner });
+  if (error) throw new SocialError("profile_lists", error.code);
+  return (data as { id: string; name: string; count: number }[]).map((r) => ({ id: r.id, name: r.name, count: r.count }));
+}
+
+export async function getBio(supabase: SupabaseClient, id: string): Promise<string> {
+  const { data } = await supabase.from("profiles").select("bio").eq("id", id).maybeSingle();
+  return (data?.bio as string | null) ?? "";
+}
+
+export type RecentList = { id: string; name: string; ownerNickname: string; count: number; points: { lat: number; lng: number; tier: string | null }[] };
+
+export async function getRecentPublicLists(supabase: SupabaseClient, limit = 4): Promise<RecentList[]> {
+  const { data, error } = await supabase.rpc("recent_public_lists", { p_limit: limit });
+  if (error) throw new SocialError("recent_public_lists", error.code);
+  return (data as { id: string; name: string; owner_nickname: string; count: number; points: RecentList["points"] }[]).map((r) => ({
+    id: r.id,
+    name: r.name,
+    ownerNickname: r.owner_nickname,
+    count: r.count,
+    points: r.points,
+  }));
+}
+
+export async function getMyWantToGoPoints(supabase: SupabaseClient, me: string): Promise<{ lat: number; lng: number }[]> {
+  const { data, error } = await supabase.from("user_places").select("places(lat, lng)").eq("user_id", me).eq("tier", "want_to_go").limit(2000);
+  if (error) throw new SocialError("want_to_go", error.code);
+  return (data as unknown as { places: { lat: number; lng: number } | null }[]).flatMap((r) => (r.places ? [r.places] : []));
+}

@@ -14,7 +14,8 @@ file rules/testing.md
 file rules/git_workflow.md
 file rules/logging.md
 
-# 스택 확정 후 추가 (예: react.md · nextjs.md · python.md · fastapi.md · docker.md · github-actions.md)
+file rules/coding/react.md
+file rules/coding/nextjs.md
 
 skill code-review
 skill systematic-debugging

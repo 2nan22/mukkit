@@ -1,0 +1,171 @@
+import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
+import { CuisineIcon } from "@/components/ui/CuisineIcon";
+import { TierBadge } from "@/components/ui/TierBadge";
+import { CUISINE_LABEL } from "@/domain/cuisine";
+import { regionOf } from "@/domain/region";
+import { tierFromDb } from "@/domain/tier";
+import { FollowButton } from "@/features/social/FollowButton";
+import type { RecentList, SharedRating, TasteMatch } from "@/features/social/social";
+
+function timeAgo(iso: string): string {
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutes < 60) return `${Math.max(1, minutes)}분 전`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  return days === 1 ? "어제" : `${days}일 전`;
+}
+
+function SectionHead({ title, sub, more }: { title: string; sub?: string; more?: string }) {
+  return (
+    <div className="flex items-center justify-between px-5">
+      <div className="flex flex-col gap-0.5">
+        <h2 className="text-section font-bold">{title}</h2>
+        {sub && <span className="text-meta text-muted">{sub}</span>}
+      </div>
+      {more && (
+        <Link href={more} className="flex h-btn-m items-center text-meta text-muted">
+          전체보기
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// 팔로잉 새 평가 — 가로로 넘기는 카드
+export function FollowingNew({ ratings, followingCount }: { ratings: SharedRating[]; followingCount: number }) {
+  const anyPhoto = ratings.some((r) => r.media.some((m) => m.kind === "image"));
+  return (
+    <section className="flex flex-col gap-2">
+      <SectionHead title="팔로잉 새 평가" more={ratings.length ? "/feed" : undefined} />
+      {ratings.length === 0 ? (
+        <div className="mx-5 flex items-center justify-between gap-3 rounded-[16px] bg-surface p-4">
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-body font-semibold">{followingCount > 0 ? "팔로잉의 새 평가가 아직 없어요" : "아직 팔로우한 사람이 없어요"}</span>
+            <span className="text-meta text-muted">{followingCount > 0 ? "새로 평가하면 여기에 보여요" : "취향이 비슷한 사람부터 찾아보세요"}</span>
+          </span>
+          <Link href="/people" className="flex h-9 shrink-0 items-center rounded-full bg-white px-3.5 text-meta font-semibold text-ink">
+            사람 찾기
+          </Link>
+        </div>
+      ) : (
+        <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+          {ratings.map((r) => (
+            <li key={`${r.ownerId}:${r.placeId}`} className="flex shrink-0">
+              <Link href={`/p/${r.placeId}`} className="flex w-[260px] flex-col overflow-hidden rounded-[16px] border border-line">
+                {r.media.find((m) => m.kind === "image") ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다
+                  <img src={r.media.find((m) => m.kind === "image")!.url} alt="" className="h-[120px] w-full object-cover" />
+                ) : anyPhoto ? (
+                  <span className={`flex h-[120px] items-center justify-center ${SOFT[r.tier] ?? "bg-surface"}`}>
+                    <CuisineIcon cuisine={r.cuisine} />
+                  </span>
+                ) : null}
+                <span className="flex flex-1 flex-col gap-1.5 p-3.5">
+                  <span className="flex items-center gap-1.5 text-meta text-muted">
+                    <Avatar name={r.ownerNickname} size={24} />
+                    <span className="truncate">
+                      {r.ownerNickname} · {timeAgo(r.updatedAt)}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-[16px] font-semibold">{r.placeName}</span>
+                    <TierBadge tier={r.tier} />
+                  </span>
+                  <span className="truncate text-meta text-muted">{[CUISINE_LABEL[r.cuisine], regionOf(r.address)].filter(Boolean).join(" · ")}</span>
+                  {r.review && <span className="line-clamp-2 text-meta leading-normal text-ink-2">{r.review}</span>}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// 취향이 비슷한 사람 — 줄마다 팔로우
+export function SimilarPeople({ matches: all }: { matches: TasteMatch[] }) {
+  // 같이 평가한 곳이 없으면 비슷하다고 할 근거가 없다
+  const matches = all.filter((m) => m.overlap > 0);
+  if (matches.length === 0) return null;
+  return (
+    <section className="flex flex-col">
+      <SectionHead title="취향이 비슷한 사람" sub="나와 평가가 비슷한 순" more="/people" />
+      <ul className="px-5">
+        {matches.slice(0, 4).map((m) => (
+          <li key={m.userId} className="flex items-center gap-3 border-b border-line py-2.5 last:border-b-0">
+            <Link href={`/u/${m.userId}`} className="flex min-w-0 flex-1 items-center gap-3">
+              <Avatar name={m.nickname} size={40} />
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate text-body font-bold">{m.nickname}</span>
+                <span className="truncate text-meta text-muted">
+                  {m.bothThree > 0 ? `둘 다 3스타 ${m.bothThree}곳` : `같이 평가한 곳 ${m.overlap}곳`} · 취향 일치 {Math.round(m.similarity * 100)}%
+                </span>
+              </span>
+            </Link>
+            <FollowButton targetId={m.userId} following={false} compact />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+const SOFT: Record<string, string> = {
+  three: "bg-tier-3-soft",
+  two: "bg-tier-2-soft",
+  one: "bg-tier-1-soft",
+};
+
+const DOT: Record<string, string> = {
+  three: "bg-tier-3",
+  two: "bg-pin-2",
+  one: "bg-pin-1",
+  notRecommended: "bg-pin-none",
+};
+
+// 리스트의 실제 장소 위치로 찍은 작은 미리보기 — 지도 타일 없이 점만
+function MiniMap({ points, count }: { points: RecentList["points"]; count: number }) {
+  const lats = points.map((p) => p.lat);
+  const lngs = points.map((p) => p.lng);
+  const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)];
+  const pos = (v: number, lo: number, hi: number) => (hi - lo < 1e-6 ? 50 : 14 + ((v - lo) / (hi - lo)) * 72);
+  return (
+    <span aria-hidden="true" className="relative block h-28 overflow-hidden rounded-[14px] bg-[#eef1ee]">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full">
+        <path d="M70 -5c-8 18 6 30 -4 48s10 30 2 62h40v-110z" fill="#d6e6ef" />
+        <path d="M-5 58c22-6 40 4 60-6s30-8 50-2" fill="none" stroke="#ffffff" strokeWidth="3" />
+        <path d="M30 -5c4 30 -6 60 4 110" fill="none" stroke="#ffffff" strokeWidth="2" />
+        <path d="M-5 24c30 6 50-4 105 10" fill="none" stroke="#ffffff" strokeWidth="1.5" />
+      </svg>
+      {points.map((p, i) => (
+        <span
+          key={i}
+          className={`absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-sm ${p.tier ? DOT[tierFromDb(p.tier)] : "bg-pin-none"}`}
+          style={{ left: `${pos(p.lng, minLng, maxLng)}%`, top: `${100 - pos(p.lat, minLat, maxLat)}%` }}
+        />
+      ))}
+      <span className="absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-caption font-semibold text-ink">{count}곳</span>
+    </span>
+  );
+}
+
+export function RecentLists({ lists }: { lists: RecentList[] }) {
+  if (lists.length === 0) return null;
+  return (
+    <section className="flex flex-col gap-2.5">
+      <SectionHead title="새로 올라온 리스트" />
+      <div className="grid grid-cols-2 gap-2.5 px-5">
+        {lists.slice(0, 4).map((l) => (
+          <Link key={l.id} href={`/l/${l.id}`} className="flex min-w-0 flex-col gap-1.5">
+            <MiniMap points={l.points} count={l.count} />
+            <span className="truncate text-body font-bold">{l.name}</span>
+            <span className="truncate text-meta text-muted">{l.ownerNickname}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
