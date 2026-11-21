@@ -14,7 +14,7 @@ type Person = { id: string; nickname: string };
 type Entry = MeetupVisitEntry & { key: string; name: string };
 
 // 끝낸 약속 — 간 곳을 1차 · 2차로 여러 곳, 가게마다 그 자리에 있던 사람을 골라 한 번에 기록
-export function MeetupVisitPicker({ meetupId, people, startIndex }: { meetupId: string; people: Person[]; startIndex: number }) {
+export function MeetupVisitPicker({ meetupId, people, startIndex, cancelHref }: { meetupId: string; people: Person[]; startIndex: number; cancelHref?: string }) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<SearchResult | null>(null);
   const [searching, startSearch] = useTransition();
@@ -63,9 +63,15 @@ export function MeetupVisitPicker({ meetupId, people, startIndex }: { meetupId: 
   return (
     <div className="flex flex-1 flex-col gap-4">
       {entries.length > 0 && (
+        <div className="flex flex-col gap-0.5">
+          <h3 className="text-body font-semibold">추가할 곳</h3>
+          {people.length > 0 && <span className="text-caption text-muted">이름을 누르면 빠지고, 다시 누르면 들어가요.</span>}
+        </div>
+      )}
+      {entries.length > 0 && (
         <ol className="flex flex-col gap-2">
           {entries.map((e, i) => (
-            <li key={e.key} className="flex flex-col gap-2 rounded-[16px] bg-surface p-4">
+            <li key={e.key} className="flex flex-col gap-2 rounded-[16px] bg-white p-4 ring-1 ring-line">
               <div className="flex items-center gap-2">
                 <span className="shrink-0 rounded-full bg-ink px-2 py-0.5 text-caption font-bold text-white">{startIndex + i + 1}차</span>
                 <span className="min-w-0 flex-1 truncate text-body font-semibold">{e.name}</span>
@@ -75,8 +81,9 @@ export function MeetupVisitPicker({ meetupId, people, startIndex }: { meetupId: 
                   </svg>
                 </button>
               </div>
+              {people.length > 0 && <span className="text-caption text-muted">{e.userIds.length ? `함께한 사람 ${e.userIds.length}명` : "나 혼자"}</span>}
               {people.length > 0 && (
-                <div role="group" aria-label={`${e.name}에 함께 있던 사람`} className="flex flex-wrap gap-1.5">
+                <div role="group" aria-label={`${e.name}에 함께 있던 사람`} className="flex flex-wrap gap-x-1.5 gap-y-2">
                   {people.map((p) => {
                     const on = e.userIds.includes(p.id);
                     return (
@@ -85,7 +92,7 @@ export function MeetupVisitPicker({ meetupId, people, startIndex }: { meetupId: 
                         type="button"
                         aria-pressed={on}
                         onClick={() => toggle(e.key, p.id)}
-                        className={`h-9 rounded-full px-3 text-meta font-medium ${on ? "bg-ink text-white" : "bg-white text-subtle line-through"}`}
+                        className={`relative h-9 rounded-full px-3 text-meta font-medium before:absolute before:inset-x-0 before:-inset-y-1 before:content-[''] ${on ? "bg-ink text-white" : "bg-surface text-muted"}`}
                       >
                         {honor(p.nickname)}
                       </button>
@@ -97,7 +104,6 @@ export function MeetupVisitPicker({ meetupId, people, startIndex }: { meetupId: 
           ))}
         </ol>
       )}
-      {people.length > 0 && entries.length > 0 && <span className="-mt-2 text-caption text-muted">그 자리에 없던 사람은 눌러서 빼 주세요.</span>}
 
       {!full && (
         <div className="flex flex-col gap-2">
@@ -138,6 +144,11 @@ export function MeetupVisitPicker({ meetupId, people, startIndex }: { meetupId: 
               </li>
             ))}
           </ul>
+          {cancelHref && entries.length === 0 && (
+            <a href={cancelHref} className="flex h-11 items-center self-center text-meta text-muted underline underline-offset-[3px]">
+              그만 추가하기
+            </a>
+          )}
         </div>
       )}
 

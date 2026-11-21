@@ -51,8 +51,9 @@ export async function recordMeetupVisits(meetupId: string, input: MeetupVisitEnt
   const memberIds = new Set(status.members.filter((m) => !m.isMe).map((m) => m.id));
   const visitedOn = kstDate(status.startsAt);
 
+  const { count: already } = await supabase.from("visits").select("id", { count: "exact", head: true }).eq("meetup_id", meetupId).eq("created_by", me);
   const invitedAll: string[] = [];
-  for (const entry of parsed.data) {
+  for (const [index, entry] of parsed.data.entries()) {
     let placeId = entry.placeId;
     if (!placeId && entry.kakao) {
       const opened = await openKakaoPlace(entry.kakao);
@@ -74,6 +75,7 @@ export async function recordMeetupVisits(meetupId: string, input: MeetupVisitEnt
         supabase, me, placeId, existing?.visitedOn ?? visitedOn,
         { userIds: [...keepUsers, ...picked], guests: keepGuests, showInFeed: existing?.myShowInFeed ?? true },
         meetupId,
+        (already ?? 0) + index + 1,
       );
       invitedAll.push(...invited);
     } catch {

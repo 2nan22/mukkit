@@ -27,11 +27,14 @@ export default function MeetVisitPage({ params, searchParams }: PageProps<"/meet
   );
 }
 
-function who(v: MeetupVisit): string {
-  const names = v.members.filter((m) => m.status !== "declined").map((m) => (m.guest ? m.nickname : honor(m.nickname)));
-  if (names.length === 0) return "나 혼자";
-  const waiting = v.members.filter((m) => m.status === "invited").length;
-  return `${names.join(" · ")}${waiting ? ` · 수락 대기 ${waiting}명` : ""}`;
+function who(v: MeetupVisit): { names: string; waiting: string | null } {
+  const live = v.members.filter((m) => m.status !== "declined");
+  if (live.length === 0) return { names: "나 혼자", waiting: null };
+  const waiting = live.filter((m) => m.status === "invited").length;
+  return {
+    names: live.map((m) => (m.guest ? m.nickname : honor(m.nickname))).join(" · "),
+    waiting: waiting === 0 ? null : waiting === live.length ? "아직 아무도 수락하지 않았어요" : `${waiting}명 수락 전`,
+  };
 }
 
 async function MeetVisit({ params, searchParams }: { params: Promise<{ meetupId: string }>; searchParams: Promise<{ add?: string | string[] }> }) {
@@ -53,7 +56,7 @@ async function MeetVisit({ params, searchParams }: { params: Promise<{ meetupId:
       <section className="flex flex-col gap-1">
         <h2 className="text-title font-bold tracking-tight">{recorded.length ? "다녀온 곳" : "어디서 만났어요?"}</h2>
         <span className="text-meta leading-normal text-muted">
-          {recorded.length ? "가게마다 평가와 함께한 사람을 고칠 수 있어요." : "1차 · 2차처럼 여러 곳을 한 번에 기록할 수 있어요."}
+          {recorded.length === 0 ? "1차 · 2차처럼 여러 곳을 한 번에 기록할 수 있어요." : adding ? "더 간 곳을 이어서 기록해요." : "가게마다 평가와 함께한 사람을 고칠 수 있어요."}
         </span>
       </section>
 
@@ -61,6 +64,7 @@ async function MeetVisit({ params, searchParams }: { params: Promise<{ meetupId:
         <ol className="flex flex-col gap-2">
           {recorded.map((v, i) => {
             const rated = v.myTier && RATED.includes(v.myTier);
+            const people = who(v);
             return (
               <li key={v.visitId} className="flex flex-col gap-2 rounded-[16px] bg-surface p-4">
                 <div className="flex items-center gap-2">
@@ -70,11 +74,20 @@ async function MeetVisit({ params, searchParams }: { params: Promise<{ meetupId:
                   </Link>
                   {rated && <TierBadge tier={tierFromDb(v.myTier!)} />}
                 </div>
-                <span className="text-meta text-ink-2">{who(v)}</span>
-                <div className="-mb-2 flex items-center justify-between">
-                  <Link href={`/rate/${v.placeId}?next=${encodeURIComponent(back)}`} className="flex h-11 items-center text-meta font-semibold text-ink">
-                    {rated ? "평가 · 함께한 사람 고치기" : "평가하기"}
-                  </Link>
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-meta text-ink-2">{people.names}</span>
+                  {people.waiting && <span className="text-caption text-muted">{people.waiting}</span>}
+                </span>
+                <div className="-mb-2 flex min-h-11 items-center justify-between">
+                  {rated ? (
+                    <Link href={`/rate/${v.placeId}?next=${encodeURIComponent(back)}`} className="flex h-11 items-center text-meta font-semibold text-ink underline underline-offset-[3px]">
+                      고치기
+                    </Link>
+                  ) : (
+                    <Link href={`/rate/${v.placeId}?next=${encodeURIComponent(back)}`} className="flex h-9 items-center rounded-full bg-ink px-3.5 text-meta font-semibold text-white">
+                      평가하기
+                    </Link>
+                  )}
                   {v.isCreator && <RemoveVisit visitId={v.visitId} />}
                 </div>
               </li>
@@ -84,7 +97,7 @@ async function MeetVisit({ params, searchParams }: { params: Promise<{ meetupId:
       )}
 
       {adding ? (
-        <MeetupVisitPicker meetupId={meetupId} people={others} startIndex={recorded.length} />
+        <MeetupVisitPicker meetupId={meetupId} people={others} startIndex={recorded.length} cancelHref={recorded.length ? back : undefined} />
       ) : (
         <Link href={`${back}?add=1`} replace className="flex h-11 w-fit items-center gap-1.5 rounded-full bg-surface px-4 text-meta font-semibold text-ink">
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">

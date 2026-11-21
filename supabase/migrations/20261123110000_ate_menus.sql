@@ -85,3 +85,7 @@ revoke all on function public.place_ratings(uuid) from public;
 grant execute on function public.feed(timestamptz, int) to authenticated;
 grant execute on function public.profile_ratings(uuid, int) to anon, authenticated;
 grant execute on function public.place_ratings(uuid) to anon, authenticated;
+
+-- 이미 있던 방문을 끝낸 약속에 이어 붙일 수 있게 — 약속 연결 · 차수(1차 · 2차)도 만든 사람이 고침
+alter table public.visits add column meetup_seq smallint check (meetup_seq between 1 and 20);
+grant update (meetup_id, meetup_seq) on public.visits to authenticated;
