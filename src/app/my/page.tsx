@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { TIER_LABEL, tierToDb, type Tier } from "@/domain/tier";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
-import { countMyTiers, getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
+import { countMyTiers, getMyLists } from "@/features/lists/lists";
 import { getBio, getFollowCounts, getPerson } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -98,34 +98,9 @@ async function MyContent() {
         )}
       </section>
 
-      <section className="flex flex-col px-5 pt-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-section font-bold">리스트</h2>
-          <Link href="/lists/new" className="flex h-btn-m items-center gap-1 text-meta text-muted">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            새 리스트 만들기
-          </Link>
-        </div>
-        {lists.slice(0, 5).map((l) => (
-          <Link key={l.id} href={`/lists/${l.id}`} className="flex min-h-16 flex-col justify-center gap-0.5 border-b border-line py-2">
-            <span className="truncate text-body font-bold">{l.name}</span>
-            <span className="text-meta text-muted">
-              {l.count}곳 · {VISIBILITY_LABEL[l.visibility]}
-            </span>
-          </Link>
-        ))}
-        {lists.length > 5 && (
-          <Link href="/lists" className="flex h-btn-m items-center text-meta text-ink-2">
-            리스트 {lists.length}개 모두 보기
-          </Link>
-        )}
-        {lists.length === 0 && <p className="py-4 text-meta text-muted">아직 만든 리스트가 없어요.</p>}
-      </section>
-
       <nav aria-label="MY 메뉴" className="flex flex-col px-5 pt-4 pb-6">
         {[
+          { href: "/lists", label: lists.length > 0 ? `내 리스트 ${lists.length}개` : "내 리스트", icon: "M6 3h12v18l-6-4-6 4z" },
           { href: "/people", label: "사람 찾기", icon: "M10 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM3 20c.8-3.5 3.6-5.5 7-5.5M15.5 15.5a3 3 0 1 0 4.2 4.2 3 3 0 0 0-4.2-4.2zM19.7 19.7L21 21" },
           { href: "/import", label: "저장한 장소 가져오기", icon: "M12 4v11M7 10l5 5 5-5M5 20h14" },
           { href: "/rate", label: "빠르게 평가하기", icon: "M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" },
