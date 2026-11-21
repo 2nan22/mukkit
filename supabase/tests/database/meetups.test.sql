@@ -1,7 +1,7 @@
 -- 약속 잡기 — 당사자만, 상대 위치는 상대도 못 읽음, 링크 참여, 1km 깎기
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(20);
 
 insert into auth.users (id, email) values
   ('71111111-1111-1111-1111-111111111111', 'mt-host@test.local'),
@@ -41,6 +41,20 @@ select throws_ok(
 select set_config('request.jwt.claims', '{"sub":"73333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
 select throws_ok($$select public.join_meetup('$$ || :'tok' || $$')$$, 'P0001', null, '자리가 차면 참여 불가');
 select throws_ok($$select * from public.meetup_area_scores('d1111111-0000-0000-0000-000000000001')$$, '42501', null, '당사자가 아니면 지역 점수 불가');
+
+-- 앱 안 초대: 만든 사람이 사용자를 초대 → 받은 사람은 보고 수락 · 거절
+reset role;
+insert into public.meetups (id, host_id, purpose) values ('d1111111-0000-0000-0000-000000000002', '71111111-1111-1111-1111-111111111111', 'meal');
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"73333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
+select throws_ok($$select public.invite_to_meetup('d1111111-0000-0000-0000-000000000002', '72222222-2222-2222-2222-222222222222')$$, '42501', null, '만든 사람이 아니면 초대 불가');
+select set_config('request.jwt.claims', '{"sub":"71111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select lives_ok($$select public.invite_to_meetup('d1111111-0000-0000-0000-000000000002', '73333333-3333-3333-3333-333333333333')$$, '만든 사람이 사용자 초대');
+select throws_ok($$update public.meetups set guest_id = '72222222-2222-2222-2222-222222222222' where id = 'd1111111-0000-0000-0000-000000000002'$$, '42501', null, '손님 칸은 직접 못 바꿈');
+select set_config('request.jwt.claims', '{"sub":"73333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
+select is((select is_invitee from public.meetup_status('d1111111-0000-0000-0000-000000000002')), true, '초대받은 사람은 약속을 봄');
+select lives_ok($$select public.respond_meetup_invite('d1111111-0000-0000-0000-000000000002', true)$$, '수락');
+select is((select partner_nickname is not null and not is_invitee from public.meetup_status('d1111111-0000-0000-0000-000000000002')), true, '수락하면 손님이 됨');
 
 -- 정리 작업: 끝난 약속의 위치 삭제
 reset role;

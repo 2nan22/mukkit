@@ -79,6 +79,45 @@ export async function closeMeetup(meetupId: string, status: "done" | "cancelled"
   redirect("/meet", RedirectType.replace);
 }
 
+export async function inviteUser(meetupId: string, userId: string): Promise<Result> {
+  if (!z.uuid().safeParse(meetupId).success || !z.uuid().safeParse(userId).success) return { error: FAILED };
+  const { supabase } = await requireUser();
+  const { error } = await supabase.rpc("invite_to_meetup", { p_meetup: meetupId, p_user: userId });
+  if (error) return { error: "초대하지 못했어요. 다시 시도해 주세요." };
+  revalidatePath(`/meet/${meetupId}`);
+  return {};
+}
+
+export async function respondInvite(meetupId: string, accept: boolean): Promise<Result> {
+  if (!z.uuid().safeParse(meetupId).success) return { error: FAILED };
+  const { supabase } = await requireUser();
+  const { error } = await supabase.rpc("respond_meetup_invite", { p_meetup: meetupId, p_accept: accept });
+  if (error) return { error: error.code === "P0001" ? "이미 다른 분이 참여한 약속이에요" : FAILED };
+  revalidatePath("/meet");
+  if (!accept) redirect("/meet", RedirectType.replace);
+  revalidatePath(`/meet/${meetupId}`);
+  return {};
+}
+
+export type InviteCandidate = { id: string; nickname: string; following: boolean };
+
+// 초대할 사람 — 검색어가 없으면 내가 팔로우하는 사람, 있으면 닉네임 검색
+export async function findInvitees(query: string): Promise<InviteCandidate[]> {
+  const { supabase, me } = await requireUser();
+  const { data: follows } = await supabase.from("follows").select("followee_id").eq("follower_id", me).limit(500);
+  const followingIds = new Set(((follows ?? []) as { followee_id: string }[]).map((f) => f.followee_id));
+  const q = query.trim().replace(/[%_,()\\]/g, "").slice(0, 20);
+  if (!q) {
+    if (followingIds.size === 0) return [];
+    const { data } = await supabase.from("profiles").select("id, nickname").in("id", [...followingIds]).order("nickname").limit(30);
+    return ((data ?? []) as { id: string; nickname: string }[]).map((p) => ({ ...p, following: true }));
+  }
+  const { data } = await supabase.from("profiles").select("id, nickname").ilike("nickname", `%${q}%`).neq("id", me).limit(20);
+  return ((data ?? []) as { id: string; nickname: string }[])
+    .map((p) => ({ ...p, following: followingIds.has(p.id) }))
+    .sort((a, b) => Number(b.following) - Number(a.following));
+}
+
 export type PlaceOption = { label: string; detail: string; lat: number; lng: number };
 
 // 출발지 · 귀가지 찾기 — 역 · 동 이름으로 (카카오 키워드 검색)
