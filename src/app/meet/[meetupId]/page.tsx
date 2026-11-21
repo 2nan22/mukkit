@@ -6,6 +6,8 @@ import { ListSkeleton } from "@/components/ui/Skeleton";
 import { PURPOSE_LABEL } from "@/domain/meetup";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { CloseMeetup } from "@/features/meetup/CloseMeetup";
+import { InviteAnswer } from "@/features/meetup/InviteAnswer";
+import { InvitePicker } from "@/features/meetup/InvitePicker";
 import { InviteShare } from "@/features/meetup/InviteShare";
 import { getMeetupStatus, getMyPoints, planMeetup } from "@/features/meetup/meetup";
 import { MeetupRefresher } from "@/features/meetup/MeetupRefresher";
@@ -59,6 +61,14 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
   if (!me) redirect(SIGNED_OUT_HOME);
   const status = await getMeetupStatus(supabase, meetupId);
   if (!status) notFound();
+  const purposeLabel = PURPOSE_LABEL[status.purpose];
+  if (status.isInvitee) {
+    return (
+      <div className="flex flex-col gap-6 px-5 pb-10">
+        <InviteAnswer meetupId={status.id} hostNickname={status.hostNickname} purposeLabel={purposeLabel} when={range(status.startsAt, status.endsAt)} />
+      </div>
+    );
+  }
   const points = await getMyPoints(supabase, meetupId);
   const label = (k: "origin" | "return") => points.find((p) => p.kind === k)?.label ?? null;
   const h = await headers();
@@ -82,7 +92,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
         <h2 className="text-title font-bold tracking-tight">{title}</h2>
         <span className="text-meta text-muted">
           {range(status.startsAt, status.endsAt)}
-          {!status.partner && " · 상대를 기다리는 중이에요"}
+          {!status.partner && (status.inviteeNickname ? ` · ${status.inviteeNickname}님의 수락을 기다리는 중` : " · 상대를 기다리는 중이에요")}
         </span>
       </section>
 
@@ -102,7 +112,8 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
       ) : (
         <>
           {status.isHost && !status.partner && status.inviteToken && (
-            <Step n={1} title="링크 보내기">
+            <Step n={1} title="같이 갈 분 초대">
+              <InvitePicker meetupId={status.id} pendingNickname={status.inviteeNickname} />
               <InviteShare url={`${origin}/m/${status.inviteToken}`} title={`${purpose} 약속`} />
             </Step>
           )}

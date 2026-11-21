@@ -12,17 +12,20 @@ export type MeetupStatus = {
   startsAt: string | null;
   endsAt: string | null;
   isHost: boolean;
+  isInvitee: boolean;
+  hostNickname: string;
+  inviteeNickname: string | null;
   partner: { id: string; nickname: string } | null;
   meReady: boolean;
   partnerReady: boolean;
 };
 export type MyPoint = { kind: "origin" | "return"; label: string };
-export type MeetupListItem = { id: string; purpose: Purpose; status: string; startsAt: string | null; partnerNickname: string | null; isHost: boolean };
+export type MeetupListItem = { id: string; purpose: Purpose; status: string; startsAt: string | null; partnerNickname: string | null; isHost: boolean; invitedBy: string | null };
 export type AreaPlan = RankedArea & { shops: Scored[] };
 
 type StatusRow = {
   meetup_id: string; purpose: Purpose; status: MeetupStatus["status"]; invite_token: string | null; expires_at: string;
-  starts_at: string | null; ends_at: string | null; is_host: boolean; partner_id: string | null; partner_nickname: string | null;
+  starts_at: string | null; ends_at: string | null; is_host: boolean; is_invitee: boolean; host_nickname: string; invitee_nickname: string | null; partner_id: string | null; partner_nickname: string | null;
   me_ready: boolean; partner_ready: boolean;
 };
 
@@ -39,6 +42,9 @@ export async function getMeetupStatus(supabase: SupabaseClient, id: string): Pro
     startsAt: r.starts_at,
     endsAt: r.ends_at,
     isHost: r.is_host,
+    isInvitee: r.is_invitee,
+    hostNickname: r.host_nickname,
+    inviteeNickname: r.invitee_nickname,
     partner: r.partner_id && r.partner_nickname ? { id: r.partner_id, nickname: r.partner_nickname } : null,
     meReady: r.me_ready,
     partnerReady: r.partner_ready,
@@ -51,14 +57,14 @@ export async function getMyPoints(supabase: SupabaseClient, meetupId: string): P
 }
 
 type ListRow = {
-  id: string; purpose: Purpose; status: string; starts_at: string | null; host_id: string;
+  id: string; purpose: Purpose; status: string; starts_at: string | null; host_id: string; invitee_id: string | null;
   host: { nickname: string } | null; guest: { nickname: string } | null;
 };
 
 export async function getMyMeetups(supabase: SupabaseClient, me: string): Promise<MeetupListItem[]> {
   const { data } = await supabase
     .from("meetups")
-    .select("id, purpose, status, starts_at, host_id, host:profiles!meetups_host_id_fkey(nickname), guest:profiles!meetups_guest_id_fkey(nickname)")
+    .select("id, purpose, status, starts_at, host_id, invitee_id, host:profiles!meetups_host_id_fkey(nickname), guest:profiles!meetups_guest_id_fkey(nickname)")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(30);
@@ -69,6 +75,7 @@ export async function getMyMeetups(supabase: SupabaseClient, me: string): Promis
     startsAt: r.starts_at,
     isHost: r.host_id === me,
     partnerNickname: r.host_id === me ? (r.guest?.nickname ?? null) : (r.host?.nickname ?? null),
+    invitedBy: r.invitee_id === me ? (r.host?.nickname ?? null) : null,
   }));
 }
 

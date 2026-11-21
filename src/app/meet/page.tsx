@@ -47,11 +47,12 @@ async function MeetList() {
           <Link href={`/meet/${m.id}`} className="flex min-h-16 items-center gap-3 border-b border-line py-2.5">
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-body font-semibold">
-                {PURPOSE_LABEL[m.purpose]} · {m.partnerNickname ? `${m.partnerNickname}님과` : "상대를 기다리는 중"}
+                {m.invitedBy ? `${m.invitedBy}님의 ${PURPOSE_LABEL[m.purpose]} 초대` : `${PURPOSE_LABEL[m.purpose]} · ${m.partnerNickname ? `${m.partnerNickname}님과` : "상대를 기다리는 중"}`}
               </span>
               <span className="text-meta text-muted">
                 {when(m.startsAt)}
                 {m.status !== "open" && ` · ${m.status === "done" ? "끝남" : "취소"}`}
+                {m.invitedBy && " · 수락 기다리는 중"}
               </span>
             </span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-subtle" aria-hidden="true">
