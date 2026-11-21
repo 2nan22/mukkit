@@ -56,10 +56,11 @@ export async function syncMyVisit(
   visitedOn: string | null,
   input: CompanionInput,
   meetupId: string | null = null,
+  meetupSeq: number | null = null,
 ): Promise<{ visitId: string | null; invited: string[] }> {
   const userIds = [...new Set(input.userIds.filter((id) => id !== me))];
   const guests = [...new Set(input.guests.map((g) => g.trim()).filter(Boolean))];
-  const { data: found } = await supabase.from("visits").select("id, visited_on").eq("created_by", me).eq("place_id", placeId).maybeSingle();
+  const { data: found } = await supabase.from("visits").select("id, visited_on, meetup_id").eq("created_by", me).eq("place_id", placeId).maybeSingle();
 
   if (userIds.length + guests.length === 0) {
     if (found) await supabase.from("visits").delete().eq("id", found.id);
@@ -68,11 +69,18 @@ export async function syncMyVisit(
 
   let visitId = found?.id as string | undefined;
   if (!visitId) {
-    const { data, error } = await supabase.from("visits").insert({ place_id: placeId, created_by: me, visited_on: visitedOn, meetup_id: meetupId }).select("id").single();
+    const { data, error } = await supabase.from("visits").insert({ place_id: placeId, created_by: me, visited_on: visitedOn, meetup_id: meetupId, meetup_seq: meetupId ? meetupSeq : null }).select("id").single();
     if (error || !data) throw new Error(`방문 만들기 실패: ${error?.code}`);
     visitId = data.id as string;
-  } else if (found!.visited_on !== visitedOn) {
-    await supabase.from("visits").update({ visited_on: visitedOn }).eq("id", visitId);
+  } else {
+    const patch: Record<string, unknown> = {};
+    if (found!.visited_on !== visitedOn) patch.visited_on = visitedOn;
+    // 따로 남겼던 방문을 이번 약속에 잇기
+    if (meetupId && !found!.meetup_id) {
+      patch.meetup_id = meetupId;
+      patch.meetup_seq = meetupSeq;
+    }
+    if (Object.keys(patch).length) await supabase.from("visits").update(patch).eq("id", visitId);
   }
 
   const { data: rows } = await supabase.from("visit_members").select("id, user_id, guest_name").eq("visit_id", visitId);
@@ -93,4 +101,28 @@ export async function syncMyVisit(
   }
   await supabase.rpc("set_visit_feed", { p_visit: visitId, p_show: input.showInFeed });
   return { visitId, invited };
+}
+
+export type MeetupVisit = { visitId: string; placeId: string; placeName: string; isCreator: boolean; myTier: string | null; members: VisitMember[] };
+
+// 이 약속으로 남긴 방문들 — 내가 만들었거나 나를 태그한 것만 (RLS)
+export async function getMeetupVisits(supabase: SupabaseClient, me: string, meetupId: string): Promise<MeetupVisit[]> {
+  const { data } = await supabase.from("visits").select("id, place_id, created_by, created_at, places(name)").eq("meetup_id", meetupId).order("meetup_seq", { nullsFirst: false }).order("created_at");
+  const rows = (data ?? []) as unknown as { id: string; place_id: string; created_by: string; places: { name: string } | null }[];
+  if (rows.length === 0) return [];
+  const placeIds = [...new Set(rows.map((r) => r.place_id))];
+  const [{ data: mine }, details] = await Promise.all([
+    supabase.from("user_places").select("place_id, tier").eq("user_id", me).in("place_id", placeIds),
+    Promise.all(placeIds.map((id) => getMyVisits(supabase, id))),
+  ]);
+  const tierOf = new Map(((mine ?? []) as { place_id: string; tier: string }[]).map((r) => [r.place_id, r.tier]));
+  const byVisit = new Map(details.flat().map((v) => [v.visitId, v]));
+  return rows.map((r) => ({
+    visitId: r.id,
+    placeId: r.place_id,
+    placeName: r.places?.name ?? "",
+    isCreator: r.created_by === me,
+    myTier: tierOf.get(r.place_id) ?? null,
+    members: byVisit.get(r.id)?.members ?? [],
+  }));
 }

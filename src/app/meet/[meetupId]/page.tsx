@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -134,6 +135,18 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
           {others.length === 0 && " · 함께할 분을 기다리는 중이에요"}
         </span>
       </section>
+
+      {status.status === "done" && (
+        <Link href={`/meet/${status.id}/visit`} className="flex min-h-14 items-center justify-between gap-3 rounded-[16px] bg-surface px-4">
+          <span className="flex flex-col gap-0.5">
+            <span className="text-body font-semibold">다녀온 곳 기록</span>
+            <span className="text-meta text-muted">1차 · 2차 가게와 함께한 사람을 남겨요</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-muted" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </Link>
+      )}
 
       {status.members.length > 1 && <Members members={status.members} max={status.maxMembers} />}
 

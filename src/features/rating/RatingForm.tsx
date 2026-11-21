@@ -7,6 +7,7 @@ import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
 import { saveRating, type RatingFormState } from "./actions";
 import { NOTE_MAX, RATING_VISIBILITIES, REVIEW_MAX, type RatingVisibility, type SavedPlace } from "./rating";
 import { MediaUploader } from "./MediaUploader";
+import { MenuPicker } from "./MenuPicker";
 import { CompanionPicker } from "@/features/visit/CompanionPicker";
 import type { MyVisit } from "@/features/visit/visit";
 
@@ -23,7 +24,7 @@ const PICKED: Partial<Record<Tier, string>> = {
   notRecommended: "has-checked:border-ink has-checked:bg-surface",
 };
 
-export function RatingForm({ place, next, userId, visits }: { place: SavedPlace; next: string; userId: string; visits: MyVisit[] }) {
+export function RatingForm({ place, next, userId, visits, menuOptions }: { place: SavedPlace; next: string; userId: string; visits: MyVisit[]; menuOptions: string[] }) {
   const [state, action, pending] = useActionState<RatingFormState, FormData>(saveRating, {});
   // 안 가본 곳(가고 싶은 곳 · 평가 전)이면 방문 관련 칸을 숨긴다 — 값은 그대로 보낸다
   const [tier, setTier] = useState<Tier>(place.tier);
@@ -86,6 +87,10 @@ export function RatingForm({ place, next, userId, visits }: { place: SavedPlace;
           placeholder="예: 점심 정식이 좋아요"
           className="w-full resize-none rounded-[12px] border border-transparent bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink focus:bg-white"
         />
+      </div>
+
+      <div className={visited ? "" : "hidden"}>
+        <MenuPicker initial={place.menus} options={menuOptions} />
       </div>
 
       <div className={`px-5 pt-6 ${visited ? "" : "hidden"}`}>
