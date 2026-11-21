@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { BottomNav } from "@/components/BottomNav";
-import { NICKNAME_SETUP, SIGNED_OUT_HOME } from "@/features/auth/paths";
+import { NICKNAME_SETUP, SESSION_ENDED, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { FollowingNew, RecentLists, SimilarPeople } from "@/features/home/HomeSections";
 import { needsAgreement } from "@/features/legal/legal";
 import { NearbyWantToGo } from "@/features/home/NearbyWantToGo";
@@ -42,7 +42,9 @@ async function HomeContent() {
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
   const { data: profile } = await supabase.from("profiles").select("nickname_set_at, terms_version").eq("id", me).single();
-  if (profile && !profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
+  // 프로필이 없으면 지워진 계정의 로그인이 남은 것 — 반복 대신 로그아웃
+  if (!profile) redirect(SESSION_ENDED);
+  if (!profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
   if (needsAgreement(profile)) redirect("/onboarding/terms?next=/home");
 
   const [wantToGo, feed, matches, lists, counts] = await Promise.all([

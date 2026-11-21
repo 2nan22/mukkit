@@ -1,4 +1,5 @@
 const LOGIN_ERROR_MESSAGE = "로그인에 실패했어요. 다시 시도해 주세요.";
+const SESSION_ENDED_MESSAGE = "계정 정보가 바뀌어 로그아웃됐어요. 다시 로그인해 주세요.";
 
 // 요청마다 다른 값(searchParams)은 여기서만 읽어 나머지 화면을 미리 그릴 수 있게 둔다
 export async function LoginErrorNotice({ searchParams }: { searchParams: Promise<{ error?: string | string[] }> }) {
@@ -7,7 +8,7 @@ export async function LoginErrorNotice({ searchParams }: { searchParams: Promise
   if (!error) return null;
   return (
     <p role="alert" className="pb-1 text-center text-meta text-danger">
-      {LOGIN_ERROR_MESSAGE}
+      {error === "session" ? SESSION_ENDED_MESSAGE : LOGIN_ERROR_MESSAGE}
     </p>
   );
 }
