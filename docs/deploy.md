@@ -15,7 +15,8 @@ Vercel(앱) + Supabase 호스팅(DB · 인증 · 사진). 둘 다 **서울** —
 3. Authentication › URL Configuration
    - Site URL: `https://<배포 주소>`
    - Redirect URLs: `https://<배포 주소>/**`
-4. Authentication › Providers
+4. Authentication › Sign In / Providers › **Allow manual linking** 켜기 — 설정 › 계정 연결이 이걸로 동작 (로컬은 config.toml `enable_manual_linking = true`)
+5. Authentication › Providers
    - Kakao: Client ID = 카카오 REST API 키, Secret = 카카오 Client Secret
    - Google: 웹 클라이언트 ID · Secret
    - 네이버(커스텀 OIDC): 로컬과 같은 스크립트를 호스팅 주소로
