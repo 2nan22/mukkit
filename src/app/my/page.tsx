@@ -102,6 +102,7 @@ async function MyContent() {
       <nav aria-label="MY 메뉴" className="flex flex-col px-5 pt-4 pb-6">
         {[
           { href: "/lists", label: lists.length > 0 ? `내 리스트 ${lists.length}개` : "내 리스트", icon: "M6 3h12v18l-6-4-6 4z" },
+          { href: "/meet", label: "약속", icon: "M8 8m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M16 8m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M3 19c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5M11 19c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5" },
           { href: "/people", label: "사람 찾기", icon: "M10 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM3 20c.8-3.5 3.6-5.5 7-5.5M15.5 15.5a3 3 0 1 0 4.2 4.2 3 3 0 0 0-4.2-4.2zM19.7 19.7L21 21" },
           { href: "/import", label: "저장한 장소 가져오기", icon: "M12 4v11M7 10l5 5 5-5M5 20h14" },
           ...((tiers.unrated ?? 0) > 0 ? [{ href: "/rate", label: "빠르게 평가하기", icon: "M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" }] : []),

@@ -18,13 +18,13 @@ function readLastLogin(): string | null {
 // 쿠키는 바뀌어도 알림이 없다 — 처음 그릴 때 한 번만 읽는다
 const noSubscribe = () => () => undefined;
 
-export function LoginButtons() {
+export function LoginButtons({ next }: { next?: string } = {}) {
   const last = useSyncExternalStore(noSubscribe, readLastLogin, () => null);
   return (
     <>
       {BUTTONS.map((b) => (
         // 로그인 라우트는 a 로 전체 이동 — Link 프리페치가 OAuth 시작을 부르지 않게
-        <a key={b.provider} href={`/auth/login/${b.provider}`} className={`relative flex h-btn-l items-center justify-center rounded-btn-l text-[16px] font-bold ${b.className}`}>
+        <a key={b.provider} href={`/auth/login/${b.provider}${next ? `?next=${encodeURIComponent(next)}` : ""}`} className={`relative flex h-btn-l items-center justify-center rounded-btn-l text-[16px] font-bold ${b.className}`}>
           {b.icon}
           {b.label}
           {last === b.provider && (
