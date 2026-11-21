@@ -7,6 +7,8 @@ import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
 import { saveRating, type RatingFormState } from "./actions";
 import { NOTE_MAX, RATING_VISIBILITIES, REVIEW_MAX, type RatingVisibility, type SavedPlace } from "./rating";
 import { MediaUploader } from "./MediaUploader";
+import { CompanionPicker } from "@/features/visit/CompanionPicker";
+import type { MyVisit } from "@/features/visit/visit";
 
 const VISIBILITY_TEXT: Record<RatingVisibility, string> = { private: "나만", followers: "팔로워", public: "전체 공개" };
 
@@ -21,7 +23,7 @@ const PICKED: Partial<Record<Tier, string>> = {
   notRecommended: "has-checked:border-ink has-checked:bg-surface",
 };
 
-export function RatingForm({ place, next, userId }: { place: SavedPlace; next: string; userId: string }) {
+export function RatingForm({ place, next, userId, visits }: { place: SavedPlace; next: string; userId: string; visits: MyVisit[] }) {
   const [state, action, pending] = useActionState<RatingFormState, FormData>(saveRating, {});
   // 안 가본 곳(가고 싶은 곳 · 평가 전)이면 방문 관련 칸을 숨긴다 — 값은 그대로 보낸다
   const [tier, setTier] = useState<Tier>(place.tier);
@@ -128,6 +130,10 @@ export function RatingForm({ place, next, userId }: { place: SavedPlace; next: s
       </div>
 
       <VisitedOn initial={place.visitedOn} hidden={!visited} />
+
+      <div className={visited ? "" : "hidden"}>
+        <CompanionPicker visits={visits} />
+      </div>
 
       <label className={`flex min-h-11 items-start gap-2.5 px-5 pt-6 ${visited ? "" : "hidden"}`}>
         <input

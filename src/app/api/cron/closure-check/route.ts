@@ -10,6 +10,9 @@ export async function GET(request: Request): Promise<Response> {
   const admin = createSupabaseAdminClient();
   if (!admin) return Response.json({ ok: false, error: "서비스 키 없음" }, { status: 500 });
   const result = await runClosureCheck(admin);
+  // 끝났거나 지난 약속의 위치 기록 정리 — 같은 새벽 작업에 붙인다
+  const cleaned = await admin.rpc("cleanup_meetup_points");
+  console.info("[cron meetup-cleanup]", JSON.stringify({ deleted: cleaned.data ?? null, error: cleaned.error?.code ?? null }));
   console.info("[cron closure-check]", JSON.stringify({ ok: result.ok, checked: result.checked, closed: result.closed, reopened: result.reopened, detail: result.detail, error: result.error }));
   return Response.json(result, { status: result.ok ? 200 : 500 });
 }

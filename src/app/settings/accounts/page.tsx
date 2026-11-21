@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { WithdrawSection } from "@/features/auth/WithdrawSection";
+import { PushToggle } from "@/features/push/PushToggle";
 import { ProviderMark } from "@/components/brand/BrandLogo";
 import { AppHeader } from "@/components/AppHeader";
 import { Suspense } from "react";
@@ -21,6 +22,9 @@ export default function AccountLinksPage({ searchParams }: PageProps<"/settings/
       <Suspense fallback={null}>
         <AccountLinks searchParams={searchParams} />
       </Suspense>
+      <section className="px-5 pt-6">
+        <PushToggle variant="row" />
+      </section>
       <form action="/auth/logout" method="post" className="px-5 pt-4">
         <button type="submit" className="h-btn-m w-full rounded-btn-m bg-surface text-body font-medium text-ink">
           로그아웃

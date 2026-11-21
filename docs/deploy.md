@@ -48,6 +48,8 @@ Vercel(앱) + Supabase 호스팅(DB · 인증 · 사진). 둘 다 **서울** —
    | `NEXT_PUBLIC_KAKAO_MAP_KEY` | 카카오 JavaScript 키 |
    | `KAKAO_REST_API_KEY` | 카카오 REST API 키 |
    | `CRON_SECRET` | 임의의 긴 문자열 (`openssl rand -hex 32`) |
+   | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` · `VAPID_PRIVATE_KEY` | `pnpm dlx web-push@3.6.7 generate-vapid-keys` 로 한 번 생성 (로컬과 같은 키를 써도 됨 · 바꾸면 모든 구독을 다시 켜야 함) |
+   | `VAPID_SUBJECT` | `mailto:<운영 메일>` |
    | `NEXT_PUBLIC_CONTACT_EMAIL` · `NEXT_PUBLIC_OPERATOR_NAME` | 공개 출시 전에 |
 
 4. `vercel.json` 이 함수 지역(서울 `icn1`)과 크론(매일 18:00 UTC = 새벽 3시)을 정한다
