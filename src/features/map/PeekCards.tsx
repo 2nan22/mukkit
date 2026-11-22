@@ -24,13 +24,49 @@ function distance(m: number): string {
 export type NearPlace = MapPlace & { meters: number | null };
 
 // 접힌 목록 — 지금 보이는 지도 안의 내 장소를 가운데에서 가까운 순으로 옆으로 넘겨 보기
-export function PeekCards({ places, covers, onPick, onMore }: { places: NearPlace[]; covers: Record<string, string>; onPick: (placeId: string) => void; onMore: () => void }) {
+// onFocus: 지금 맨 앞에 보이는 카드의 가게 — 지도에서 그 핀을 강조한다
+export function PeekCards({
+  places,
+  covers,
+  onPick,
+  onMore,
+  onFocus,
+}: {
+  places: NearPlace[];
+  covers: Record<string, string>;
+  onPick: (placeId: string) => void;
+  onMore: () => void;
+  onFocus?: (placeId: string | null) => void;
+}) {
   const list = useRef<HTMLUListElement>(null);
   const first = places[0]?.placeId;
+  const ids = places.slice(0, SHOWN).map((p) => p.placeId).join(",");
   // 지도를 옮겨 맨 앞 가게가 바뀌면 처음으로 — 살짝 움직였을 땐 그대로
   useEffect(() => {
     list.current?.scrollTo({ left: 0 });
+    onFocus?.(first ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 맨 앞 가게가 바뀔 때만
   }, [first]);
+  // 넘길 때마다 맨 앞 카드
+  useEffect(() => {
+    const el = list.current;
+    if (!el || !onFocus) return;
+    const order = ids ? ids.split(",") : [];
+    let t = 0;
+    const onScroll = () => {
+      window.clearTimeout(t);
+      t = window.setTimeout(() => {
+        const card = el.querySelector("li");
+        const step = card ? card.getBoundingClientRect().width + 8 : 1;
+        onFocus(order[Math.min(order.length - 1, Math.round(el.scrollLeft / step))] ?? null);
+      }, 80);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      window.clearTimeout(t);
+    };
+  }, [ids, onFocus]);
 
   return (
     <ul ref={list} className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-2 overflow-x-auto px-5 [scrollbar-width:none]">

@@ -3,7 +3,8 @@ import type { Cuisine } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
 import { tierFromDb, type Tier } from "@/domain/tier";
 
-export type MyPlaceHit = { placeId: string; name: string; cuisine: Cuisine; region: string; tier: Tier };
+// lat · lng 는 카카오 결과와 같은 가게를 거를 때만 쓴다
+export type MyPlaceHit = { placeId: string; name: string; cuisine: Cuisine; region: string; tier: Tier; lat: number; lng: number };
 
 // 검색어에서 ilike 를 깨는 문자 제거
 export function cleanQuery(q: string): string {
@@ -13,17 +14,19 @@ export function cleanQuery(q: string): string {
 export async function searchMyPlaces(supabase: SupabaseClient, me: string, q: string): Promise<MyPlaceHit[]> {
   const { data, error } = await supabase
     .from("user_places")
-    .select("tier, places!inner(id, name, address, cuisine)")
+    .select("tier, places!inner(id, name, address, cuisine, lat, lng)")
     .eq("user_id", me)
     .ilike("places.name", `%${q}%`)
     .limit(10);
   if (error) return [];
-  return (data as unknown as { tier: string; places: { id: string; name: string; address: string; cuisine: Cuisine } }[]).map((r) => ({
+  return (data as unknown as { tier: string; places: { id: string; name: string; address: string; cuisine: Cuisine; lat: number; lng: number } }[]).map((r) => ({
     placeId: r.places.id,
     name: r.places.name,
     cuisine: r.places.cuisine,
     region: regionOf(r.places.address) ?? "",
     tier: tierFromDb(r.tier),
+    lat: r.places.lat,
+    lng: r.places.lng,
   }));
 }
 

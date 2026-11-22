@@ -152,8 +152,11 @@ export function PlaceMap({
   onUserMove,
   zoomRef,
   onViewChange,
+  highlightId = null,
 }: {
   pins: Pin[];
+  // 고르지는 않고 눈에 띄게만 — 접힌 목록에서 맨 앞 카드의 핀
+  highlightId?: string | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
   padding?: readonly [number, number, number, number];
@@ -254,6 +257,21 @@ export function PlaceMap({
       hit.overlay.setZIndex(zOf(hit.pin.tier, on));
     }
   }, [ready, selectedId]);
+
+  // 강조 핀 — 고른 핀처럼 크게 보이되 지도는 움직이지 않는다
+  const highlightRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = highlightRef.current;
+    highlightRef.current = highlightId;
+    if (!ready || prev === highlightId) return;
+    for (const id of [prev, highlightId]) {
+      const hit = id ? overlays.current.get(id) : undefined;
+      if (!hit || hit.pin.kind === "found" || id === selectedRef.current) continue;
+      const on = id === highlightId;
+      hit.overlay.setContent(pinElement(hit.pin.tier, on, () => onSelectRef.current(hit.pin.id)));
+      hit.overlay.setZIndex(zOf(hit.pin.tier, on));
+    }
+  }, [ready, highlightId]);
 
   // 고른 장소로 다가간다 — 동네가 보일 만큼만 확대
   useEffect(() => {

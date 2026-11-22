@@ -180,6 +180,8 @@ export function MapView({
   // 지도 검색으로 찾은 새 가게 — 임시 핀 · 아래 카드
   const [found, setFound] = useState<NewPlaceHit | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  // 접힌 목록에서 맨 앞 카드 — 그 핀을 강조
+  const [peekId, setPeekId] = useState<string | null>(null);
   const zoomRef = useRef<((step: number) => void) | null>(null);
   // 지금 지도에 보이는 범위 — 접힌 목록 카드가 따른다
   // bottomCover: 지도가 멈춘 순간 접힌 시트가 덮은 높이 (이벤트에서 잰다)
@@ -316,6 +318,7 @@ export function MapView({
         <PlaceMap
           pins={pins}
           selectedId={selected?.placeId ?? (found ? FOUND_PIN : null)}
+          highlightId={snap === "peek" && !selected && !found ? peekId : null}
           onSelect={(id) => (id === FOUND_PIN ? undefined : (setFound(null), setSelectedId(id)))}
           zoomRef={zoomRef}
           onViewChange={(v) => setViewport({ ...v, bottomCover: snap === "peek" ? (sheetRef.current?.offsetHeight ?? 0) : PEEK_COVER_PX })}
@@ -334,6 +337,7 @@ export function MapView({
           onPickNew={pickNew}
           onOpenChange={setSearchOpen}
           onClear={() => setFound(null)}
+          near={viewport ? { lat: (viewport.north + viewport.south) / 2, lng: (viewport.east + viewport.west) / 2 } : null}
           mineLabel={isFollowing ? "팔로잉이 평가한 곳" : undefined}
           freshLabel={isFollowing ? "팔로잉이 평가하지 않은 가게" : undefined}
         />
@@ -552,7 +556,7 @@ export function MapView({
             {snap === "peek" &&
               viewport &&
               (inView.length > 0 ? (
-                <PeekCards places={inView} covers={covers} onPick={(id) => (setFound(null), setSelectedId(id))} onMore={() => setSnap("half")} />
+                <PeekCards places={inView} covers={covers} onPick={(id) => (setFound(null), setSelectedId(id))} onMore={() => setSnap("half")} onFocus={setPeekId} />
               ) : (
                 <EmptyHere filtered={filtered} onReset={resetFilters} />
               ))}

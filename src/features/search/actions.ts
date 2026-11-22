@@ -59,8 +59,9 @@ export async function searchAll(query: string, near: { lat: number; lng: number 
         tier: k?.tier ?? null,
       };
     })
-    // 내 장소에 이미 나온 곳은 빼기
-    .filter((p) => !(p.placeId && mineIds.has(p.placeId)));
+    // 내 장소에 이미 나온 곳은 빼기 — 같은 장소 id, 또는 다른 출처로 저장해 id 가 달라도 이름 · 거리로 같은 가게
+    .filter((p) => !(p.placeId && mineIds.has(p.placeId)))
+    .filter((p) => !mine.some((m) => isSamePlace({ name: m.name, lat: m.lat, lng: m.lng }, p)));
   return { mine, places, people: people.slice(0, 5), placeSearch: hits !== null };
 }
 
