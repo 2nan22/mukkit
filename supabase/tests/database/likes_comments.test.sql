@@ -1,7 +1,7 @@
 -- 좋아요 · 댓글 — 볼 수 있는 평가에만 · 차단 · 숨김 · 지우기 권한
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(17);
 
 insert into auth.users (id, email) values
   ('c1111111-1111-1111-1111-111111111111', 'lc-a@test.local'),
@@ -30,6 +30,7 @@ select throws_ok($$insert into public.rating_likes (user_id, owner_id, place_id)
 select lives_ok($$insert into public.rating_comments (owner_id, place_id, author_id, body) values ('c1111111-1111-1111-1111-111111111111', 'a9300000-0000-0000-0000-000000000001', 'c1111111-1111-1111-1111-111111111111', '꼭 가보세요')$$, '평가 주인도 댓글');
 select is((select row(likes, liked, comments)::text from public.rating_reactions(array['c1111111-1111-1111-1111-111111111111'::uuid], array['a9300000-0000-0000-0000-000000000001'::uuid])), '(1,f,2)', '좋아요 1 · 내가 안 누름 · 댓글 2');
 select is((select count(*)::int from public.rating_comments_of('c1111111-1111-1111-1111-111111111111', 'a9300000-0000-0000-0000-000000000001') where can_delete), 2, '평가 주인은 댓글 모두 지울 수 있음');
+select is((select preview->1->>'body' from public.rating_reactions(array['c1111111-1111-1111-1111-111111111111'::uuid], array['a9300000-0000-0000-0000-000000000001'::uuid])), '꼭 가보세요', '미리보기는 최근 2개를 오래된 순으로');
 
 -- 차단하면 그 사람 댓글은 내게 안 보이고, 나는 그 사람 평가에 못 씀
 reset role;
