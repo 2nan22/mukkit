@@ -14,7 +14,7 @@ export const metadata = { title: "지도" };
 
 export default function MapPage({ searchParams }: PageProps<"/map">) {
   return (
-    <main className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden">
+    <main className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden overscroll-none">
       <AppHeader
         kind="tab"
         title="지도"

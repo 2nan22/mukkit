@@ -25,6 +25,11 @@ export function recordPath(path: string) {
   write(stack);
 }
 
+// 외부(소셜 로그인 등)를 거쳐 도착한 화면 — 여기서 앱 기록을 새로 시작해 뒤로가기가 외부 페이지로 가지 않게
+export function restartAt(path: string) {
+  write([path]);
+}
+
 export function canGoBack(): boolean {
   return read().length > 1;
 }
