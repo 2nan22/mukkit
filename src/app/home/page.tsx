@@ -10,10 +10,10 @@ import { NICKNAME_SETUP, SESSION_ENDED, SIGNED_OUT_HOME } from "@/features/auth/
 import { FollowingNew, RecentLists, SimilarPeople } from "@/features/home/HomeSections";
 import { needsAgreement } from "@/features/legal/legal";
 import { NearbyWantToGo } from "@/features/home/NearbyWantToGo";
-import { getFeed, getFollowCounts, getMyWantToGoPoints, getRecentPublicLists, getTasteMatches } from "@/features/social/social";
+import { getFeed, getFollowCounts, getMyWantToGoPoints, getPopularPublicLists, getTasteMatches } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-// 홈 — 시안 1: 근처 가고 싶은 곳 · 팔로잉 새 평가 · 취향이 비슷한 사람 · 요즘 공개된 리스트
+// 홈 — 시안 1: 근처 가고 싶은 곳 · 팔로잉 새 평가 · 취향이 비슷한 사람 · 요즘 많이 저장된 리스트
 export default function HomePage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
@@ -54,7 +54,7 @@ async function HomeContent() {
     getMyWantToGoPoints(supabase, me),
     getFeed(supabase),
     getTasteMatches(supabase, 8),
-    getRecentPublicLists(supabase, 4),
+    getPopularPublicLists(supabase, 4),
     getFollowCounts(supabase, me),
     supabase.from("visit_members").select("id", { count: "exact", head: true }).eq("user_id", me).eq("status", "invited"),
     supabase.from("meetup_invites").select("meetup_id, meetups!inner(status)", { count: "exact", head: true }).eq("user_id", me).eq("meetups.status", "open"),
