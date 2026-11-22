@@ -1,4 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Cuisine } from "@/domain/cuisine";
+import { getPlaceCovers } from "@/features/place/covers";
+import { topCuisines } from "@/components/ui/ListThumb";
 import { z } from "zod";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 
@@ -138,6 +141,33 @@ export async function getMyLists(supabase: SupabaseClient, userId: string): Prom
     .returns<ListRow[]>();
   if (error) throw new ListWriteError("list", error.code);
   return data.map(toSummary);
+}
+
+const THUMB_SLOTS = 4;
+
+export type ListThumb = { photos: string[]; cuisines: Cuisine[] };
+
+// 리스트 카드 썸네일 — 담긴 곳의 대표 사진(내 사진 · 팔로잉) 최대 4장 + 많이 담긴 업종 순서
+export async function getMyListThumbs(supabase: SupabaseClient, listIds: string[]): Promise<Map<string, ListThumb>> {
+  const out = new Map<string, ListThumb>();
+  if (listIds.length === 0) return out;
+  const { data, error } = await supabase
+    .from("list_items")
+    .select("list_id, place_id, places(cuisine)")
+    .in("list_id", listIds)
+    .order("added_at", { ascending: false })
+    .limit(listIds.length * 40);
+  if (error) throw new ListWriteError("thumbs", error.code);
+  const rows = (data ?? []) as unknown as { list_id: string; place_id: string; places: { cuisine: Cuisine } | null }[];
+  const covers = await getPlaceCovers(supabase, rows.map((r) => r.place_id));
+  const byList = new Map<string, typeof rows>();
+  for (const r of rows) byList.set(r.list_id, [...(byList.get(r.list_id) ?? []), r]);
+  for (const [listId, items] of byList) {
+    const photos = items.flatMap((r) => (covers.get(r.place_id) ? [covers.get(r.place_id)!.url] : [])).slice(0, THUMB_SLOTS);
+    const cuisines = topCuisines(items.flatMap((r) => (r.places ? [{ cuisine: r.places.cuisine }] : [])));
+    out.set(listId, { photos, cuisines });
+  }
+  return out;
 }
 
 export async function getMyList(supabase: SupabaseClient, userId: string, listId: string): Promise<(ListSummary & { placeIds: string[] }) | null> {

@@ -5,6 +5,8 @@
   --font-sans: var(--font-pretendard), system-ui, sans-serif;
 
   --color-brand: #c8410b;
+  /* 내 위치 — 지도 앱 관례의 파랑, 장소 핀 색과 겹치지 않게 (PlaceMap ME_COLOR 와 같은 값) */
+  --color-me: #2f6fde;
   --color-brand-soft: #fff1e8;
   --color-danger: #c4320a;
   --color-ink: #17181c;

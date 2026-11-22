@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     // 계정 연결 중 실패는 설정 화면에서, 로그인 실패는 시작 화면에서 안내한다
     const target = next === ACCOUNT_LINKS ? new URL(ACCOUNT_LINKS, request.url) : new URL("/", request.url);
     target.searchParams.set("error", next === ACCOUNT_LINKS ? reason : "login");
+    target.searchParams.set("from", "auth");
     return NextResponse.redirect(target);
   };
 
@@ -37,7 +38,11 @@ export async function GET(request: NextRequest) {
   if (!profile?.nickname_set_at) {
     const setup = new URL(NICKNAME_SETUP, request.url);
     setup.searchParams.set("next", next);
+    setup.searchParams.set("from", "auth");
     return remember(NextResponse.redirect(setup));
   }
-  return remember(NextResponse.redirect(new URL(next, request.url)));
+  // 외부 로그인 페이지를 거쳐 왔다는 표시 — 앱이 여기서 기록을 새로 시작한다 (lib/nav/NavTracker)
+  const target = new URL(next, request.url);
+  target.searchParams.set("from", "auth");
+  return remember(NextResponse.redirect(target));
 }

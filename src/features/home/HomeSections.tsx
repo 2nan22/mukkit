@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { CuisineIcon } from "@/components/ui/CuisineIcon";
+import { ListThumb, topCuisines } from "@/components/ui/ListThumb";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
-import { tierFromDb } from "@/domain/tier";
 import { FollowButton } from "@/features/social/FollowButton";
 import type { RecentList, SharedRating, TasteMatch } from "@/features/social/social";
 
@@ -119,40 +119,8 @@ const SOFT: Record<string, string> = {
   one: "bg-tier-1-soft",
 };
 
-const DOT: Record<string, string> = {
-  three: "bg-tier-3",
-  two: "bg-pin-2",
-  one: "bg-pin-1",
-  notRecommended: "bg-pin-none",
-};
 
-// 리스트의 실제 장소 위치로 찍은 작은 미리보기 — 지도 타일 없이 점만
-function MiniMap({ points, count }: { points: RecentList["points"]; count: number }) {
-  const lats = points.map((p) => p.lat);
-  const lngs = points.map((p) => p.lng);
-  const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)];
-  const pos = (v: number, lo: number, hi: number) => (hi - lo < 1e-6 ? 50 : 14 + ((v - lo) / (hi - lo)) * 72);
-  return (
-    <span aria-hidden="true" className="relative block h-28 overflow-hidden rounded-[14px] bg-[#eef1ee]">
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full">
-        <path d="M70 -5c-8 18 6 30 -4 48s10 30 2 62h40v-110z" fill="#d6e6ef" />
-        <path d="M-5 58c22-6 40 4 60-6s30-8 50-2" fill="none" stroke="#ffffff" strokeWidth="3" />
-        <path d="M30 -5c4 30 -6 60 4 110" fill="none" stroke="#ffffff" strokeWidth="2" />
-        <path d="M-5 24c30 6 50-4 105 10" fill="none" stroke="#ffffff" strokeWidth="1.5" />
-      </svg>
-      {points.map((p, i) => (
-        <span
-          key={i}
-          className={`absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-sm ${p.tier ? DOT[tierFromDb(p.tier)] : "bg-pin-none"}`}
-          style={{ left: `${pos(p.lng, minLng, maxLng)}%`, top: `${100 - pos(p.lat, minLat, maxLat)}%` }}
-        />
-      ))}
-      <span className="absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-caption font-semibold text-ink">{count}곳</span>
-    </span>
-  );
-}
-
-export function RecentLists({ lists }: { lists: RecentList[] }) {
+export function RecentLists({ lists, covers = {} }: { lists: RecentList[]; covers?: Record<string, string> }) {
   if (lists.length === 0) return null;
   return (
     <section className="flex flex-col gap-2.5">
@@ -160,7 +128,12 @@ export function RecentLists({ lists }: { lists: RecentList[] }) {
       <div className="grid grid-cols-2 gap-2.5 px-5">
         {lists.slice(0, 4).map((l) => (
           <Link key={l.id} href={`/l/${l.id}`} className="flex min-w-0 flex-col gap-1.5">
-            <MiniMap points={l.points} count={l.count} />
+            <ListThumb
+              size="card"
+              count={l.count}
+              photos={l.points.flatMap((p) => (covers[p.placeId] ? [covers[p.placeId]] : [])).slice(0, 4)}
+              cuisines={topCuisines(l.points)}
+            />
             <span className="truncate text-body font-bold">{l.name}</span>
             <span className="truncate text-meta text-muted">{l.ownerNickname}</span>
           </Link>

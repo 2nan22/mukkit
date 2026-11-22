@@ -10,7 +10,7 @@ type KakaoMaps = {
   load(cb: () => void): void;
   Map: new (el: HTMLElement, opts: { center: LatLng; level: number }) => KakaoMapInstance;
   LatLng: new (lat: number, lng: number) => LatLng;
-  LatLngBounds: new () => { extend(p: LatLng): void };
+  LatLngBounds: new () => KakaoBounds;
   CustomOverlay: new (opts: {
     position: LatLng;
     content: HTMLElement;
@@ -20,6 +20,16 @@ type KakaoMaps = {
     zIndex: number;
     clickable: boolean;
   }) => KakaoOverlay;
+  Circle: new (opts: {
+    center: LatLng;
+    radius: number;
+    strokeWeight: number;
+    strokeColor: string;
+    strokeOpacity: number;
+    fillColor: string;
+    fillOpacity: number;
+    map?: KakaoMapInstance;
+  }) => KakaoCircle;
   MarkerClusterer?: new (opts: {
     map: KakaoMapInstance;
     averageCenter: boolean;
@@ -30,23 +40,32 @@ type KakaoMaps = {
   }) => KakaoClusterer;
 };
 type KakaoClusterer = { addMarkers(m: KakaoOverlay[]): void; clear(): void };
+type KakaoBounds = { extend(p: LatLng): void; contain(p: LatLng): boolean };
+type KakaoCircle = { setMap(m: KakaoMapInstance | null): void; setPosition(p: LatLng): void; setRadius(r: number): void; setOptions(o: { strokeOpacity: number; fillOpacity: number }): void };
 type KakaoMapInstance = {
   setBounds(b: object, top?: number, right?: number, bottom?: number, left?: number): void;
   getLevel(): number;
   setLevel(level: number): void;
-  panTo(p: LatLng): void;
+  panTo(p: LatLng | KakaoBounds, padding?: number): void;
+  getBounds(): KakaoBounds;
   setCenter(p: LatLng): void;
   relayout(): void;
 };
-type KakaoOverlay = { setMap(m: KakaoMapInstance | null): void };
+type KakaoOverlay = {
+  setMap(m: KakaoMapInstance | null): void;
+  setContent(el: HTMLElement): void;
+  setZIndex(z: number): void;
+  setPosition(p: LatLng): void;
+};
 
 declare global {
   interface Window {
-    kakao?: { maps: KakaoMaps };
+    kakao?: { maps: KakaoMaps & { event: { addListener(target: object, type: string, cb: () => void): void } } };
   }
 }
 
 export type Pin = { id: string; lat: number; lng: number; tier: Tier };
+export type MyLocation = { lat: number; lng: number; accuracy: number };
 
 const APP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const SEOUL = { lat: 37.5665, lng: 126.978 };
@@ -88,6 +107,22 @@ function pinElement(tier: Tier, selected: boolean, onClick: () => void): HTMLEle
   return el;
 }
 
+// 내 위치 색 — 장소 핀(빨강 · 주황 · 노랑 · 회색)과 겹치지 않는 지도 앱 관례의 파랑 (globals.css --color-me 와 같은 값)
+const ME_COLOR = "#2f6fde";
+
+function zOf(tier: Tier, selected: boolean): number {
+  return selected ? 1000 : tier === "three" ? 300 : tier === "two" ? 200 : 100;
+}
+
+// 내 위치 점 — 장소 핀과 헷갈리지 않게 파란 점 · 흰 테두리
+function meElement(): HTMLElement {
+  const el = document.createElement("span");
+  el.setAttribute("aria-hidden", "true");
+  el.style.cssText =
+    `display:block;width:18px;height:18px;box-sizing:border-box;border-radius:50%;background:${ME_COLOR};border:3px solid #ffffff;box-shadow:0 0 0 1px rgba(47,111,222,.35),0 2px 6px rgba(0,0,0,.25);pointer-events:none`;
+  return el;
+}
+
 // padding: 핀을 다 넣을 때 위 · 오른쪽 · 아래 · 왼쪽 여백 — 지도 위에 겹치는 칩 · 시트만큼
 const SHEET_PADDING = [160, 40, 220, 40] as const;
 
@@ -98,6 +133,9 @@ export function PlaceMap({
   padding = SHEET_PADDING,
   cluster = false,
   focus = null,
+  refit = "always",
+  me = null,
+  onUserMove,
 }: {
   pins: Pin[];
   selectedId: string | null;
@@ -107,17 +145,29 @@ export function PlaceMap({
   cluster?: boolean;
   // 이 자리 · 확대 수준으로 연다 (처음 열 때 · 현재 위치 버튼) — 없으면 핀 전체에 맞춘다
   focus?: { lat: number; lng: number; level: number } | null;
+  // 핀이 바뀔 때 — always: 매번 전체에 맞춤 / hidden: 처음만 맞추고, 이후엔 보이는 핀이 하나도 없을 때만 부드럽게 옮김
+  refit?: "always" | "hidden";
+  // 내 위치 점 · 정확도 원
+  me?: MyLocation | null;
+  // 사용자가 손으로 지도를 옮겼을 때
+  onUserMove?: () => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<KakaoMapInstance | null>(null);
-  const overlays = useRef<KakaoOverlay[]>([]);
+  const overlays = useRef<Map<string, { overlay: KakaoOverlay; pin: Pin }>>(new Map());
+  const selectedRef = useRef<string | null>(selectedId);
+  const fitted = useRef(false);
+  const meDot = useRef<KakaoOverlay | null>(null);
+  const meCircle = useRef<KakaoCircle | null>(null);
   const clusterer = useRef<KakaoClusterer | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const onSelectRef = useRef(onSelect);
+  const onMoveRef = useRef(onUserMove);
   useEffect(() => {
     onSelectRef.current = onSelect;
-  }, [onSelect]);
+    onMoveRef.current = onUserMove;
+  }, [onSelect, onUserMove]);
 
   useEffect(() => {
     const maps = window.kakao?.maps;
@@ -127,10 +177,11 @@ export function PlaceMap({
       // 컨테이너 크기가 그려진 뒤에 지도 크기를 다시 맞춘다 — 안 하면 타일이 반만 깔린다
       const m0 = map.current;
       requestAnimationFrame(() => m0.relayout());
+      window.kakao?.maps.event.addListener(m0, "dragstart", () => onMoveRef.current?.());
     }
     const m = map.current;
     clusterer.current?.clear();
-    overlays.current.forEach((o) => o.setMap(null));
+    overlays.current.forEach(({ overlay }) => overlay.setMap(null));
     const useCluster = cluster && Boolean(maps.MarkerClusterer);
     if (useCluster && !clusterer.current && maps.MarkerClusterer) {
       clusterer.current = new maps.MarkerClusterer({
@@ -142,20 +193,38 @@ export function PlaceMap({
         styles: [CLUSTER_STYLE],
       });
     }
-    overlays.current = pins.map((p) => {
-      const selected = p.id === selectedId;
-      return new maps.CustomOverlay({
+    // 핀이 바뀔 때만 다시 만든다 — 고르기는 아래에서 두 핀만 바꾼다
+    const next = new Map<string, { overlay: KakaoOverlay; pin: Pin }>();
+    for (const p of pins) {
+      const selected = p.id === selectedRef.current;
+      const overlay = new maps.CustomOverlay({
         position: new maps.LatLng(p.lat, p.lng),
         content: pinElement(p.tier, selected, () => onSelectRef.current(p.id)),
         map: useCluster ? undefined : m,
         xAnchor: 0.5,
         yAnchor: 0.5,
-        zIndex: selected ? 1000 : p.tier === "three" ? 300 : p.tier === "two" ? 200 : 100,
+        zIndex: zOf(p.tier, selected),
         clickable: true,
       });
-    });
-    if (useCluster) clusterer.current?.addMarkers(overlays.current);
-  }, [ready, pins, selectedId, cluster]);
+      next.set(p.id, { overlay, pin: p });
+    }
+    overlays.current = next;
+    if (useCluster) clusterer.current?.addMarkers([...next.values()].map((v) => v.overlay));
+  }, [ready, pins, cluster]);
+
+  // 고른 핀 표시 — 이전 · 새 핀 두 개만 바꾼다
+  useEffect(() => {
+    const prev = selectedRef.current;
+    selectedRef.current = selectedId;
+    if (!ready || prev === selectedId) return;
+    for (const id of [prev, selectedId]) {
+      const hit = id ? overlays.current.get(id) : undefined;
+      if (!hit) continue;
+      const on = id === selectedId;
+      hit.overlay.setContent(pinElement(hit.pin.tier, on, () => onSelectRef.current(hit.pin.id)));
+      hit.overlay.setZIndex(zOf(hit.pin.tier, on));
+    }
+  }, [ready, selectedId]);
 
   // 고른 장소로 다가간다 — 동네가 보일 만큼만 확대
   useEffect(() => {
@@ -166,7 +235,7 @@ export function PlaceMap({
     map.current.panTo(new maps.LatLng(pin.lat, pin.lng));
   }, [ready, pins, selectedId]);
 
-  // 거르기가 바뀌면 보이는 핀이 다 들어오게
+  // 거르기가 바뀌면 보이는 핀이 다 들어오게 — hidden 이면 처음 한 번만, 이후엔 화면에 하나도 없을 때만 부드럽게
   const [top, right, bottom, left] = padding;
   useEffect(() => {
     const maps = window.kakao?.maps;
@@ -174,6 +243,15 @@ export function PlaceMap({
     const m = map.current;
     requestAnimationFrame(() => {
       m.relayout();
+      if (refit === "hidden" && fitted.current) {
+        const view = m.getBounds();
+        if (pins.some((p) => view.contain(new maps.LatLng(p.lat, p.lng)))) return;
+        const target = new maps.LatLngBounds();
+        pins.forEach((p) => target.extend(new maps.LatLng(p.lat, p.lng)));
+        m.panTo(target, Math.max(top, bottom));
+        return;
+      }
+      fitted.current = true;
       if (pins.length === 1) {
         m.setLevel(SINGLE_LEVEL);
         m.setCenter(new maps.LatLng(pins[0].lat, pins[0].lng));
@@ -183,7 +261,7 @@ export function PlaceMap({
       pins.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
       m.setBounds(bounds, top, right, bottom, left);
     });
-  }, [ready, pins, top, right, bottom, left]);
+  }, [ready, pins, top, right, bottom, left, refit]);
 
   // 핀 맞춤보다 뒤에 돌도록 아래에 둔다 — 같은 프레임이면 이 위치가 이긴다
   useEffect(() => {
@@ -191,10 +269,37 @@ export function PlaceMap({
     if (!ready || !maps || !map.current || !focus) return;
     const m = map.current;
     requestAnimationFrame(() => {
+      fitted.current = true;
       m.setLevel(focus.level);
       m.setCenter(new maps.LatLng(focus.lat, focus.lng));
     });
   }, [ready, focus]);
+
+  // 내 위치 — 점은 위에, 정확도 원은 아래에. 위치가 바뀌면 옮기기만
+  useEffect(() => {
+    const maps = window.kakao?.maps;
+    if (!ready || !maps || !map.current) return;
+    if (!me) {
+      meDot.current?.setMap(null);
+      meCircle.current?.setMap(null);
+      meDot.current = null;
+      meCircle.current = null;
+      return;
+    }
+    const at = new maps.LatLng(me.lat, me.lng);
+    // 정확도 원은 부정확할 때(accuracy 0 으로 넘김) 그리지 않는다 — 화면을 덮지 않게
+    const radius = me.accuracy > 0 ? Math.max(me.accuracy, 10) : 0;
+    if (!meDot.current) {
+      meCircle.current = new maps.Circle({ center: at, radius: radius || 1, strokeWeight: 1, strokeColor: ME_COLOR, strokeOpacity: radius ? 0.4 : 0, fillColor: ME_COLOR, fillOpacity: radius ? 0.12 : 0, map: map.current });
+      // 선택한 핀(1000)보다 아래 — 가게에 와 있어도 핀을 누를 수 있게
+      meDot.current = new maps.CustomOverlay({ position: at, content: meElement(), map: map.current, xAnchor: 0.5, yAnchor: 0.5, zIndex: 500, clickable: false });
+    } else {
+      meDot.current.setPosition(at);
+      meCircle.current?.setPosition(at);
+      meCircle.current?.setRadius(radius || 1);
+    }
+    meCircle.current?.setOptions({ strokeOpacity: radius ? 0.4 : 0, fillOpacity: radius ? 0.12 : 0 });
+  }, [ready, me]);
 
   if (!APP_KEY || failed) {
     return (

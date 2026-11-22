@@ -1,3 +1,4 @@
+import { getPlaceCovers } from "@/features/place/covers";
 import { AppHeader } from "@/components/AppHeader";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
@@ -31,8 +32,8 @@ async function ListLoader({ params }: { params: Promise<{ listId: string }> }) {
   if (!userId) redirect(SIGNED_OUT_HOME);
   const list = /^[0-9a-f-]{36}$/.test(listId) ? await getMyList(supabase, userId, listId) : null;
   if (!list) notFound();
-  const [places, h] = await Promise.all([getPickablePlaces(supabase, userId), headers()]);
+  const [places, h, covers] = await Promise.all([getPickablePlaces(supabase, userId), headers(), getPlaceCovers(supabase, list.placeIds)]);
   // 공유 링크는 지금 접속한 주소 기준 — 배포하면 그 도메인이 된다
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
-  return <ListDetail list={list} places={places} origin={origin} />;
+  return <ListDetail list={list} places={places} origin={origin} covers={Object.fromEntries([...covers].map(([id, c]) => [id, c.url]))} />;
 }

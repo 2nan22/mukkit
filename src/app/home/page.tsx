@@ -1,3 +1,4 @@
+import { getPlaceCovers } from "@/features/place/covers";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
@@ -41,21 +42,23 @@ async function HomeContent() {
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
-  const { data: profile } = await supabase.from("profiles").select("nickname_set_at, terms_version").eq("id", me).single();
-  // 프로필이 없으면 지워진 계정의 로그인이 남은 것 — 반복 대신 로그아웃
-  if (!profile) redirect(SESSION_ENDED);
-  if (!profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
-  if (needsAgreement(profile)) redirect("/onboarding/terms?next=/home");
-
-  const [wantToGo, feed, matches, lists, counts] = await Promise.all([
+  // 프로필 확인과 화면 데이터를 한 번에 — 차례로 기다리지 않게 (리다이렉트면 결과는 버린다)
+  const [{ data: profile }, wantToGo, feed, matches, lists, counts, { count: visitTags }, { count: invites }] = await Promise.all([
+    supabase.from("profiles").select("nickname_set_at, terms_version").eq("id", me).single(),
     getMyWantToGoPoints(supabase, me),
     getFeed(supabase),
     getTasteMatches(supabase, 8),
     getRecentPublicLists(supabase, 4),
     getFollowCounts(supabase, me),
+    supabase.from("visit_members").select("id", { count: "exact", head: true }).eq("user_id", me).eq("status", "invited"),
+    supabase.from("meetup_invites").select("meetup_id, meetups!inner(status)", { count: "exact", head: true }).eq("user_id", me).eq("meetups.status", "open"),
   ]);
-  const { count: visitTags } = await supabase.from("visit_members").select("id", { count: "exact", head: true }).eq("user_id", me).eq("status", "invited");
-  const { count: invites } = await supabase.from("meetup_invites").select("meetup_id, meetups!inner(status)", { count: "exact", head: true }).eq("user_id", me).eq("meetups.status", "open");
+  // 리스트 카드 썸네일 — 담긴 곳의 대표 사진 (내 사진 · 팔로잉)
+  const recentCovers = Object.fromEntries([...(await getPlaceCovers(supabase, lists.flatMap((l) => l.points.map((p) => p.placeId))))].map(([id, c]) => [id, c.url]));
+  // 프로필이 없으면 지워진 계정의 로그인이 남은 것 — 반복 대신 로그아웃
+  if (!profile) redirect(SESSION_ENDED);
+  if (!profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
+  if (needsAgreement(profile)) redirect("/onboarding/terms?next=/home");
 
   return (
     <>
@@ -97,7 +100,7 @@ async function HomeContent() {
       ) : null}
       <FollowingNew ratings={feed.slice(0, 10)} followingCount={counts.following} />
       <SimilarPeople matches={matches} />
-      <RecentLists lists={lists} />
+      <RecentLists lists={lists} covers={recentCovers} />
     </>
   );
 }

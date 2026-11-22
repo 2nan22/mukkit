@@ -1,7 +1,7 @@
 import type { Cuisine } from "@/domain/cuisine";
 
 // 사진이 없는 장소 줄의 썸네일 자리 — 업종별 선 아이콘
-const PATHS: Record<Cuisine, string> = {
+export const CUISINE_ICON_PATH: Record<Cuisine, string> = {
   korean: "M4 11h16a8 8 0 0 1-16 0zM8 8c0-1.5 1-2 1-3.5M12 8c0-1.5 1-2 1-3.5M16 8c0-1.5 1-2 1-3.5",
   chinese: "M4 12h16a8 8 0 0 1-16 0zM14 3l-4 9M19 4l-6 8",
   japanese: "M4 14c0-2.5 3.6-4.5 8-4.5s8 2 8 4.5-3.6 4.5-8 4.5-8-2-8-4.5zM8 12.5c1.5-1.5 6.5-1.5 8 0",
@@ -19,7 +19,7 @@ export function CuisineIcon({ cuisine, size = 48 }: { cuisine: Cuisine; size?: 4
   return (
     <span aria-hidden="true" className={`flex shrink-0 items-center justify-center rounded-[12px] bg-surface text-ink-2 ${size === 48 ? "size-12" : "size-10"}`}>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <path d={PATHS[cuisine]} />
+        <path d={CUISINE_ICON_PATH[cuisine]} />
       </svg>
     </span>
   );

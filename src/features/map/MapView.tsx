@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { CuisineIcon } from "@/components/ui/CuisineIcon";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { SOURCE_LABEL } from "@/features/import/sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
-import { PlaceMap } from "./PlaceMap";
+import { PlaceMap, type MyLocation } from "./PlaceMap";
 import type { MapPlace } from "./myPlaces";
 
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
@@ -23,6 +24,18 @@ const TIER_DOT: Record<Tier, string> = {
 const CUISINE_ORDER: Cuisine[] = ["korean", "chinese", "japanese", "western", "asian", "snack", "chicken", "bar", "cafe", "other", "nonFood"];
 
 type Focus = { lat: number; lng: number; level: number };
+type Snap = "peek" | "half" | "full";
+// 목록 높이 — 접힘 · 중간 · 펼침 (화면 높이 대비)
+// 펼침은 칩 줄 · 머리줄 · 하단 탭 자리를 남긴다 — 작은 화면에서 칩을 덮지 않게
+const CHROME_PX = 300;
+const SNAP_CLASS: Record<Snap, string> = { peek: "h-0", half: "h-[40dvh]", full: "h-[min(68dvh,calc(100dvh-300px))]" };
+function snapPx(s: Snap): number {
+  const vh = window.innerHeight;
+  return s === "peek" ? 0 : s === "half" ? vh * 0.4 : Math.max(vh * 0.4, Math.min(vh * 0.68, vh - CHROME_PX));
+}
+const ORDER: Snap[] = ["peek", "half", "full"];
+const ME_ACCURACY_MAX = 300;
+const TAP_SLOP = 6;
 const AREA_LEVEL = 6;
 const HERE_LEVEL = 5;
 
@@ -42,23 +55,126 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
   // 리스트 하나만 볼 때는 전체 맞춤, 아니면 위치 · 많이 저장한 지역에서 시작
   const [focus, setFocus] = useState<Focus | null>(() => (at ? { ...at, level: HERE_LEVEL } : places.length > 30 ? busiestArea(places) : null));
   const [locating, setLocating] = useState(false);
-  function goHere() {
-    if (!navigator.geolocation) return;
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
+  const [me, setMe] = useState<MyLocation | null>(null);
+  // 내 위치가 지도 가운데일 때만 버튼을 파랗게 — 지도를 손으로 옮기면 해제
+  const [centered, setCentered] = useState(false);
+  const [locError, setLocError] = useState<string | null>(null);
+  const watchId = useRef<number | null>(null);
+  // 처음 누르면 위치를 따라가기 시작하고 그 자리로, 다시 누르면 내 위치로 돌아오기
+  function startWatch(recenter: boolean) {
+    let first = recenter;
+    watchId.current = navigator.geolocation.watchPosition(
       ({ coords }) => {
         setLocating(false);
-        setFocus({ lat: coords.latitude, lng: coords.longitude, level: HERE_LEVEL });
+        setMe({ lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy });
+        if (first) {
+          setFocus({ lat: coords.latitude, lng: coords.longitude, level: HERE_LEVEL });
+          setCentered(true);
+        }
+        first = false;
       },
-      () => setLocating(false),
-      { maximumAge: 5 * 60 * 1000, timeout: 10_000 },
+      (err) => {
+        setLocating(false);
+        setLocError(err.code === err.PERMISSION_DENIED ? "위치 권한이 꺼져 있어요. 브라우저 설정에서 허용해 주세요" : "지금은 위치를 찾을 수 없어요");
+        if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
+        watchId.current = null;
+      },
+      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 15_000 },
     );
   }
+  function goHere() {
+    if (me) {
+      setCentered(true);
+      return setFocus({ lat: me.lat, lng: me.lng, level: HERE_LEVEL });
+    }
+    if (!navigator.geolocation) return setLocError("이 브라우저에서는 위치를 쓸 수 없어요");
+    setLocating(true);
+    setLocError(null);
+    startWatch(true);
+  }
+  // 지도 탭을 떠나거나 화면이 가려지면 위치 따라가기를 멈춘다 (배터리) — 돌아오면 다시
+  const watching = me !== null;
+  useEffect(() => {
+    if (!watching) return;
+    const onVisible = () => {
+      if (document.hidden) {
+        if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
+        watchId.current = null;
+      } else if (watchId.current === null) startWatch(false);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [watching]);
+  useEffect(
+    () => () => {
+      if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
+    },
+    [],
+  );
+  useEffect(() => {
+    if (!locError) return;
+    const t = setTimeout(() => setLocError(null), 5000);
+    return () => clearTimeout(t);
+  }, [locError]);
   const [tiers, setTiers] = useState<Tier[]>(initialTiers);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [listOpen, setListOpen] = useState(!process.env.NEXT_PUBLIC_KAKAO_MAP_KEY);
+  const [snap, setSnap] = useState<Snap>(process.env.NEXT_PUBLIC_KAKAO_MAP_KEY ? "peek" : "half");
+  const listRef = useRef<HTMLUListElement>(null);
+  const drag = useRef<{ y: number; h: number; t: number; moved: boolean } | null>(null);
+  const frame = useRef(0);
+
+  // 시트 끌기 — 손잡이 · 머리줄에서 누르면 화면 어디로 움직여도 따라간다
+  // 끄는 동안은 목록 높이만 직접 바꾸고(다시 그리기 없음), 놓으면 가까운 단계(빠르게 밀면 그 방향)로
+  function onSheetDown(e: PointerEvent<HTMLDivElement>) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const list = listRef.current;
+    if (!list) return;
+    drag.current = { y: e.clientY, h: list.offsetHeight, t: e.timeStamp, moved: false };
+    const move = (ev: globalThis.PointerEvent) => {
+      const d = drag.current;
+      if (!d) return;
+      const dy = d.y - ev.clientY;
+      if (!d.moved && Math.abs(dy) < TAP_SLOP) return;
+      d.moved = true;
+      cancelAnimationFrame(frame.current);
+      frame.current = requestAnimationFrame(() => {
+        list.style.transition = "none";
+        list.style.height = `${Math.max(0, Math.min(snapPx("full"), d.h + dy))}px`;
+      });
+    };
+    const up = (ev: globalThis.PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      cancelAnimationFrame(frame.current);
+      const d = drag.current;
+      drag.current = null;
+      list.style.transition = "";
+      list.style.height = "";
+      if (!d?.moved) return;
+      // 끌고 놓은 자리에서 이어지는 클릭(목록 보기 버튼 등)은 한 번 무시
+      const swallow = (c: MouseEvent) => (c.preventDefault(), c.stopPropagation());
+      window.addEventListener("click", swallow, { capture: true, once: true });
+      setTimeout(() => window.removeEventListener("click", swallow, true), 300);
+      const h = Math.max(0, d.h + (d.y - ev.clientY));
+      const speed = (d.y - ev.clientY) / Math.max(1, ev.timeStamp - d.t);
+      const nearest = ORDER.reduce((a, b) => (Math.abs(snapPx(b) - h) < Math.abs(snapPx(a) - h) ? b : a));
+      const from = ORDER.reduce((a, b) => (Math.abs(snapPx(b) - d.h) < Math.abs(snapPx(a) - d.h) ? b : a));
+      const step = speed > 0.5 ? 1 : speed < -0.5 ? -1 : 0;
+      // 빠르게 밀면 최소 한 단계, 멀리 끌었으면 가까운 단계까지
+      const stepped = ORDER.indexOf(from) + step;
+      const target = step > 0 ? Math.max(stepped, ORDER.indexOf(nearest)) : step < 0 ? Math.min(stepped, ORDER.indexOf(nearest)) : ORDER.indexOf(nearest);
+      setSnap(ORDER[Math.max(0, Math.min(2, target))]);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
+  const listOpen = snap !== "peek";
+  const up1 = (s: Snap) => ORDER[Math.min(2, ORDER.indexOf(s) + 1)];
+  const down1 = (s: Snap) => ORDER[Math.max(0, ORDER.indexOf(s) - 1)];
 
   const shown = useMemo(
     () =>
@@ -74,21 +190,16 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="absolute inset-0">
-        <PlaceMap pins={pins} selectedId={selected?.placeId ?? null} onSelect={setSelectedId} cluster focus={focus} />
-      </div>
-      <div className="absolute right-4 bottom-28 z-10">
-        <button
-          type="button"
-          onClick={goHere}
-          disabled={locating}
-          aria-label="현재 위치로"
-          className="flex size-11 items-center justify-center rounded-full bg-white text-ink shadow-float disabled:opacity-60"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-          </svg>
-        </button>
+        <PlaceMap
+          pins={pins}
+          selectedId={selected?.placeId ?? null}
+          onSelect={setSelectedId}
+          cluster
+          focus={focus}
+          refit="hidden"
+          me={me && me.accuracy <= ME_ACCURACY_MAX ? me : me ? { ...me, accuracy: 0 } : null}
+          onUserMove={() => setCentered(false)}
+        />
       </div>
 
       <div className="pointer-events-none relative z-10 flex flex-col gap-1 pt-2">
@@ -150,37 +261,79 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
 
       <div className="flex-1" />
 
-      <section className="relative z-10 rounded-t-2xl bg-white px-5 pt-2 pb-5 shadow-sheet">
-        <span aria-hidden="true" className="mx-auto mb-2 block h-1 w-9 rounded-full bg-line-strong" />
+      <section className="relative z-10 rounded-t-2xl bg-white px-5 pb-5 shadow-sheet">
+        {!(snap === "full" && !selected) && (
+          <div className="absolute right-4 bottom-full mb-3 flex flex-col items-end gap-2">
+            {locError && (
+              <p role="status" className="max-w-60 rounded-[12px] bg-ink px-3 py-2 text-meta leading-normal text-white shadow-float">
+                {locError}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={goHere}
+              disabled={locating}
+              aria-busy={locating}
+              aria-label={locating ? "내 위치 찾는 중" : me ? "내 위치로 돌아가기" : "내 위치 보기"}
+              className={`flex size-11 items-center justify-center rounded-full bg-white shadow-float ${me && centered ? "text-me" : "text-ink"}`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" className={locating ? "animate-pulse" : ""}>
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              </svg>
+            </button>
+          </div>
+        )}
         {selected ? (
-          <PlaceCard place={selected} onClose={() => setSelectedId(null)} />
+          <div className="pt-4">
+            <PlaceCard place={selected} onClose={() => setSelectedId(null)} />
+          </div>
         ) : (
           <>
-            <div className="flex items-center justify-between">
-              <span className="text-body font-bold">{shown.length}곳</span>
-              <button type="button" onClick={() => setListOpen((v) => !v)} aria-expanded={listOpen} className="h-btn-m text-meta text-ink-2">
-                {listOpen ? "목록 닫기" : "목록 보기"}
+            <div onPointerDown={onSheetDown} className="-mx-5 touch-none px-5 select-none [-webkit-touch-callout:none]">
+              <button
+                type="button"
+                aria-label={snap === "full" ? "목록 줄이기" : "목록 더 펼치기"}
+                onClick={() => setSnap(snap === "full" ? "half" : up1(snap))}
+                onKeyDown={(e) => {
+                  if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+                  e.preventDefault();
+                  setSnap(e.key === "ArrowUp" ? up1(snap) : down1(snap));
+                }}
+                className="mx-auto flex h-6 w-16 items-center justify-center"
+              >
+                <span aria-hidden="true" className="h-1 w-9 rounded-full bg-line-strong" />
               </button>
+              <div className="flex items-center justify-between">
+                <span className="text-body font-bold">{shown.length}곳</span>
+                <button type="button" onClick={() => setSnap(snap === "peek" ? "half" : "peek")} aria-expanded={listOpen} className="h-btn-m text-meta text-ink-2">
+                  {listOpen ? "목록 닫기" : "목록 보기"}
+                </button>
+              </div>
             </div>
-            {listOpen && (
-              <ul className="max-h-[40dvh] overflow-y-auto">
-                {shown.map((p) => (
-                  <li key={p.placeId}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedId(p.placeId)}
-                      className="flex min-h-14 w-full items-center gap-3 border-b border-line text-left"
-                    >
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-body">{p.name}</span>
-                        <span className="truncate text-meta text-muted">{placeMeta(p)}</span>
-                      </span>
-                      <TierBadge tier={p.tier} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ul
+              ref={listRef}
+              inert={!listOpen}
+              className={`overflow-y-auto overscroll-contain transition-[height] duration-200 ease-out ${SNAP_CLASS[snap]}`}
+            >
+              {shown.length === 0 && <li className="py-6 text-center text-meta text-muted">조건에 맞는 곳이 없어요</li>}
+              {shown.map((p) => (
+                <li key={p.placeId}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(p.placeId)}
+                    className="flex min-h-16 w-full items-center gap-3 border-b border-line py-2 text-left"
+                  >
+                    <CuisineIcon cuisine={p.cuisine} size={40} />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="truncate text-body font-semibold">{p.name}</span>
+                      <span className="truncate text-meta text-muted">{placeMeta(p)}</span>
+                    </span>
+                    <TierBadge tier={p.tier} />
+                  </button>
+                </li>
+              ))}
+            </ul>
           </>
         )}
       </section>

@@ -8,7 +8,8 @@ import { TIER_LABEL, TIERS, tierToDb, type Tier } from "@/domain/tier";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { SOURCE_LABEL } from "@/features/import/sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
-import { countMyTiers, getImportedLists, getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
+import { ListThumb } from "@/components/ui/ListThumb";
+import { countMyTiers, getImportedLists, getMyListThumbs, getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "리스트" };
@@ -54,6 +55,7 @@ async function ListsContent() {
     getMyLists(supabase, userId),
     getImportedLists(supabase, userId),
   ]);
+  const thumbs = await getMyListThumbs(supabase, lists.map((l) => l.id));
 
   return (
     <div className="flex flex-col gap-7 px-5 pt-2">
@@ -78,12 +80,16 @@ async function ListsContent() {
       <section className="flex flex-col">
         <h2 className="mb-1 text-[16px] font-bold">내 리스트</h2>
         {lists.map((l) => (
-          <Link key={l.id} href={`/lists/${l.id}`} className="flex min-h-16 items-center gap-3 border-b border-line py-2.5 last:border-b-0">
-            <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-[12px] bg-brand-soft text-brand">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
-                <path d="M6 3h12v18l-6-4-6 4z" />
-              </svg>
-            </span>
+          <Link key={l.id} href={`/lists/${l.id}`} className="flex min-h-20 items-center gap-3.5 border-b border-line py-3 last:border-b-0">
+            {thumbs.get(l.id) ? (
+              <ListThumb photos={thumbs.get(l.id)!.photos} cuisines={thumbs.get(l.id)!.cuisines} />
+            ) : (
+              <span aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded-[10px] bg-surface text-subtle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+                  <path d="M6 3h12v18l-6-4-6 4z" />
+                </svg>
+              </span>
+            )}
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-body font-semibold">{l.name}</span>
               <span className="text-meta text-muted">

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Cuisine } from "@/domain/cuisine";
 import type { Tier } from "@/domain/tier";
-import { CuisineIcon } from "./CuisineIcon";
+import { PlaceThumb } from "./PlaceThumb";
 import { TierBadge } from "./TierBadge";
 
 type Props = {
@@ -19,13 +19,15 @@ type Props = {
   onClick?: () => void;
   selected?: boolean;
   id?: string;
+  // 대표 사진(사용자가 올린 평가 사진) — 없으면 업종 아이콘
+  thumb?: string | null;
 };
 
 // 모든 장소 목록이 같은 모양 — 업종 아이콘 · 이름 · 메타 · 등급은 오른쪽 끝
-export function PlaceRow({ name, cuisine, meta, tier, note, index, action, href, onClick, selected, id }: Props) {
+export function PlaceRow({ name, cuisine, meta, tier, note, index, action, href, onClick, selected, id, thumb }: Props) {
   const body = (
     <>
-      <CuisineIcon cuisine={cuisine} size={40} />
+      <PlaceThumb src={thumb} cuisine={cuisine} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-body font-semibold">{name}</span>
         <span className="truncate text-meta text-muted">{meta}</span>
