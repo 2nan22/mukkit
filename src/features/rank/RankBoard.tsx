@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
-import { placeInThree } from "./actions";
+import { loadRanking, placeInThree, saveThreeOrder } from "./actions";
+import { RankedList } from "./RankedList";
 import { CompareSheet } from "./CompareSheet";
 import type { RankPlace } from "./rank";
 
@@ -21,6 +22,10 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
   const [comparing, setComparing] = useState<RankPlace | null>(null);
   // 하나씩 정하기 — 끝나면 다음 안 정한 곳으로 이어 간다 ('나중에 할게요'로 멈춤)
   const [chain, setChain] = useState(false);
+  // 순서 바꾸기 편집 모드 — ≡ 로 끌어서 옮기기
+  const [editing, setEditing] = useState(false);
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
+  const saveSeq = useRef(0);
   const [showAll, setShowAll] = useState(false);
   const FOLD = 5;
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +51,7 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
 
   return (
     <div className="flex flex-col px-5 pb-10">
-      {error && (
+      {error && ranked.length <= 1 && (
         <p role="alert" className="pt-3 text-meta text-danger">
           {error}
         </p>
@@ -57,24 +62,47 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
           <p>아래에서 하나씩 정해 보세요.</p>
         </div>
       ) : (
-        <ol aria-label="3스타 순위" className="flex flex-col">
-          {ranked.map((p, i) => (
-            <li key={p.placeId} className="flex min-h-16 items-center gap-3 border-b border-line">
-              <span className={`w-7 shrink-0 text-center text-section font-bold ${i < 3 ? "text-tier-3" : "text-ink-2"}`}>{i + 1}</span>
-              <Link href={`/p/${p.placeId}`} className="flex min-w-0 flex-1 flex-col gap-0.5 py-2">
-                <span className="truncate text-body font-semibold">{p.name}</span>
-                <span className="truncate text-meta text-muted">{meta(p)}</span>
-              </Link>
-              {ranked.length > 1 && (
-                <button type="button" disabled={pending} onClick={() => begin(p)} aria-label={`${p.name} 순위 다시 정하기`} className="h-11 min-w-11 shrink-0 px-2 text-meta text-ink-2">
-                  다시 정하기
-                </button>
-              )}
-            </li>
-          ))}
-        </ol>
+        <>
+          {ranked.length > 1 && (
+            <div className="flex min-h-14 items-center justify-between gap-3">
+              <span className="text-meta text-muted">{editing ? "오른쪽 손잡이를 끌어 순서를 바꿔요." : ""}</span>
+              <button
+                type="button"
+                onClick={() => setEditing((v) => !v)}
+                className={editing ? "h-11 shrink-0 rounded-btn-s bg-ink px-4 text-meta font-bold text-white" : "h-11 shrink-0 text-meta font-semibold text-ink"}
+              >
+                {editing ? "완료" : "순서 바꾸기"}
+              </button>
+            </div>
+          )}
+          {error && ranked.length > 1 && (
+            <p role="alert" className="pb-2 text-meta text-danger">
+              {error}
+            </p>
+          )}
+          <RankedList
+            ranked={ranked}
+            editing={editing}
+            meta={meta}
+            busy={pending}
+            onRedo={(p) => begin(p)}
+            onMove={(next) => {
+              setRanked(next);
+              setError(null);
+              // 연달아 옮겨도 저장은 차례대로 — 마지막 순서가 남는다
+              const mine = ++saveSeq.current;
+              saveChain.current = saveChain.current.then(async () => {
+                const res = await saveThreeOrder(next.map((p) => p.placeId));
+                if (res.error && mine === saveSeq.current) {
+                  setError(res.error);
+                  setRanked(await loadRanking().catch(() => next));
+                }
+              });
+            }}
+          />
+        </>
       )}
-      {unranked.length > 0 && (
+      {!editing && unranked.length > 0 && (
         <section aria-labelledby="unranked-title" className="flex flex-col pt-8">
           <div className="flex items-center justify-between gap-3">
             <h2 id="unranked-title" className="text-section font-bold">
