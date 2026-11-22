@@ -120,11 +120,13 @@ const SOFT: Record<string, string> = {
 };
 
 
+// 저장된 리스트가 하나라도 있으면 '요즘 많이 저장된', 아직 없으면 '새로 올라온' — 제목이 사실과 맞게
 export function RecentLists({ lists, covers = {} }: { lists: RecentList[]; covers?: Record<string, string> }) {
   if (lists.length === 0) return null;
+  const popular = lists.some((l) => (l.saves ?? 0) > 0);
   return (
     <section className="flex flex-col gap-2.5">
-      <SectionHead title="새로 올라온 리스트" />
+      <SectionHead title={popular ? "요즘 많이 저장된 리스트" : "새로 올라온 리스트"} more="/lists/popular" />
       <div className="grid grid-cols-2 gap-2.5 px-5">
         {lists.slice(0, 4).map((l) => (
           <Link key={l.id} href={`/l/${l.id}`} className="flex min-w-0 flex-col gap-1.5">
@@ -135,7 +137,10 @@ export function RecentLists({ lists, covers = {} }: { lists: RecentList[]; cover
               cuisines={topCuisines(l.points)}
             />
             <span className="truncate text-body font-bold">{l.name}</span>
-            <span className="truncate text-meta text-muted">{l.ownerNickname}</span>
+            <span className="truncate text-meta text-muted">
+              {l.ownerNickname}
+              {l.saves ? ` · ${l.saves}명 저장` : ""}
+            </span>
           </Link>
         ))}
       </div>

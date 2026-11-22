@@ -172,22 +172,24 @@ export async function getBio(supabase: SupabaseClient, id: string): Promise<stri
   return (data?.bio as string | null) ?? "";
 }
 
-export type RecentList = { id: string; name: string; ownerNickname: string; count: number; points: { placeId: string; cuisine: Cuisine; lat: number; lng: number; tier: string | null }[] };
-
-export async function getRecentPublicLists(supabase: SupabaseClient, limit = 4): Promise<RecentList[]> {
-  const { data, error } = await supabase.rpc("recent_public_lists", { p_limit: limit });
-  if (error) throw new SocialError("recent_public_lists", error.code);
-  return (data as { id: string; name: string; owner_nickname: string; count: number; points: RecentList["points"] }[]).map((r) => ({
-    id: r.id,
-    name: r.name,
-    ownerNickname: r.owner_nickname,
-    count: r.count,
-    points: r.points,
-  }));
-}
+export type RecentList = { id: string; name: string; ownerNickname: string; count: number; points: { placeId: string; cuisine: Cuisine; lat: number; lng: number; tier: string | null }[]; saves?: number };
 
 export async function getMyWantToGoPoints(supabase: SupabaseClient, me: string): Promise<{ lat: number; lng: number }[]> {
   const { data, error } = await supabase.from("user_places").select("places(lat, lng)").eq("user_id", me).eq("tier", "want_to_go").limit(2000);
   if (error) throw new SocialError("want_to_go", error.code);
   return (data as unknown as { places: { lat: number; lng: number } | null }[]).flatMap((r) => (r.places ? [r.places] : []));
+}
+
+// 요즘 많이 저장된 공개 리스트 — 최근 30일 저장 수 › 전체 저장 수 › 최근 고친 순
+export async function getPopularPublicLists(supabase: SupabaseClient, limit = 4, offset = 0): Promise<RecentList[]> {
+  const { data, error } = await supabase.rpc("popular_public_lists", { p_limit: limit, p_offset: offset });
+  if (error) throw new SocialError("popular_public_lists", error.code);
+  return (data as { id: string; name: string; owner_nickname: string; count: number; points: RecentList["points"]; saves: number }[]).map((r) => ({
+    id: r.id,
+    name: r.name,
+    ownerNickname: r.owner_nickname,
+    count: r.count,
+    points: r.points,
+    saves: r.saves,
+  }));
 }
