@@ -45,7 +45,7 @@ type KakaoCircle = { setMap(m: KakaoMapInstance | null): void; setPosition(p: La
 type KakaoMapInstance = {
   setBounds(b: object, top?: number, right?: number, bottom?: number, left?: number): void;
   getLevel(): number;
-  setLevel(level: number): void;
+  setLevel(level: number, opts?: { animate?: boolean }): void;
   panTo(p: LatLng | KakaoBounds, padding?: number): void;
   getBounds(): KakaoBounds;
   setCenter(p: LatLng): void;
@@ -64,7 +64,7 @@ declare global {
   }
 }
 
-export type Pin = { id: string; lat: number; lng: number; tier: Tier };
+export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found" };
 export type MyLocation = { lat: number; lng: number; accuracy: number };
 
 const APP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
@@ -94,6 +94,17 @@ const PIN_STYLE: Record<Tier, { size: number; bg: string; ring: string; text: st
   wantToGo: { size: 12, bg: "#ffffff", ring: "#5b5f69", text: "#5b5f69", label: "" },
   unrated: { size: 10, bg: "#ffffff", ring: "#adb1b8", text: "#5b5f69", label: "" },
 };
+
+// 지도 검색으로 찾은 가게 — 내 등급 핀과 헷갈리지 않는 검정 핀
+function foundElement(): HTMLElement {
+  const el = document.createElement("span");
+  el.setAttribute("role", "img");
+  el.setAttribute("aria-label", "검색한 가게");
+  el.style.cssText =
+    "display:flex;align-items:center;justify-content:center;width:28px;height:28px;box-sizing:border-box;border-radius:50%;background:#17181c;border:3px solid #ffffff;box-shadow:0 3px 10px rgba(0,0,0,.3)";
+  el.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#ffffff"></span>';
+  return el;
+}
 
 function pinElement(tier: Tier, selected: boolean, onClick: () => void): HTMLElement {
   const s = PIN_STYLE[tier];
@@ -136,6 +147,7 @@ export function PlaceMap({
   refit = "always",
   me = null,
   onUserMove,
+  zoomRef,
 }: {
   pins: Pin[];
   selectedId: string | null;
@@ -151,6 +163,8 @@ export function PlaceMap({
   me?: MyLocation | null;
   // 사용자가 손으로 지도를 옮겼을 때
   onUserMove?: () => void;
+  // 확대 · 축소 — 바깥 버튼이 부른다 (지도 탭)
+  zoomRef?: { current: ((step: number) => void) | null };
 }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<KakaoMapInstance | null>(null);
@@ -199,17 +213,17 @@ export function PlaceMap({
       const selected = p.id === selectedRef.current;
       const overlay = new maps.CustomOverlay({
         position: new maps.LatLng(p.lat, p.lng),
-        content: pinElement(p.tier, selected, () => onSelectRef.current(p.id)),
-        map: useCluster ? undefined : m,
+        content: p.kind === "found" ? foundElement() : pinElement(p.tier, selected, () => onSelectRef.current(p.id)),
+        map: useCluster && p.kind !== "found" ? undefined : m,
         xAnchor: 0.5,
         yAnchor: 0.5,
-        zIndex: zOf(p.tier, selected),
-        clickable: true,
+        zIndex: p.kind === "found" ? 1000 : zOf(p.tier, selected),
+        clickable: p.kind !== "found",
       });
       next.set(p.id, { overlay, pin: p });
     }
     overlays.current = next;
-    if (useCluster) clusterer.current?.addMarkers([...next.values()].map((v) => v.overlay));
+    if (useCluster) clusterer.current?.addMarkers([...next.values()].filter((v) => v.pin.kind !== "found").map((v) => v.overlay));
   }, [ready, pins, cluster]);
 
   // 고른 핀 표시 — 이전 · 새 핀 두 개만 바꾼다
@@ -219,7 +233,7 @@ export function PlaceMap({
     if (!ready || prev === selectedId) return;
     for (const id of [prev, selectedId]) {
       const hit = id ? overlays.current.get(id) : undefined;
-      if (!hit) continue;
+      if (!hit || hit.pin.kind === "found") continue;
       const on = id === selectedId;
       hit.overlay.setContent(pinElement(hit.pin.tier, on, () => onSelectRef.current(hit.pin.id)));
       hit.overlay.setZIndex(zOf(hit.pin.tier, on));
@@ -274,6 +288,16 @@ export function PlaceMap({
       m.setCenter(new maps.LatLng(focus.lat, focus.lng));
     });
   }, [ready, focus]);
+
+  useEffect(() => {
+    if (!zoomRef) return;
+    zoomRef.current = ready
+      ? (step: number) => {
+          const m = map.current;
+          if (m) m.setLevel(Math.max(1, Math.min(14, m.getLevel() + step)), { animate: true });
+        }
+      : null;
+  }, [ready, zoomRef]);
 
   // 내 위치 — 점은 위에, 정확도 원은 아래에. 위치가 바뀌면 옮기기만
   useEffect(() => {

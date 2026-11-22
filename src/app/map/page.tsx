@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { redirect } from "next/navigation";
@@ -15,18 +14,7 @@ export const metadata = { title: "지도" };
 export default function MapPage({ searchParams }: PageProps<"/map">) {
   return (
     <main className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden overscroll-none">
-      <AppHeader
-        kind="tab"
-        title="지도"
-        right={
-          <Link href="/search" aria-label="검색" className="flex size-11 items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-4-4" />
-            </svg>
-          </Link>
-        }
-      />
+      <AppHeader kind="tab" title="지도" />
       <Suspense fallback={<div className="flex-1 bg-map-land" />}>
         <MapLoader searchParams={searchParams} />
       </Suspense>
