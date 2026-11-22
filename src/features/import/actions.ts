@@ -7,6 +7,7 @@ import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { placeSourceFor, sourceNameForLink } from "./sources";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { ImportModeSchema, type ImportMode } from "./importMode";
+import { recordImportSource } from "./refreshImport";
 import { ImportSaveError, saveImportedList, type ImportResult } from "./saveImportedList";
 
 export type ListPreview = { listId: string; source: PlaceSourceName; name: string; count: number; unavailable: number };
@@ -46,7 +47,10 @@ export async function importList(link: string, mode: ImportMode): Promise<Action
   if (!source) return { ok: false, error: ERROR_MESSAGE.INVALID_LINK, code: "INVALID_LINK" };
   try {
     const list = await placeSourceFor(source).fetchList(link);
-    return { ok: true, data: await saveImportedList(supabase, userId, list, parsedMode.data) };
+    const saved = await saveImportedList(supabase, userId, list, parsedMode.data);
+    // 자동 새로 고침을 위해 방식 · 원본 요약을 남긴다
+    await recordImportSource(supabase, userId, list, parsedMode.data);
+    return { ok: true, data: saved };
   } catch (error) {
     return failure(error, source);
   }
