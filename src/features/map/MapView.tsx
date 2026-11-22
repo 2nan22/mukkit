@@ -67,7 +67,7 @@ function busiestArea(places: MapPlace[]): Focus | null {
 
 // view: mine 내 장소 · following 팔로우하는 사람이 평가한 곳 (following: 팔로우 수 — 빈 화면 안내)
 export function MapView({
-  places,
+  places: allPlaces,
   initialTiers = [],
   at = null,
   view = "mine",
@@ -80,6 +80,25 @@ export function MapView({
   following?: number;
 }) {
   const isFollowing = view === "following";
+  // 팔로잉 지도 사람 거르기 — 고른 사람의 평가만 남기고, 핀 색도 그 사람들 중 가장 높은 등급으로
+  const [people, setPeople] = useState<string[]>([]);
+  const [peopleOpen, setPeopleOpen] = useState(false);
+  const places = useMemo(
+    () =>
+      people.length === 0
+        ? allPlaces
+        : allPlaces.flatMap((p) => {
+            const rs = (p.raters ?? []).filter((r) => people.includes(r.userId));
+            return rs.length ? [{ ...p, raters: rs, tier: rs[0].tier }] : [];
+          }),
+    [allPlaces, people],
+  );
+  // 지도에 나온 팔로잉 — 평가한 곳 많은 순
+  const raterList = useMemo(() => {
+    const m = new Map<string, { userId: string; nickname: string; count: number }>();
+    for (const p of allPlaces) for (const r of p.raters ?? []) m.set(r.userId, { userId: r.userId, nickname: r.nickname, count: (m.get(r.userId)?.count ?? 0) + 1 });
+    return [...m.values()].sort((a, b) => b.count - a.count || a.nickname.localeCompare(b.nickname));
+  }, [allPlaces]);
   // 팔로잉 지도는 누군가 그 등급을 줬으면 해당 (핀 색은 가장 높은 등급)
   const tierMatch = (p: MapPlace, ts: Tier[]) => ts.length === 0 || (p.raters ? p.raters.some((r) => ts.includes(r.tier)) : ts.includes(p.tier));
   // 리스트 하나만 볼 때는 전체 맞춤, 아니면 위치 · 많이 저장한 지역에서 시작
@@ -266,7 +285,8 @@ export function MapView({
   }, [shown, viewport, me]);
   // 펼친 목록도 화면 안 · 가까운 순 (지도가 아직 안 떴으면 전체)
   const listed: MapPlace[] = viewport ? inView : shown;
-  const filtered = tiers.length > 0 || cuisines.length > 0;
+  const filtered = tiers.length > 0 || cuisines.length > 0 || people.length > 0;
+  const resetFilters = () => (setTiers([]), setCuisines([]), setPeople([]));
   const coverKey = listed.slice(0, 20).map((p) => p.placeId).join(",");
   useEffect(() => {
     const ids = coverKey ? coverKey.split(",").filter((id) => !askedCovers.current.has(id)) : [];
@@ -308,8 +328,17 @@ export function MapView({
           mineLabel={isFollowing ? "팔로잉이 평가한 곳" : undefined}
           freshLabel={isFollowing ? "팔로잉이 평가하지 않은 가게" : undefined}
         />
-        <div className={searchOpen || (isFollowing && places.length === 0) ? "invisible" : ""}>
+        <div className={searchOpen || (isFollowing && allPlaces.length === 0) ? "invisible" : ""}>
         <ChipRow label="등급">
+          {isFollowing && raterList.length > 1 && (
+            <Chip pressed={people.length > 0} onClick={() => setPeopleOpen(true)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21c1-4 4-6 8-6s7 2 8 6" />
+              </svg>
+              {people.length === 0 ? "사람" : people.length === 1 ? raterList.find((r) => r.userId === people[0])?.nickname : `사람 ${people.length}`}
+            </Chip>
+          )}
           <Chip pressed={tiers.length === 0} onClick={() => setTiers([])}>
             전체
           </Chip>
@@ -328,6 +357,52 @@ export function MapView({
         </ChipRow>
         </div>
       </div>
+
+      {peopleOpen && (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/30" onClick={() => setPeopleOpen(false)}>
+          <section
+            role="dialog"
+            aria-label="사람 고르기"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.key === "Escape" && setPeopleOpen(false)}
+            className="flex max-h-[80dvh] w-full max-w-[480px] flex-col gap-3 rounded-t-[20px] bg-white px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+          >
+            <span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-line-strong" />
+            <div className="flex items-center justify-between">
+              <h2 className="text-section font-bold">누구의 평가를 볼까요?</h2>
+              {people.length > 0 && (
+                <button type="button" onClick={() => setPeople([])} className="h-11 text-meta text-muted">
+                  초기화
+                </button>
+              )}
+            </div>
+            <ul className="-mx-5 flex flex-col overflow-y-auto px-5">
+              {raterList.map((r) => {
+                const on = people.includes(r.userId);
+                return (
+                  <li key={r.userId}>
+                    <button type="button" aria-pressed={on} onClick={() => setPeople(toggle(people, r.userId))} className="flex h-12 w-full items-center gap-3 text-left">
+                      <Avatar name={r.nickname} size={32} />
+                      <span className={`min-w-0 flex-1 truncate text-body ${on ? "font-bold" : ""}`}>{r.nickname}</span>
+                      <span className="text-meta text-muted">{r.count}곳</span>
+                      <span aria-hidden="true" className={`flex size-6 items-center justify-center rounded-full ${on ? "bg-ink text-white" : "border border-line-strong"}`}>
+                        {on && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12l5 5 9-10" />
+                          </svg>
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <button type="button" onClick={() => setPeopleOpen(false)} className="h-btn-l shrink-0 rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+              {shown.length}곳 보기
+            </button>
+          </section>
+        </div>
+      )}
 
       {filterOpen && (
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/30" onClick={() => setFilterOpen(false)}>
@@ -404,7 +479,7 @@ export function MapView({
             </button>
           </div>
         )}
-        {isFollowing && places.length === 0 ? (
+        {isFollowing && allPlaces.length === 0 ? (
           <div className="flex flex-col items-start gap-2 pt-5 pb-1">
             <span className="text-body font-bold">{following > 0 ? "팔로잉이 평가한 곳이 아직 없어요" : "아직 팔로우한 사람이 없어요"}</span>
             <span className="text-meta text-muted">{following > 0 ? "팔로우한 사람이 공개한 평가만 보여요." : "취향이 비슷한 사람을 팔로우하면 그 사람의 평가가 지도에 모여요."}</span>
@@ -450,7 +525,7 @@ export function MapView({
               (inView.length > 0 ? (
                 <PeekCards places={inView} covers={covers} onPick={(id) => (setFound(null), setSelectedId(id))} onMore={() => setSnap("half")} />
               ) : (
-                <EmptyHere filtered={filtered} onReset={() => (setTiers([]), setCuisines([]))} />
+                <EmptyHere filtered={filtered} onReset={resetFilters} />
               ))}
             <ul
               ref={listRef}
@@ -459,7 +534,7 @@ export function MapView({
             >
               {listed.length === 0 && (
                 <li>
-                  <EmptyHere filtered={filtered} onReset={() => (setTiers([]), setCuisines([]))} />
+                  <EmptyHere filtered={filtered} onReset={resetFilters} />
                 </li>
               )}
               {listed.map((p) => (
