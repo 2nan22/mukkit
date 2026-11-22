@@ -40,7 +40,8 @@ type KakaoMaps = {
   }) => KakaoClusterer;
 };
 type KakaoClusterer = { addMarkers(m: KakaoOverlay[]): void; clear(): void };
-type KakaoBounds = { extend(p: LatLng): void; contain(p: LatLng): boolean };
+type KakaoLatLng = { getLat(): number; getLng(): number };
+type KakaoBounds = { extend(p: LatLng): void; contain(p: LatLng): boolean; getSouthWest(): KakaoLatLng; getNorthEast(): KakaoLatLng };
 type KakaoCircle = { setMap(m: KakaoMapInstance | null): void; setPosition(p: LatLng): void; setRadius(r: number): void; setOptions(o: { strokeOpacity: number; fillOpacity: number }): void };
 type KakaoMapInstance = {
   setBounds(b: object, top?: number, right?: number, bottom?: number, left?: number): void;
@@ -48,6 +49,7 @@ type KakaoMapInstance = {
   setLevel(level: number, opts?: { animate?: boolean }): void;
   panTo(p: LatLng | KakaoBounds, padding?: number): void;
   getBounds(): KakaoBounds;
+  getCenter(): KakaoLatLng;
   setCenter(p: LatLng): void;
   relayout(): void;
 };
@@ -66,6 +68,7 @@ declare global {
 
 export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found" };
 export type MyLocation = { lat: number; lng: number; accuracy: number };
+export type MapViewport = { south: number; west: number; north: number; east: number; center: { lat: number; lng: number }; height: number };
 
 const APP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const SEOUL = { lat: 37.5665, lng: 126.978 };
@@ -148,6 +151,7 @@ export function PlaceMap({
   me = null,
   onUserMove,
   zoomRef,
+  onViewChange,
 }: {
   pins: Pin[];
   selectedId: string | null;
@@ -165,6 +169,8 @@ export function PlaceMap({
   onUserMove?: () => void;
   // 확대 · 축소 — 바깥 버튼이 부른다 (지도 탭)
   zoomRef?: { current: ((step: number) => void) | null };
+  // 지도가 멈출 때마다 지금 보이는 범위 · 가운데
+  onViewChange?: (view: MapViewport) => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<KakaoMapInstance | null>(null);
@@ -178,10 +184,12 @@ export function PlaceMap({
   const [failed, setFailed] = useState(false);
   const onSelectRef = useRef(onSelect);
   const onMoveRef = useRef(onUserMove);
+  const onViewRef = useRef(onViewChange);
   useEffect(() => {
     onSelectRef.current = onSelect;
     onMoveRef.current = onUserMove;
-  }, [onSelect, onUserMove]);
+    onViewRef.current = onViewChange;
+  }, [onSelect, onUserMove, onViewChange]);
 
   useEffect(() => {
     const maps = window.kakao?.maps;
@@ -192,6 +200,13 @@ export function PlaceMap({
       const m0 = map.current;
       requestAnimationFrame(() => m0.relayout());
       window.kakao?.maps.event.addListener(m0, "dragstart", () => onMoveRef.current?.());
+      window.kakao?.maps.event.addListener(m0, "idle", () => {
+        const b = m0.getBounds();
+        const sw = b.getSouthWest();
+        const ne = b.getNorthEast();
+        const c = m0.getCenter();
+        onViewRef.current?.({ south: sw.getLat(), west: sw.getLng(), north: ne.getLat(), east: ne.getLng(), center: { lat: c.getLat(), lng: c.getLng() }, height: el.current?.clientHeight ?? 0 });
+      });
     }
     const m = map.current;
     clusterer.current?.clear();

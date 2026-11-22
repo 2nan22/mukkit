@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import { CuisineIcon } from "@/components/ui/CuisineIcon";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { SOURCE_LABEL } from "@/features/import/sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
-import { PlaceMap, type MyLocation } from "./PlaceMap";
+import { PlaceMap, type MapViewport, type MyLocation } from "./PlaceMap";
+import { PeekCards, type NearPlace } from "./PeekCards";
+import { PlaceThumb } from "@/components/ui/PlaceThumb";
+import { loadPlaceCovers } from "@/features/place/coverActions";
 import { MapSearch } from "./MapSearch";
 import { openKakaoPlace, type NewPlaceHit } from "@/features/search/actions";
 import type { MapPlace } from "./myPlaces";
@@ -43,6 +45,10 @@ const AREA_LEVEL = 6;
 const HERE_LEVEL = 5;
 const PICK_LEVEL = 4;
 const FOUND_PIN = "found";
+// 지도 위쪽 검색창 · 칩이 덮는 높이
+const TOP_COVER_PX = 110;
+// 목록을 펼친 동안엔 접힌 시트 높이로 셈 — 목록이 출렁이지 않게
+const PEEK_COVER_PX = 165;
 
 // 처음 열 때 — 가장 많이 저장한 지역(시 · 구)의 가운데
 function busiestArea(places: MapPlace[]): Focus | null {
@@ -128,6 +134,13 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
   const [found, setFound] = useState<NewPlaceHit | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const zoomRef = useRef<((step: number) => void) | null>(null);
+  // 지금 지도에 보이는 범위 — 접힌 목록 카드가 따른다
+  // bottomCover: 지도가 멈춘 순간 접힌 시트가 덮은 높이 (이벤트에서 잰다)
+  const [viewport, setViewport] = useState<(MapViewport & { bottomCover: number }) | null>(null);
+  const sheetRef = useRef<HTMLElement>(null);
+  // 카드 · 목록의 대표 사진 — 화면에 나온 곳만 한 번씩 묻는다
+  const [covers, setCovers] = useState<Record<string, string>>({});
+  const askedCovers = useRef(new Set<string>());
   function pickMine(placeId: string) {
     const p = places.find((x) => x.placeId === placeId);
     if (!p) return;
@@ -216,6 +229,36 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
     ],
     [shown, found],
   );
+  // 보이는 지도 안의 내 장소 · 보이는 가운데에서 가까운 순
+  // 위 검색창 · 칩, 아래 접힌 시트에 가려진 줄은 뺀다
+  const inView = useMemo((): NearPlace[] => {
+    if (!viewport || !viewport.height) return [];
+    const { south, west, north, east, height, bottomCover } = viewport;
+    const span = north - south;
+    const top = north - span * (TOP_COVER_PX / height);
+    const bottom = south + span * (bottomCover / height);
+    const center = { lat: (top + bottom) / 2, lng: (west + east) / 2 };
+    const k = Math.cos((center.lat * Math.PI) / 180);
+    const meters = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => Math.hypot(a.lat - b.lat, (a.lng - b.lng) * k) * 111_000;
+    return shown
+      .filter((p) => p.lat >= bottom && p.lat <= top && p.lng >= west && p.lng <= east)
+      .sort((a, b) => meters(a, center) - meters(b, center))
+      .map((p) => ({ ...p, meters: me ? meters(p, me) : null }));
+  }, [shown, viewport, me]);
+  // 펼친 목록도 화면 안 · 가까운 순 (지도가 아직 안 떴으면 전체)
+  const listed: MapPlace[] = viewport ? inView : shown;
+  const filtered = tiers.length > 0 || cuisines.length > 0;
+  const coverKey = listed.slice(0, 20).map((p) => p.placeId).join(",");
+  useEffect(() => {
+    const ids = coverKey ? coverKey.split(",").filter((id) => !askedCovers.current.has(id)) : [];
+    if (ids.length === 0) return;
+    const t = setTimeout(async () => {
+      ids.forEach((id) => askedCovers.current.add(id));
+      const got = await loadPlaceCovers(ids).catch(() => ({}));
+      if (Object.keys(got).length) setCovers((c) => ({ ...c, ...got }));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [coverKey]);
   const presentCuisines = CUISINE_ORDER.filter((c) => places.some((p) => p.cuisine === c));
   const selected = shown.find((p) => p.placeId === selectedId) ?? null;
 
@@ -227,6 +270,7 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
           selectedId={selected?.placeId ?? (found ? FOUND_PIN : null)}
           onSelect={(id) => (id === FOUND_PIN ? undefined : (setFound(null), setSelectedId(id)))}
           zoomRef={zoomRef}
+          onViewChange={(v) => setViewport({ ...v, bottomCover: snap === "peek" ? (sheetRef.current?.offsetHeight ?? 0) : PEEK_COVER_PX })}
           cluster
           focus={focus}
           refit="hidden"
@@ -297,7 +341,7 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
 
       <div className="flex-1" />
 
-      <section className="relative z-10 rounded-t-2xl bg-white px-5 pb-5 shadow-sheet">
+      <section ref={sheetRef} className={`relative z-10 rounded-t-2xl bg-white px-5 shadow-sheet ${snap === "peek" && !selected && !found ? "pb-3" : "pb-5"}`}>
         {!(snap === "full" && !selected) && (
           <div className="absolute right-4 bottom-full mb-3 flex flex-col items-end gap-2">
             {locError && (
@@ -358,26 +402,37 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
                 <span aria-hidden="true" className="h-1 w-9 rounded-full bg-line-strong" />
               </button>
               <div className="flex items-center justify-between">
-                <span className="text-body font-bold">{shown.length}곳</span>
+                <span className="text-body font-bold">{!viewport ? `${shown.length}곳` : inView.length ? `이 화면에 ${inView.length}곳` : "이 화면에 저장한 곳이 없어요"}</span>
                 <button type="button" onClick={() => setSnap(snap === "peek" ? "half" : "peek")} aria-expanded={listOpen} className="h-btn-m text-meta text-ink-2">
                   {listOpen ? "목록 닫기" : "목록 보기"}
                 </button>
               </div>
             </div>
+            {snap === "peek" &&
+              viewport &&
+              (inView.length > 0 ? (
+                <PeekCards places={inView} covers={covers} onPick={(id) => (setFound(null), setSelectedId(id))} onMore={() => setSnap("half")} />
+              ) : (
+                <EmptyHere filtered={filtered} onReset={() => (setTiers([]), setCuisines([]))} />
+              ))}
             <ul
               ref={listRef}
               inert={!listOpen}
               className={`overflow-y-auto overscroll-contain transition-[height] duration-200 ease-out ${SNAP_CLASS[snap]}`}
             >
-              {shown.length === 0 && <li className="py-6 text-center text-meta text-muted">조건에 맞는 곳이 없어요</li>}
-              {shown.map((p) => (
+              {listed.length === 0 && (
+                <li>
+                  <EmptyHere filtered={filtered} onReset={() => (setTiers([]), setCuisines([]))} />
+                </li>
+              )}
+              {listed.map((p) => (
                 <li key={p.placeId}>
                   <button
                     type="button"
                     onClick={() => setSelectedId(p.placeId)}
                     className="flex min-h-16 w-full items-center gap-3 border-b border-line py-2 text-left"
                   >
-                    <CuisineIcon cuisine={p.cuisine} size={40} />
+                    <PlaceThumb src={covers[p.placeId]} cuisine={p.cuisine} />
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate text-body font-semibold">{p.name}</span>
                       <span className="truncate text-meta text-muted">{placeMeta(p)}</span>
@@ -390,6 +445,24 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
           </>
         )}
       </section>
+    </div>
+  );
+}
+
+// 보이는 지도에 저장한 곳이 없을 때 — 거르기가 켜져 있으면 지우기
+function EmptyHere({ filtered, onReset }: { filtered: boolean; onReset: () => void }) {
+  return (
+    <div className="flex h-16 items-center gap-3 text-meta text-muted">
+      {filtered ? (
+        <>
+          조건에 맞는 곳이 없어요
+          <button type="button" onClick={onReset} className="h-11 text-meta font-semibold text-ink underline underline-offset-[3px]">
+            조건 지우기
+          </button>
+        </>
+      ) : (
+        "지도를 축소하면 더 보여요"
+      )}
     </div>
   );
 }

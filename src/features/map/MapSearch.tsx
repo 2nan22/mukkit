@@ -35,7 +35,9 @@ export function MapSearch({
   const q = query.trim();
   const panel = open && q.length > 0;
 
-  useEffect(() => onOpenChange?.(panel), [panel, onOpenChange]);
+  useEffect(() => {
+    onOpenChange?.(panel);
+  }, [panel, onOpenChange]);
   useEffect(() => {
     if (!q) return;
     const t = setTimeout(() => start(async () => setResult({ q, places: (await searchAll(q, null)).places })), 300);
