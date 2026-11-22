@@ -73,9 +73,12 @@ export async function updateList(
 }
 
 export async function deleteList(supabase: SupabaseClient, userId: string, listId: string): Promise<void> {
-  const { data, error } = await supabase.from("lists").delete().eq("id", listId).eq("owner_id", userId).select("id");
+  const { data, error } = await supabase.from("lists").delete().eq("id", listId).eq("owner_id", userId).select("id, source, source_list_id");
   if (error) throw new ListWriteError("delete", error.code);
   if (data.length === 0) throw new ListNotFoundError();
+  // 가져온 리스트를 지우면 원본 새로 고침도 멈춘다 (지운 리스트를 새벽 작업이 다시 만들지 않게)
+  const { source, source_list_id } = data[0] as { source: string | null; source_list_id: string | null };
+  if (source && source_list_id) await supabase.from("import_sources").delete().eq("user_id", userId).eq("source", source).eq("source_list_id", source_list_id);
 }
 
 export async function addPlaces(supabase: SupabaseClient, userId: string, listId: string, placeIds: string[]): Promise<void> {
