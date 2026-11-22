@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getPublicList } from "@/features/share/publicList";
 import { PublicListView } from "@/features/share/PublicListView";
+import { getListMeta, getMySavedPlaceIds } from "@/features/share/savedLists";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function generateMetadata({ params }: PageProps<"/l/[listId]">): Promise<Metadata> {
@@ -34,8 +35,9 @@ export default function PublicListPage({ params }: PageProps<"/l/[listId]">) {
 async function PublicListLoader({ params }: { params: Promise<{ listId: string }> }) {
   const { listId } = await params;
   const supabase = await createSupabaseServerClient();
-  const [list, { data: claims }] = await Promise.all([getPublicList(supabase, listId), supabase.auth.getClaims()]);
-  const signedIn = Boolean(claims?.claims?.sub);
+  const [list, { data: claims }, meta] = await Promise.all([getPublicList(supabase, listId), supabase.auth.getClaims(), getListMeta(supabase, listId).catch(() => null)]);
+  const me = claims?.claims?.sub ?? null;
+  const signedIn = Boolean(me);
 
   if (!list) {
     return (
@@ -47,16 +49,30 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
     );
   }
 
+  // 로그인한 남의 리스트 — 저장 · 담기. 저장해 둔 리스트면 본 시각을 갱신('새로 추가된 곳' 지움)
+  const saveable = Boolean(me && meta && !meta.mine);
+  const [savedPlaceIds, covers] = await Promise.all([
+    saveable && me ? getMySavedPlaceIds(supabase, me, list.places.map((p) => p.placeId)) : Promise.resolve([]),
+    getPlaceCovers(supabase, list.places.map((p) => p.placeId)),
+    meta?.saved && me ? supabase.from("saved_lists").update({ last_seen_at: new Date().toISOString() }).eq("user_id", me).eq("list_id", listId) : Promise.resolve(null),
+  ]);
+
   return (
     <>
       <header className="flex flex-col gap-1 px-5 pt-5 pb-4">
         <span className="text-meta font-semibold text-muted">{list.ownerNickname}님의 리스트</span>
         <h1 className="text-title font-bold tracking-tight">{list.name}</h1>
         <span className="text-meta text-muted">
-          {list.places.length}곳{list.description && ` · ${list.description}`}
+          {list.places.length}곳{meta && meta.saves > 0 ? ` · 저장 ${meta.saves}` : ""}
+          {list.description && ` · ${list.description}`}
         </span>
       </header>
-      <PublicListView list={list} signedIn={signedIn} covers={Object.fromEntries([...(await getPlaceCovers(supabase, list.places.map((p) => p.placeId)))].map(([id, c]) => [id, c.url]))} />
+      <PublicListView
+        list={list}
+        signedIn={signedIn}
+        covers={Object.fromEntries([...covers].map(([id, c]) => [id, c.url]))}
+        save={saveable && meta ? { saved: meta.saved, savedPlaceIds } : null}
+      />
       {!signedIn && (
         <div className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-[480px] bg-white px-5 pt-3 pb-5 shadow-sheet">
           <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">

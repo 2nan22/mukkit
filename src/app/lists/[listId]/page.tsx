@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { ListDetail } from "@/features/lists/ListDetail";
+import { getListMeta } from "@/features/share/savedLists";
 import { getMyList } from "@/features/lists/lists";
 import { getPickablePlaces } from "@/features/lists/pickablePlaces";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -32,8 +33,8 @@ async function ListLoader({ params }: { params: Promise<{ listId: string }> }) {
   if (!userId) redirect(SIGNED_OUT_HOME);
   const list = /^[0-9a-f-]{36}$/.test(listId) ? await getMyList(supabase, userId, listId) : null;
   if (!list) notFound();
-  const [places, h, covers] = await Promise.all([getPickablePlaces(supabase, userId), headers(), getPlaceCovers(supabase, list.placeIds)]);
+  const [places, h, covers, meta] = await Promise.all([getPickablePlaces(supabase, userId), headers(), getPlaceCovers(supabase, list.placeIds), getListMeta(supabase, list.id).catch(() => null)]);
   // 공유 링크는 지금 접속한 주소 기준 — 배포하면 그 도메인이 된다
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
-  return <ListDetail list={list} places={places} origin={origin} covers={Object.fromEntries([...covers].map(([id, c]) => [id, c.url]))} />;
+  return <ListDetail list={list} places={places} origin={origin} saves={meta?.saves ?? 0} covers={Object.fromEntries([...covers].map(([id, c]) => [id, c.url]))} />;
 }

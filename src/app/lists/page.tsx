@@ -10,6 +10,7 @@ import { SOURCE_LABEL } from "@/features/import/sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
 import { ListThumb } from "@/components/ui/ListThumb";
 import { countMyTiers, getImportedLists, getMyListThumbs, getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
+import { getMySavedLists } from "@/features/share/savedLists";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "리스트" };
@@ -50,10 +51,11 @@ async function ListsContent() {
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) redirect(SIGNED_OUT_HOME);
-  const [tiers, lists, imported] = await Promise.all([
+  const [tiers, lists, imported, saved] = await Promise.all([
     countMyTiers(supabase, userId),
     getMyLists(supabase, userId),
     getImportedLists(supabase, userId),
+    getMySavedLists(supabase),
   ]);
   const thumbs = await getMyListThumbs(supabase, lists.map((l) => l.id));
 
@@ -113,6 +115,32 @@ async function ListsContent() {
         )}
       </section>
 
+      {/* 남의 리스트 — 공유 링크에서 '리스트 저장'. 주인이 새로 담은 곳은 표시 */}
+      <section className="flex flex-col">
+        <h2 className="mb-1 text-[16px] font-bold">저장한 리스트</h2>
+        {saved.map((l) => (
+          <Link key={l.id} href={`/l/${l.id}`} className="flex min-h-20 items-center gap-3.5 border-b border-line py-3 last:border-b-0">
+            <ListThumb photos={[]} cuisines={l.cuisines} />
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="truncate text-body font-semibold">{l.name}</span>
+              <span className="truncate text-meta text-muted">
+                {l.ownerNickname} · {l.count}곳 · {updatedLabel(l.updatedAt)}
+              </span>
+              {l.newCount > 0 && (
+                <span className="flex items-center gap-1 text-meta font-bold text-ink">
+                  <span aria-hidden="true" className="size-1.5 rounded-full bg-brand" />
+                  새로 추가된 곳 {l.newCount}
+                </span>
+              )}
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-subtle" aria-hidden="true">
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        ))}
+        {saved.length === 0 && <p className="py-4 text-meta text-muted">공유받은 리스트에서 &lsquo;리스트 저장&rsquo;을 누르면 여기에 모여요.</p>}
+      </section>
+
       {imported.length > 0 && (
         <section className="flex flex-col">
           <h2 className="mb-1 text-[16px] font-bold">가져온 리스트</h2>
@@ -136,4 +164,12 @@ async function ListsContent() {
       )}
     </div>
   );
+}
+
+function updatedLabel(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days < 1) return "오늘 업데이트";
+  if (days < 7) return `${days}일 전 업데이트`;
+  if (days < 30) return `${Math.floor(days / 7)}주 전 업데이트`;
+  return `${Math.floor(days / 30)}달 전 업데이트`;
 }
