@@ -42,9 +42,11 @@ async function MapLoader({ searchParams }: { searchParams: Promise<{ tier?: stri
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) redirect(SIGNED_OUT_HOME);
-  const all = await getMyMapPlaces(supabase, userId);
-  // ?list= 이면 그 리스트에 담긴 곳만, ?tier= 이면 그 등급을 미리 고른 채로
-  const only = typeof list === "string" ? await getMyList(supabase, userId, list).catch(() => null) : null;
+  // ?list= 이면 그 리스트에 담긴 곳만, ?tier= 이면 그 등급을 미리 고른 채로 — 두 조회는 한 번에
+  const [all, only] = await Promise.all([
+    getMyMapPlaces(supabase, userId),
+    typeof list === "string" ? getMyList(supabase, userId, list).catch(() => null) : Promise.resolve(null),
+  ]);
   const places = only ? all.filter((p) => only.placeIds.includes(p.placeId)) : all;
   const initialTiers = TIERS.filter((t) => t === tier);
   // ?at=위도,경도 — 홈 '근처 가고 싶은 곳'에서 그 위치로
