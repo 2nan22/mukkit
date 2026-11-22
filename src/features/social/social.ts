@@ -163,7 +163,7 @@ export async function getBio(supabase: SupabaseClient, id: string): Promise<stri
   return (data?.bio as string | null) ?? "";
 }
 
-export type RecentList = { id: string; name: string; ownerNickname: string; count: number; points: { lat: number; lng: number; tier: string | null }[] };
+export type RecentList = { id: string; name: string; ownerNickname: string; count: number; points: { placeId: string; cuisine: Cuisine; lat: number; lng: number; tier: string | null }[] };
 
 export async function getRecentPublicLists(supabase: SupabaseClient, limit = 4): Promise<RecentList[]> {
   const { data, error } = await supabase.rpc("recent_public_lists", { p_limit: limit });

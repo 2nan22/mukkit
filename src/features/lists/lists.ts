@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Cuisine } from "@/domain/cuisine";
 import { getPlaceCovers } from "@/features/place/covers";
+import { topCuisines } from "@/components/ui/ListThumb";
 import { z } from "zod";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 
@@ -163,9 +164,7 @@ export async function getMyListThumbs(supabase: SupabaseClient, listIds: string[
   for (const r of rows) byList.set(r.list_id, [...(byList.get(r.list_id) ?? []), r]);
   for (const [listId, items] of byList) {
     const photos = items.flatMap((r) => (covers.get(r.place_id) ? [covers.get(r.place_id)!.url] : [])).slice(0, THUMB_SLOTS);
-    const count = new Map<Cuisine, number>();
-    for (const r of items) if (r.places) count.set(r.places.cuisine, (count.get(r.places.cuisine) ?? 0) + 1);
-    const cuisines = [...count.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);
+    const cuisines = topCuisines(items.flatMap((r) => (r.places ? [{ cuisine: r.places.cuisine }] : [])));
     out.set(listId, { photos, cuisines });
   }
   return out;
