@@ -6,7 +6,7 @@ import { honor } from "@/domain/honor";
 import { block, report, unblock } from "./actions";
 import { REASON_LABEL, REPORT_REASONS, type ReportReason } from "./reasons";
 
-type Step = "menu" | "report" | "block" | "done";
+type Step = "menu" | "report" | "block" | "delete" | "done";
 
 // 평가 · 프로필 · 댓글의 '더 보기' — 신고하기 · 차단하기 (placeId 면 그 평가, commentId 면 그 댓글 신고)
 // onDelete: 댓글 삭제(쓴 사람 · 평가 주인) · selfOnly: 내 댓글이라 삭제만
@@ -78,7 +78,7 @@ export function SafetyMenu({
             tabIndex={-1}
             role="dialog"
             aria-modal="true"
-            aria-label={step === "report" ? "신고" : step === "block" ? "차단" : commentId ? "댓글 메뉴" : `${who} 신고 · 차단`}
+            aria-label={step === "report" ? "신고" : step === "block" ? "차단" : step === "delete" ? "댓글 삭제" : commentId ? "댓글 메뉴" : `${who} 신고 · 차단`}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.key === "Escape" && close()}
             className="flex w-full max-w-[480px] flex-col gap-1 rounded-t-[20px] bg-white px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] outline-none"
@@ -87,8 +87,8 @@ export function SafetyMenu({
             {step === "menu" && (
               <>
                 {onDelete && (
-                  <button type="button" disabled={pending} onClick={() => start(async () => finish(await onDelete(), true))} className="flex h-12 items-center text-body text-ink">
-                    댓글 삭제
+                  <button type="button" onClick={() => setStep("delete")} className="flex h-12 items-center text-body text-danger">
+                    댓글 삭제하기
                   </button>
                 )}
                 {!selfOnly && (
@@ -177,6 +177,26 @@ export function SafetyMenu({
                   </button>
                   <button type="button" disabled={pending} onClick={() => start(async () => finish(await block(userId), true))} className="h-12 rounded-btn-m bg-danger text-body font-bold text-white disabled:opacity-40">
                     차단하기
+                  </button>
+                </div>
+              </>
+            )}
+
+            {step === "delete" && onDelete && (
+              <>
+                <h2 className="text-section font-bold">이 댓글을 삭제할까요?</h2>
+                <p className="pt-1 text-meta text-ink-2">삭제한 댓글은 되돌릴 수 없어요.</p>
+                {error && (
+                  <p role="alert" className="text-meta text-danger">
+                    {error}
+                  </p>
+                )}
+                <div className="grid grid-cols-2 gap-2 pt-4">
+                  <button type="button" onClick={close} className="h-12 rounded-btn-m bg-surface text-body font-medium text-ink">
+                    취소
+                  </button>
+                  <button type="button" disabled={pending} onClick={() => start(async () => finish(await onDelete(), true))} className="h-12 rounded-btn-m bg-danger text-body font-bold text-white disabled:opacity-40">
+                    삭제
                   </button>
                 </div>
               </>

@@ -50,17 +50,15 @@ export function ReactionBar({
     <div className="-ml-2.5 flex flex-col">
       <div className="flex items-center">
         {mine ? (
-          <span className="flex h-11 items-center gap-1.5 px-2.5 text-meta text-muted" aria-label={`좋아요 ${likes}개`}>
-            {heart(false)}
-            {likes > 0 && <span aria-hidden="true">{likes}</span>}
-          </span>
+          // 내 평가 — 누를 수 없으니 버튼 모양 없이 글자로만, 0이면 숨김
+          likes > 0 && <span className="flex h-11 items-center px-2.5 text-meta text-muted">좋아요 {likes}</span>
         ) : (
           <button
             type="button"
             onClick={toggle}
             aria-pressed={liked}
-            aria-label={`좋아요${likes > 0 ? ` ${likes}개` : ""}`}
-            className={`flex h-11 items-center gap-1.5 px-2.5 text-meta ${liked ? "font-bold text-ink" : "text-muted"}`}
+            aria-label={liked ? `좋아요 취소, ${likes}개` : `좋아요${likes > 0 ? `, ${likes}개` : ""}`}
+            className={`flex h-11 items-center gap-1.5 px-2.5 text-meta transition-transform active:scale-90 ${liked ? "font-bold text-ink" : "text-muted"}`}
           >
             {heart(liked)}
             {likes > 0 && <span aria-hidden="true">{likes}</span>}
@@ -71,7 +69,7 @@ export function ReactionBar({
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
               <path d="M4 5h16v11H9l-5 4z" />
             </svg>
-            <span aria-hidden="true">{reaction.comments > 0 ? reaction.comments : "댓글"}</span>
+            {reaction.comments > 0 && <span aria-hidden="true">{reaction.comments}</span>}
           </Link>
         )}
       </div>

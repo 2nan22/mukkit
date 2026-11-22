@@ -18,7 +18,7 @@ export const metadata = { title: "댓글" };
 // 평가 하나의 댓글 — 평가를 볼 수 있는 사람만 (볼 수 없으면 없는 화면)
 export default function RatingCommentsPage({ params }: PageProps<"/p/[placeId]/r/[userId]">) {
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
+    <div className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden">
       <Suspense fallback={<ListSkeleton />}>
         <Comments params={params} />
       </Suspense>
@@ -52,29 +52,33 @@ async function Comments({ params }: { params: Promise<{ placeId: string; userId:
   return (
     <>
       <AppHeader kind="back" title="댓글" fallback={`/p/${placeId}`} />
-      <main className="flex flex-1 flex-col px-5">
+      <main id="comment-scroll" className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5">
         <RatingCard rating={rating} showOwner viewerId={me} reaction={reactions.get(reactionKey(userId, placeId)) ?? null} showComments={false} />
-        <section aria-label="댓글" className="flex flex-1 flex-col pb-4">
+        <section aria-labelledby="comments-title" className="flex flex-1 flex-col pt-3 pb-4">
+          <h2 id="comments-title" className="text-meta font-bold">
+            댓글 {comments.length > 0 ? comments.length : ""}
+          </h2>
           {comments.length === 0 ? (
-            <p className="py-10 text-center text-meta text-muted">첫 댓글을 남겨 보세요</p>
+            <p className="py-10 text-center text-meta text-muted">{userId === me ? "아직 댓글이 없어요" : "첫 댓글을 남겨 보세요"}</p>
           ) : (
             <ul className="flex flex-col">
               {comments.map((c) => (
-                <li key={c.id} className="flex gap-2.5 py-3">
+                <li key={c.id} className="flex items-start gap-2.5 py-3">
                   <Link href={`/u/${c.authorId}`} aria-label={`${c.nickname} 프로필`} className="shrink-0 pt-0.5">
-                    <Avatar name={c.nickname} size={40} />
+                    <Avatar name={c.nickname} size={32} />
                   </Link>
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="flex items-center gap-1.5 text-meta">
                       <Link href={`/u/${c.authorId}`} className="font-bold">
                         {c.nickname}
                       </Link>
-                      {c.authorId === userId && <span className="text-caption text-muted">작성자</span>}
+                      {c.authorId === userId && <span className="rounded bg-surface px-1.5 py-0.5 text-caption text-ink-2">글쓴이</span>}
                       <span className="text-muted">· {timeLabel(c.createdAt)}</span>
                     </span>
-                    <p className="text-body leading-normal break-words whitespace-pre-line text-ink-2">{c.body}</p>
+                    <p className="text-body leading-normal break-words whitespace-pre-line text-ink">{c.body}</p>
                   </div>
                   {(c.canDelete || !c.mine) && (
+                    <div className="-mt-2">
                     <SafetyMenu
                       userId={c.authorId}
                       nickname={c.nickname}
@@ -82,6 +86,7 @@ async function Comments({ params }: { params: Promise<{ placeId: string; userId:
                       onDelete={c.canDelete ? deleteComment.bind(null, c.id) : undefined}
                       selfOnly={c.mine}
                     />
+                    </div>
                   )}
                 </li>
               ))}
@@ -89,9 +94,7 @@ async function Comments({ params }: { params: Promise<{ placeId: string; userId:
           )}
         </section>
       </main>
-      <div className="sticky bottom-0">
-        <CommentForm ownerId={userId} placeId={placeId} />
-      </div>
+      <CommentForm ownerId={userId} placeId={placeId} />
     </>
   );
 }
