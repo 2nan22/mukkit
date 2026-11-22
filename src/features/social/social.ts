@@ -115,6 +115,14 @@ export async function getProfileRatings(supabase: SupabaseClient, owner: Person)
   return withMedia(supabase, data as RatingRow[], owner);
 }
 
+// 평가 하나 — 댓글 화면 머리. 볼 수 없으면 null
+export async function getRatingDetail(supabase: SupabaseClient, ownerId: string, placeId: string): Promise<SharedRating | null> {
+  const { data, error } = await supabase.rpc("rating_detail", { p_owner: ownerId, p_place: placeId });
+  if (error) throw new SocialError("rating_detail", error.code);
+  const rows = data as RatingRow[];
+  return rows.length ? (await withMedia(supabase, rows))[0] : null;
+}
+
 export async function getFeed(supabase: SupabaseClient, before?: string): Promise<SharedRating[]> {
   const { data, error } = await supabase.rpc("feed", { p_before: before ?? null, p_limit: 20 });
   if (error) throw new SocialError("feed", error.code);

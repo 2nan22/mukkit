@@ -6,10 +6,27 @@ import { honor } from "@/domain/honor";
 import { block, report, unblock } from "./actions";
 import { REASON_LABEL, REPORT_REASONS, type ReportReason } from "./reasons";
 
-type Step = "menu" | "report" | "block" | "done";
+type Step = "menu" | "report" | "block" | "delete" | "done";
 
-// 평가 · 프로필의 '더 보기' — 신고하기 · 차단하기 (placeId 가 있으면 그 평가 신고)
-export function SafetyMenu({ userId, nickname, placeId = null, blocked = false }: { userId: string; nickname: string; placeId?: string | null; blocked?: boolean }) {
+// 평가 · 프로필 · 댓글의 '더 보기' — 신고하기 · 차단하기 (placeId 면 그 평가, commentId 면 그 댓글 신고)
+// onDelete: 댓글 삭제(쓴 사람 · 평가 주인) · selfOnly: 내 댓글이라 삭제만
+export function SafetyMenu({
+  userId,
+  nickname,
+  placeId = null,
+  commentId = null,
+  blocked = false,
+  onDelete,
+  selfOnly = false,
+}: {
+  userId: string;
+  nickname: string;
+  placeId?: string | null;
+  commentId?: string | null;
+  blocked?: boolean;
+  onDelete?: () => Promise<{ error?: string; done?: string }>;
+  selfOnly?: boolean;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<Step | null>(null);
   const [reason, setReason] = useState<ReportReason | null>(null);
@@ -47,7 +64,7 @@ export function SafetyMenu({ userId, nickname, placeId = null, blocked = false }
 
   return (
     <>
-      <button ref={trigger} type="button" aria-label={`${who} 더 보기`} onClick={() => setStep("menu")} className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
+      <button ref={trigger} type="button" aria-label={commentId ? `${who} 댓글 더 보기` : `${who} 더 보기`} onClick={() => setStep("menu")} className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <circle cx="12" cy="5" r="1.6" />
           <circle cx="12" cy="12" r="1.6" />
@@ -61,25 +78,30 @@ export function SafetyMenu({ userId, nickname, placeId = null, blocked = false }
             tabIndex={-1}
             role="dialog"
             aria-modal="true"
-            aria-label={step === "report" ? "신고" : step === "block" ? "차단" : `${who} 신고 · 차단`}
+            aria-label={step === "report" ? "신고" : step === "block" ? "차단" : step === "delete" ? "댓글 삭제" : commentId ? "댓글 메뉴" : `${who} 신고 · 차단`}
             onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.key === "Escape" && close()}
+            onKeyDown={(e) => {
+              // 댓글 시트 안에서 열렸을 때 바깥 시트까지 닫히지 않게
+              if (e.key !== "Escape") return;
+              e.stopPropagation();
+              close();
+            }}
             className="flex w-full max-w-[480px] flex-col gap-1 rounded-t-[20px] bg-white px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] outline-none"
           >
             <span aria-hidden="true" className="mx-auto mb-2 block h-1 w-9 rounded-full bg-line-strong" />
             {step === "menu" && (
               <>
-                {placeId && (
-                  <button type="button" onClick={() => setStep("report")} className="flex h-12 items-center text-body text-ink">
-                    이 평가 신고하기
+                {onDelete && (
+                  <button type="button" onClick={() => setStep("delete")} className="flex h-12 items-center text-body text-danger">
+                    댓글 삭제하기
                   </button>
                 )}
-                {!placeId && (
+                {!selfOnly && (
                   <button type="button" onClick={() => setStep("report")} className="flex h-12 items-center text-body text-ink">
-                    {who} 신고하기
+                    {commentId ? "이 댓글 신고하기" : placeId ? "이 평가 신고하기" : `${who} 신고하기`}
                   </button>
                 )}
-                {blocked ? (
+                {selfOnly ? null : blocked ? (
                   <button type="button" disabled={pending} onClick={() => start(async () => finish(await unblock(userId), true))} className="flex h-12 items-center text-body text-ink">
                     {who} 차단 해제
                   </button>
@@ -101,10 +123,10 @@ export function SafetyMenu({ userId, nickname, placeId = null, blocked = false }
 
             {step === "report" && (
               <>
-                <h2 className="pb-1 text-section font-bold">{placeId ? "신고하는 이유를 골라 주세요" : `${who}을 신고하는 이유를 골라 주세요`}</h2>
+                <h2 className="pb-1 text-section font-bold">{placeId || commentId ? "신고하는 이유를 골라 주세요" : `${who}을 신고하는 이유를 골라 주세요`}</h2>
                 <fieldset className="flex flex-col">
                   <legend className="sr-only">신고 이유</legend>
-                  {REPORT_REASONS.filter((r) => placeId || r !== "fake").map((r) => (
+                  {REPORT_REASONS.filter((r) => (placeId && !commentId) || r !== "fake").map((r) => (
                     <label key={r} className="flex min-h-12 items-center gap-3 border-b border-line text-body">
                       <input type="radio" name="reason" value={r} checked={reason === r} onChange={() => setReason(r)} className="size-5 accent-ink" />
                       {REASON_LABEL[r]}
@@ -122,7 +144,7 @@ export function SafetyMenu({ userId, nickname, placeId = null, blocked = false }
                     className="mt-2 w-full resize-none rounded-[12px] bg-surface px-3.5 py-3 text-body outline-none focus:bg-white focus:ring-1 focus:ring-ink"
                   />
                 )}
-                <p className="pt-2 text-caption leading-normal text-muted">{placeId ? "신고한 사실은 상대에게 알리지 않아요. 여러 명이 신고한 평가는 숨겨져요." : "신고한 사실은 상대에게 알리지 않아요."}</p>
+                <p className="pt-2 text-caption leading-normal text-muted">{commentId ? "신고한 사실은 상대에게 알리지 않아요. 여러 명이 신고한 댓글은 숨겨져요." : placeId ? "신고한 사실은 상대에게 알리지 않아요. 여러 명이 신고한 평가는 숨겨져요." : "신고한 사실은 상대에게 알리지 않아요."}</p>
                 {error && (
                   <p role="alert" className="text-meta text-danger">
                     {error}
@@ -135,7 +157,7 @@ export function SafetyMenu({ userId, nickname, placeId = null, blocked = false }
                   <button
                     type="button"
                     disabled={!reason || pending}
-                    onClick={() => start(async () => finish(await report({ userId, placeId, reason: reason!, note })))}
+                    onClick={() => start(async () => finish(await report({ userId, placeId: commentId ? null : placeId, commentId, reason: reason!, note })))}
                     className="h-12 rounded-btn-m bg-ink text-body font-bold text-white disabled:opacity-40"
                   >
                     신고하기
@@ -160,6 +182,26 @@ export function SafetyMenu({ userId, nickname, placeId = null, blocked = false }
                   </button>
                   <button type="button" disabled={pending} onClick={() => start(async () => finish(await block(userId), true))} className="h-12 rounded-btn-m bg-danger text-body font-bold text-white disabled:opacity-40">
                     차단하기
+                  </button>
+                </div>
+              </>
+            )}
+
+            {step === "delete" && onDelete && (
+              <>
+                <h2 className="text-section font-bold">이 댓글을 삭제할까요?</h2>
+                <p className="pt-1 text-meta text-ink-2">삭제한 댓글은 되돌릴 수 없어요.</p>
+                {error && (
+                  <p role="alert" className="text-meta text-danger">
+                    {error}
+                  </p>
+                )}
+                <div className="grid grid-cols-2 gap-2 pt-4">
+                  <button type="button" onClick={close} className="h-12 rounded-btn-m bg-surface text-body font-medium text-ink">
+                    취소
+                  </button>
+                  <button type="button" disabled={pending} onClick={() => start(async () => finish(await onDelete(), true))} className="h-12 rounded-btn-m bg-danger text-body font-bold text-white disabled:opacity-40">
+                    삭제
                   </button>
                 </div>
               </>

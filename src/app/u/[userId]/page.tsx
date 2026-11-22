@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { FollowButton } from "@/features/social/FollowButton";
+import { getReactions, reactionKey, type Reaction } from "@/features/reactions/reactions";
 import { RatingCard } from "@/features/social/RatingCard";
 import {
   getBio,
@@ -76,6 +77,8 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
     );
   }
   const ratings = ratingsRaw.map((r) => ({ ...r, ownerNickname: person.nickname }));
+  // 평가 탭에서만 좋아요 · 댓글 수 — 로그인한 사람만
+  const reactions = me && tab !== "lists" ? await getReactions(supabase, ratings) : new Map<string, Reaction>();
   const rated = stats.three + stats.two + stats.one + stats.notRecommended;
   // 숫자는 집계 값으로 — 아래 목록은 최근 것부터 일부만 불러온다
   const ratedTotal = rated + stats.sponsored;
@@ -113,6 +116,14 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
               </span>
               <span>협찬 · 이벤트 평가 {stats.sponsored}건</span>
             </div>
+            {me === person.id && stats.three > 0 && (
+              <Link href="/rank" className="flex h-11 items-center justify-between border-t border-line text-body font-medium">
+                내 3스타 순위
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-subtle">
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </Link>
+            )}
           </div>
         )}
 
@@ -163,7 +174,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
         ) : (
           <>
             {ratings.map((r) => (
-              <RatingCard key={r.placeId} rating={r} showOwner={false} viewerId={me} />
+              <RatingCard key={r.placeId} rating={r} showOwner={false} viewerId={me} reaction={reactions.get(reactionKey(r.ownerId, r.placeId)) ?? null} />
             ))}
             {ratedTotal > ratings.length && <p className="py-6 text-center text-meta text-muted">최근 평가 {ratings.length}곳까지 보여요</p>}
           </>

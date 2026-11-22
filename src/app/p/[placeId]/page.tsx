@@ -1,4 +1,6 @@
 import { SafetyMenu } from "@/features/safety/SafetyMenu";
+import { ReactionBar } from "@/features/reactions/ReactionBar";
+import { getReactions, reactionKey, type Reaction } from "@/features/reactions/reactions";
 import { getPlaceCovers } from "@/features/place/covers";
 import { TIER_MEANING } from "@/domain/tier";
 import Link from "next/link";
@@ -54,9 +56,9 @@ function MediaStrip({ media }: { media: MediaRef[] }) {
   );
 }
 
-function OtherRow({ r, placeId }: { r: OtherRating; placeId: string }) {
+function OtherRow({ r, placeId, reaction }: { r: OtherRating; placeId: string; reaction: Reaction | null }) {
   return (
-    <div className="flex flex-col gap-2 border-b border-line py-3">
+    <div className="flex flex-col gap-2 border-b border-line pt-3 pb-1">
       <div className="flex items-center gap-2.5">
         <Link href={`/u/${r.userId}`} className="flex min-w-0 flex-1 items-center gap-2.5">
           <Avatar name={r.nickname} size={40} />
@@ -76,6 +78,7 @@ function OtherRow({ r, placeId }: { r: OtherRating; placeId: string }) {
       <Companions people={r.companions} />
       <MediaStrip media={r.media} />
       {r.visitedOn && <span className="text-meta text-muted">{dot(r.visitedOn)}</span>}
+      {reaction && <ReactionBar ownerId={r.userId} placeId={placeId} reaction={reaction} mine={false} />}
     </div>
   );
 }
@@ -99,6 +102,9 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
     getPlaceCovers(supabase, [placeId]),
   ]);
   if (!place) notFound();
+  const myRated = Boolean(mine && ["three", "two", "one", "notRecommended"].includes(mine.tier));
+  const reactions = await getReactions(supabase, [...others.map((o) => ({ ownerId: o.userId, placeId })), ...(myRated ? [{ ownerId: me, placeId }] : [])]);
+  const reactionOf = (owner: string) => reactions.get(reactionKey(owner, placeId)) ?? null;
   const seen = new Set<string>();
   const myCompanions = myVisits
     .flatMap((v) => v.members.filter((m) => m.status === "accepted"))
@@ -154,6 +160,11 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <div className="flex items-center gap-2">
               <TierBadge tier={mine.tier} />
               <span className="text-meta font-medium text-ink-2">{TIER_MEANING[mine.tier]}</span>
+              {mine.tier === "three" && (
+                <Link href="/rank" className="inline-flex min-h-11 items-center text-meta font-semibold text-ink underline underline-offset-[3px]">
+                  {mine.rank ? `3스타 중 ${mine.rank}위` : "순위 정하기"}
+                </Link>
+              )}
               {mine.visitedOn && <span className="ml-auto text-meta text-subtle">{dot(mine.visitedOn)}</span>}
             </div>
             {mine.review && <p className="text-body leading-relaxed">{mine.review}</p>}
@@ -165,6 +176,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
                 <span className="text-muted">나만 보는 메모</span> · {mine.note}
               </p>
             )}
+            {reactionOf(me) && <ReactionBar ownerId={me} placeId={place.id} reaction={reactionOf(me)!} mine />}
           </div>
         ) : mine ? (
           <div className="flex flex-col gap-2">
@@ -186,13 +198,13 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         <h2 className="text-section font-bold">팔로잉 평가</h2>
         {following.length === 0 && <p className="py-3 text-meta text-muted">팔로잉 중에는 아직 평가한 사람이 없어요</p>}
         {following.map((r) => (
-          <OtherRow key={r.userId} r={r} placeId={place.id} />
+          <OtherRow key={r.userId} r={r} placeId={place.id} reaction={reactionOf(r.userId)} />
         ))}
         {rest.length > 0 && (
           <>
             <h2 className="pt-5 text-section font-bold">다른 사람 평가</h2>
             {rest.map((r) => (
-              <OtherRow key={r.userId} r={r} placeId={place.id} />
+              <OtherRow key={r.userId} r={r} placeId={place.id} reaction={reactionOf(r.userId)} />
             ))}
           </>
         )}

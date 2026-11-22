@@ -10,6 +10,7 @@ const PALETTE = [
 
 const SIZE = {
   24: "size-6 text-[11px]",
+  32: "size-8 text-[13px]",
   40: "size-10 text-[15px]",
   56: "size-14 text-[20px]",
 } as const;

@@ -84,9 +84,11 @@ export type SavedPlace = {
   review: string;
   visibility: RatingVisibility;
   menus: string[];
+  // 3스타 안 순위 (1부터) · 안 정했으면 null
+  rank?: number | null;
 };
 
-const SAVED_PLACE_COLUMNS = "place_id, tier, note, visited_on, sponsored, review, visibility, menus, places(name, address, category_name, cuisine)";
+const SAVED_PLACE_COLUMNS = "place_id, tier, note, visited_on, sponsored, review, visibility, menus, tier_rank, places(name, address, category_name, cuisine)";
 
 type SavedPlaceRow = {
   place_id: string;
@@ -97,6 +99,7 @@ type SavedPlaceRow = {
   review: string;
   visibility: RatingVisibility;
   menus: string[] | null;
+  tier_rank: number | null;
   places: { name: string; address: string; category_name: string; cuisine: string } | null;
 };
 
@@ -114,6 +117,7 @@ function toSavedPlace(row: SavedPlaceRow): SavedPlace {
     review: row.review,
     visibility: row.visibility,
     menus: row.menus ?? [],
+    rank: row.tier_rank === null ? null : row.tier_rank + 1,
   };
 }
 

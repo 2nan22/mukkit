@@ -19,8 +19,12 @@ export function MapSearch({
   onPickNew,
   onOpenChange,
   onClear,
+  mineLabel = "내 장소",
+  freshLabel = "저장하지 않은 가게",
 }: {
   places: MapPlace[];
+  mineLabel?: string;
+  freshLabel?: string;
   onPickMine: (placeId: string) => void;
   onPickNew: (hit: NewPlaceHit) => void;
   onOpenChange?: (open: boolean) => void;
@@ -119,12 +123,12 @@ export function MapSearch({
           className="relative z-10 max-h-[min(55dvh,420px)] overflow-y-auto overscroll-contain rounded-[16px] bg-white px-4 py-2 shadow-float"
         >
           <p role="status" className="sr-only">
-            {hits ? `내 장소 ${mine.length}곳, 저장하지 않은 가게 ${fresh.length}곳` : ""}
+            {hits ? `${mineLabel} ${mine.length}곳, ${freshLabel} ${fresh.length}곳` : ""}
           </p>
           {mine.length > 0 && (
-            <ul aria-label="내 장소">
+            <ul aria-label={mineLabel}>
               <li aria-hidden="true" className="pt-1 pb-0.5 text-caption font-semibold text-muted">
-                내 장소
+                {mineLabel}
               </li>
               {mine.map((p) => (
                 <li key={p.placeId}>
@@ -148,9 +152,9 @@ export function MapSearch({
             </ul>
           )}
           {fresh.length > 0 && (
-            <ul aria-label="저장하지 않은 가게">
+            <ul aria-label={freshLabel}>
               <li aria-hidden="true" className="pt-3 pb-0.5 text-caption font-semibold text-muted">
-                저장하지 않은 가게
+                {freshLabel}
               </li>
               {fresh.slice(0, 8).map((h) => (
                 <li key={h.kakaoId}>

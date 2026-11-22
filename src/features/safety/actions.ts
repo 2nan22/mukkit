@@ -20,6 +20,7 @@ async function requireUser() {
 const ReportInput = z.object({
   userId: z.uuid(),
   placeId: z.uuid().nullable(),
+  commentId: z.uuid().nullable().default(null),
   reason: z.enum(REPORT_REASONS),
   note: z.string().trim().max(300),
 });
@@ -31,7 +32,15 @@ export async function report(input: z.input<typeof ReportInput>): Promise<Result
   const { supabase, me } = await requireUser();
   const p = parsed.data;
   if (p.userId === me) return { error: "내 평가는 신고할 수 없어요." };
-  const { error } = await supabase.from("reports").insert({ reporter_id: me, target_user: p.userId, target_place: p.placeId, reason: p.reason, note: p.note });
+  // 댓글 신고는 댓글만 가리킨다 (평가 숨김에 세지 않음)
+  const { error } = await supabase.from("reports").insert({
+    reporter_id: me,
+    target_user: p.userId,
+    target_place: p.commentId ? null : p.placeId,
+    target_comment: p.commentId,
+    reason: p.reason,
+    note: p.note,
+  });
   if (error) return error.code === "23505" ? { done: "이미 신고했어요." } : { error: "신고하지 못했어요. 다시 시도해 주세요." };
   return { done: "신고했어요. 확인하고 조치할게요." };
 }
