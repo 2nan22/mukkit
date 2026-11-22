@@ -41,3 +41,36 @@ describe("글에서 가게 후보 뽑기", () => {
     expect(candidateQuery({ name: "어니언", address: null })).toBe("어니언");
   });
 });
+
+describe("글에서 가게 후보 뽑기 — 실제 글 형식", () => {
+  it("메뉴 · 가격 · 광고 표시는 후보가 아님", () => {
+    const text = "[내돈내산]\n[메뉴]\n🍴 삼겹살 18,000\n🍽️ 추천메뉴: 짚불구이\n<광고>\n📍 짚불구이집 망원점";
+    expect(extractPlaceCandidates(text).map((c) => c.name)).toEqual(["짚불구이집 망원점"]);
+  });
+
+  it("번호 · 체크 목록과 괄호 지역", () => {
+    const list = extractPlaceCandidates("1. 어니언 성수\n2) 대림창고\n✔️ 영남순대국 (을지로)");
+    expect(list.map((c) => c.name)).toEqual(["어니언 성수", "대림창고", "영남순대국"]);
+    expect(candidateQuery(list[2])).toBe("을지로 영남순대국");
+  });
+
+  it("주소 변형 — 층 · 호 · 번길 · 시 · 도 없는 주소, 이름보다 먼저 온 주소", () => {
+    expect(extractPlaceCandidates("📍 한남동 카페\n서울 용산구 대사관로5길 12 1층 102호 (한남동)")[0].address).toBe("서울 용산구 대사관로5길 12");
+    expect(extractPlaceCandidates("상호: 판교 국밥\n주소: 경기 성남시 분당구 판교역로 146번길 20")[0].address).toBe("경기 성남시 분당구 판교역로 146번길 20");
+    expect(extractPlaceCandidates("중구 다산로 149\n📍 동대문 닭한마리")[0]).toEqual({ name: "동대문 닭한마리", address: "중구 다산로 149" });
+  });
+
+  it("긴 주소 라벨은 잘라서", () => {
+    const [c] = extractPlaceCandidates(`상호: 한옥국수집\n주소: ${"가".repeat(200)}`);
+    expect(c.address!.length).toBeLessThanOrEqual(80);
+  });
+
+  it("해시태그는 일반 · 동네 · 영문 태그 빼고 3개까지", () => {
+    expect(extractPlaceCandidates("#용산 #우대갈비 #jmt #먹스타 #맛집탐방 #서울고기집 #몽탄 #삼각지역").map((c) => c.name)).toEqual(["우대갈비", "몽탄"]);
+  });
+
+  it("위치 안내 문구는 검색어 지역으로 쓰지 않음", () => {
+    const [c] = extractPlaceCandidates("상호: 몽탄\n위치: 삼각지역 8번 출구");
+    expect(candidateQuery(c)).toBe("몽탄");
+  });
+});

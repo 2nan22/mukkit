@@ -15,16 +15,30 @@ export function TextImportFlow() {
   const [url, setUrl] = useState("");
   const [results, setResults] = useState<CandidateResult[] | null>(null);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
-  const [saved, setSaved] = useState<Record<string, true>>({});
+  // 저장한 가게 → 마이슐랭 장소 (상세로 가는 링크)
+  const [saved, setSaved] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  // 원문 링크 — http(s) 만, 공유 추적 꼬리(?igsh= 등)는 뗀다
+  const link = (() => {
+    const v = url.trim();
+    if (!v) return { ok: true, value: null as string | null };
+    try {
+      const u = new URL(v);
+      if (u.protocol !== "http:" && u.protocol !== "https:") return { ok: false, value: null };
+      return { ok: true, value: `${u.origin}${u.pathname}` };
+    } catch {
+      return { ok: false, value: null };
+    }
+  })();
 
   function find() {
     setMessage(null);
     setResults(null);
     const candidates = extractPlaceCandidates(text);
     if (candidates.length === 0) {
-      setMessage({ text: "글에서 가게 이름을 찾지 못했어요. '📍가게이름'처럼 적힌 줄이 있는지 확인해 주세요.", error: true });
+      setMessage({ text: "글에서 가게 이름을 찾지 못했어요. 위치 표시 뒤에 가게 이름이 적힌 줄이 있는지 확인해 주세요.", error: true });
       return;
     }
     start(async () => {
@@ -38,11 +52,10 @@ export function TextImportFlow() {
     setBusy(h.kakaoId);
     setMessage(null);
     start(async () => {
-      const link = /^https?:\/\//.test(url.trim()) ? url.trim() : null;
-      const res = await saveFoundPlace({ kakaoId: h.kakaoId, name: h.name, lat: h.lat, lng: h.lng, sourceUrl: link });
+      const res = await saveFoundPlace({ kakaoId: h.kakaoId, name: h.name, lat: h.lat, lng: h.lng, sourceUrl: link.value });
       setBusy(null);
       if (res.error) return setMessage({ text: res.error, error: true });
-      setSaved((s) => ({ ...s, [h.kakaoId]: true }));
+      setSaved((s) => ({ ...s, [h.kakaoId]: res.placeId! }));
       setMessage({ text: `가고 싶은 곳으로 저장했어요 · ${h.name}` });
     });
   }
@@ -59,7 +72,9 @@ export function TextImportFlow() {
           placeholder={"📍을지로 영남순대국\n📍서울 중구 다산로42길 19\n#을지로맛집"}
           className="w-full resize-none rounded-[12px] bg-surface px-3.5 py-3 text-body leading-normal outline-none focus:bg-white focus:ring-1 focus:ring-ink"
         />
-        <span className="text-caption text-muted">글은 이 기기에서만 읽고, 찾은 가게 이름만 검색에 써요.</span>
+        <span className="text-caption text-muted">
+          글은 이 기기에서만 읽고, 찾은 가게 이름 · 주소만 검색에 써요.{text.length >= TEXT_MAX && ` ${TEXT_MAX}자까지만 읽어요.`}
+        </span>
       </label>
       <label className="flex flex-col gap-1.5">
         <span className="text-meta font-semibold text-ink">원문 링크 (선택)</span>
@@ -68,41 +83,56 @@ export function TextImportFlow() {
           onChange={(e) => setUrl(e.target.value)}
           inputMode="url"
           placeholder="https://"
-          className="h-12 rounded-[12px] bg-surface px-3.5 text-body outline-none focus:bg-white focus:ring-1 focus:ring-ink"
+          aria-invalid={!link.ok}
+          className={`h-12 rounded-[12px] bg-surface px-3.5 text-body outline-none focus:bg-white focus:ring-1 ${link.ok ? "focus:ring-ink" : "ring-1 ring-danger"}`}
         />
-        <span className="text-caption text-muted">넣으면 저장한 가게의 나만 보는 메모로 남아요.</span>
+        <span className={`text-caption ${link.ok ? "text-muted" : "text-danger"}`}>
+          {link.ok ? "넣으면 저장한 가게의 나만 보는 메모로 남아요." : "https:// 로 시작하는 링크를 넣어 주세요."}
+        </span>
       </label>
       <button
         type="button"
-        disabled={pending || text.trim().length < 2}
+        disabled={pending || text.trim().length < 2 || !link.ok}
         onClick={find}
         className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:bg-surface disabled:text-subtle disabled:shadow-none"
       >
         {pending && !busy ? "찾는 중" : "가게 찾기"}
       </button>
-      <p role={message?.error ? "alert" : "status"} className={message ? `text-meta ${message.error ? "text-danger" : "text-ink-2"}` : "sr-only"}>
-        {message?.text ?? ""}
+      <p role="alert" className={message?.error ? "text-meta text-danger" : "sr-only"}>
+        {message?.error ? message.text : ""}
+      </p>
+      {/* 저장 알림 — 아래쪽 줄에서 눌러도 보이게 화면 아래 */}
+      <p role="status" className={message && !message.error ? "fixed inset-x-0 bottom-6 z-30 mx-auto w-fit max-w-[90%] rounded-full bg-ink px-4 py-2.5 text-meta text-white shadow-float" : "sr-only"}>
+        {message && !message.error ? message.text : ""}
       </p>
 
       {results && (
         <div className="flex flex-col gap-5 pt-2">
-          {results.map(({ candidate, hits }) => (
+          {results.map(({ candidate, hits, failed }) => (
             <section key={candidate.name} aria-label={`${candidate.name} 후보`} className="flex flex-col">
               <h2 className="text-meta text-muted">
                 글에서 찾은 이름 · <b className="font-semibold text-ink">{candidate.name}</b>
                 {candidate.address && ` · ${candidate.address}`}
               </h2>
-              {hits.length === 0 ? (
+              {failed ? (
+                <p className="flex min-h-12 items-center gap-2 text-meta text-muted">
+                  지금 검색이 잠시 안 돼요.
+                  <button type="button" onClick={find} className="h-11 font-semibold text-ink underline underline-offset-[3px]">
+                    다시 찾기
+                  </button>
+                </p>
+              ) : hits.length === 0 ? (
                 <p className="flex min-h-12 items-center gap-2 text-meta text-muted">
                   카카오에서 찾지 못했어요.
-                  <Link href="/search" className="font-semibold text-ink underline underline-offset-[3px]">
+                  <Link href={`/search?q=${encodeURIComponent(candidate.name)}`} className="flex h-11 items-center font-semibold text-ink underline underline-offset-[3px]">
                     직접 검색
                   </Link>
                 </p>
               ) : (
                 <ul className="flex flex-col">
                   {hits.map((h) => {
-                    const inMine = Boolean(h.tier) || saved[h.kakaoId];
+                    const inMine = Boolean(h.tier) || Boolean(saved[h.kakaoId]);
+                    const placeId = h.placeId ?? saved[h.kakaoId] ?? null;
                     return (
                       <li key={h.kakaoId}>
                         <PlaceRow
@@ -110,7 +140,7 @@ export function TextImportFlow() {
                           cuisine={h.cuisine}
                           meta={h.meta}
                           tier={h.tier}
-                          href={h.placeId ? `/p/${h.placeId}` : undefined}
+                          href={placeId ? `/p/${placeId}` : `/search?q=${encodeURIComponent(h.name)}`}
                           action={
                             inMine ? (
                               <span role="img" aria-label="내 장소에 있음" className="flex size-11 shrink-0 items-center justify-center text-ink">

@@ -7,7 +7,7 @@ import { candidateQuery, type PlaceCandidate } from "@/domain/textPlaces";
 import { tierFromDb, type Tier } from "@/domain/tier";
 import type { Cuisine } from "@/domain/cuisine";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
-import { searchKakaoKeyword } from "@/features/search/kakaoLocal";
+import { searchKakaoKeywordOrFail } from "@/features/search/kakaoLocal";
 import { knownKakaoPlaces } from "@/features/search/search";
 import { openKakaoPlace } from "@/features/search/actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -21,24 +21,32 @@ async function requireUser() {
 }
 
 export type FoundHit = { kakaoId: string; name: string; lat: number; lng: number; cuisine: Cuisine; meta: string; placeId: string | null; tier: Tier | null };
-export type CandidateResult = { candidate: PlaceCandidate; hits: FoundHit[] };
+// failed: 카카오 검색이 오류로 실패 (0건과 구분)
+export type CandidateResult = { candidate: PlaceCandidate; hits: FoundHit[]; failed: boolean };
 
-const Candidates = z.array(z.object({ name: z.string().trim().min(2).max(30), address: z.string().max(80).nullable() })).min(1).max(8);
+const Candidates = z
+  .array(z.object({ name: z.string().trim().min(2).max(30), address: z.string().max(80).nullable(), area: z.string().max(12).nullable().optional() }))
+  .min(1)
+  .max(8);
 
 // 글에서 뽑은 후보마다 카카오에서 가게 3곳까지 — 이미 내 장소면 내 등급도
 export async function findCandidatePlaces(candidates: PlaceCandidate[]): Promise<{ results: CandidateResult[]; error?: string }> {
   const parsed = Candidates.safeParse(candidates);
   if (!parsed.success) return { results: [], error: "찾을 가게가 없어요." };
   const { supabase, me } = await requireUser();
-  // 넉넉히 찾아 음식점이 아닌 곳(주차장 등)을 뒤로 빼고 3곳만
-  const lists = (await Promise.all(parsed.data.map((c) => searchKakaoKeyword(candidateQuery(c), undefined, 6)))).map((l) =>
-    l === null ? null : [...l.filter((h) => h.cuisine !== "nonFood"), ...l.filter((h) => h.cuisine === "nonFood")].slice(0, 3),
-  );
-  if (lists.every((l) => l === null)) return { results: [], error: "지금은 가게를 찾을 수 없어요. 잠시 뒤 다시 시도해 주세요." };
-  const known = await knownKakaoPlaces(supabase, me, lists.flatMap((l) => (l ?? []).map((h) => h.id)));
+  // 넉넉히 찾아 음식점 결과가 있으면 음식점만(주차장 등 제외), 3곳까지
+  const raw = await Promise.all(parsed.data.map((c) => searchKakaoKeywordOrFail(candidateQuery(c), undefined, 6)));
+  if (raw.every((l) => l === null)) return { results: [], error: "지금은 가게를 찾을 수 없어요. 잠시 뒤 다시 시도해 주세요." };
+  const lists = raw.map((l) => {
+    if (!Array.isArray(l)) return [];
+    const food = l.filter((h) => h.cuisine !== "nonFood");
+    return (food.length ? food : l).slice(0, 3);
+  });
+  const known = await knownKakaoPlaces(supabase, me, lists.flatMap((l) => l.map((h) => h.id)));
   const results = parsed.data.map((candidate, i) => ({
     candidate,
-    hits: (lists[i] ?? []).map((h) => ({
+    failed: raw[i] === "failed",
+    hits: lists[i].map((h) => ({
       kakaoId: h.id,
       name: h.name,
       lat: h.lat,
