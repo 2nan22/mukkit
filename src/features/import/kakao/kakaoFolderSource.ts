@@ -55,7 +55,7 @@ type Favorite = z.infer<typeof FavoriteSchema>;
 export class KakaoFolderSource implements PlaceSource {
   constructor(private readonly fetchImpl: FetchLike = fetch) {}
 
-  async fetchList(input: string): Promise<ImportedList> {
+  async fetchList(input: string, opts: { knownIds?: ReadonlySet<string> } = {}): Promise<ImportedList> {
     const folderId = await this.resolveFolderId(input.trim());
     const folder = await this.fetchFolder(folderId);
     const raw = await this.getJson(KAKAO_FOLDER.favoritesUrl(folderId), KAKAO_FOLDER.headers);
@@ -75,7 +75,7 @@ export class KakaoFolderSource implements PlaceSource {
       sourceListId: folderId,
       name: folder.title,
       memo: folder.memo ?? "",
-      places: await mapLimit(favorites, KAKAO_FOLDER.placeConcurrency, (f) => this.toPlace(f)),
+      places: await mapLimit(favorites, KAKAO_FOLDER.placeConcurrency, (f) => this.toPlace(f, opts.knownIds?.has(f.key) ?? false)),
       expectedCount: folder.favorite_cnt,
       skipped,
     };
@@ -110,8 +110,9 @@ export class KakaoFolderSource implements PlaceSource {
   }
 
   // 장소는 상세에서 위경도 · 업종을 받는다. 상세가 없으면(폐업 등) 즐겨찾기 좌표로
-  private async toPlace(f: Favorite): Promise<ImportedPlace> {
-    const detail = f.type === "PLACE" ? await this.fetchPlaceDetail(f.key) : null;
+  // known: 이미 가져온 곳 — 상세를 다시 부르지 않는다 (새로 고침은 메모 · 목록만 본다)
+  private async toPlace(f: Favorite, known = false): Promise<ImportedPlace> {
+    const detail = f.type === "PLACE" && !known ? await this.fetchPlaceDetail(f.key) : null;
     const category = detail?.category;
     const categoryPath = [category?.name1, category?.name2, category?.name3].filter((v): v is string => !!v);
     const point = detail ? { lat: detail.point.lat, lng: detail.point.lon } : wcongToLatLng(f.x, f.y);
@@ -127,7 +128,7 @@ export class KakaoFolderSource implements PlaceSource {
       cuisine: kakaoCuisineOf(categoryPath).cuisine,
       memo: f.memo ?? "",
       savedAt: parseKst(f.created_at),
-      available: f.type !== "PLACE" || detail !== null,
+      available: known || f.type !== "PLACE" || detail !== null,
       raw: { favorite: f, category: category ?? null },
     };
   }

@@ -10,12 +10,14 @@ import { CUISINE_LABEL } from "@/domain/cuisine";
 import { addPlacesToList, removeList, removePlacesFromList, restorePlacesToList, saveListInfo, setListVisibility } from "./actions";
 import type { RemovedItem } from "./lists";
 import { LIST_NAME_MAX, VISIBILITIES, VISIBILITY_LABEL, type ListSummary } from "./lists";
+import { RefreshImportButton } from "@/features/import/RefreshImportButton";
+import type { ImportStatus } from "@/features/import/importStatus";
 import { PlacePicker } from "./PlacePicker";
 import type { PickablePlace } from "./pickablePlaces";
 
-type Props = { list: ListSummary & { placeIds: string[] }; places: PickablePlace[]; origin: string; covers?: Record<string, string> };
+type Props = { list: ListSummary & { placeIds: string[] }; places: PickablePlace[]; origin: string; covers?: Record<string, string>; saves?: number; imported?: ImportStatus | null };
 
-export function ListDetail({ list, places, origin, covers = {} }: Props) {
+export function ListDetail({ list, places, origin, covers = {}, saves = 0, imported = null }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -140,7 +142,10 @@ export function ListDetail({ list, places, origin, covers = {} }: Props) {
         )}
       </section>
 
+      {imported && list.source && <RefreshImportButton listId={list.id} source={list.source} status={imported.status} lastSyncedAt={imported.lastSyncedAt} />}
       {list.visibility !== "private" && <ShareBox url={`${origin}/l/${list.id}`} name={list.name} />}
+      {/* 누가 저장했는지는 보이지 않는다 — 숫자만 */}
+      {list.visibility !== "private" && saves > 0 && <p className="px-5 pt-2 text-meta text-muted">{saves}명이 이 리스트를 저장했어요</p>}
 
       <div className="grid grid-cols-2 gap-2">
         <Link href={`/map?list=${list.id}`} className="flex h-btn-m items-center justify-center gap-1.5 rounded-btn-m bg-surface text-body font-medium text-ink">

@@ -33,7 +33,8 @@ export type ImportedList = {
 };
 
 export interface PlaceSource {
-  fetchList(input: string): Promise<ImportedList>;
+  // knownIds: 이미 가져온 장소 — 새로 고칠 때 상세 조회를 건너뛴다(카카오)
+  fetchList(input: string, opts?: { knownIds?: ReadonlySet<string> }): Promise<ImportedList>;
 }
 
 export type ImportErrorCode =

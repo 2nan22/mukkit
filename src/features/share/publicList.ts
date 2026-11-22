@@ -11,6 +11,7 @@ export type PublicListPlace = {
   cuisine: Cuisine;
   categoryName: string;
   tier: Tier | null;
+  addedAt: string | null;
 };
 
 export type PublicList = {
@@ -35,6 +36,7 @@ type Row = {
   cuisine: string | null;
   category_name: string | null;
   tier: string | null;
+  added_at: string | null;
 };
 
 // 링크 · 공개 리스트만 — 비공개거나 없으면 null. 메모 · 원본은 이 통로에 없다
@@ -62,6 +64,7 @@ export async function getPublicList(supabase: SupabaseClient, listId: string): P
             cuisine: (r.cuisine ?? "other") as Cuisine,
             categoryName: r.category_name ?? "",
             tier: r.tier ? tierFromDb(r.tier) : null,
+            addedAt: r.added_at,
           }]
         : [],
     ),
