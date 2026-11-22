@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Cuisine } from "@/domain/cuisine";
 import { tierFromDb, type Tier } from "@/domain/tier";
+import { getBlockedIds } from "@/features/safety/safety";
 
 const MEDIA_BUCKET = "rating-media";
 const SIGNED_SECONDS = 3600;
@@ -67,9 +68,9 @@ export async function searchPeople(supabase: SupabaseClient, query: string, me: 
   if (q.length < 1) return [];
   let req = supabase.from("profiles").select("id, nickname").ilike("nickname", `%${q}%`).limit(30);
   if (me) req = req.neq("id", me);
-  const { data, error } = await req;
+  const [{ data, error }, blocked] = await Promise.all([req, me ? getBlockedIds(supabase) : Promise.resolve(new Set<string>())]);
   if (error) throw new SocialError("search", error.code);
-  return data.map((r) => ({ id: r.id as string, nickname: r.nickname as string }));
+  return data.filter((r) => !blocked.has(r.id as string)).map((r) => ({ id: r.id as string, nickname: r.nickname as string }));
 }
 
 type RatingRow = {
