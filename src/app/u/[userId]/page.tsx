@@ -36,22 +36,25 @@ export default function ProfilePage({ params, searchParams }: PageProps<"/u/[use
 async function Profile({ params, searchParams }: { params: Promise<{ userId: string }>; searchParams: Promise<{ tab?: string | string[] }> }) {
   const [{ userId }, { tab }] = await Promise.all([params, searchParams]);
   const supabase = await createSupabaseServerClient();
-  const person = await getPerson(supabase, userId);
-  if (!person) notFound();
+  if (!/^[0-9a-f-]{36}$/.test(userId)) notFound();
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub ?? null;
-  const [counts, following, ratings, stats, lists, bio, taste] = await Promise.all([
-    getFollowCounts(supabase, person.id),
-    me ? isFollowing(supabase, me, person.id) : Promise.resolve(false),
-    getProfileRatings(supabase, person),
-    getProfileStats(supabase, person.id),
+  // 사람 · 평가 · 숫자를 한 번에 — 프로필 id 만 있으면 된다 (닉네임은 아래에서 채움)
+  const [person, counts, following, ratingsRaw, stats, lists, bio, taste] = await Promise.all([
+    getPerson(supabase, userId),
+    getFollowCounts(supabase, userId),
+    me ? isFollowing(supabase, me, userId) : Promise.resolve(false),
+    getProfileRatings(supabase, { id: userId, nickname: "" }),
+    getProfileStats(supabase, userId),
     // 본인 프로필은 비공개 리스트까지 (남에게는 공개 리스트만)
-    me === person.id
+    me === userId
       ? getMyLists(supabase, me).then((ls) => ls.map((l) => ({ id: l.id, name: l.name, count: l.count, visibility: l.visibility })))
-      : getProfileLists(supabase, person.id).then((ls) => ls.map((l) => ({ ...l, visibility: null }))),
-    getBio(supabase, person.id),
-    me && me !== person.id ? getTasteWith(supabase, person.id) : Promise.resolve(null),
+      : getProfileLists(supabase, userId).then((ls) => ls.map((l) => ({ ...l, visibility: null }))),
+    getBio(supabase, userId),
+    me && me !== userId ? getTasteWith(supabase, userId) : Promise.resolve(null),
   ]);
+  if (!person) notFound();
+  const ratings = ratingsRaw.map((r) => ({ ...r, ownerNickname: person.nickname }));
   const rated = stats.three + stats.two + stats.one + stats.notRecommended;
   // 숫자는 집계 값으로 — 아래 목록은 최근 것부터 일부만 불러온다
   const ratedTotal = rated + stats.sponsored;
@@ -134,7 +137,12 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
             {me === person.id ? "공개한 평가가 아직 없어요. 평가할 때 공개 범위를 바꿀 수 있어요." : "볼 수 있는 평가가 아직 없어요."}
           </p>
         ) : (
-          ratings.map((r) => <RatingCard key={r.placeId} rating={r} showOwner={false} />)
+          <>
+            {ratings.map((r) => (
+              <RatingCard key={r.placeId} rating={r} showOwner={false} />
+            ))}
+            {ratedTotal > ratings.length && <p className="py-6 text-center text-meta text-muted">최근 평가 {ratings.length}곳까지 보여요</p>}
+          </>
         )}
       </div>
     </div>

@@ -85,15 +85,18 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
-  const place = await getPlace(supabase, placeId);
-  if (!place) notFound();
-  const [mine, myMedia, others, lists] = await Promise.all([
-    getSavedPlace(supabase, me, place.id),
-    getMyMedia(supabase, me, place.id),
-    getOtherRatings(supabase, place.id),
+  if (!/^[0-9a-f-]{36}$/.test(placeId)) notFound();
+  // 장소 id 만 있으면 되는 조회는 한 번에 — 차례로 기다리지 않게
+  const [place, mine, myMedia, others, lists, myVisits, covers] = await Promise.all([
+    getPlace(supabase, placeId),
+    getSavedPlace(supabase, me, placeId),
+    getMyMedia(supabase, me, placeId),
+    getOtherRatings(supabase, placeId),
     getMyLists(supabase, me),
+    getMyVisits(supabase, placeId),
+    getPlaceCovers(supabase, [placeId]),
   ]);
-  const [myVisits, covers] = await Promise.all([getMyVisits(supabase, place.id), getPlaceCovers(supabase, [place.id])]);
+  if (!place) notFound();
   const seen = new Set<string>();
   const myCompanions = myVisits
     .flatMap((v) => v.members.filter((m) => m.status === "accepted"))
@@ -105,7 +108,6 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
     });
   const links = sourceLinks(place);
   const kakaoSource = place.sources.find((s) => s.source === "kakao" && !s.sourcePlaceId.startsWith("N"));
-  const menu = await getMenu({ name: place.name, lat: place.lat, lng: place.lng, kakaoPlaceId: kakaoSource?.sourcePlaceId ?? null });
   const following = others.filter((o) => o.followed);
   const rest = others.filter((o) => !o.followed);
 
@@ -136,7 +138,10 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         </div>
       </section>
 
-      {menu && <MenuSection menu={menu} kakaoUrl={`https://place.map.kakao.com/${menu.kakaoPlaceId}`} />}
+      {/* 메뉴는 카카오에 묻느라 늦을 수 있어 따로 — 나머지 화면을 막지 않는다 */}
+      <Suspense fallback={null}>
+        <PlaceMenu name={place.name} lat={place.lat} lng={place.lng} kakaoPlaceId={kakaoSource?.sourcePlaceId ?? null} />
+      </Suspense>
 
       <section className="flex flex-col gap-2 border-b-8 border-surface px-5 pt-4 pb-5">
         <div className="flex items-center justify-between">
@@ -194,4 +199,9 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
       <PlaceBottomBar placeId={place.id} saved={Boolean(mine)} rated={Boolean(mine && ["three", "two", "one", "notRecommended"].includes(mine.tier))} lists={lists.map((l) => ({ id: l.id, name: l.name }))} />
     </>
   );
+}
+
+async function PlaceMenu(target: { name: string; lat: number; lng: number; kakaoPlaceId: string | null }) {
+  const menu = await getMenu(target).catch(() => null);
+  return menu ? <MenuSection menu={menu} kakaoUrl={`https://place.map.kakao.com/${menu.kakaoPlaceId}`} /> : null;
 }
