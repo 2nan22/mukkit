@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Cuisine } from "@/domain/cuisine";
 import type { Tier } from "@/domain/tier";
-import { CuisineIcon } from "./CuisineIcon";
+import { PlaceThumb } from "./PlaceThumb";
 import { TierBadge } from "./TierBadge";
 
 type Props = {
@@ -27,12 +27,7 @@ type Props = {
 export function PlaceRow({ name, cuisine, meta, tier, note, index, action, href, onClick, selected, id, thumb }: Props) {
   const body = (
     <>
-      {thumb ? (
-        // eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다
-        <img src={thumb} alt="" loading="lazy" className="size-10 shrink-0 rounded-[12px] bg-surface object-cover" />
-      ) : (
-        <CuisineIcon cuisine={cuisine} size={40} />
-      )}
+      <PlaceThumb src={thumb} cuisine={cuisine} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-body font-semibold">{name}</span>
         <span className="truncate text-meta text-muted">{meta}</span>

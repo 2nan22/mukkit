@@ -26,7 +26,7 @@ export const metadata = { title: "장소" };
 export default function PlacePage({ params }: PageProps<"/p/[placeId]">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <Suspense fallback={<div className="h-[180px] bg-map-land" />}>
+      <Suspense fallback={<div className="h-[200px] bg-map-land" />}>
         <PlaceDetail params={params} />
       </Suspense>
     </main>
@@ -113,7 +113,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
 
   return (
     <>
-      <PlaceHeaderMap id={place.id} lat={place.lat} lng={place.lng} tier={mine?.tier ?? "unrated"} cover={covers.get(place.id) ?? null} />
+      <PlaceHeaderMap id={place.id} name={place.name} lat={place.lat} lng={place.lng} tier={mine?.tier ?? "unrated"} cover={covers.get(place.id) ?? null} />
 
       <section className="flex flex-col gap-1 border-b-8 border-surface px-5 pt-4 pb-5">
         <span className="text-meta text-muted">{[CUISINE_LABEL[place.cuisine], place.categoryName].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i).join(" · ")}</span>

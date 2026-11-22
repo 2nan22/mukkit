@@ -1,7 +1,7 @@
 -- 대표 사진 — 내 사진 먼저 · 팔로잉 다음 · 남의 비공개 평가 사진은 안 고름
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(4);
+select plan(5);
 
 insert into auth.users (id, email) values
   ('b1111111-1111-1111-1111-111111111111', 'cv-a@test.local'),
@@ -32,6 +32,13 @@ reset role;
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 select is((select path from public.place_covers(array['a9200000-0000-0000-0000-000000000001'::uuid])), 'cv-b/1.jpg', '로그인 안 해도 공개 평가 사진만');
+
+-- 협찬 표시 평가의 사진은 남에게 대표로 쓰지 않음
+reset role;
+update public.user_places set sponsored = true where user_id = 'b2222222-2222-2222-2222-222222222222';
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"b3333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
+select is((select count(*)::int from public.place_covers(array['a9200000-0000-0000-0000-000000000001'::uuid])), 0, '협찬 평가 사진은 대표에서 빠짐');
 
 select * from finish();
 rollback;

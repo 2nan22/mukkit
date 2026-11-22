@@ -325,8 +325,8 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
                     className="flex min-h-16 w-full items-center gap-3 border-b border-line py-2 text-left"
                   >
                     <CuisineIcon cuisine={p.cuisine} size={40} />
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-body">{p.name}</span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="truncate text-body font-semibold">{p.name}</span>
                       <span className="truncate text-meta text-muted">{placeMeta(p)}</span>
                     </span>
                     <TierBadge tier={p.tier} />
