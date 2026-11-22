@@ -37,3 +37,17 @@ export async function placeInThree(placeId: string, afterPlaceId: string | null)
   revalidatePath("/rank");
   return { rank: order.indexOf(placeId) + 1 };
 }
+
+// 순서 바꾸기(끌어서 옮기기) — 정한 3스타의 새 순서를 한 번에. 그 사이 바뀐 것은 뒤에 붙인다
+export async function saveThreeOrder(placeIds: string[]): Promise<{ error?: string }> {
+  if (!z.array(z.uuid()).max(1000).safeParse(placeIds).success) return { error: "순서를 저장하지 못했어요." };
+  const { supabase, userId } = await requireUser();
+  const { ranked } = await getThreeRanking(supabase, userId);
+  const current = new Set(ranked.map((p) => p.placeId));
+  const order = placeIds.filter((id) => current.has(id));
+  for (const p of ranked) if (!order.includes(p.placeId)) order.push(p.placeId);
+  const { error } = await supabase.rpc("set_three_order", { p_places: order });
+  if (error) return { error: "순서를 저장하지 못했어요. 다시 시도해 주세요." };
+  revalidatePath("/rank");
+  return {};
+}

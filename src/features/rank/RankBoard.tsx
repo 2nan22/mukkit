@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
-import { placeInThree } from "./actions";
+import { placeInThree, saveThreeOrder } from "./actions";
+import { RankedList } from "./RankedList";
 import { CompareSheet } from "./CompareSheet";
 import type { RankPlace } from "./rank";
 
@@ -21,6 +22,8 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
   const [comparing, setComparing] = useState<RankPlace | null>(null);
   // 하나씩 정하기 — 끝나면 다음 안 정한 곳으로 이어 간다 ('나중에 할게요'로 멈춤)
   const [chain, setChain] = useState(false);
+  // 순서 바꾸기 편집 모드 — ≡ 로 끌어서 옮기기
+  const [editing, setEditing] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const FOLD = 5;
   const [error, setError] = useState<string | null>(null);
@@ -57,22 +60,35 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
           <p>아래에서 하나씩 정해 보세요.</p>
         </div>
       ) : (
-        <ol aria-label="3스타 순위" className="flex flex-col">
-          {ranked.map((p, i) => (
-            <li key={p.placeId} className="flex min-h-16 items-center gap-3 border-b border-line">
-              <span className={`w-7 shrink-0 text-center text-section font-bold ${i < 3 ? "text-tier-3" : "text-ink-2"}`}>{i + 1}</span>
-              <Link href={`/p/${p.placeId}`} className="flex min-w-0 flex-1 flex-col gap-0.5 py-2">
-                <span className="truncate text-body font-semibold">{p.name}</span>
-                <span className="truncate text-meta text-muted">{meta(p)}</span>
-              </Link>
-              {ranked.length > 1 && (
-                <button type="button" disabled={pending} onClick={() => begin(p)} aria-label={`${p.name} 순위 다시 정하기`} className="h-11 min-w-11 shrink-0 px-2 text-meta text-ink-2">
-                  다시 정하기
-                </button>
-              )}
-            </li>
-          ))}
-        </ol>
+        <>
+          {ranked.length > 1 && (
+            <div className="flex justify-end">
+              <button type="button" onClick={() => setEditing((v) => !v)} aria-pressed={editing} className="h-11 text-meta font-semibold text-ink">
+                {editing ? "완료" : "순서 바꾸기"}
+              </button>
+            </div>
+          )}
+          {editing && <p className="pb-1 text-meta text-muted">≡ 를 잡고 위아래로 옮기면 바로 저장돼요.</p>}
+          <RankedList
+            ranked={ranked}
+            editing={editing}
+            meta={meta}
+            busy={pending}
+            onRedo={(p) => begin(p)}
+            onMove={(next) => {
+              const before = ranked;
+              setRanked(next);
+              setError(null);
+              start(async () => {
+                const res = await saveThreeOrder(next.map((p) => p.placeId));
+                if (res.error) {
+                  setRanked(before);
+                  setError(res.error);
+                }
+              });
+            }}
+          />
+        </>
       )}
       {unranked.length > 0 && (
         <section aria-labelledby="unranked-title" className="flex flex-col pt-8">
