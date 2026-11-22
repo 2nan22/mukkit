@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SIGNED_OUT_HOME } from "./paths";
 
@@ -17,7 +17,7 @@ export async function withdraw(_prev: WithdrawState, formData: FormData): Promis
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
-  if (!me) redirect(SIGNED_OUT_HOME);
+  if (!me) redirect(SIGNED_OUT_HOME, RedirectType.replace);
 
   const paths = await listMyFiles(supabase, me);
   if (paths === null) return { error: FAILED };
@@ -29,7 +29,7 @@ export async function withdraw(_prev: WithdrawState, formData: FormData): Promis
   const { error } = await supabase.rpc("delete_my_account");
   if (error) return { error: FAILED };
   await supabase.auth.signOut();
-  redirect("/?bye=1");
+  redirect("/?bye=1", RedirectType.replace);
 }
 
 // <나>/<장소>/<파일> — 평가에 붙지 않은 채 올라간 파일까지 폴더째 찾는다

@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { safeNextPath, SESSION_ENDED, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { TERMS_VERSION } from "@/features/legal/legal";
@@ -19,7 +19,7 @@ export async function saveNickname(_prev: NicknameFormState, formData: FormData)
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
-  if (!userId) redirect(SIGNED_OUT_HOME);
+  if (!userId) redirect(SIGNED_OUT_HOME, RedirectType.replace);
 
   const { data: saved, error } = await supabase
     .from("profiles")
@@ -32,6 +32,6 @@ export async function saveNickname(_prev: NicknameFormState, formData: FormData)
       value: parsed.data,
     };
   }
-  if (!saved?.length) redirect(SESSION_ENDED);
-  redirect(safeNextPath(String(formData.get("next") ?? "")));
+  if (!saved?.length) redirect(SESSION_ENDED, RedirectType.replace);
+  redirect(safeNextPath(String(formData.get("next") ?? "")), RedirectType.replace);
 }
