@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { unblock } from "./actions";
 import type { BlockedPerson } from "./safety";
@@ -10,6 +10,7 @@ import type { BlockedPerson } from "./safety";
 export function BlockedList({ people }: { people: BlockedPerson[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   return (
     <div className="flex flex-col gap-1">
       <span className="text-meta text-muted">차단한 사람</span>
@@ -26,17 +27,24 @@ export function BlockedList({ people }: { people: BlockedPerson[] }) {
                 disabled={pending}
                 onClick={() =>
                   start(async () => {
-                    await unblock(p.id);
-                    router.refresh();
+                    const res = await unblock(p.id);
+                    if (res.error) setError(res.error);
+                    else router.refresh();
                   })
                 }
-                className="h-9 rounded-btn-s border border-line-strong px-3.5 text-meta text-ink-2 disabled:opacity-50"
+                aria-label={`${p.nickname}님 차단 해제`}
+                className="h-11 rounded-btn-s border border-line-strong px-4 text-meta text-ink-2 disabled:opacity-50"
               >
                 해제
               </button>
             </li>
           ))}
         </ul>
+      )}
+      {error && (
+        <p role="alert" className="text-meta text-danger">
+          {error}
+        </p>
       )}
     </div>
   );

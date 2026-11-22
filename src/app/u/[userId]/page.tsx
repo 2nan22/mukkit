@@ -1,3 +1,4 @@
+import { UnblockButton } from "@/features/safety/UnblockButton";
 import { SafetyMenu } from "@/features/safety/SafetyMenu";
 import { getBlockedIds } from "@/features/safety/safety";
 import { getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
@@ -61,17 +62,16 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
   ]);
   if (!person) notFound();
   // 서로 차단한 사이 — 내가 막았으면 해제 안내, 상대가 막았으면 볼 수 없음
-  if (blockedIds.has(userId)) {
+  // 상대가 나를 차단했으면 없는 프로필과 같은 화면 — 차단 사실이 드러나지 않게
+  if (blockedIds.has(userId) && !iBlocked) notFound();
+  if (iBlocked) {
     return (
       <div className="flex flex-col items-start gap-3 px-6 pt-16">
-        <h2 className="text-title font-bold tracking-tight">{iBlocked ? "차단한 사람이에요" : "볼 수 없는 프로필이에요"}</h2>
-        <p className="text-body leading-relaxed text-ink-2">{iBlocked ? "차단을 해제하면 평가와 리스트를 다시 볼 수 있어요." : "이 프로필은 지금 볼 수 없어요."}</p>
-        {iBlocked && (
-          <div className="flex items-center gap-2 pt-2">
-            <span className="text-meta text-muted">차단 해제는 여기서</span>
-            <SafetyMenu userId={userId} nickname={person.nickname} blocked />
-          </div>
-        )}
+        <h2 className="text-title font-bold tracking-tight">차단한 사람이에요</h2>
+        <p className="text-body leading-relaxed text-ink-2">차단을 해제하면 평가와 리스트를 다시 볼 수 있어요.</p>
+        <div className="pt-2">
+          <UnblockButton userId={userId} />
+        </div>
       </div>
     );
   }

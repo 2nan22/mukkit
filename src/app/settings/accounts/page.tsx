@@ -32,7 +32,7 @@ export default function AccountLinksPage({ searchParams }: PageProps<"/settings/
           <Blocked />
         </Suspense>
       </section>
-      <form action="/auth/logout" method="post" className="px-5 pt-4">
+      <form action="/auth/logout" method="post" className="px-5 pt-8">
         <button type="submit" className="h-btn-m w-full rounded-btn-m bg-surface text-body font-medium text-ink">
           로그아웃
         </button>

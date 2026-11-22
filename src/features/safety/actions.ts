@@ -33,7 +33,7 @@ export async function report(input: z.input<typeof ReportInput>): Promise<Result
   if (p.userId === me) return { error: "내 평가는 신고할 수 없어요." };
   const { error } = await supabase.from("reports").insert({ reporter_id: me, target_user: p.userId, target_place: p.placeId, reason: p.reason, note: p.note });
   if (error) return error.code === "23505" ? { done: "이미 신고했어요." } : { error: "신고하지 못했어요. 다시 시도해 주세요." };
-  return { done: "신고했어요. 확인 후 조치할게요." };
+  return { done: "신고했어요. 확인하고 조치할게요." };
 }
 
 export async function block(userId: string): Promise<Result> {
