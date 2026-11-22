@@ -10,6 +10,9 @@ import { MediaUploader } from "./MediaUploader";
 import { MenuPicker } from "./MenuPicker";
 import { CompanionPicker } from "@/features/visit/CompanionPicker";
 import type { MyVisit } from "@/features/visit/visit";
+import { loadThreeCompare, placeInThree } from "@/features/rank/actions";
+import { CompareSheet } from "@/features/rank/CompareSheet";
+import type { RankPlace } from "@/features/rank/rank";
 
 const VISIBILITY_TEXT: Record<RatingVisibility, string> = { private: "나만", followers: "팔로워", public: "전체 공개" };
 
@@ -30,12 +33,26 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
   const [tier, setTier] = useState<Tier>(place.tier);
   const visited = RATED.includes(tier);
   const leave = useLeave(next);
+  // 3스타로 저장했고 아직 3스타 순위에 없으면 — 같은 3스타와 비교해 자리를 정한다 (첫 3스타면 바로 1위)
+  const [compare, setCompare] = useState<{ target: RankPlace; ranked: RankPlace[] } | null>(null);
   useEffect(() => {
-    if (state.saved) leave();
+    if (!state.saved) return;
+    if (tier !== "three") return leave();
+    (async () => {
+      const got = await loadThreeCompare(place.placeId).catch(() => null);
+      if (!got?.target || got.alreadyRanked) return leave();
+      if (got.ranked.length === 0) {
+        await placeInThree(place.placeId, null).catch(() => null);
+        return leave();
+      }
+      setCompare({ target: got.target, ranked: got.ranked });
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 저장된 순간 한 번만
   }, [state]);
 
   return (
+    <>
+    {compare && <CompareSheet target={compare.target} ranked={compare.ranked} onDone={() => leave()} />}
     <form action={action} className="flex flex-1 flex-col">
       <input type="hidden" name="placeId" value={place.placeId} />
       <input type="hidden" name="next" value={next} />
@@ -169,6 +186,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
         </button>
       </div>
     </form>
+    </>
   );
 }
 
