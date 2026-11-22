@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
+import { getReactions, reactionKey } from "@/features/reactions/reactions";
 import { RatingCard } from "@/features/social/RatingCard";
 import { getFeed, getFollowCounts } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -47,10 +48,11 @@ async function Feed() {
       </div>
     );
   }
+  const reactions = await getReactions(supabase, feed);
   return (
     <div className="px-5 pb-6">
       {feed.map((r) => (
-        <RatingCard key={`${r.ownerId}:${r.placeId}`} rating={r} showOwner viewerId={me} />
+        <RatingCard key={`${r.ownerId}:${r.placeId}`} rating={r} showOwner viewerId={me} reaction={reactions.get(reactionKey(r.ownerId, r.placeId)) ?? null} />
       ))}
     </div>
   );
