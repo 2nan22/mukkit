@@ -50,7 +50,7 @@ async function Feed() {
   return (
     <div className="px-5 pb-6">
       {feed.map((r) => (
-        <RatingCard key={`${r.ownerId}:${r.placeId}`} rating={r} showOwner />
+        <RatingCard key={`${r.ownerId}:${r.placeId}`} rating={r} showOwner viewerId={me} />
       ))}
     </div>
   );

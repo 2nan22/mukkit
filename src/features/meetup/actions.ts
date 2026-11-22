@@ -8,6 +8,7 @@ import { PURPOSES } from "@/domain/meetup";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { searchKakaoKeyword } from "@/features/search/kakaoLocal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getBlockedIds } from "@/features/safety/safety";
 import { notifyMeetup } from "./notify";
 
 type Result = { error?: string };
@@ -90,7 +91,7 @@ export async function inviteUser(meetupId: string, userId: string): Promise<Resu
   if (!z.uuid().safeParse(meetupId).success || !z.uuid().safeParse(userId).success) return { error: FAILED };
   const { supabase, me } = await requireUser();
   const { error } = await supabase.rpc("invite_to_meetup", { p_meetup: meetupId, p_user: userId });
-  if (error) return { error: "초대하지 못했어요. 다시 시도해 주세요." };
+  if (error) return { error: error.code === "42501" ? "초대할 수 없는 사람이에요." : "초대하지 못했어요. 다시 시도해 주세요." };
   after(() => notifyMeetup(meetupId, me, { kind: "invited", to: userId }));
   revalidatePath(`/meet/${meetupId}`);
   return {};
@@ -113,16 +114,17 @@ export type InviteCandidate = { id: string; nickname: string; following: boolean
 // 초대할 사람 — 검색어가 없으면 내가 팔로우하는 사람, 있으면 닉네임 검색
 export async function findInvitees(query: string): Promise<InviteCandidate[]> {
   const { supabase, me } = await requireUser();
-  const { data: follows } = await supabase.from("follows").select("followee_id").eq("follower_id", me).limit(500);
+  const [{ data: follows }, blocked] = await Promise.all([supabase.from("follows").select("followee_id").eq("follower_id", me).limit(500), getBlockedIds(supabase)]);
   const followingIds = new Set(((follows ?? []) as { followee_id: string }[]).map((f) => f.followee_id));
   const q = query.trim().replace(/[%_,()\\]/g, "").slice(0, 20);
   if (!q) {
     if (followingIds.size === 0) return [];
     const { data } = await supabase.from("profiles").select("id, nickname").in("id", [...followingIds]).order("nickname").limit(30);
-    return ((data ?? []) as { id: string; nickname: string }[]).map((p) => ({ ...p, following: true }));
+    return ((data ?? []) as { id: string; nickname: string }[]).filter((p) => !blocked.has(p.id)).map((p) => ({ ...p, following: true }));
   }
   const { data } = await supabase.from("profiles").select("id, nickname").ilike("nickname", `%${q}%`).neq("id", me).limit(20);
   return ((data ?? []) as { id: string; nickname: string }[])
+    .filter((p) => !blocked.has(p.id))
     .map((p) => ({ ...p, following: followingIds.has(p.id) }))
     .sort((a, b) => Number(b.following) - Number(a.following));
 }

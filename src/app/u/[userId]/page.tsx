@@ -1,3 +1,5 @@
+import { SafetyMenu } from "@/features/safety/SafetyMenu";
+import { getBlockedIds } from "@/features/safety/safety";
 import { getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
@@ -40,7 +42,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub ?? null;
   // 사람 · 평가 · 숫자를 한 번에 — 프로필 id 만 있으면 된다 (닉네임은 아래에서 채움)
-  const [person, counts, following, ratingsRaw, stats, lists, bio, taste] = await Promise.all([
+  const [person, counts, following, ratingsRaw, stats, lists, bio, taste, blockedIds, iBlocked] = await Promise.all([
     getPerson(supabase, userId),
     getFollowCounts(supabase, userId),
     me ? isFollowing(supabase, me, userId) : Promise.resolve(false),
@@ -52,8 +54,27 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
       : getProfileLists(supabase, userId).then((ls) => ls.map((l) => ({ ...l, visibility: null }))),
     getBio(supabase, userId),
     me && me !== userId ? getTasteWith(supabase, userId) : Promise.resolve(null),
+    me && me !== userId ? getBlockedIds(supabase) : Promise.resolve(new Set<string>()),
+    me && me !== userId
+      ? supabase.from("blocks").select("blocked_id").eq("blocker_id", me).eq("blocked_id", userId).maybeSingle().then((r) => Boolean(r.data))
+      : Promise.resolve(false),
   ]);
   if (!person) notFound();
+  // 서로 차단한 사이 — 내가 막았으면 해제 안내, 상대가 막았으면 볼 수 없음
+  if (blockedIds.has(userId)) {
+    return (
+      <div className="flex flex-col items-start gap-3 px-6 pt-16">
+        <h2 className="text-title font-bold tracking-tight">{iBlocked ? "차단한 사람이에요" : "볼 수 없는 프로필이에요"}</h2>
+        <p className="text-body leading-relaxed text-ink-2">{iBlocked ? "차단을 해제하면 평가와 리스트를 다시 볼 수 있어요." : "이 프로필은 지금 볼 수 없어요."}</p>
+        {iBlocked && (
+          <div className="flex items-center gap-2 pt-2">
+            <span className="text-meta text-muted">차단 해제는 여기서</span>
+            <SafetyMenu userId={userId} nickname={person.nickname} blocked />
+          </div>
+        )}
+      </div>
+    );
+  }
   const ratings = ratingsRaw.map((r) => ({ ...r, ownerNickname: person.nickname }));
   const rated = stats.three + stats.two + stats.one + stats.notRecommended;
   // 숫자는 집계 값으로 — 아래 목록은 최근 것부터 일부만 불러온다
@@ -67,7 +88,10 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
         <div className="flex items-center gap-4">
           <Avatar name={person.nickname} size={56} />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="truncate text-section font-bold">{person.nickname}</span>
+            <span className="flex items-center justify-between gap-2">
+              <span className="truncate text-section font-bold">{person.nickname}</span>
+              {me && me !== person.id && <SafetyMenu userId={person.id} nickname={person.nickname} />}
+            </span>
             <span className="text-meta text-muted">
               평가 {ratedTotal}곳 · 팔로워 {counts.followers} · 팔로잉 {counts.following}
             </span>
@@ -139,7 +163,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
         ) : (
           <>
             {ratings.map((r) => (
-              <RatingCard key={r.placeId} rating={r} showOwner={false} />
+              <RatingCard key={r.placeId} rating={r} showOwner={false} viewerId={me} />
             ))}
             {ratedTotal > ratings.length && <p className="py-6 text-center text-meta text-muted">최근 평가 {ratings.length}곳까지 보여요</p>}
           </>

@@ -5,6 +5,7 @@ import { Companions } from "@/components/ui/Companions";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
+import { SafetyMenu } from "@/features/safety/SafetyMenu";
 import type { SharedRating } from "./social";
 
 function dateLabel(iso: string): string {
@@ -13,14 +14,19 @@ function dateLabel(iso: string): string {
 }
 
 // 피드 · 프로필 공용 — 공개 한마디 · 사진 · 등급만 (메모는 이 데이터에 없다)
-export function RatingCard({ rating, showOwner }: { rating: SharedRating; showOwner: boolean }) {
+// viewerId: 보는 사람 — 남의 평가에만 신고 · 차단 메뉴
+export function RatingCard({ rating, showOwner, viewerId = null }: { rating: SharedRating; showOwner: boolean; viewerId?: string | null }) {
+  const menu = viewerId && viewerId !== rating.ownerId ? <SafetyMenu userId={rating.ownerId} nickname={rating.ownerNickname} placeId={rating.placeId} /> : null;
   return (
     <article className="flex flex-col gap-2.5 border-b border-line py-4">
       {showOwner && (
-        <Link href={`/u/${rating.ownerId}`} className="flex items-center gap-2 self-start">
-          <Avatar name={rating.ownerNickname} size={24} />
-          <span className="text-meta font-bold">{rating.ownerNickname}</span>
-        </Link>
+        <div className="-my-2 flex items-center justify-between">
+          <Link href={`/u/${rating.ownerId}`} className="flex items-center gap-2">
+            <Avatar name={rating.ownerNickname} size={24} />
+            <span className="text-meta font-bold">{rating.ownerNickname}</span>
+          </Link>
+          {menu}
+        </div>
       )}
       {rating.media.length > 0 && (
         <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-1.5 overflow-x-auto px-5">
@@ -43,7 +49,10 @@ export function RatingCard({ rating, showOwner }: { rating: SharedRating; showOw
             {[CUISINE_LABEL[rating.cuisine], regionOf(rating.address), dateLabel(rating.updatedAt)].filter(Boolean).join(" · ")}
           </span>
         </div>
-        <TierBadge tier={rating.tier} />
+        <span className="flex items-center gap-1">
+          <TierBadge tier={rating.tier} />
+          {!showOwner && menu}
+        </span>
       </div>
       {rating.review && <p className="text-body leading-normal text-ink-2">{rating.review}</p>}
       <AteMenus menus={rating.menus} />

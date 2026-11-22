@@ -1,3 +1,5 @@
+import { BlockedList } from "@/features/safety/BlockedList";
+import { getMyBlocks } from "@/features/safety/safety";
 import Link from "next/link";
 import { WithdrawSection } from "@/features/auth/WithdrawSection";
 import { PushToggle } from "@/features/push/PushToggle";
@@ -24,6 +26,11 @@ export default function AccountLinksPage({ searchParams }: PageProps<"/settings/
       </Suspense>
       <section className="px-5 pt-6">
         <PushToggle variant="row" />
+      </section>
+      <section className="px-5 pt-6">
+        <Suspense fallback={null}>
+          <Blocked />
+        </Suspense>
       </section>
       <form action="/auth/logout" method="post" className="px-5 pt-4">
         <button type="submit" className="h-btn-m w-full rounded-btn-m bg-surface text-body font-medium text-ink">
@@ -96,3 +103,10 @@ async function AccountLinks({ searchParams }: { searchParams: Promise<{ error?: 
   );
 }
 
+async function Blocked() {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.auth.getClaims();
+  const me = data?.claims?.sub;
+  if (!me) return null;
+  return <BlockedList people={await getMyBlocks(supabase, me)} />;
+}
