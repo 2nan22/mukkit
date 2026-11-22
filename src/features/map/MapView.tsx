@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
+import { honor } from "@/domain/honor";
 import { regionOf } from "@/domain/region";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { SOURCE_LABEL } from "@/features/import/sources";
@@ -83,6 +84,10 @@ export function MapView({
   // 팔로잉 지도 사람 거르기 — 고른 사람의 평가만 남기고, 핀 색도 그 사람들 중 가장 높은 등급으로
   const [people, setPeople] = useState<string[]>([]);
   const [peopleOpen, setPeopleOpen] = useState(false);
+  const peopleSheet = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (peopleOpen) peopleSheet.current?.focus();
+  }, [peopleOpen]);
   const places = useMemo(
     () =>
       people.length === 0
@@ -99,6 +104,10 @@ export function MapView({
     for (const p of allPlaces) for (const r of p.raters ?? []) m.set(r.userId, { userId: r.userId, nickname: r.nickname, count: (m.get(r.userId)?.count ?? 0) + 1 });
     return [...m.values()].sort((a, b) => b.count - a.count || a.nickname.localeCompare(b.nickname));
   }, [allPlaces]);
+  const firstPicked = raterList.find((r) => r.userId === people[0])?.nickname ?? "";
+  const peopleLabel = people.length === 0 ? "사람" : people.length === 1 ? firstPicked : `사람 ${people.length}`;
+  // 목록 제목 — 고른 사람이 있으면 그 사람 기준으로
+  const whoseLabel = people.length === 0 ? "팔로잉이" : people.length === 1 ? `${honor(firstPicked)}이` : `고른 ${people.length}명이`;
   // 팔로잉 지도는 누군가 그 등급을 줬으면 해당 (핀 색은 가장 높은 등급)
   const tierMatch = (p: MapPlace, ts: Tier[]) => ts.length === 0 || (p.raters ? p.raters.some((r) => ts.includes(r.tier)) : ts.includes(p.tier));
   // 리스트 하나만 볼 때는 전체 맞춤, 아니면 위치 · 많이 저장한 지역에서 시작
@@ -329,17 +338,29 @@ export function MapView({
           freshLabel={isFollowing ? "팔로잉이 평가하지 않은 가게" : undefined}
         />
         <div className={searchOpen || (isFollowing && allPlaces.length === 0) ? "invisible" : ""}>
-        <ChipRow label="등급">
+        <ChipRow label="거르기">
           {isFollowing && raterList.length > 1 && (
-            <Chip pressed={people.length > 0} onClick={() => setPeopleOpen(true)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 21c1-4 4-6 8-6s7 2 8 6" />
-              </svg>
-              {people.length === 0 ? "사람" : people.length === 1 ? raterList.find((r) => r.userId === people[0])?.nickname : `사람 ${people.length}`}
-            </Chip>
+            <>
+              <Chip pressed={people.length > 0} onClick={() => setPeopleOpen(true)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21c1-4 4-6 8-6s7 2 8 6" />
+                </svg>
+                <span className="max-w-[8rem] truncate">{peopleLabel}</span>
+              </Chip>
+              {people.length > 0 && (
+                <button type="button" onClick={() => setPeople([])} aria-label="사람 거르기 풀기" className="-ml-1 flex h-11 w-8 shrink-0 items-center justify-center">
+                  <span className="flex size-6 items-center justify-center rounded-full bg-white text-ink shadow-float">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </span>
+                </button>
+              )}
+              <span aria-hidden="true" className="mx-0.5 h-5 w-px shrink-0 self-center bg-line-strong" />
+            </>
           )}
-          <Chip pressed={tiers.length === 0} onClick={() => setTiers([])}>
+          <Chip pressed={tiers.length === 0 && people.length === 0} onClick={() => (setTiers([]), setPeople([]))}>
             전체
           </Chip>
           {(isFollowing ? RATED_FILTERS : TIER_FILTERS).map((t) => (
@@ -361,11 +382,14 @@ export function MapView({
       {peopleOpen && (
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/30" onClick={() => setPeopleOpen(false)}>
           <section
+            ref={peopleSheet}
+            tabIndex={-1}
             role="dialog"
+            aria-modal="true"
             aria-label="사람 고르기"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.key === "Escape" && setPeopleOpen(false)}
-            className="flex max-h-[80dvh] w-full max-w-[480px] flex-col gap-3 rounded-t-[20px] bg-white px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+            className="flex max-h-[80dvh] w-full max-w-[480px] flex-col gap-3 rounded-t-[20px] bg-white px-5 outline-none pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
           >
             <span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-line-strong" />
             <div className="flex items-center justify-between">
@@ -397,8 +421,13 @@ export function MapView({
                 );
               })}
             </ul>
-            <button type="button" onClick={() => setPeopleOpen(false)} className="h-btn-l shrink-0 rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
-              {shown.length}곳 보기
+            <button
+              type="button"
+              disabled={shown.length === 0}
+              onClick={() => setPeopleOpen(false)}
+              className="h-btn-l shrink-0 rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:bg-surface disabled:text-subtle disabled:shadow-none"
+            >
+              {shown.length > 0 ? `${shown.length}곳 보기` : "평가한 곳이 없어요"}
             </button>
           </section>
         </div>
@@ -513,7 +542,7 @@ export function MapView({
               </button>
               <div className="flex items-center justify-between">
                 <span className="text-body font-bold">
-                  {!viewport ? `${shown.length}곳` : inView.length ? (isFollowing ? `팔로잉이 평가한 곳 ${inView.length}곳` : `이 화면에 ${inView.length}곳`) : isFollowing ? "이 화면에 팔로잉이 평가한 곳이 없어요" : "이 화면에 저장한 곳이 없어요"}
+                  {!viewport ? `${shown.length}곳` : inView.length ? (isFollowing ? `${whoseLabel} 평가한 곳 ${inView.length}곳` : `이 화면에 ${inView.length}곳`) : isFollowing ? "이 화면에 팔로잉이 평가한 곳이 없어요" : "이 화면에 저장한 곳이 없어요"}
                 </span>
                 <button type="button" onClick={() => setSnap(snap === "peek" ? "half" : "peek")} aria-expanded={listOpen} className="h-btn-m text-meta text-ink-2">
                   {listOpen ? "목록 닫기" : "목록 보기"}

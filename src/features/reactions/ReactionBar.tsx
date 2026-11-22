@@ -71,10 +71,17 @@ export function ReactionBar({
           </button>
         )}
         {showComments && (
-          <button type="button" onClick={() => setSheet(true)} aria-label={count > 0 ? `댓글 ${count}개 보기` : "댓글 쓰기"} className="flex size-11 items-center justify-center text-ink-2">
+          <button
+            type="button"
+            onClick={() => setSheet(true)}
+            aria-label={mine ? undefined : count > 0 ? `댓글 ${count}개 보기` : "댓글 쓰기"}
+            className={`flex h-11 items-center gap-1.5 text-ink-2 ${mine ? "px-2.5 text-meta" : "w-11 justify-center"}`}
+          >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
               <path d="M4 5h16v11H9l-5 4z" />
             </svg>
+            {/* 내 평가는 하트가 없어 아이콘만 뜨면 뭔지 모른다 — 글자를 붙인다 */}
+            {mine && <span>{count > 0 ? `댓글 ${count}개` : "댓글 쓰기"}</span>}
           </button>
         )}
       </div>
@@ -82,14 +89,14 @@ export function ReactionBar({
       {preview.length > 0 && (
         <ul aria-label="최근 댓글" className="flex flex-col gap-0.5 pt-1">
           {preview.map((c) => (
-            <li key={c.id} className="line-clamp-2 text-meta leading-normal text-ink">
-              <span className="font-bold">{c.nickname}</span> {c.body}
+            <li key={c.id} className="line-clamp-2 text-meta leading-normal text-ink-2">
+              <span className="font-bold text-ink">{c.nickname}</span> {c.body}
             </li>
           ))}
         </ul>
       )}
       {showComments && count > preview.length && (
-        <button type="button" onClick={() => setSheet(true)} className="flex h-9 items-center self-start text-meta text-muted">
+        <button type="button" onClick={() => setSheet(true)} className="-mb-1 flex h-11 items-center self-start text-meta text-muted">
           댓글 {count}개 모두 보기
         </button>
       )}

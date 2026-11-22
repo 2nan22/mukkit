@@ -25,6 +25,7 @@ export function CommentThread({
   initial,
   viewerIsOwner,
   top = null,
+  hideTitle = false,
   onCount,
 }: {
   ownerId: string;
@@ -32,10 +33,13 @@ export function CommentThread({
   initial: RatingComment[];
   viewerIsOwner: boolean;
   top?: ReactNode;
+  // 시트처럼 머리에 이미 '댓글 N'이 있으면 제목은 화면 낭독용으로만
+  hideTitle?: boolean;
   onCount?: (n: number) => void;
 }) {
   const [comments, setComments] = useState(initial);
   const [error, setError] = useState<string | null>(null);
+  const [announce, setAnnounce] = useState("");
   const scroll = useRef<HTMLDivElement>(null);
 
   async function reload(toBottom: boolean) {
@@ -44,6 +48,7 @@ export function CommentThread({
     setError(null);
     setComments(res.comments);
     onCount?.(res.comments.length);
+    if (toBottom) setAnnounce("댓글을 남겼어요");
     if (toBottom) requestAnimationFrame(() => scroll.current?.scrollTo({ top: scroll.current.scrollHeight, behavior: "smooth" }));
   }
 
@@ -52,9 +57,12 @@ export function CommentThread({
       <div ref={scroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5">
         {top}
         <section aria-labelledby={`comments-${placeId}-${ownerId}`} className="flex flex-col pt-3 pb-4">
-          <h2 id={`comments-${placeId}-${ownerId}`} className="text-meta font-bold">
+          <h2 id={`comments-${placeId}-${ownerId}`} className={hideTitle ? "sr-only" : "text-meta font-bold"}>
             댓글 {comments.length > 0 ? comments.length : ""}
           </h2>
+          <p role="status" className="sr-only">
+            {announce}
+          </p>
           {error && (
             <p role="alert" className="pt-2 text-meta text-danger">
               {error}

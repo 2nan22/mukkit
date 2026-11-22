@@ -80,7 +80,12 @@ export function SafetyMenu({
             aria-modal="true"
             aria-label={step === "report" ? "신고" : step === "block" ? "차단" : step === "delete" ? "댓글 삭제" : commentId ? "댓글 메뉴" : `${who} 신고 · 차단`}
             onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.key === "Escape" && close()}
+            onKeyDown={(e) => {
+              // 댓글 시트 안에서 열렸을 때 바깥 시트까지 닫히지 않게
+              if (e.key !== "Escape") return;
+              e.stopPropagation();
+              close();
+            }}
             className="flex w-full max-w-[480px] flex-col gap-1 rounded-t-[20px] bg-white px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] outline-none"
           >
             <span aria-hidden="true" className="mx-auto mb-2 block h-1 w-9 rounded-full bg-line-strong" />
