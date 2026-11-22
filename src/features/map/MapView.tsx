@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { CuisineIcon } from "@/components/ui/CuisineIcon";
 import { TierBadge } from "@/components/ui/TierBadge";
@@ -10,6 +11,8 @@ import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { SOURCE_LABEL } from "@/features/import/sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
 import { PlaceMap, type MyLocation } from "./PlaceMap";
+import { MapSearch } from "./MapSearch";
+import { openKakaoPlace, type NewPlaceHit } from "@/features/search/actions";
 import type { MapPlace } from "./myPlaces";
 
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
@@ -38,6 +41,8 @@ const ME_ACCURACY_MAX = 300;
 const TAP_SLOP = 6;
 const AREA_LEVEL = 6;
 const HERE_LEVEL = 5;
+const PICK_LEVEL = 4;
+const FOUND_PIN = "found";
 
 // 처음 열 때 — 가장 많이 저장한 지역(시 · 구)의 가운데
 function busiestArea(places: MapPlace[]): Focus | null {
@@ -119,6 +124,27 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
   const [tiers, setTiers] = useState<Tier[]>(initialTiers);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // 지도 검색으로 찾은 새 가게 — 임시 핀 · 아래 카드
+  const [found, setFound] = useState<NewPlaceHit | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const zoomRef = useRef<((step: number) => void) | null>(null);
+  function pickMine(placeId: string) {
+    const p = places.find((x) => x.placeId === placeId);
+    if (!p) return;
+    // 거르기 때문에 안 보이는 곳이면 거르기를 풀고 보여 준다
+    if (!((tiers.length === 0 || tiers.includes(p.tier)) && (cuisines.length === 0 || cuisines.includes(p.cuisine)))) {
+      setTiers([]);
+      setCuisines([]);
+    }
+    setFound(null);
+    setSelectedId(placeId);
+    setFocus({ lat: p.lat, lng: p.lng, level: PICK_LEVEL });
+  }
+  function pickNew(hit: NewPlaceHit) {
+    setSelectedId(null);
+    setFound(hit);
+    setFocus({ lat: hit.lat, lng: hit.lng, level: PICK_LEVEL });
+  }
   const [filterOpen, setFilterOpen] = useState(false);
   const [snap, setSnap] = useState<Snap>(process.env.NEXT_PUBLIC_KAKAO_MAP_KEY ? "peek" : "half");
   const listRef = useRef<HTMLUListElement>(null);
@@ -183,7 +209,13 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
       ),
     [places, tiers, cuisines],
   );
-  const pins = useMemo(() => shown.map((p) => ({ id: p.placeId, lat: p.lat, lng: p.lng, tier: p.tier })), [shown]);
+  const pins = useMemo(
+    () => [
+      ...shown.map((p) => ({ id: p.placeId, lat: p.lat, lng: p.lng, tier: p.tier })),
+      ...(found ? [{ id: FOUND_PIN, lat: found.lat, lng: found.lng, tier: "unrated" as const, kind: "found" as const }] : []),
+    ],
+    [shown, found],
+  );
   const presentCuisines = CUISINE_ORDER.filter((c) => places.some((p) => p.cuisine === c));
   const selected = shown.find((p) => p.placeId === selectedId) ?? null;
 
@@ -192,8 +224,9 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
       <div className="absolute inset-0">
         <PlaceMap
           pins={pins}
-          selectedId={selected?.placeId ?? null}
-          onSelect={setSelectedId}
+          selectedId={selected?.placeId ?? (found ? FOUND_PIN : null)}
+          onSelect={(id) => (id === FOUND_PIN ? undefined : (setFound(null), setSelectedId(id)))}
+          zoomRef={zoomRef}
           cluster
           focus={focus}
           refit="hidden"
@@ -202,7 +235,9 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
         />
       </div>
 
-      <div className="pointer-events-none relative z-10 flex flex-col gap-1 pt-2">
+      <div className="pointer-events-none relative z-20 flex flex-col gap-1 pt-2">
+        <MapSearch places={places} onPickMine={pickMine} onPickNew={pickNew} onOpenChange={setSearchOpen} onClear={() => setFound(null)} />
+        <div className={searchOpen ? "invisible" : ""}>
         <ChipRow label="등급">
           <Chip pressed={tiers.length === 0} onClick={() => setTiers([])}>
             전체
@@ -220,6 +255,7 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
             {cuisines.length > 0 ? `음식 종류 ${cuisines.length}` : "음식 종류"}
           </Chip>
         </ChipRow>
+        </div>
       </div>
 
       {filterOpen && (
@@ -269,6 +305,19 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
                 {locError}
               </p>
             )}
+            {/* 확대 · 축소 — 내 위치 버튼 위, 시트와 같이 움직인다 */}
+            <div className="flex flex-col overflow-hidden rounded-[12px] bg-white shadow-float">
+              {([
+                ["확대", -1, "M12 5v14M5 12h14"],
+                ["축소", 1, "M5 12h14"],
+              ] as const).map(([label, step, d], i) => (
+                <button key={label} type="button" aria-label={label} onClick={() => zoomRef.current?.(step)} className={`flex size-11 items-center justify-center text-ink ${i === 0 ? "border-b border-line" : ""}`}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d={d} />
+                  </svg>
+                </button>
+              ))}
+            </div>
             <button
               type="button"
               onClick={goHere}
@@ -287,6 +336,10 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
         {selected ? (
           <div className="pt-4">
             <PlaceCard place={selected} onClose={() => setSelectedId(null)} />
+          </div>
+        ) : found ? (
+          <div className="pt-4">
+            <FoundCard hit={found} onClose={() => setFound(null)} />
           </div>
         ) : (
           <>
@@ -337,6 +390,44 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
           </>
         )}
       </section>
+    </div>
+  );
+}
+
+// 지도 검색으로 찾은, 아직 저장하지 않은 가게
+function FoundCard({ hit, onClose }: { hit: NewPlaceHit; onClose: () => void }) {
+  const router = useRouter();
+  const [opening, setOpening] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function open() {
+    if (hit.placeId) return router.push(`/p/${hit.placeId}`);
+    setOpening(true);
+    const res = await openKakaoPlace({ kakaoId: hit.kakaoId, name: hit.name, lat: hit.lat, lng: hit.lng });
+    setOpening(false);
+    if (res.placeId) router.push(`/p/${res.placeId}`);
+    else setError(res.error ?? "장소를 열지 못했어요");
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="truncate text-section font-bold">{hit.name}</span>
+          <span className="truncate text-meta text-muted">{hit.meta}</span>
+        </div>
+        <button type="button" onClick={onClose} aria-label="닫기" className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      {error && (
+        <p role="alert" className="text-meta text-danger">
+          {error}
+        </p>
+      )}
+      <button type="button" disabled={opening} onClick={open} className="mt-2 flex h-btn-m items-center justify-center rounded-btn-m bg-brand text-body font-bold text-white raised-brand disabled:opacity-60">
+        {opening ? "여는 중" : "장소 보기"}
+      </button>
     </div>
   );
 }

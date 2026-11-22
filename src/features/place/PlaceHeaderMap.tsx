@@ -14,8 +14,8 @@ export function PlaceHeaderMap({ id, name, lat, lng, tier, cover = null }: { id:
   return (
     <div className="relative h-[200px] shrink-0 overflow-hidden bg-map-land">
       {cover && !showMap ? (
-        // eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다
         <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다 */}
           <img src={cover.url} alt={`${name} — ${cover.mine ? "내가" : `${honor(cover.ownerNickname)}이`} 올린 사진`} className="absolute inset-0 size-full object-cover" />
           {/* 밝은 사진에서도 버튼 · 글자가 보이게 위아래만 살짝 어둡게 */}
           <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/40" />
