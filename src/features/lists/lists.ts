@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Cuisine } from "@/domain/cuisine";
+import { getPlaceCovers } from "@/features/place/covers";
 import { z } from "zod";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 
@@ -140,34 +142,31 @@ export async function getMyLists(supabase: SupabaseClient, userId: string): Prom
   return data.map(toSummary);
 }
 
-const THUMB_POINTS = 12;
+const THUMB_SLOTS = 4;
 
-// 리스트 카드 미니 지도용 — 리스트마다 최근 담은 곳 몇 곳의 위치와 내 등급
-export async function getMyListPoints(
-  supabase: SupabaseClient,
-  userId: string,
-  listIds: string[],
-): Promise<Map<string, { lat: number; lng: number; tier: string | null }[]>> {
-  const out = new Map<string, { lat: number; lng: number; tier: string | null }[]>();
+export type ListThumb = { photos: string[]; cuisines: Cuisine[] };
+
+// 리스트 카드 썸네일 — 담긴 곳의 대표 사진(내 사진 · 팔로잉) 최대 4장 + 많이 담긴 업종 순서
+export async function getMyListThumbs(supabase: SupabaseClient, listIds: string[]): Promise<Map<string, ListThumb>> {
+  const out = new Map<string, ListThumb>();
   if (listIds.length === 0) return out;
   const { data, error } = await supabase
     .from("list_items")
-    .select("list_id, place_id, places(lat, lng)")
+    .select("list_id, place_id, places(cuisine)")
     .in("list_id", listIds)
     .order("added_at", { ascending: false })
     .limit(listIds.length * 40);
-  if (error) throw new ListWriteError("points", error.code);
-  const rows = (data ?? []) as unknown as { list_id: string; place_id: string; places: { lat: number; lng: number } | null }[];
-  const placeIds = [...new Set(rows.map((r) => r.place_id))];
-  const { data: mine } = placeIds.length
-    ? await supabase.from("user_places").select("place_id, tier").eq("user_id", userId).in("place_id", placeIds)
-    : { data: [] };
-  const tierOf = new Map(((mine ?? []) as { place_id: string; tier: string }[]).map((r) => [r.place_id, r.tier]));
-  for (const r of rows) {
-    if (!r.places) continue;
-    const list = out.get(r.list_id) ?? [];
-    if (list.length < THUMB_POINTS) list.push({ lat: r.places.lat, lng: r.places.lng, tier: tierOf.get(r.place_id) ?? null });
-    out.set(r.list_id, list);
+  if (error) throw new ListWriteError("thumbs", error.code);
+  const rows = (data ?? []) as unknown as { list_id: string; place_id: string; places: { cuisine: Cuisine } | null }[];
+  const covers = await getPlaceCovers(supabase, rows.map((r) => r.place_id));
+  const byList = new Map<string, typeof rows>();
+  for (const r of rows) byList.set(r.list_id, [...(byList.get(r.list_id) ?? []), r]);
+  for (const [listId, items] of byList) {
+    const photos = items.flatMap((r) => (covers.get(r.place_id) ? [covers.get(r.place_id)!.url] : [])).slice(0, THUMB_SLOTS);
+    const count = new Map<Cuisine, number>();
+    for (const r of items) if (r.places) count.set(r.places.cuisine, (count.get(r.places.cuisine) ?? 0) + 1);
+    const cuisines = [...count.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);
+    out.set(listId, { photos, cuisines });
   }
   return out;
 }

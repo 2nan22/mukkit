@@ -1,7 +1,7 @@
 -- 대표 사진 — 내 사진 먼저 · 팔로잉 다음 · 남의 비공개 평가 사진은 안 고름
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(5);
+select plan(6);
 
 insert into auth.users (id, email) values
   ('b1111111-1111-1111-1111-111111111111', 'cv-a@test.local'),
@@ -31,7 +31,14 @@ select is((select path from public.place_covers(array['a9200000-0000-0000-0000-0
 reset role;
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-select is((select path from public.place_covers(array['a9200000-0000-0000-0000-000000000001'::uuid])), 'cv-b/1.jpg', '로그인 안 해도 공개 평가 사진만');
+select is((select count(*)::int from public.place_covers(array['a9200000-0000-0000-0000-000000000001'::uuid])), 0, '로그인 안 했으면 대표 사진 없음 (모르는 사람 사진은 안 씀)');
+
+-- 팔로우하지 않는 사람(A 기준 B · C)의 공개 사진도 안 씀
+reset role;
+delete from public.rating_media where user_id = 'b1111111-1111-1111-1111-111111111111';
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"b1111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select is((select count(*)::int from public.place_covers(array['a9200000-0000-0000-0000-000000000001'::uuid])), 0, '팔로우하지 않는 사람의 공개 사진은 안 씀');
 
 -- 협찬 표시 평가의 사진은 남에게 대표로 쓰지 않음
 reset role;

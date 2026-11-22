@@ -8,8 +8,8 @@ import { TIER_LABEL, TIERS, tierToDb, type Tier } from "@/domain/tier";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { SOURCE_LABEL } from "@/features/import/sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
-import { MiniMap } from "@/components/ui/MiniMap";
-import { countMyTiers, getImportedLists, getMyListPoints, getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
+import { ListThumb } from "@/components/ui/ListThumb";
+import { countMyTiers, getImportedLists, getMyListThumbs, getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "리스트" };
@@ -55,7 +55,7 @@ async function ListsContent() {
     getMyLists(supabase, userId),
     getImportedLists(supabase, userId),
   ]);
-  const points = await getMyListPoints(supabase, userId, lists.map((l) => l.id));
+  const thumbs = await getMyListThumbs(supabase, lists.map((l) => l.id));
 
   return (
     <div className="flex flex-col gap-7 px-5 pt-2">
@@ -81,10 +81,10 @@ async function ListsContent() {
         <h2 className="mb-1 text-[16px] font-bold">내 리스트</h2>
         {lists.map((l) => (
           <Link key={l.id} href={`/lists/${l.id}`} className="flex min-h-20 items-center gap-3.5 border-b border-line py-3 last:border-b-0">
-            {points.get(l.id)?.length ? (
-              <MiniMap points={points.get(l.id)!} size="thumb" />
+            {thumbs.get(l.id) ? (
+              <ListThumb photos={thumbs.get(l.id)!.photos} cuisines={thumbs.get(l.id)!.cuisines} />
             ) : (
-              <span aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded-[10px] bg-[#eef1ee] text-subtle">
+              <span aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded-[10px] bg-surface text-subtle">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
                   <path d="M6 3h12v18l-6-4-6 4z" />
                 </svg>
