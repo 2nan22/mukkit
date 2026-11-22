@@ -1,3 +1,4 @@
+import { getPlaceCovers } from "@/features/place/covers";
 import { TIER_MEANING } from "@/domain/tier";
 import Link from "next/link";
 import { AteMenus } from "@/components/ui/AteMenus";
@@ -92,7 +93,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
     getOtherRatings(supabase, place.id),
     getMyLists(supabase, me),
   ]);
-  const myVisits = await getMyVisits(supabase, place.id);
+  const [myVisits, covers] = await Promise.all([getMyVisits(supabase, place.id), getPlaceCovers(supabase, [place.id])]);
   const seen = new Set<string>();
   const myCompanions = myVisits
     .flatMap((v) => v.members.filter((m) => m.status === "accepted"))
@@ -110,7 +111,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
 
   return (
     <>
-      <PlaceHeaderMap id={place.id} lat={place.lat} lng={place.lng} tier={mine?.tier ?? "unrated"} />
+      <PlaceHeaderMap id={place.id} lat={place.lat} lng={place.lng} tier={mine?.tier ?? "unrated"} cover={covers.get(place.id) ?? null} />
 
       <section className="flex flex-col gap-1 border-b-8 border-surface px-5 pt-4 pb-5">
         <span className="text-meta text-muted">{[CUISINE_LABEL[place.cuisine], place.categoryName].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i).join(" · ")}</span>

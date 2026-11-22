@@ -13,9 +13,9 @@ import { LIST_NAME_MAX, VISIBILITIES, VISIBILITY_LABEL, type ListSummary } from 
 import { PlacePicker } from "./PlacePicker";
 import type { PickablePlace } from "./pickablePlaces";
 
-type Props = { list: ListSummary & { placeIds: string[] }; places: PickablePlace[]; origin: string };
+type Props = { list: ListSummary & { placeIds: string[] }; places: PickablePlace[]; origin: string; covers?: Record<string, string> };
 
-export function ListDetail({ list, places, origin }: Props) {
+export function ListDetail({ list, places, origin, covers = {} }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -175,6 +175,7 @@ export function ListDetail({ list, places, origin }: Props) {
             <li key={p.placeId}>
               <PlaceRow
                 index={i + 1}
+                thumb={covers[p.placeId]}
                 href={`/p/${p.placeId}`}
                 name={p.name}
                 cuisine={p.cuisine}

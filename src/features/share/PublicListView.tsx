@@ -8,7 +8,7 @@ import { regionOf } from "@/domain/region";
 import { PlaceMap } from "@/features/map/PlaceMap";
 import type { PublicList } from "./publicList";
 
-export function PublicListView({ list, signedIn = false }: { list: PublicList; signedIn?: boolean }) {
+export function PublicListView({ list, signedIn = false, covers = {} }: { list: PublicList; signedIn?: boolean; covers?: Record<string, string> }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const pins = useMemo(() => list.places.map((p) => ({ id: p.placeId, lat: p.lat, lng: p.lng, tier: p.tier ?? "unrated" })), [list.places]);
 
@@ -26,6 +26,7 @@ export function PublicListView({ list, signedIn = false }: { list: PublicList; s
             <PlaceRow
               // 로그인한 사람은 장소 상세로, 아니면 지도에서 짚어 보기만
               href={signedIn ? `/p/${p.placeId}` : undefined}
+              thumb={covers[p.placeId]}
               onClick={() => setSelectedId(p.placeId)}
               selected={p.placeId === selectedId}
               name={p.name}
