@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
-import { placeInThree, saveThreeOrder } from "./actions";
+import { loadRanking, placeInThree, saveThreeOrder } from "./actions";
 import { RankedList } from "./RankedList";
 import { CompareSheet } from "./CompareSheet";
 import type { RankPlace } from "./rank";
@@ -24,6 +24,8 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
   const [chain, setChain] = useState(false);
   // 순서 바꾸기 편집 모드 — ≡ 로 끌어서 옮기기
   const [editing, setEditing] = useState(false);
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
+  const saveSeq = useRef(0);
   const [showAll, setShowAll] = useState(false);
   const FOLD = 5;
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +51,7 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
 
   return (
     <div className="flex flex-col px-5 pb-10">
-      {error && (
+      {error && ranked.length <= 1 && (
         <p role="alert" className="pt-3 text-meta text-danger">
           {error}
         </p>
@@ -62,13 +64,22 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
       ) : (
         <>
           {ranked.length > 1 && (
-            <div className="flex justify-end">
-              <button type="button" onClick={() => setEditing((v) => !v)} aria-pressed={editing} className="h-11 text-meta font-semibold text-ink">
+            <div className="flex min-h-14 items-center justify-between gap-3">
+              <span className="text-meta text-muted">{editing ? "오른쪽 손잡이를 끌어 순서를 바꿔요." : ""}</span>
+              <button
+                type="button"
+                onClick={() => setEditing((v) => !v)}
+                className={editing ? "h-11 shrink-0 rounded-btn-s bg-ink px-4 text-meta font-bold text-white" : "h-11 shrink-0 text-meta font-semibold text-ink"}
+              >
                 {editing ? "완료" : "순서 바꾸기"}
               </button>
             </div>
           )}
-          {editing && <p className="pb-1 text-meta text-muted">≡ 를 잡고 위아래로 옮기면 바로 저장돼요.</p>}
+          {error && ranked.length > 1 && (
+            <p role="alert" className="pb-2 text-meta text-danger">
+              {error}
+            </p>
+          )}
           <RankedList
             ranked={ranked}
             editing={editing}
@@ -76,21 +87,22 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
             busy={pending}
             onRedo={(p) => begin(p)}
             onMove={(next) => {
-              const before = ranked;
               setRanked(next);
               setError(null);
-              start(async () => {
+              // 연달아 옮겨도 저장은 차례대로 — 마지막 순서가 남는다
+              const mine = ++saveSeq.current;
+              saveChain.current = saveChain.current.then(async () => {
                 const res = await saveThreeOrder(next.map((p) => p.placeId));
-                if (res.error) {
-                  setRanked(before);
+                if (res.error && mine === saveSeq.current) {
                   setError(res.error);
+                  setRanked(await loadRanking().catch(() => next));
                 }
               });
             }}
           />
         </>
       )}
-      {unranked.length > 0 && (
+      {!editing && unranked.length > 0 && (
         <section aria-labelledby="unranked-title" className="flex flex-col pt-8">
           <div className="flex items-center justify-between gap-3">
             <h2 id="unranked-title" className="text-section font-bold">

@@ -51,3 +51,9 @@ export async function saveThreeOrder(placeIds: string[]): Promise<{ error?: stri
   revalidatePath("/rank");
   return {};
 }
+
+// 저장 실패 뒤 화면을 DB 순서로 되돌릴 때
+export async function loadRanking(): Promise<RankPlace[]> {
+  const { supabase, userId } = await requireUser();
+  return (await getThreeRanking(supabase, userId)).ranked;
+}
