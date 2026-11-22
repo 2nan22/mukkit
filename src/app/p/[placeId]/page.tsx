@@ -160,6 +160,11 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <div className="flex items-center gap-2">
               <TierBadge tier={mine.tier} />
               <span className="text-meta font-medium text-ink-2">{TIER_MEANING[mine.tier]}</span>
+              {mine.tier === "three" && (
+                <Link href="/rank" className="text-meta font-semibold text-ink underline underline-offset-[3px]">
+                  {mine.rank ? `3스타 중 ${mine.rank}위` : "순위 정하기"}
+                </Link>
+              )}
               {mine.visitedOn && <span className="ml-auto text-meta text-subtle">{dot(mine.visitedOn)}</span>}
             </div>
             {mine.review && <p className="text-body leading-relaxed">{mine.review}</p>}

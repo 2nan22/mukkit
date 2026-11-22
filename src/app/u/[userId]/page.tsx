@@ -116,6 +116,14 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
               </span>
               <span>협찬 · 이벤트 평가 {stats.sponsored}건</span>
             </div>
+            {me === person.id && stats.three > 0 && (
+              <Link href="/rank" className="flex h-11 items-center justify-between border-t border-line text-body font-medium">
+                내 3스타 순위
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-subtle">
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </Link>
+            )}
           </div>
         )}
 
