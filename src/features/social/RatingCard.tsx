@@ -5,6 +5,8 @@ import { Companions } from "@/components/ui/Companions";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
+import { ReactionBar } from "@/features/reactions/ReactionBar";
+import type { Reaction } from "@/features/reactions/reactions";
 import { SafetyMenu } from "@/features/safety/SafetyMenu";
 import type { SharedRating } from "./social";
 
@@ -15,10 +17,23 @@ function dateLabel(iso: string): string {
 
 // 피드 · 프로필 공용 — 공개 한마디 · 사진 · 등급만 (메모는 이 데이터에 없다)
 // viewerId: 보는 사람 — 남의 평가에만 신고 · 차단 메뉴
-export function RatingCard({ rating, showOwner, viewerId = null }: { rating: SharedRating; showOwner: boolean; viewerId?: string | null }) {
+// reaction: 좋아요 · 댓글 수 (없으면 줄을 그리지 않음) · showComments=false 는 댓글 화면 안
+export function RatingCard({
+  rating,
+  showOwner,
+  viewerId = null,
+  reaction = null,
+  showComments = true,
+}: {
+  rating: SharedRating;
+  showOwner: boolean;
+  viewerId?: string | null;
+  reaction?: Reaction | null;
+  showComments?: boolean;
+}) {
   const menu = viewerId && viewerId !== rating.ownerId ? <SafetyMenu userId={rating.ownerId} nickname={rating.ownerNickname} placeId={rating.placeId} /> : null;
   return (
-    <article className="flex flex-col gap-2.5 border-b border-line py-4">
+    <article className="flex flex-col gap-2.5 border-b border-line pt-4 pb-2">
       {showOwner && (
         <div className="-my-2 flex items-center justify-between">
           <Link href={`/u/${rating.ownerId}`} className="flex items-center gap-2">
@@ -57,6 +72,7 @@ export function RatingCard({ rating, showOwner, viewerId = null }: { rating: Sha
       {rating.review && <p className="text-body leading-normal text-ink-2">{rating.review}</p>}
       <AteMenus menus={rating.menus} />
       <Companions people={rating.companions} />
+      {reaction && <ReactionBar ownerId={rating.ownerId} placeId={rating.placeId} reaction={reaction} mine={viewerId === rating.ownerId} showComments={showComments} />}
     </article>
   );
 }
