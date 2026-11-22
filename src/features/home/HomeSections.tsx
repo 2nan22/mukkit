@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { CuisineIcon } from "@/components/ui/CuisineIcon";
-import { MiniMap } from "@/components/ui/MiniMap";
+import { ListThumb, topCuisines } from "@/components/ui/ListThumb";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
@@ -120,7 +120,7 @@ const SOFT: Record<string, string> = {
 };
 
 
-export function RecentLists({ lists }: { lists: RecentList[] }) {
+export function RecentLists({ lists, covers = {} }: { lists: RecentList[]; covers?: Record<string, string> }) {
   if (lists.length === 0) return null;
   return (
     <section className="flex flex-col gap-2.5">
@@ -128,7 +128,12 @@ export function RecentLists({ lists }: { lists: RecentList[] }) {
       <div className="grid grid-cols-2 gap-2.5 px-5">
         {lists.slice(0, 4).map((l) => (
           <Link key={l.id} href={`/l/${l.id}`} className="flex min-w-0 flex-col gap-1.5">
-            <MiniMap points={l.points} count={l.count} />
+            <ListThumb
+              size="card"
+              count={l.count}
+              photos={l.points.flatMap((p) => (covers[p.placeId] ? [covers[p.placeId]] : [])).slice(0, 4)}
+              cuisines={topCuisines(l.points)}
+            />
             <span className="truncate text-body font-bold">{l.name}</span>
             <span className="truncate text-meta text-muted">{l.ownerNickname}</span>
           </Link>

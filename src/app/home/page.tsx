@@ -1,3 +1,4 @@
+import { getPlaceCovers } from "@/features/place/covers";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
@@ -52,6 +53,8 @@ async function HomeContent() {
     supabase.from("visit_members").select("id", { count: "exact", head: true }).eq("user_id", me).eq("status", "invited"),
     supabase.from("meetup_invites").select("meetup_id, meetups!inner(status)", { count: "exact", head: true }).eq("user_id", me).eq("meetups.status", "open"),
   ]);
+  // 리스트 카드 썸네일 — 담긴 곳의 대표 사진 (내 사진 · 팔로잉)
+  const recentCovers = Object.fromEntries([...(await getPlaceCovers(supabase, lists.flatMap((l) => l.points.map((p) => p.placeId))))].map(([id, c]) => [id, c.url]));
   // 프로필이 없으면 지워진 계정의 로그인이 남은 것 — 반복 대신 로그아웃
   if (!profile) redirect(SESSION_ENDED);
   if (!profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
@@ -97,7 +100,7 @@ async function HomeContent() {
       ) : null}
       <FollowingNew ratings={feed.slice(0, 10)} followingCount={counts.following} />
       <SimilarPeople matches={matches} />
-      <RecentLists lists={lists} />
+      <RecentLists lists={lists} covers={recentCovers} />
     </>
   );
 }
