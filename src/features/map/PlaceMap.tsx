@@ -41,7 +41,7 @@ type KakaoMaps = {
 };
 type KakaoClusterer = { addMarkers(m: KakaoOverlay[]): void; clear(): void };
 type KakaoBounds = { extend(p: LatLng): void; contain(p: LatLng): boolean };
-type KakaoCircle = { setMap(m: KakaoMapInstance | null): void; setPosition(p: LatLng): void; setRadius(r: number): void };
+type KakaoCircle = { setMap(m: KakaoMapInstance | null): void; setPosition(p: LatLng): void; setRadius(r: number): void; setOptions(o: { strokeOpacity: number; fillOpacity: number }): void };
 type KakaoMapInstance = {
   setBounds(b: object, top?: number, right?: number, bottom?: number, left?: number): void;
   getLevel(): number;
@@ -60,7 +60,7 @@ type KakaoOverlay = {
 
 declare global {
   interface Window {
-    kakao?: { maps: KakaoMaps };
+    kakao?: { maps: KakaoMaps & { event: { addListener(target: object, type: string, cb: () => void): void } } };
   }
 }
 
@@ -107,6 +107,9 @@ function pinElement(tier: Tier, selected: boolean, onClick: () => void): HTMLEle
   return el;
 }
 
+// 내 위치 색 — 장소 핀(빨강 · 주황 · 노랑 · 회색)과 겹치지 않는 지도 앱 관례의 파랑 (globals.css --color-me 와 같은 값)
+const ME_COLOR = "#2f6fde";
+
 function zOf(tier: Tier, selected: boolean): number {
   return selected ? 1000 : tier === "three" ? 300 : tier === "two" ? 200 : 100;
 }
@@ -116,7 +119,7 @@ function meElement(): HTMLElement {
   const el = document.createElement("span");
   el.setAttribute("aria-hidden", "true");
   el.style.cssText =
-    "display:block;width:18px;height:18px;box-sizing:border-box;border-radius:50%;background:#2f6fde;border:3px solid #ffffff;box-shadow:0 0 0 1px rgba(47,111,222,.35),0 2px 6px rgba(0,0,0,.25)";
+    `display:block;width:18px;height:18px;box-sizing:border-box;border-radius:50%;background:${ME_COLOR};border:3px solid #ffffff;box-shadow:0 0 0 1px rgba(47,111,222,.35),0 2px 6px rgba(0,0,0,.25);pointer-events:none`;
   return el;
 }
 
@@ -132,6 +135,7 @@ export function PlaceMap({
   focus = null,
   refit = "always",
   me = null,
+  onUserMove,
 }: {
   pins: Pin[];
   selectedId: string | null;
@@ -145,6 +149,8 @@ export function PlaceMap({
   refit?: "always" | "hidden";
   // 내 위치 점 · 정확도 원
   me?: MyLocation | null;
+  // 사용자가 손으로 지도를 옮겼을 때
+  onUserMove?: () => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<KakaoMapInstance | null>(null);
@@ -157,9 +163,11 @@ export function PlaceMap({
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const onSelectRef = useRef(onSelect);
+  const onMoveRef = useRef(onUserMove);
   useEffect(() => {
     onSelectRef.current = onSelect;
-  }, [onSelect]);
+    onMoveRef.current = onUserMove;
+  }, [onSelect, onUserMove]);
 
   useEffect(() => {
     const maps = window.kakao?.maps;
@@ -169,6 +177,7 @@ export function PlaceMap({
       // 컨테이너 크기가 그려진 뒤에 지도 크기를 다시 맞춘다 — 안 하면 타일이 반만 깔린다
       const m0 = map.current;
       requestAnimationFrame(() => m0.relayout());
+      window.kakao?.maps.event.addListener(m0, "dragstart", () => onMoveRef.current?.());
     }
     const m = map.current;
     clusterer.current?.clear();
@@ -278,15 +287,18 @@ export function PlaceMap({
       return;
     }
     const at = new maps.LatLng(me.lat, me.lng);
-    const radius = Math.min(Math.max(me.accuracy, 10), 2000);
+    // 정확도 원은 부정확할 때(accuracy 0 으로 넘김) 그리지 않는다 — 화면을 덮지 않게
+    const radius = me.accuracy > 0 ? Math.max(me.accuracy, 10) : 0;
     if (!meDot.current) {
-      meCircle.current = new maps.Circle({ center: at, radius, strokeWeight: 1, strokeColor: "#2f6fde", strokeOpacity: 0.4, fillColor: "#2f6fde", fillOpacity: 0.12, map: map.current });
-      meDot.current = new maps.CustomOverlay({ position: at, content: meElement(), map: map.current, xAnchor: 0.5, yAnchor: 0.5, zIndex: 2000, clickable: false });
+      meCircle.current = new maps.Circle({ center: at, radius: radius || 1, strokeWeight: 1, strokeColor: ME_COLOR, strokeOpacity: radius ? 0.4 : 0, fillColor: ME_COLOR, fillOpacity: radius ? 0.12 : 0, map: map.current });
+      // 선택한 핀(1000)보다 아래 — 가게에 와 있어도 핀을 누를 수 있게
+      meDot.current = new maps.CustomOverlay({ position: at, content: meElement(), map: map.current, xAnchor: 0.5, yAnchor: 0.5, zIndex: 500, clickable: false });
     } else {
       meDot.current.setPosition(at);
       meCircle.current?.setPosition(at);
-      meCircle.current?.setRadius(radius);
+      meCircle.current?.setRadius(radius || 1);
     }
+    meCircle.current?.setOptions({ strokeOpacity: radius ? 0.4 : 0, fillOpacity: radius ? 0.12 : 0 });
   }, [ready, me]);
 
   if (!APP_KEY || failed) {
