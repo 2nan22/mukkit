@@ -18,7 +18,6 @@ import { openKakaoPlace, type NewPlaceHit } from "@/features/search/actions";
 import { ratersLine, type MapPlace } from "./myPlaces";
 import { Avatar } from "@/components/ui/Avatar";
 
-
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
 // 팔로잉 지도는 평가한 곳만이라 평가 등급만
 const RATED_FILTERS: Tier[] = ["three", "two", "one", "notRecommended"];
@@ -307,9 +306,9 @@ export function MapView({
           onOpenChange={setSearchOpen}
           onClear={() => setFound(null)}
           mineLabel={isFollowing ? "팔로잉이 평가한 곳" : undefined}
-          freshLabel={isFollowing ? "다른 가게" : undefined}
+          freshLabel={isFollowing ? "팔로잉이 평가하지 않은 가게" : undefined}
         />
-        <div className={searchOpen ? "invisible" : ""}>
+        <div className={searchOpen || (isFollowing && places.length === 0) ? "invisible" : ""}>
         <ChipRow label="등급">
           <Chip pressed={tiers.length === 0} onClick={() => setTiers([])}>
             전체
@@ -408,8 +407,8 @@ export function MapView({
         {isFollowing && places.length === 0 ? (
           <div className="flex flex-col items-start gap-2 pt-5 pb-1">
             <span className="text-body font-bold">{following > 0 ? "팔로잉이 평가한 곳이 아직 없어요" : "아직 팔로우한 사람이 없어요"}</span>
-            <span className="text-meta text-muted">{following > 0 ? "팔로우한 사람이 평가를 공개하면 지도에 보여요." : "취향이 비슷한 사람을 팔로우하면 그 사람의 평가가 지도에 모여요."}</span>
-            <Link href="/people" className="mt-1 flex h-10 items-center rounded-full bg-brand-soft px-4 text-meta font-bold text-brand">
+            <span className="text-meta text-muted">{following > 0 ? "팔로우한 사람이 공개한 평가만 보여요." : "취향이 비슷한 사람을 팔로우하면 그 사람의 평가가 지도에 모여요."}</span>
+            <Link href="/people" className="mt-1 flex h-11 items-center rounded-full bg-brand-soft px-4 text-meta font-bold text-brand">
               사람 찾기
             </Link>
           </div>
@@ -439,7 +438,7 @@ export function MapView({
               </button>
               <div className="flex items-center justify-between">
                 <span className="text-body font-bold">
-                  {!viewport ? `${shown.length}곳` : inView.length ? `이 화면에 ${inView.length}곳` : isFollowing ? "이 화면에 팔로잉이 평가한 곳이 없어요" : "이 화면에 저장한 곳이 없어요"}
+                  {!viewport ? `${shown.length}곳` : inView.length ? (isFollowing ? `팔로잉이 평가한 곳 ${inView.length}곳` : `이 화면에 ${inView.length}곳`) : isFollowing ? "이 화면에 팔로잉이 평가한 곳이 없어요" : "이 화면에 저장한 곳이 없어요"}
                 </span>
                 <button type="button" onClick={() => setSnap(snap === "peek" ? "half" : "peek")} aria-expanded={listOpen} className="h-btn-m text-meta text-ink-2">
                   {listOpen ? "목록 닫기" : "목록 보기"}
@@ -475,7 +474,7 @@ export function MapView({
                       <span className="truncate text-body font-semibold">{p.name}</span>
                       <span className="truncate text-meta text-muted">{p.raters ? `${ratersLine(p.raters)} · ${placeMeta(p)}` : placeMeta(p)}</span>
                     </span>
-                    <TierBadge tier={p.tier} />
+                    {p.raters && p.raters.length > 1 ? <span className="shrink-0 text-meta text-muted">{p.raters.length}명 평가</span> : <TierBadge tier={p.tier} />}
                   </button>
                 </li>
               ))}
@@ -599,17 +598,17 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
 function FollowingCard({ place, onClose }: { place: MapPlace; onClose: () => void }) {
   const raters = place.raters ?? [];
   const SHOW = 3;
+  const [all, setAll] = useState(false);
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-1">
-          <Link href={`/p/${place.placeId}`} className="truncate text-section font-bold underline-offset-[3px] hover:underline">
-            {place.name}
-          </Link>
+          <h2 className="truncate text-section font-bold">{place.name}</h2>
           <span className="text-meta text-muted">
             {placeMeta(place)}
             {!place.available && " · 지도에 정보 없음"}
           </span>
+          {place.myTier && <span className="text-meta text-ink-2">{["three", "two", "one", "notRecommended"].includes(place.myTier) ? `내 평가 ${TIER_LABEL[place.myTier]}` : "내가 저장한 곳"}</span>}
         </div>
         <button type="button" onClick={onClose} aria-label="닫기" className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
@@ -617,18 +616,25 @@ function FollowingCard({ place, onClose }: { place: MapPlace; onClose: () => voi
           </svg>
         </button>
       </div>
-      <ul aria-label="평가한 팔로잉" className="flex flex-col">
-        {raters.slice(0, SHOW).map((r) => (
+      <ul aria-label="평가한 사람" className={`flex flex-col ${all ? "max-h-56 overflow-y-auto" : ""}`}>
+        {(all ? raters : raters.slice(0, SHOW)).map((r) => (
           <li key={r.userId}>
-            <Link href={`/p/${place.placeId}/r/${r.userId}`} className="flex h-11 items-center gap-2.5">
+            <Link href={`/p/${place.placeId}/r/${r.userId}`} aria-label={`${r.nickname} ${TIER_LABEL[r.tier]} 평가 보기`} className="flex h-11 items-center gap-2.5">
               <Avatar name={r.nickname} size={24} />
               <span className="min-w-0 flex-1 truncate text-body">{r.nickname}</span>
               <TierBadge tier={r.tier} />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-subtle">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
             </Link>
           </li>
         ))}
       </ul>
-      {raters.length > SHOW && <span className="text-meta text-muted">외 {raters.length - SHOW}명이 더 평가했어요</span>}
+      {raters.length > SHOW && !all && (
+        <button type="button" onClick={() => setAll(true)} className="flex h-11 items-center text-meta font-semibold text-ink-2">
+          전체 {raters.length}명 보기
+        </button>
+      )}
       <Link
         href={`/p/${place.placeId}`}
         className="mt-2 flex h-btn-m items-center justify-center rounded-btn-m bg-brand text-body font-bold text-white raised-brand"

@@ -4,7 +4,7 @@ import Link from "next/link";
 export async function MapViewSwitch({ searchParams }: { searchParams: Promise<{ view?: string | string[] }> }) {
   const { view } = await searchParams;
   const following = view === "following";
-  const item = (on: boolean) => `flex h-9 items-center rounded-full px-3 text-meta ${on ? "bg-ink font-bold text-white" : "text-ink-2"}`;
+  const item = (on: boolean) => `flex h-11 items-center rounded-full px-4 text-meta ${on ? "bg-ink font-bold text-white" : "text-ink-2"}`;
   return (
     <nav aria-label="지도 보기" className="mr-3 flex rounded-full bg-surface p-0.5">
       <Link href="/map" replace aria-current={!following ? "page" : undefined} className={item(!following)}>

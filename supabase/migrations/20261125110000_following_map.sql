@@ -4,12 +4,14 @@
 create function public.following_map_places()
 returns table (
   place_id uuid, name text, lat double precision, lng double precision, address text, cuisine text,
-  category_name text, available boolean, raters jsonb
+  category_name text, available boolean, raters jsonb, my_tier public.tier
 )
 language sql stable security definer set search_path = '' as $$
   select pl.id, pl.name, pl.lat, pl.lng, pl.address, pl.cuisine, pl.category_name, pl.available,
          jsonb_agg(jsonb_build_object('userId', up.user_id, 'nickname', pr.nickname, 'tier', up.tier)
-                   order by public.tier_score(up.tier) desc, up.updated_at desc)
+                   order by public.tier_score(up.tier) desc, up.updated_at desc),
+         -- 내가 저장했으면 내 등급 (카드에 함께 표시)
+         (select mine.tier from public.user_places mine where mine.user_id = (select auth.uid()) and mine.place_id = pl.id)
   from public.follows f
   join public.user_places up on up.user_id = f.followee_id
   join public.places pl on pl.id = up.place_id

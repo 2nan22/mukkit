@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PlaceSourceName } from "@/domain/importedPlace";
-import { tierFromDb, type Tier } from "@/domain/tier";
+import { TIER_LABEL, tierFromDb, type Tier } from "@/domain/tier";
 import type { Cuisine } from "@/domain/cuisine";
 
 export type SourceLink = { source: PlaceSourceName; url: string };
@@ -19,6 +19,8 @@ export type MapPlace = {
   links: SourceLink[];
   // 팔로잉 지도 — 이 곳을 평가한 팔로잉 (등급 높은 순). 내 지도에서는 없음
   raters?: Rater[];
+  // 팔로잉 지도 — 내가 저장했으면 내 등급
+  myTier?: Tier | null;
 };
 
 export type Rater = { userId: string; nickname: string; tier: Tier };
@@ -33,6 +35,7 @@ type FollowingRow = {
   category_name: string;
   available: boolean;
   raters: { userId: string; nickname: string; tier: string }[];
+  my_tier: string | null;
 };
 
 // 팔로잉 지도 — 팔로우하는 사람이 평가한 곳 (볼 수 있는 평가만 · 협찬 제외). 핀 등급은 그중 가장 높은 실제 평가
@@ -54,14 +57,16 @@ export async function getFollowingMapPlaces(supabase: SupabaseClient): Promise<M
       note: "",
       links: [],
       raters,
+      myTier: r.my_tier ? tierFromDb(r.my_tier) : null,
     };
   });
 }
 
-// '민지님 외 2명' — 팔로잉 지도 카드 · 목록 한 줄
+// '민지 3스타 · 외 2명' — 등급은 사람에 붙인다 (가게 점수처럼 읽히지 않게)
 export function ratersLine(raters: Rater[]): string {
   if (raters.length === 0) return "";
-  return raters.length === 1 ? raters[0].nickname : `${raters[0].nickname} 외 ${raters.length - 1}명`;
+  const first = `${raters[0].nickname} ${TIER_LABEL[raters[0].tier]}`;
+  return raters.length === 1 ? first : `${first} · 외 ${raters.length - 1}명`;
 }
 
 const SOURCE_URL: Record<PlaceSourceName, (id: string) => string> = {
