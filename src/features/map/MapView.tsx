@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { CuisineIcon } from "@/components/ui/CuisineIcon";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
@@ -321,8 +322,9 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
                   <button
                     type="button"
                     onClick={() => setSelectedId(p.placeId)}
-                    className="flex min-h-14 w-full items-center gap-3 border-b border-line text-left"
+                    className="flex min-h-16 w-full items-center gap-3 border-b border-line py-2 text-left"
                   >
+                    <CuisineIcon cuisine={p.cuisine} size={40} />
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-body">{p.name}</span>
                       <span className="truncate text-meta text-muted">{placeMeta(p)}</span>
