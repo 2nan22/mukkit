@@ -30,24 +30,28 @@ export async function refreshImportedList(listId: string): Promise<{ error?: str
     .eq("source_list_id", list.data.source_list_id)
     .maybeSingle();
   const last = src.data?.last_synced_at ? new Date(src.data.last_synced_at as string).getTime() : 0;
-  if (src.data?.status === "ok" && Date.now() - last < COOLDOWN_MS) return { done: "방금 원본을 확인했어요. 바뀐 곳이 없어요." };
+  if (Date.now() - last < COOLDOWN_MS) return { done: "조금 전에 확인했어요. 잠시 뒤에 다시 눌러 주세요." };
   // 직접 누르면 실패 횟수를 지워 새벽 작업도 다시 시작
   if (src.data) await supabase.from("import_sources").update({ fail_count: 0 }).eq("user_id", userId).eq("source", list.data.source).eq("source_list_id", list.data.source_list_id);
 
   const mode = src.data?.mode === "tier" && src.data.tier ? modeFromValue(src.data.tier as string) : { kind: "plain" as const };
-  const res = await refreshImport(supabase, userId, { source: list.data.source as PlaceSourceName, sourceListId: list.data.source_list_id as string, mode });
+  const res = await refreshImport(supabase, userId, { source: list.data.source as PlaceSourceName, sourceListId: list.data.source_list_id as string, mode }).catch(
+    () => ({ status: "error" as const }),
+  );
   revalidatePath(`/lists/${listId}`);
   revalidatePath("/lists");
   switch (res.status) {
     case "unchanged":
       return { done: "원본과 같아요. 바뀐 곳이 없어요." };
     case "updated": {
-      const parts = [res.added && `새로 ${res.added}곳`, res.removed && `빠진 ${res.removed}곳`, res.memos && `메모 ${res.memos}개`].filter(Boolean);
-      return { done: parts.length ? `원본을 반영했어요 · ${parts.join(" · ")}` : "원본을 반영했어요." };
+      const parts = [res.added && `새로 담은 곳 ${res.added}`, res.removed && `뺀 곳 ${res.removed}`, res.memos && `바뀐 메모 ${res.memos}`].filter(Boolean);
+      return { done: parts.length ? `원본을 반영했어요 · ${parts.join(" · ")}` : "원본과 같아요. 바뀐 곳이 없어요." };
     }
     case "unavailable":
       return { error: "원본 리스트를 볼 수 없어요. 공개 범위를 확인해 주세요." };
+    case "dropped":
+      return { error: "가져온 리스트가 아니에요." };
     default:
-      return { error: "원본을 불러오지 못했어요. 잠시 후 다시 시도해 주세요." };
+      return { error: "원본을 제대로 불러오지 못해 반영하지 않았어요. 잠시 후 다시 시도해 주세요." };
   }
 }

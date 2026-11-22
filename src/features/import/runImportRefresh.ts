@@ -16,7 +16,7 @@ type Due = { user_id: string; source: PlaceSourceName; source_list_id: string; m
 export async function runImportRefresh(admin: SupabaseClient): Promise<{ ok: boolean; checked: number; detail: Record<string, number>; error?: string }> {
   const started = Date.now();
   const run = await admin.from("job_runs").insert({ job: JOB_NAME }).select("id").single();
-  const detail: Record<string, number> = { unchanged: 0, updated: 0, unavailable: 0, error: 0, added: 0, removed: 0, memos: 0 };
+  const detail: Record<string, number> = { unchanged: 0, updated: 0, unavailable: 0, error: 0, dropped: 0, added: 0, removed: 0, memos: 0 };
   let checked = 0;
   let error: string | undefined;
   try {
@@ -25,9 +25,17 @@ export async function runImportRefresh(admin: SupabaseClient): Promise<{ ok: boo
     for (const d of due.data as Due[]) {
       if (Date.now() - started > BUDGET_MS) break;
       const mode = d.mode === "tier" && d.tier ? modeFromValue(d.tier) : { kind: "plain" as const };
-      const res = await refreshImport(admin, d.user_id, { source: d.source, sourceListId: d.source_list_id, mode }, { updatePlaces: true });
+      const key = { source: d.source, sourceListId: d.source_list_id, mode };
+      // 한 리스트가 실패해도 다음으로 — 실패로 남겨 내일은 뒤로 밀린다
+      const res = await refreshImport(admin, d.user_id, key).catch(async () => {
+        await admin
+          .from("import_sources")
+          .update({ status: "error", last_synced_at: new Date().toISOString() })
+          .match({ user_id: d.user_id, source: d.source, source_list_id: d.source_list_id });
+        return { status: "error" as const };
+      });
       checked += 1;
-      detail[res.status] += 1;
+      detail[res.status] = (detail[res.status] ?? 0) + 1;
       if (res.status === "updated") {
         detail.added += res.added;
         detail.removed += res.removed;

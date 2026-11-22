@@ -22,10 +22,14 @@ export function RefreshImportButton({ listId, source, status, lastSyncedAt }: { 
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
 
   return (
-    <div className="flex flex-col gap-1 pt-3">
+    <div className="flex flex-col gap-0.5 pt-1">
       <div className="flex items-center justify-between gap-3">
         <span className={`text-meta ${status === "ok" ? "text-muted" : "text-danger"}`} suppressHydrationWarning>
-          {status === "unavailable" ? `${SOURCE_LABEL[source]} 원본을 볼 수 없어요` : `${SOURCE_LABEL[source]} 원본 · ${ago(lastSyncedAt)}`}
+          {status === "unavailable"
+            ? `${SOURCE_LABEL[source]} 원본을 볼 수 없어요`
+            : status === "error"
+              ? `${SOURCE_LABEL[source]} 원본을 불러오지 못했어요`
+              : `${SOURCE_LABEL[source]} 원본 · ${ago(lastSyncedAt)}`}
         </span>
         <button
           type="button"
@@ -37,12 +41,16 @@ export function RefreshImportButton({ listId, source, status, lastSyncedAt }: { 
               router.refresh();
             })
           }
-          className="h-11 shrink-0 text-meta font-semibold text-ink disabled:opacity-50"
+          aria-label={`${SOURCE_LABEL[source]} 원본에서 새로 고침`}
+          className="flex h-11 min-w-11 shrink-0 items-center gap-1.5 text-meta font-semibold text-ink disabled:opacity-50"
         >
-          {pending ? "확인 중" : "원본에서 새로 고치기"}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={pending ? "animate-spin" : ""}>
+            <path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4" />
+          </svg>
+          {pending ? "확인 중" : "새로 고침"}
         </button>
       </div>
-      {status === "unavailable" && !message && <p className="text-meta text-muted">원본 리스트의 공개 범위를 확인해 주세요. 매일 새벽에도 다시 확인해요.</p>}
+      {status === "unavailable" && !message && <p className="text-meta text-muted">원본 공개 범위를 바꾸면 다시 맞춰요.</p>}
       <p role={message?.error ? "alert" : "status"} className={message ? `text-meta ${message.error ? "text-danger" : "text-ink-2"}` : "sr-only"}>
         {message?.text ?? ""}
       </p>
