@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { PlaceThumb } from "@/components/ui/PlaceThumb";
-import type { MapPlace } from "./myPlaces";
+import { ratersLine, type MapPlace } from "./myPlaces";
 
 const TIER_DOT: Record<Tier, string> = {
   three: "bg-tier-3",
@@ -42,7 +42,7 @@ export function PeekCards({ places, covers, onPick, onMore }: { places: NearPlac
               <span className="truncate text-body font-semibold">{p.name}</span>
               <span className="flex items-center gap-1.5 truncate text-meta text-muted">
                 <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${TIER_DOT[p.tier]}`} />
-                {TIER_LABEL[p.tier]} · {p.meters !== null ? distance(p.meters) : CUISINE_LABEL[p.cuisine]}
+                {p.raters ? ratersLine(p.raters) : TIER_LABEL[p.tier]} · {p.meters !== null ? distance(p.meters) : CUISINE_LABEL[p.cuisine]}
               </span>
             </span>
           </button>

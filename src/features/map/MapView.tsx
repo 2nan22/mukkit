@@ -15,9 +15,13 @@ import { PlaceThumb } from "@/components/ui/PlaceThumb";
 import { loadPlaceCovers } from "@/features/place/coverActions";
 import { MapSearch } from "./MapSearch";
 import { openKakaoPlace, type NewPlaceHit } from "@/features/search/actions";
-import type { MapPlace } from "./myPlaces";
+import { ratersLine, type MapPlace } from "./myPlaces";
+import { Avatar } from "@/components/ui/Avatar";
+
 
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
+// 팔로잉 지도는 평가한 곳만이라 평가 등급만
+const RATED_FILTERS: Tier[] = ["three", "two", "one", "notRecommended"];
 const TIER_DOT: Record<Tier, string> = {
   three: "bg-tier-3",
   two: "bg-pin-2",
@@ -62,7 +66,23 @@ function busiestArea(places: MapPlace[]): Focus | null {
   return { lat: top.reduce((n, p) => n + p.lat, 0) / top.length, lng: top.reduce((n, p) => n + p.lng, 0) / top.length, level: AREA_LEVEL };
 }
 
-export function MapView({ places, initialTiers = [], at = null }: { places: MapPlace[]; initialTiers?: Tier[]; at?: { lat: number; lng: number } | null }) {
+// view: mine 내 장소 · following 팔로우하는 사람이 평가한 곳 (following: 팔로우 수 — 빈 화면 안내)
+export function MapView({
+  places,
+  initialTiers = [],
+  at = null,
+  view = "mine",
+  following = 0,
+}: {
+  places: MapPlace[];
+  initialTiers?: Tier[];
+  at?: { lat: number; lng: number } | null;
+  view?: "mine" | "following";
+  following?: number;
+}) {
+  const isFollowing = view === "following";
+  // 팔로잉 지도는 누군가 그 등급을 줬으면 해당 (핀 색은 가장 높은 등급)
+  const tierMatch = (p: MapPlace, ts: Tier[]) => ts.length === 0 || (p.raters ? p.raters.some((r) => ts.includes(r.tier)) : ts.includes(p.tier));
   // 리스트 하나만 볼 때는 전체 맞춤, 아니면 위치 · 많이 저장한 지역에서 시작
   const [focus, setFocus] = useState<Focus | null>(() => (at ? { ...at, level: HERE_LEVEL } : places.length > 30 ? busiestArea(places) : null));
   const [locating, setLocating] = useState(false);
@@ -145,7 +165,7 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
     const p = places.find((x) => x.placeId === placeId);
     if (!p) return;
     // 거르기 때문에 안 보이는 곳이면 거르기를 풀고 보여 준다
-    if (!((tiers.length === 0 || tiers.includes(p.tier)) && (cuisines.length === 0 || cuisines.includes(p.cuisine)))) {
+    if (!(tierMatch(p, tiers) && (cuisines.length === 0 || cuisines.includes(p.cuisine)))) {
       setTiers([]);
       setCuisines([]);
     }
@@ -218,7 +238,7 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
   const shown = useMemo(
     () =>
       places.filter(
-        (p) => (tiers.length === 0 || tiers.includes(p.tier)) && (cuisines.length === 0 || cuisines.includes(p.cuisine)),
+        (p) => tierMatch(p, tiers) && (cuisines.length === 0 || cuisines.includes(p.cuisine)),
       ),
     [places, tiers, cuisines],
   );
@@ -280,13 +300,21 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
       </div>
 
       <div className="pointer-events-none relative z-20 flex flex-col gap-1 pt-2">
-        <MapSearch places={places} onPickMine={pickMine} onPickNew={pickNew} onOpenChange={setSearchOpen} onClear={() => setFound(null)} />
+        <MapSearch
+          places={places}
+          onPickMine={pickMine}
+          onPickNew={pickNew}
+          onOpenChange={setSearchOpen}
+          onClear={() => setFound(null)}
+          mineLabel={isFollowing ? "팔로잉이 평가한 곳" : undefined}
+          freshLabel={isFollowing ? "다른 가게" : undefined}
+        />
         <div className={searchOpen ? "invisible" : ""}>
         <ChipRow label="등급">
           <Chip pressed={tiers.length === 0} onClick={() => setTiers([])}>
             전체
           </Chip>
-          {TIER_FILTERS.map((t) => (
+          {(isFollowing ? RATED_FILTERS : TIER_FILTERS).map((t) => (
             <Chip key={t} pressed={tiers.includes(t)} onClick={() => setTiers(toggle(tiers, t))}>
               <span aria-hidden="true" className={`size-2 rounded-full ${TIER_DOT[t]}`} />
               {TIER_LABEL[t]}
@@ -377,9 +405,17 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
             </button>
           </div>
         )}
-        {selected ? (
+        {isFollowing && places.length === 0 ? (
+          <div className="flex flex-col items-start gap-2 pt-5 pb-1">
+            <span className="text-body font-bold">{following > 0 ? "팔로잉이 평가한 곳이 아직 없어요" : "아직 팔로우한 사람이 없어요"}</span>
+            <span className="text-meta text-muted">{following > 0 ? "팔로우한 사람이 평가를 공개하면 지도에 보여요." : "취향이 비슷한 사람을 팔로우하면 그 사람의 평가가 지도에 모여요."}</span>
+            <Link href="/people" className="mt-1 flex h-10 items-center rounded-full bg-brand-soft px-4 text-meta font-bold text-brand">
+              사람 찾기
+            </Link>
+          </div>
+        ) : selected ? (
           <div className="pt-4">
-            <PlaceCard place={selected} onClose={() => setSelectedId(null)} />
+            {isFollowing ? <FollowingCard place={selected} onClose={() => setSelectedId(null)} /> : <PlaceCard place={selected} onClose={() => setSelectedId(null)} />}
           </div>
         ) : found ? (
           <div className="pt-4">
@@ -402,7 +438,9 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
                 <span aria-hidden="true" className="h-1 w-9 rounded-full bg-line-strong" />
               </button>
               <div className="flex items-center justify-between">
-                <span className="text-body font-bold">{!viewport ? `${shown.length}곳` : inView.length ? `이 화면에 ${inView.length}곳` : "이 화면에 저장한 곳이 없어요"}</span>
+                <span className="text-body font-bold">
+                  {!viewport ? `${shown.length}곳` : inView.length ? `이 화면에 ${inView.length}곳` : isFollowing ? "이 화면에 팔로잉이 평가한 곳이 없어요" : "이 화면에 저장한 곳이 없어요"}
+                </span>
                 <button type="button" onClick={() => setSnap(snap === "peek" ? "half" : "peek")} aria-expanded={listOpen} className="h-btn-m text-meta text-ink-2">
                   {listOpen ? "목록 닫기" : "목록 보기"}
                 </button>
@@ -435,7 +473,7 @@ export function MapView({ places, initialTiers = [], at = null }: { places: MapP
                     <PlaceThumb src={covers[p.placeId]} cuisine={p.cuisine} />
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate text-body font-semibold">{p.name}</span>
-                      <span className="truncate text-meta text-muted">{placeMeta(p)}</span>
+                      <span className="truncate text-meta text-muted">{p.raters ? `${ratersLine(p.raters)} · ${placeMeta(p)}` : placeMeta(p)}</span>
                     </span>
                     <TierBadge tier={p.tier} />
                   </button>
@@ -553,6 +591,50 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
           {["three", "two", "one", "notRecommended"].includes(place.tier) ? "평가 수정" : "평가하기"}
         </Link>
       </div>
+    </div>
+  );
+}
+
+// 팔로잉 지도 카드 — 누가 어떤 등급을 줬는지 (평균 없음), 장소 보기
+function FollowingCard({ place, onClose }: { place: MapPlace; onClose: () => void }) {
+  const raters = place.raters ?? [];
+  const SHOW = 3;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-col gap-1">
+          <Link href={`/p/${place.placeId}`} className="truncate text-section font-bold underline-offset-[3px] hover:underline">
+            {place.name}
+          </Link>
+          <span className="text-meta text-muted">
+            {placeMeta(place)}
+            {!place.available && " · 지도에 정보 없음"}
+          </span>
+        </div>
+        <button type="button" onClick={onClose} aria-label="닫기" className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <ul aria-label="평가한 팔로잉" className="flex flex-col">
+        {raters.slice(0, SHOW).map((r) => (
+          <li key={r.userId}>
+            <Link href={`/p/${place.placeId}/r/${r.userId}`} className="flex h-11 items-center gap-2.5">
+              <Avatar name={r.nickname} size={24} />
+              <span className="min-w-0 flex-1 truncate text-body">{r.nickname}</span>
+              <TierBadge tier={r.tier} />
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {raters.length > SHOW && <span className="text-meta text-muted">외 {raters.length - SHOW}명이 더 평가했어요</span>}
+      <Link
+        href={`/p/${place.placeId}`}
+        className="mt-2 flex h-btn-m items-center justify-center rounded-btn-m bg-brand text-body font-bold text-white raised-brand"
+      >
+        장소 보기
+      </Link>
     </div>
   );
 }
