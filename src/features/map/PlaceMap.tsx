@@ -112,11 +112,13 @@ function foundElement(): HTMLElement {
 function pinElement(tier: Tier, selected: boolean, onClick: () => void): HTMLElement {
   const s = PIN_STYLE[tier];
   const size = selected ? s.size + 8 : s.size;
+  // 빈 원 핀(가고 싶은 곳 · 평가 전)은 커져도 눈에 덜 띄어 검정 테두리로
+  const ring = selected && (tier === "wantToGo" || tier === "unrated") ? "#17181c" : s.ring;
   const el = document.createElement("button");
   el.type = "button";
   el.setAttribute("aria-label", "장소 선택");
   el.style.cssText = "padding:0;border:0;background:none;cursor:pointer";
-  el.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;box-sizing:border-box;border-radius:50%;background:${s.bg};border:${selected ? 3 : 2}px solid ${s.ring};box-shadow:0 2px 8px rgba(0,0,0,.18);color:${s.text};font:700 11px/1 system-ui">${s.label}</span>`;
+  el.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;box-sizing:border-box;border-radius:50%;background:${s.bg};border:${selected ? 3 : 2}px solid ${ring};box-shadow:0 2px 8px rgba(0,0,0,.18);color:${s.text};font:700 11px/1 system-ui">${s.label}</span>`;
   el.addEventListener("click", onClick);
   return el;
 }
@@ -179,6 +181,7 @@ export function PlaceMap({
   const map = useRef<KakaoMapInstance | null>(null);
   const overlays = useRef<Map<string, { overlay: KakaoOverlay; pin: Pin }>>(new Map());
   const selectedRef = useRef<string | null>(selectedId);
+  const highlightRef = useRef<string | null>(null);
   const fitted = useRef(false);
   const meDot = useRef<KakaoOverlay | null>(null);
   const meCircle = useRef<KakaoCircle | null>(null);
@@ -228,7 +231,8 @@ export function PlaceMap({
     // 핀이 바뀔 때만 다시 만든다 — 고르기는 아래에서 두 핀만 바꾼다
     const next = new Map<string, { overlay: KakaoOverlay; pin: Pin }>();
     for (const p of pins) {
-      const selected = p.id === selectedRef.current;
+      // 고른 핀 · 강조 핀은 다시 만들 때도 크게
+      const selected = p.id === selectedRef.current || p.id === highlightRef.current;
       const overlay = new maps.CustomOverlay({
         position: new maps.LatLng(p.lat, p.lng),
         content: p.kind === "found" ? foundElement() : pinElement(p.tier, selected, () => onSelectRef.current(p.id)),
@@ -259,7 +263,6 @@ export function PlaceMap({
   }, [ready, selectedId]);
 
   // 강조 핀 — 고른 핀처럼 크게 보이되 지도는 움직이지 않는다
-  const highlightRef = useRef<string | null>(null);
   useEffect(() => {
     const prev = highlightRef.current;
     highlightRef.current = highlightId;

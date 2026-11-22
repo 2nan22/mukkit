@@ -53,13 +53,16 @@ export function PeekCards({
     if (!el || !onFocus) return;
     const order = ids ? ids.split(",") : [];
     let t = 0;
+    const pick = () => {
+      const card = el.querySelector("li");
+      const step = card ? card.getBoundingClientRect().width + 8 : 1;
+      onFocus(order[Math.min(order.length - 1, Math.round(el.scrollLeft / step))] ?? null);
+    };
+    // 순서만 바뀌고 스크롤은 그대로일 때도 맞춘다
+    pick();
     const onScroll = () => {
       window.clearTimeout(t);
-      t = window.setTimeout(() => {
-        const card = el.querySelector("li");
-        const step = card ? card.getBoundingClientRect().width + 8 : 1;
-        onFocus(order[Math.min(order.length - 1, Math.round(el.scrollLeft / step))] ?? null);
-      }, 80);
+      t = window.setTimeout(pick, 80);
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => {
@@ -67,6 +70,8 @@ export function PeekCards({
       window.clearTimeout(t);
     };
   }, [ids, onFocus]);
+  // 목록이 사라지면 강조도 지운다
+  useEffect(() => () => onFocus?.(null), [onFocus]);
 
   return (
     <ul ref={list} className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-2 overflow-x-auto px-5 [scrollbar-width:none]">

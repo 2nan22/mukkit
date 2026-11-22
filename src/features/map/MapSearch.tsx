@@ -52,7 +52,7 @@ export function MapSearch({
   }, [panel, onOpenChange]);
   useEffect(() => {
     if (!q) return;
-    const t = setTimeout(() => start(async () => setResult({ q, places: (await searchAll(q, nearRef.current)).places })), 300);
+    const t = setTimeout(() => start(async () => setResult({ q, places: (await searchAll(q, nearRef.current, false)).places })), 300);
     return () => clearTimeout(t);
   }, [q]);
 

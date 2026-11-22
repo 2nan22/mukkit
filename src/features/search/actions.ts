@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { Cuisine } from "@/domain/cuisine";
-import { isSamePlace } from "@/domain/samePlace";
+import { distanceMeters, isSamePlace, normalizePlaceName } from "@/domain/samePlace";
 import type { Tier } from "@/domain/tier";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { upsertPlaces } from "@/features/import/saveImportedList";
@@ -31,7 +31,8 @@ function km(m: number): string {
   return m < 1000 ? `${Math.round(m / 10) * 10}m` : `${(m / 1000).toFixed(1)}km`;
 }
 
-export async function searchAll(query: string, near: { lat: number; lng: number } | null): Promise<SearchResult> {
+// dedupeMine: 다른 출처로 저장한 내 장소와 같은 가게를 카카오 결과에서 뺄지 (/search 전용 — 지도는 위쪽 목록이 내 장소가 아닐 수 있다)
+export async function searchAll(query: string, near: { lat: number; lng: number } | null, dedupeMine = true): Promise<SearchResult> {
   const q = cleanQuery(query);
   const empty = { mine: [], places: [], people: [], placeSearch: true };
   if (q.length < 1) return empty;
@@ -40,7 +41,8 @@ export async function searchAll(query: string, near: { lat: number; lng: number 
 
   const [mine, hits, people] = await Promise.all([
     searchMyPlaces(supabase, me, q),
-    searchKakaoKeyword(q, at ? { ...at, radius: 20000 } : undefined),
+    // 근처(20km)에서 못 찾으면 전국으로 다시
+    searchKakaoKeyword(q, at ? { ...at, radius: 20000 } : undefined).then((h) => (at && h !== null && h.length === 0 ? searchKakaoKeyword(q) : h)),
     searchPeople(supabase, q, me).catch(() => []),
   ]);
   const known = await knownKakaoPlaces(supabase, me, (hits ?? []).map((h) => h.id));
@@ -61,7 +63,7 @@ export async function searchAll(query: string, near: { lat: number; lng: number 
     })
     // 내 장소에 이미 나온 곳은 빼기 — 같은 장소 id, 또는 다른 출처로 저장해 id 가 달라도 이름 · 거리로 같은 가게
     .filter((p) => !(p.placeId && mineIds.has(p.placeId)))
-    .filter((p) => !mine.some((m) => isSamePlace({ name: m.name, lat: m.lat, lng: m.lng }, p)));
+    .filter((p) => !dedupeMine || !mine.some((m) => sameShop(m, p)));
   return { mine, places, people: people.slice(0, 5), placeSearch: hits !== null };
 }
 
@@ -91,4 +93,9 @@ async function requireUser() {
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
   return { supabase, me };
+}
+
+// 검색 결과 거르기용 같은 가게 — 50m 안 + 정규화 이름 완전 일치 ('본가' · '본가국밥' 처럼 포함 관계는 다른 가게로)
+function sameShop(a: { name: string; lat: number; lng: number }, b: { name: string; lat: number; lng: number }): boolean {
+  return distanceMeters(a, b) <= 50 && normalizePlaceName(a.name) === normalizePlaceName(b.name);
 }
