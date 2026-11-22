@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { candidateQuery, extractPlaceCandidates } from "./textPlaces";
+import { candidateQuery, extractPlaceCandidates, mergeCandidates, parseModelNames } from "./textPlaces";
 
 describe("글에서 가게 후보 뽑기", () => {
   it("📍 이름 + 다음 줄 주소", () => {
@@ -72,5 +72,58 @@ describe("글에서 가게 후보 뽑기 — 실제 글 형식", () => {
   it("위치 안내 문구는 검색어 지역으로 쓰지 않음", () => {
     const [c] = extractPlaceCandidates("상호: 몽탄\n위치: 삼각지역 8번 출구");
     expect(candidateQuery(c)).toBe("몽탄");
+  });
+});
+
+describe("목록 줄 · 영상 설명", () => {
+  it("번호 줄 뒤 설명은 뗀다", () => {
+    const text = "성수 하루 코스\n1. 어니언 성수 - 빵 맛집\n2. 대림창고 - 분위기 최고";
+    expect(extractPlaceCandidates(text).map((c) => c.name)).toEqual(["어니언 성수", "대림창고"]);
+  });
+
+  it("대시 목록 · 콜론 설명", () => {
+    const text = "안국 카페 투어\n- 카페 레이어드 안국점: 스콘 필수\n- 런던베이글뮤지엄: 오픈런 추천";
+    expect(extractPlaceCandidates(text).map((c) => c.name)).toEqual(["카페 레이어드 안국점", "런던베이글뮤지엄"]);
+  });
+
+  it("영상 시간표 줄 · 괄호 지역", () => {
+    const text = "오늘 다녀온 곳\n00:42 진미평양냉면 (학동)\n05:10 필동면옥 (충무로)";
+    expect(extractPlaceCandidates(text)).toEqual([
+      { name: "진미평양냉면", address: null, area: "학동" },
+      { name: "필동면옥", address: null, area: "충무로" },
+    ]);
+  });
+
+  it("줄 중간 📌", () => {
+    expect(extractPlaceCandidates("춘천 오면 무조건 📌 1.5닭갈비 본점 | 강원 춘천시 후석로 413")).toEqual([
+      { name: "1.5닭갈비 본점", address: "강원 춘천시 후석로 413" },
+    ]);
+  });
+
+  it("대시 줄이라도 영업 · 가격 줄은 아니다", () => {
+    expect(extractPlaceCandidates("- 영업시간 11:00 - 21:00\n- 주차 가능")).toEqual([]);
+  });
+});
+
+describe("기기 안 모델 답 합치기", () => {
+  it("코드 블록 · 앞뒤 말이 붙은 답", () => {
+    expect(parseModelNames('네\n```json\n{"places":[{"name":"몽탄"},{"name":"몽탄"},{"name":"우래옥"}]}\n```')).toEqual(["몽탄", "우래옥"]);
+  });
+
+  it("깨진 답은 빈 목록", () => {
+    expect(parseModelNames("모르겠어요")).toEqual([]);
+    expect(parseModelNames('{"places":"몽탄"}')).toEqual([]);
+  });
+
+  it("동네 이름만 있는 답은 뺀다", () => {
+    expect(mergeCandidates([], ["을밀대", "염리동", "합정역"]).map((c) => c.name)).toEqual(["을밀대"]);
+  });
+
+  it("규칙 후보와 같은 가게는 주소가 있는 쪽을 남기고 새 이름만 붙인다", () => {
+    const rule = [{ name: "을지로 영남순대국", address: "서울 중구 다산로42길 19" }];
+    expect(mergeCandidates(rule, ["영남순대국", "필동면옥 (충무로)"])).toEqual([
+      { name: "을지로 영남순대국", address: "서울 중구 다산로42길 19" },
+      { name: "필동면옥", address: null, area: "충무로" },
+    ]);
   });
 });

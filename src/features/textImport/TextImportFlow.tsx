@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { PlaceRow } from "@/components/ui/PlaceRow";
-import { extractPlaceCandidates } from "@/domain/textPlaces";
+import { extractPlaceCandidates, mergeCandidates } from "@/domain/textPlaces";
 import { findCandidatePlaces, saveFoundPlace, type CandidateResult, type FoundHit } from "./actions";
+import { DeviceModelOption } from "./DeviceModelOption";
+import { readPlaceNames } from "./deviceReader";
 
 const TEXT_MAX = 5000;
 
@@ -19,6 +21,12 @@ export function TextImportFlow() {
   const [saved, setSaved] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  // '더 꼼꼼하게 찾기'를 받아 켜 둔 경우 — 규칙에 더해 기기 안 모델로도 읽는다
+  const [useModel, setUseModel] = useState(false);
+  const [reading, setReading] = useState(false);
+  // 처음 한 번은 모델을 그래픽 칩에 올리느라 오래 걸린다
+  const [readOnce, setReadOnce] = useState(false);
+  const onModelChange = useCallback((v: boolean) => setUseModel(v), []);
 
   // 원문 링크 — http(s) 만, 공유 추적 꼬리(?igsh= 등)는 뗀다
   const link = (() => {
@@ -36,15 +44,37 @@ export function TextImportFlow() {
   function find() {
     setMessage(null);
     setResults(null);
-    const candidates = extractPlaceCandidates(text);
-    if (candidates.length === 0) {
+    const rule = extractPlaceCandidates(text);
+    if (rule.length === 0 && !useModel) {
       setMessage({ text: "글에서 가게 이름을 찾지 못했어요. 위치 표시 뒤에 가게 이름이 적힌 줄이 있는지 확인해 주세요.", error: true });
       return;
     }
+    // 전환 밖에서 바로 표시 — 처음 모델을 올리는 데 시간이 걸린다
+    if (useModel) setReading(true);
     start(async () => {
+      let candidates = rule;
+      let fellBack = false;
+      if (useModel) {
+        try {
+          candidates = mergeCandidates(rule, await readPlaceNames(text));
+          setReadOnce(true);
+        } catch {
+          // 모델이 실패해도 규칙으로 찾은 것으로 계속
+          fellBack = true;
+        } finally {
+          setReading(false);
+        }
+      }
+      if (candidates.length === 0) {
+        return setMessage({
+          text: fellBack ? "이번엔 문장 속 가게를 읽지 못했어요. 잠시 뒤 다시 찾아 주세요." : "글에서 가게 이름을 찾지 못했어요. 가게 이름이 글에 적혀 있는지 확인해 주세요.",
+          error: true,
+        });
+      }
       const res = await findCandidatePlaces(candidates);
       if (res.error) return setMessage({ text: res.error, error: true });
       setResults(res.results);
+      if (fellBack) setMessage({ text: "이번엔 기본 방식으로만 찾았어요." });
     });
   }
 
@@ -90,14 +120,18 @@ export function TextImportFlow() {
           {link.ok ? "넣으면 저장한 가게의 나만 보는 메모로 남아요." : "https:// 로 시작하는 링크를 넣어 주세요."}
         </span>
       </label>
+      <DeviceModelOption onChange={onModelChange} busy={reading} />
       <button
         type="button"
         disabled={pending || text.trim().length < 2 || !link.ok}
         onClick={find}
         className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:bg-surface disabled:text-subtle disabled:shadow-none"
       >
-        {pending && !busy ? "찾는 중" : "가게 찾기"}
+        {reading ? "글 읽는 중" : pending && !busy ? "찾는 중" : "가게 찾기"}
       </button>
+      <p role="status" className={reading ? "-mt-2 text-caption text-muted" : "sr-only"}>
+        {reading ? (readOnce ? "글을 읽고 있어요." : "글을 읽고 있어요. 처음 한 번은 20초쯤 걸려요.") : ""}
+      </p>
       <p role="alert" className={message?.error ? "text-meta text-danger" : "sr-only"}>
         {message?.error ? message.text : ""}
       </p>

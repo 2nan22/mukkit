@@ -10,8 +10,12 @@ const ADDR_MAX = 80;
 const TAG_MAX = 3;
 // 장소 표시 이모지 — 음식 · 식기 이모지(🍴 🍽 🥢)는 메뉴 · 가격 줄에 흔해 쓰지 않는다
 const MARKER = /^[\s•\-*·>]*(?:📍|📌|🏠|🏪|🗺️?)\s*/u;
-// 번호 · 체크 목록 줄
-const LISTED = /^\s*(?:\d{1,2}(?:\.\s|\)\s*)|[①-⑳]|✔️?|✅|☑️?|▶️?|►|■|□|◾️?)\s*/u;
+// 번호 · 체크 · 대시 목록 줄, 영상 설명의 시간표('00:42 가게')
+const LISTED = /^\s*(?:\d{1,2}(?:\.\s|\)\s*)|\d{1,2}:\d{2}(?::\d{2})?\s+|[-–•]\s+|[①-⑳]|✔️?|✅|☑️?|▶️?|►|■|□|◾️?)\s*/u;
+// 목록 줄 뒤 설명 — '어니언 성수 - 빵 맛집' · '카페 레이어드 안국점: 스콘 필수'
+const TRAILING_NOTE = /\s+[-–—]\s+.*$|\s*[:：]\s+.*$/;
+// 줄 중간 위치 표시 — '춘천 오면 무조건 📌 1.5닭갈비 본점'
+const MID_MARKER = /📍|📌/u;
 const NAME_LABEL = /^(?:상호명?|가게명?|가게 이름|식당|매장|업체명?|장소|place|name)\s*[:：\-]\s*/i;
 const ADDR_LABEL = /^(?:주소|위치|address|addr)\s*[:：\-]\s*/i;
 const BRACKET = /^[[『「<〈【](.{2,30}?)[\]』」>〉】]/;
@@ -73,7 +77,9 @@ export function extractPlaceCandidates(text: string): PlaceCandidate[] {
     pendingAddress = null;
   };
 
-  for (const raw of lines) {
+  for (const whole of lines) {
+    const at = whole.search(MID_MARKER);
+    const raw = at > 0 ? whole.slice(at) : whole;
     const marked = MARKER.test(raw);
     const listed = !marked && LISTED.test(raw);
     const body = clean(marked ? raw.replace(MARKER, "") : listed ? raw.replace(LISTED, "") : raw);
@@ -90,11 +96,12 @@ export function extractPlaceCandidates(text: string): PlaceCandidate[] {
     const bracket = body.match(BRACKET);
     if (bracket) {
       const name = clean(bracket[1]);
-      if (okName(name)) push({ name, address: findAddress(body) });
+      // '[서울 합정 맛집]' 같은 블로그 머리말은 가게가 아니다
+      if (okName(name) && !GENERIC_TAG.test(name)) push({ name, address: findAddress(body) });
       continue;
     }
     if (marked || listed) {
-      push(parseNameLine(body));
+      push(parseNameLine(findAddress(body) ? body : body.replace(TRAILING_NOTE, "")));
       continue;
     }
     // 주소만 있는 줄 (건물 · 층 · 호 · 괄호 동네가 붙어도)
@@ -123,4 +130,37 @@ export function candidateQuery(c: PlaceCandidate): string {
   const addr = c.address ? findAddress(c.address) : null;
   const region = addr ? addr.split(/\s+/).slice(0, 2).join(" ") : (c.area ?? "");
   return region ? `${region} ${c.name}` : c.name;
+}
+
+// 기기 안 모델의 답 — {"places":[{"name":"…"}]} (코드 블록 · 앞뒤 말이 붙어도) → 가게 이름들
+export function parseModelNames(raw: string): string[] {
+  const json = raw.replace(/```(?:json)?/g, "").match(/\{[\s\S]*\}/)?.[0];
+  if (!json) return [];
+  let places: unknown;
+  try {
+    places = (JSON.parse(json) as { places?: unknown }).places;
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(places)) return [];
+  const names = places
+    .map((p) => clean(typeof p === "string" ? p : typeof p?.name === "string" ? p.name : ""))
+    .filter(okName);
+  return [...new Set(names)].slice(0, MAX);
+}
+
+const compact = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+
+// 규칙 후보에 모델이 더 찾은 이름을 붙인다 — 같은 가게(한쪽이 다른 쪽을 포함)는 주소가 있는 규칙 후보를 남긴다
+export function mergeCandidates(rule: PlaceCandidate[], modelNames: string[]): PlaceCandidate[] {
+  const out = [...rule];
+  for (const n of modelNames) {
+    const c = parseNameLine(n);
+    // 모델이 동네 · 역 이름을 가게로 내는 경우가 있다('염리동')
+    if (!c?.name || ONLY_REGION.test(c.name)) continue;
+    const k = compact(c.name);
+    if (out.some((o) => compact(o.name).includes(k) || k.includes(compact(o.name)))) continue;
+    out.push(c);
+  }
+  return out.slice(0, MAX);
 }
