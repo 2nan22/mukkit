@@ -10,7 +10,8 @@ import { addToWantToGo, setListSaved } from "./actions";
 import type { PublicList } from "./publicList";
 
 // save: 로그인한 남의 리스트일 때 — 리스트 저장 · 가게를 가고 싶은 곳으로 담기
-type Save = { saved: boolean; savedPlaceIds: string[] };
+// seenAt: 저장해 둔 리스트를 마지막으로 본 때 — 그 뒤 담긴 곳에 '새로 추가'
+type Save = { saved: boolean; savedPlaceIds: string[]; seenAt: string | null };
 
 export function PublicListView({ list, signedIn = false, covers = {}, save = null }: { list: PublicList; signedIn?: boolean; covers?: Record<string, string>; save?: Save | null }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -18,7 +19,7 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
   const [saved, setSaved] = useState(save?.saved ?? false);
   const [mine, setMine] = useState<string[]>(save?.savedPlaceIds ?? []);
   const [busy, setBusy] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
+  const [message, setMessage] = useState<{ text: string; error?: boolean; undo?: boolean } | null>(null);
   const [pending, start] = useTransition();
   const remaining = list.places.filter((p) => !mine.includes(p.placeId));
 
@@ -30,7 +31,7 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
       setBusy(null);
       if (res.error) return setMessage({ text: res.error, error: true });
       setMine((m) => [...new Set([...m, ...ids])]);
-      setMessage({ text: ids.length === 1 ? "가고 싶은 곳에 담았어요" : `${res.added ?? ids.length}곳을 가고 싶은 곳에 담았어요` });
+      setMessage({ text: ids.length === 1 ? "가고 싶은 곳으로 저장했어요" : `${res.added ?? ids.length}곳을 가고 싶은 곳으로 저장했어요` });
     });
   }
   function toggleSave() {
@@ -42,7 +43,7 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
       if (res.error) {
         setSaved(!on);
         setMessage({ text: res.error, error: true });
-      } else setMessage({ text: on ? "리스트 탭에 저장했어요" : "저장을 풀었어요" });
+      } else setMessage(on ? { text: "리스트 탭에 저장했어요" } : { text: "저장을 풀었어요", undo: true });
     });
   }
 
@@ -54,6 +55,14 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
         </div>
         <BackButton fallback="/" className="absolute top-3 left-3 z-10 rounded-full bg-white shadow-float" />
       </div>
+      {save && remaining.length > 0 && (
+        <div className="flex items-center justify-between px-5 pt-3">
+          <span className="text-meta text-muted">내 장소에 없는 곳 {remaining.length}곳</span>
+          <button type="button" disabled={pending} onClick={() => add(remaining.map((p) => p.placeId), "all")} className="h-11 text-meta font-semibold text-ink disabled:opacity-50">
+            {busy === "all" ? "저장 중" : "모두 가고 싶은 곳으로 저장"}
+          </button>
+        </div>
+      )}
       <ul className="flex flex-col px-5 pt-2">
         {list.places.map((p) => (
           <li key={p.placeId}>
@@ -67,19 +76,24 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
               cuisine={p.cuisine}
               tier={p.tier}
               meta={[CUISINE_LABEL[p.cuisine], p.categoryName, regionOf(p.address)].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i).join(" · ")}
+              note={save?.seenAt && p.addedAt && new Date(p.addedAt) > new Date(save.seenAt) ? <span className="font-bold text-ink">새로 추가</span> : undefined}
               action={
                 save &&
                 (mine.includes(p.placeId) ? (
-                  <span className="flex h-11 w-14 shrink-0 items-center justify-center text-meta text-muted">저장됨</span>
+                  // 이미 내 장소에 있음 — 누를 수 없는 표시
+                  <span role="img" aria-label="내 장소에 있음" className="flex size-11 shrink-0 items-center justify-center text-ink">
+                    {flag(true)}
+                  </span>
                 ) : (
                   <button
                     type="button"
                     disabled={pending}
                     onClick={() => add([p.placeId], p.placeId)}
-                    aria-label={`${p.name} 가고 싶은 곳에 담기`}
-                    className="flex h-11 w-14 shrink-0 items-center justify-center text-meta font-semibold text-ink disabled:opacity-50"
+                    aria-label={`${p.name} 가고 싶은 곳으로 저장`}
+                    aria-busy={busy === p.placeId}
+                    className="flex size-11 shrink-0 items-center justify-center text-muted disabled:opacity-50"
                   >
-                    {busy === p.placeId ? "담는 중" : "담기"}
+                    {flag(false)}
                   </button>
                 ))
               }
@@ -87,22 +101,20 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
           </li>
         ))}
       </ul>
-      {/* 저장 바가 기본 여백보다 높아 목록 끝이 가리지 않게 */}
-      {save && <div aria-hidden="true" className="h-16" />}
+
       {save && (
         <div className="fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-[480px] flex-col gap-1 bg-white px-5 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-sheet">
-          <p role={message?.error ? "alert" : "status"} className={`min-h-5 text-center text-meta ${message?.error ? "text-danger" : "text-ink-2"}`}>
-            {message?.text ?? ""}
-          </p>
-          {remaining.length > 0 && (
-            <button type="button" disabled={pending} onClick={() => add(remaining.map((p) => p.placeId), "all")} className="h-11 text-meta font-semibold text-ink-2 disabled:opacity-50">
-              {busy === "all" ? "담는 중" : `${remaining.length}곳 모두 가고 싶은 곳에 담기`}
-            </button>
-          )}
+          <div role={message?.error ? "alert" : "status"} className={message ? "flex min-h-9 items-center justify-center gap-2 text-meta" : "sr-only"}>
+            <span className={message?.error ? "text-danger" : "text-ink-2"}>{message?.text ?? ""}</span>
+            {message?.undo && (
+              <button type="button" onClick={toggleSave} className="h-9 font-semibold text-ink underline underline-offset-[3px]">
+                되돌리기
+              </button>
+            )}
+          </div>
           <button
             type="button"
             disabled={pending && busy === null}
-            aria-pressed={saved}
             onClick={toggleSave}
             className={`flex h-btn-l items-center justify-center gap-1.5 rounded-btn-l text-[16px] font-bold ${saved ? "border border-line-strong bg-white text-ink" : "bg-brand text-white raised-brand"}`}
           >
@@ -116,5 +128,14 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
         </div>
       )}
     </>
+  );
+}
+
+// 가고 싶은 곳 표시 — 깃발. 채우면 이미 내 장소에 있음
+function flag(filled: boolean) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 21V4h11l-2 4 2 4H6" />
+    </svg>
   );
 }

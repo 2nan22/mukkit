@@ -104,7 +104,13 @@ async function ListsContent() {
             </svg>
           </Link>
         ))}
-        {lists.length === 0 && (
+        {/* 저장한 리스트가 있으면 빈 안내는 한 줄로 — 아래 칸을 밀어내지 않게 */}
+        {lists.length === 0 && saved.length > 0 && (
+          <Link href="/lists/new" className="flex h-11 items-center text-meta text-muted">
+            아직 만든 리스트가 없어요 · <span className="ml-1 font-semibold text-ink">새 리스트 만들기</span>
+          </Link>
+        )}
+        {lists.length === 0 && saved.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <span className="text-body font-semibold">아직 만든 리스트가 없어요</span>
             <span className="text-meta text-muted">지역 · 음식 종류 · 테마로 저장한 곳을 묶어 보세요</span>

@@ -51,11 +51,14 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
 
   // 로그인한 남의 리스트 — 저장 · 담기. 저장해 둔 리스트면 본 시각을 갱신('새로 추가된 곳' 지움)
   const saveable = Boolean(me && meta && !meta.mine);
-  const [savedPlaceIds, covers] = await Promise.all([
+  // 갱신 전 본 시각을 먼저 읽어 '새로 추가' 표시에 쓴다
+  const [savedPlaceIds, covers, seen] = await Promise.all([
     saveable && me ? getMySavedPlaceIds(supabase, me, list.places.map((p) => p.placeId)) : Promise.resolve([]),
     getPlaceCovers(supabase, list.places.map((p) => p.placeId)),
-    meta?.saved && me ? supabase.from("saved_lists").update({ last_seen_at: new Date().toISOString() }).eq("user_id", me).eq("list_id", listId) : Promise.resolve(null),
+    meta?.saved && me ? supabase.from("saved_lists").select("last_seen_at").eq("user_id", me).eq("list_id", listId).maybeSingle() : Promise.resolve(null),
   ]);
+  const seenAt = (seen?.data?.last_seen_at as string | undefined) ?? null;
+  if (seenAt && me) await supabase.from("saved_lists").update({ last_seen_at: new Date().toISOString() }).eq("user_id", me).eq("list_id", listId);
 
   return (
     <>
@@ -63,7 +66,7 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
         <span className="text-meta font-semibold text-muted">{list.ownerNickname}님의 리스트</span>
         <h1 className="text-title font-bold tracking-tight">{list.name}</h1>
         <span className="text-meta text-muted">
-          {list.places.length}곳{meta && meta.saves > 0 ? ` · 저장 ${meta.saves}` : ""}
+          {list.places.length}곳{meta && meta.saves > 0 ? ` · ${meta.saves}명 저장` : ""}
           {list.description && ` · ${list.description}`}
         </span>
       </header>
@@ -71,7 +74,7 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
         list={list}
         signedIn={signedIn}
         covers={Object.fromEntries([...covers].map(([id, c]) => [id, c.url]))}
-        save={saveable && meta ? { saved: meta.saved, savedPlaceIds } : null}
+        save={saveable && meta ? { saved: meta.saved, savedPlaceIds, seenAt } : null}
       />
       {!signedIn && (
         <div className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-[480px] bg-white px-5 pt-3 pb-5 shadow-sheet">
