@@ -12,6 +12,9 @@ export async function GET(request: Request): Promise<Response> {
   const result = await runClosureCheck(admin);
   // 끝났거나 지난 약속의 위치 기록 정리 — 같은 새벽 작업에 붙인다
   const cleaned = await admin.rpc("cleanup_meetup_points");
+  // 90일 지난 알림 정리
+  const oldNotes = await admin.rpc("cleanup_notifications");
+  console.info("[cron notifications-cleanup]", JSON.stringify({ deleted: oldNotes.data ?? null, error: oldNotes.error?.code ?? null }));
   console.info("[cron meetup-cleanup]", JSON.stringify({ deleted: cleaned.data ?? null, error: cleaned.error?.code ?? null }));
   console.info("[cron closure-check]", JSON.stringify({ ok: result.ok, checked: result.checked, closed: result.closed, reopened: result.reopened, detail: result.detail, error: result.error }));
   return Response.json(result, { status: result.ok ? 200 : 500 });

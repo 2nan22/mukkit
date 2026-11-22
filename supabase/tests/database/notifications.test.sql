@@ -1,7 +1,7 @@
 -- 앱 안 알림함 — 트리거로 생성 · 받는 사람만 · 좋아요는 하나로 · 풀면 지움 · 차단한 사이 제외
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('d7111111-1111-1111-1111-111111111111', 'nt-a@test.local'),
@@ -28,6 +28,7 @@ select is((select place_name from public.my_notifications() where kind = 'like')
 select is(public.unread_notifications(), 3, '안 읽음 3');
 update public.notifications set read_at = now() where kind = 'follow';
 select is(public.unread_notifications(), 2, '읽음 표시 반영');
+select throws_ok($$update public.notifications set kind = 'comment' where kind = 'follow'$$, '42501', null, '읽음 말고 다른 칸은 못 고침');
 
 -- 평가 주인이 답하면 앞서 댓글 단 사람에게
 insert into public.rating_comments (owner_id, place_id, author_id, body) values ('d7111111-1111-1111-1111-111111111111', 'a9800000-0000-0000-0000-000000000001', 'd7111111-1111-1111-1111-111111111111', '꼭 가 보세요');
@@ -37,7 +38,20 @@ select is((select kind from public.my_notifications()), 'comment', '주인의 �
 -- 좋아요를 풀면 알림도 사라짐
 delete from public.rating_likes where user_id = 'd7222222-2222-2222-2222-222222222222';
 select set_config('request.jwt.claims', '{"sub":"d7111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
-select is((select count(*)::int from public.my_notifications() where kind = 'like'), 0, '좋아요 풀면 알림 지움');
+select is((select count(*)::int from public.my_notifications() where kind = 'like'), 0, '좋아요 풀면 목록에서 빠짐');
+-- 다시 눌러도 새로 알리지 않음
+reset role;
+update public.notifications set read_at = now() where kind = 'like';
+insert into public.rating_likes (user_id, owner_id, place_id) values ('d7222222-2222-2222-2222-222222222222', 'd7111111-1111-1111-1111-111111111111', 'a9800000-0000-0000-0000-000000000001');
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"d7111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select is((select read::text from public.my_notifications() where kind = 'like'), 'true', '다시 눌러도 안 읽음으로 돌아가지 않음');
+-- 댓글을 지우면 알림도 사라짐
+reset role;
+delete from public.rating_comments where author_id = 'd7222222-2222-2222-2222-222222222222';
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"d7111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select is((select count(*)::int from public.my_notifications() where kind = 'comment'), 0, '지운 댓글의 알림은 사라짐');
 
 -- 차단하면 그 사람 알림은 안 보임
 reset role;

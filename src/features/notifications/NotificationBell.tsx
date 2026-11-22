@@ -14,7 +14,7 @@ export async function NotificationBell() {
         <path d="M10 20a2 2 0 0 0 4 0" />
       </svg>
       {unread > 0 && (
-        <span aria-hidden="true" className="absolute top-1.5 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] leading-none font-bold text-white">
+        <span aria-hidden="true" className="absolute top-1 right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-ink px-1 text-[11px] leading-none font-bold text-white">
           {unread > 9 ? "9+" : unread}
         </span>
       )}
