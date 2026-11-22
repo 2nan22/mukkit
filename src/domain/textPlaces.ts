@@ -156,7 +156,8 @@ export function mergeCandidates(rule: PlaceCandidate[], modelNames: string[]): P
   const out = [...rule];
   for (const n of modelNames) {
     const c = parseNameLine(n);
-    if (!c?.name) continue;
+    // 모델이 동네 · 역 이름을 가게로 내는 경우가 있다('염리동')
+    if (!c?.name || ONLY_REGION.test(c.name)) continue;
     const k = compact(c.name);
     if (out.some((o) => compact(o.name).includes(k) || k.includes(compact(o.name)))) continue;
     out.push(c);

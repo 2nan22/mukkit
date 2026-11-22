@@ -24,6 +24,8 @@ export function TextImportFlow() {
   // '더 꼼꼼하게 찾기'를 받아 켜 둔 경우 — 규칙에 더해 기기 안 모델로도 읽는다
   const [useModel, setUseModel] = useState(false);
   const [reading, setReading] = useState(false);
+  // 처음 한 번은 모델을 그래픽 칩에 올리느라 오래 걸린다
+  const [readOnce, setReadOnce] = useState(false);
   const onModelChange = useCallback((v: boolean) => setUseModel(v), []);
 
   // 원문 링크 — http(s) 만, 공유 추적 꼬리(?igsh= 등)는 뗀다
@@ -55,6 +57,7 @@ export function TextImportFlow() {
       if (useModel) {
         try {
           candidates = mergeCandidates(rule, await readPlaceNames(text));
+          setReadOnce(true);
         } catch {
           // 모델이 실패해도 규칙으로 찾은 것으로 계속
           fellBack = true;
@@ -63,12 +66,15 @@ export function TextImportFlow() {
         }
       }
       if (candidates.length === 0) {
-        return setMessage({ text: "글에서 가게 이름을 찾지 못했어요. 가게 이름이 글에 적혀 있는지 확인해 주세요.", error: true });
+        return setMessage({
+          text: fellBack ? "이번엔 문장 속 가게를 읽지 못했어요. 잠시 뒤 다시 찾아 주세요." : "글에서 가게 이름을 찾지 못했어요. 가게 이름이 글에 적혀 있는지 확인해 주세요.",
+          error: true,
+        });
       }
       const res = await findCandidatePlaces(candidates);
       if (res.error) return setMessage({ text: res.error, error: true });
       setResults(res.results);
-      if (fellBack) setMessage({ text: "꼼꼼하게 찾기가 잠시 안 돼 기본 방식으로 찾았어요." });
+      if (fellBack) setMessage({ text: "이번엔 기본 방식으로만 찾았어요." });
     });
   }
 
@@ -114,7 +120,7 @@ export function TextImportFlow() {
           {link.ok ? "넣으면 저장한 가게의 나만 보는 메모로 남아요." : "https:// 로 시작하는 링크를 넣어 주세요."}
         </span>
       </label>
-      <DeviceModelOption onChange={onModelChange} />
+      <DeviceModelOption onChange={onModelChange} busy={reading} />
       <button
         type="button"
         disabled={pending || text.trim().length < 2 || !link.ok}
@@ -123,7 +129,9 @@ export function TextImportFlow() {
       >
         {reading ? "글 읽는 중" : pending && !busy ? "찾는 중" : "가게 찾기"}
       </button>
-      {reading && <p className="-mt-2 text-caption text-muted">이 기기에서 글을 읽고 있어요. 처음엔 20초쯤 걸려요.</p>}
+      <p role="status" className={reading ? "-mt-2 text-caption text-muted" : "sr-only"}>
+        {reading ? (readOnce ? "글을 읽고 있어요." : "글을 읽고 있어요. 처음 한 번은 20초쯤 걸려요.") : ""}
+      </p>
       <p role="alert" className={message?.error ? "text-meta text-danger" : "sr-only"}>
         {message?.error ? message.text : ""}
       </p>

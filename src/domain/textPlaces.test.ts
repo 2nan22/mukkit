@@ -115,6 +115,10 @@ describe("기기 안 모델 답 합치기", () => {
     expect(parseModelNames('{"places":"몽탄"}')).toEqual([]);
   });
 
+  it("동네 이름만 있는 답은 뺀다", () => {
+    expect(mergeCandidates([], ["을밀대", "염리동", "합정역"]).map((c) => c.name)).toEqual(["을밀대"]);
+  });
+
   it("규칙 후보와 같은 가게는 주소가 있는 쪽을 남기고 새 이름만 붙인다", () => {
     const rule = [{ name: "을지로 영남순대국", address: "서울 중구 다산로42길 19" }];
     expect(mergeCandidates(rule, ["영남순대국", "필동면옥 (충무로)"])).toEqual([
