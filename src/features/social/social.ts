@@ -109,7 +109,7 @@ async function withMedia(supabase: SupabaseClient, rows: RatingRow[], owner?: Pe
 }
 
 export async function getProfileRatings(supabase: SupabaseClient, owner: Person): Promise<SharedRating[]> {
-  const { data, error } = await supabase.rpc("profile_ratings", { p_owner: owner.id });
+  const { data, error } = await supabase.rpc("profile_ratings", { p_owner: owner.id, p_limit: 200 });
   if (error) throw new SocialError("profile_ratings", error.code);
   return withMedia(supabase, data as RatingRow[], owner);
 }

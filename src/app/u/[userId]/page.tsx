@@ -1,3 +1,4 @@
+import { getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { AppHeader } from "@/components/AppHeader";
@@ -44,11 +45,16 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
     me ? isFollowing(supabase, me, person.id) : Promise.resolve(false),
     getProfileRatings(supabase, person),
     getProfileStats(supabase, person.id),
-    getProfileLists(supabase, person.id),
+    // 본인 프로필은 비공개 리스트까지 (남에게는 공개 리스트만)
+    me === person.id
+      ? getMyLists(supabase, me).then((ls) => ls.map((l) => ({ id: l.id, name: l.name, count: l.count, visibility: l.visibility })))
+      : getProfileLists(supabase, person.id).then((ls) => ls.map((l) => ({ ...l, visibility: null }))),
     getBio(supabase, person.id),
     me && me !== person.id ? getTasteWith(supabase, person.id) : Promise.resolve(null),
   ]);
   const rated = stats.three + stats.two + stats.one + stats.notRecommended;
+  // 숫자는 집계 값으로 — 아래 목록은 최근 것부터 일부만 불러온다
+  const ratedTotal = rated + stats.sponsored;
   const share = (n: number) => (rated ? (n / rated) * 100 : 0);
   const showLists = tab === "lists";
 
@@ -60,7 +66,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate text-section font-bold">{person.nickname}</span>
             <span className="text-meta text-muted">
-              평가 {ratings.length}곳 · 팔로워 {counts.followers} · 팔로잉 {counts.following}
+              평가 {ratedTotal}곳 · 팔로워 {counts.followers} · 팔로잉 {counts.following}
             </span>
           </div>
         </div>
@@ -102,7 +108,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
 
       <div role="tablist" className="grid grid-cols-2 border-b border-line">
         <Link role="tab" aria-selected={!showLists} href={`/u/${person.id}`} replace className={`flex h-11 items-center justify-center text-body ${!showLists ? "border-b-2 border-ink font-bold" : "text-subtle"}`}>
-          평가 {ratings.length}
+          평가 {ratedTotal}
         </Link>
         <Link role="tab" aria-selected={showLists} href={`/u/${person.id}?tab=lists`} replace className={`flex h-11 items-center justify-center text-body ${showLists ? "border-b-2 border-ink font-bold" : "text-subtle"}`}>
           리스트 {lists.length}
@@ -112,12 +118,14 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
       <div className="px-5">
         {showLists ? (
           lists.length === 0 ? (
-            <p className="py-10 text-center text-meta text-muted">공개한 리스트가 아직 없어요</p>
+            <p className="py-10 text-center text-meta text-muted">{me === person.id ? "만든 리스트가 아직 없어요" : "공개한 리스트가 아직 없어요"}</p>
           ) : (
             lists.map((l) => (
-              <Link key={l.id} href={`/l/${l.id}`} className="flex min-h-16 flex-col justify-center gap-0.5 border-b border-line py-2">
+              <Link key={l.id} href={l.visibility ? `/lists/${l.id}` : `/l/${l.id}`} className="flex min-h-16 flex-col justify-center gap-0.5 border-b border-line py-2">
                 <span className="truncate text-body font-bold">{l.name}</span>
-                <span className="text-meta text-muted">{l.count}곳</span>
+                <span className="text-meta text-muted">
+                  {l.count}곳{l.visibility && ` · ${VISIBILITY_LABEL[l.visibility]}`}
+                </span>
               </Link>
             ))
           )
