@@ -1,14 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { addComment } from "./actions";
 
 const MAX = 300;
 
-// 댓글 쓰기 — 화면 아래. 남기면 목록을 새로 받고 목록 맨 아래로
-export function CommentForm({ ownerId, placeId }: { ownerId: string; placeId: string }) {
-  const router = useRouter();
+// 댓글 쓰기 — 목록 아래. 남기면 onPosted 로 목록을 새로 받는다
+export function CommentForm({ ownerId, placeId, onPosted }: { ownerId: string; placeId: string; onPosted: () => Promise<void> }) {
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -22,11 +20,8 @@ export function CommentForm({ ownerId, placeId }: { ownerId: string; placeId: st
       const res = await addComment({ ownerId, placeId, body });
       if (res.error) return setError(res.error);
       setBody("");
-      router.refresh();
-      requestAnimationFrame(() => {
-        const list = document.getElementById("comment-scroll");
-        list?.scrollTo({ top: list.scrollHeight });
-      });
+      if (box.current) box.current.style.height = "";
+      await onPosted();
     });
   }
 

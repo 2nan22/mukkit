@@ -6,6 +6,7 @@ import { z } from "zod";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { notifyComment } from "./notify";
+import { getComments, type RatingComment } from "./reactions";
 
 type Result = { error?: string };
 
@@ -50,4 +51,16 @@ export async function deleteComment(commentId: string): Promise<{ error?: string
   const { data, error } = await supabase.from("rating_comments").delete().eq("id", commentId).select("id");
   if (error || !data?.length) return { error: "댓글을 지우지 못했어요. 다시 시도해 주세요." };
   return { done: "댓글을 지웠어요." };
+}
+
+// 댓글 시트 · 남긴 뒤 목록 다시 받기
+export async function loadComments(input: { ownerId: string; placeId: string }): Promise<{ comments: RatingComment[]; error?: string }> {
+  const t = Target.safeParse(input);
+  if (!t.success) return { comments: [], error: "댓글을 불러오지 못했어요." };
+  const { supabase } = await requireUser();
+  try {
+    return { comments: await getComments(supabase, t.data.ownerId, t.data.placeId) };
+  } catch {
+    return { comments: [], error: "댓글을 불러오지 못했어요. 다시 시도해 주세요." };
+  }
 }
