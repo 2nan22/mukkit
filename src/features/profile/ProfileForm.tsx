@@ -32,8 +32,8 @@ export function ProfileForm({ nickname, bio }: { nickname: string; bio: string }
           {state.error}
         </p>
       )}
-      <div className="flex-1" />
-      <button type="submit" disabled={pending} className="mb-5 h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
+      {/* 입력칸이 둘뿐이라 버튼은 바로 아래 — 맨 아래로 밀면 안드로이드 홈 화면 앱에서 내비게이션 바에 가려 스크롤해야 보임 */}
+      <button type="submit" disabled={pending} className="mt-1 h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
         {pending ? "저장하는 중" : "저장"}
       </button>
     </form>
