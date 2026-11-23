@@ -30,7 +30,7 @@ export async function searchMyPlaces(supabase: SupabaseClient, me: string, q: st
   }));
 }
 
-// 카카오 장소 ID → 이미 있는 마이슐랭 장소 · 내 등급
+// 카카오 장소 ID → 이미 있는 먹킷 장소 · 내 등급
 export async function knownKakaoPlaces(supabase: SupabaseClient, me: string, kakaoIds: string[]): Promise<Map<string, { placeId: string; tier: Tier | null }>> {
   const out = new Map<string, { placeId: string; tier: Tier | null }>();
   if (kakaoIds.length === 0) return out;

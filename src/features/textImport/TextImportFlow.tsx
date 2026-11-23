@@ -17,7 +17,7 @@ export function TextImportFlow() {
   const [url, setUrl] = useState("");
   const [results, setResults] = useState<CandidateResult[] | null>(null);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
-  // 저장한 가게 → 마이슐랭 장소 (상세로 가는 링크)
+  // 저장한 가게 → 먹킷 장소 (상세로 가는 링크)
   const [saved, setSaved] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, start] = useTransition();

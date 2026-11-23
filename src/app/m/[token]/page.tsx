@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { Suspense } from "react";
 import { PURPOSE_LABEL, type Purpose } from "@/domain/meetup";
 import { JoinButton } from "@/features/meetup/JoinButton";
@@ -30,7 +31,7 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
   if (!invite || invite.status !== "open") {
     return (
       <section className="flex flex-col gap-3">
-        <span className="text-body font-bold">마이슐랭</span>
+        <Wordmark size="sm" />
         <h1 className="text-title font-bold tracking-tight">열 수 없는 약속이에요</h1>
         <p className="text-body leading-relaxed text-ink-2">이미 끝났거나 취소된 약속이에요. 보낸 분에게 새 링크를 부탁해 보세요.</p>
       </section>
@@ -46,7 +47,7 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
   return (
     <>
       <section className="flex flex-1 flex-col gap-3">
-        <span className="text-body font-bold">마이슐랭</span>
+        <Wordmark size="sm" />
         <h1 className="text-title font-bold leading-snug tracking-tight">
           {invite.host_nickname}님이
           <br />

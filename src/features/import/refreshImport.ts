@@ -43,14 +43,14 @@ export async function recordImportSource(client: SupabaseClient, userId: string,
 }
 
 // 원본을 다시 읽어 반영
-// - 빠진 곳: 마이슐랭 리스트 · 원본 기록에서만 뺀다 (내 장소 · 등급 · 메모 · 사진은 그대로)
+// - 빠진 곳: 먹킷 리스트 · 원본 기록에서만 뺀다 (내 장소 · 등급 · 메모 · 사진은 그대로)
 // - 새 곳: 가져올 때 고른 방식대로 추가 (전에 있던 곳은 다시 넣지 않는다 — 내가 리스트에서 뺀 곳이 되살아나지 않게)
 // - 원본 메모 · 리스트 이름: 내가 고치지 않은 것만 원본대로
 // - 원본이 일부만 오거나 절반 넘게 빠지면 반영하지 않고 실패로 남긴다
 export async function refreshImport(client: SupabaseClient, userId: string, key: ImportSourceKey, opts: { placeSource?: PlaceSource } = {}): Promise<RefreshResult> {
   const where = { user_id: userId, source: key.source, source_list_id: key.sourceListId };
 
-  // 그냥 저장한 리스트인데 마이슐랭 리스트를 지웠으면 새로 고침을 멈춘다
+  // 그냥 저장한 리스트인데 먹킷 리스트를 지웠으면 새로 고침을 멈춘다
   let listId: string | null = null;
   if (key.mode.kind === "plain") {
     const own = await client.from("lists").select("id").eq("owner_id", userId).eq("source", key.source).eq("source_list_id", key.sourceListId).maybeSingle();
@@ -109,7 +109,7 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
   const added = list.places.filter((p) => !known.has(p.sourcePlaceId));
   const saved = added.length > 0 ? await saveImportedList(client, userId, { ...list, places: added }, key.mode) : null;
 
-  // 빠진 곳 — 원본 기록 · 마이슐랭 리스트에서만
+  // 빠진 곳 — 원본 기록 · 먹킷 리스트에서만
   if (gone.length > 0) {
     await client.from("imported_items").delete().match(where).in("source_place_id", gone.map((g) => g.source_place_id));
     if (listId) {
@@ -120,7 +120,7 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
     }
   }
 
-  // 리스트 이름 — 마이슐랭에서 고치지 않았으면 원본 이름으로
+  // 리스트 이름 — 먹킷에서 고치지 않았으면 원본 이름으로
   if (listId && prev.data && list.name.trim()) {
     await client
       .from("lists")

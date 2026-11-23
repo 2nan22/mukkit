@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { hasLocalDb, runId, signUpTestUser } from "@/test/localSupabase";
+import { hasLocalDb, runId, signUpTestUser, testAdminClient } from "@/test/localSupabase";
 import { addPlaces, createList, deleteList, getMyList, getMyLists, ListNotFoundError, removePlaces, updateList } from "./lists";
 
 // 로컬 Supabase 에 실제로 쓴다 — `pnpm test:local-db` 로만 돈다
@@ -14,7 +14,7 @@ async function makePlaces(supabase: SupabaseClient, n: number): Promise<string[]
     lng: 127,
     cuisine: "korean",
   }));
-  const { data, error } = await supabase.from("places").insert(rows).select("id");
+  const { data, error } = await testAdminClient().from("places").insert(rows).select("id");
   if (error) throw error;
   return data.map((r) => r.id as string);
 }

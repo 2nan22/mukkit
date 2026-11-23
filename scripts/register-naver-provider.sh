@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENV_FILE="${MYCHELIN_SUPABASE_ENV:-$ROOT/supabase/.env}"
+ENV_FILE="${MUKKIT_SUPABASE_ENV:-${MYCHELIN_SUPABASE_ENV:-$ROOT/supabase/.env}}"
 
 read_env() { grep -E "^$1=" "$ENV_FILE" 2>/dev/null | tail -1 | cut -d= -f2- || true; }
 

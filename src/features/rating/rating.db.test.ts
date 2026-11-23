@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { hasLocalDb, runId, signUpTestUser } from "@/test/localSupabase";
+import { hasLocalDb, runId, signUpTestUser, testAdminClient } from "@/test/localSupabase";
 import { countUnrated, getSavedPlace, nextUnrated, updateUserPlace, UserPlaceNotFoundError } from "./rating";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -14,7 +14,7 @@ async function savePlaces(supabase: SupabaseClient, userId: string, names: strin
     lng: 127,
     cuisine: "korean",
   }));
-  const places = await supabase.from("places").insert(rows).select("id");
+  const places = await testAdminClient().from("places").insert(rows).select("id");
   if (places.error) throw places.error;
   const ids = places.data.map((p) => p.id as string);
   const saved = await supabase.from("user_places").insert(

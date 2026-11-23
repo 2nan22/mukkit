@@ -19,7 +19,7 @@ export type NewPlaceHit = {
   lng: number;
   cuisine: Cuisine;
   meta: string;
-  // 이미 마이슐랭에 있는 장소면 바로 상세로
+  // 이미 먹킷에 있는 장소면 바로 상세로
   placeId: string | null;
   tier: Tier | null;
 };
@@ -73,13 +73,13 @@ const OpenInput = z.object({ kakaoId: z.string().regex(/^\d{1,20}$/), name: z.st
 export async function openKakaoPlace(input: z.infer<typeof OpenInput>): Promise<{ placeId?: string; error?: string }> {
   const parsed = OpenInput.safeParse(input);
   if (!parsed.success) return { error: "열 수 없는 장소예요" };
-  const { supabase } = await requireUser();
+  await requireUser();
   const { kakaoId, name, lat, lng } = parsed.data;
   const hits = await searchKakaoKeyword(name, { lat, lng, radius: 300 }, 15);
   const hit = hits?.find((h) => h.id === kakaoId && isSamePlace({ name, lat, lng }, h));
   if (!hit) return { error: "장소 정보를 확인하지 못했어요. 다시 검색해 주세요." };
   try {
-    const ids = await upsertPlaces(supabase, [hitToImportedPlace(hit)]);
+    const ids = await upsertPlaces([hitToImportedPlace(hit)]);
     const placeId = ids.get(hit.id);
     return placeId ? { placeId } : { error: "장소를 열지 못했어요" };
   } catch {

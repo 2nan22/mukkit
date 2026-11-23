@@ -84,7 +84,7 @@ export type SavedPlace = {
   review: string;
   visibility: RatingVisibility;
   menus: string[];
-  // 3스타 안 순위 (1부터) · 안 정했으면 null
+  // 수저 셋 안 순위 (1부터) · 안 정했으면 null
   rank?: number | null;
 };
 

@@ -1,26 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { ImportArt, RateArt, TrustArt } from "./IntroArt";
 
 // 시작하기 화면 소개 3장 — 가져오기 → 내 기준으로 평가 → 믿는 사람의 평가. 옆으로 넘긴다 (자동 넘김 없음)
 // 그림은 실제 화면을 본뜬 장식 — 화면 낭독기는 제목 · 설명만 읽는다
 const SLIDES = [
   {
-    title: "저장해 둔 맛집,\n링크 하나로 옮겨요",
-    body: "네이버 · 카카오 지도 리스트를 그대로 가져와요.",
+    title: "저장해 둔 맛집,\n지도로 꺼내요",
+    body: "네이버 · 카카오맵 리스트를 링크 하나로 가져와요.",
     art: <ImportArt />,
     tint: "bg-[#eaeee6]",
   },
   {
-    title: "별점 대신\n찾아갈 만한 정도로",
-    body: "멀리서도 갈 곳인지, 근처라면 갈 곳인지만 골라요.",
+    title: "별점 대신\n수저 셋 · 둘 · 하나",
+    body: "나만 알고 싶은 곳에 수저 셋을 줘요.",
     art: <RateArt />,
     tint: "bg-[#f8ece3]",
   },
   {
-    title: "광고 없이,\n믿는 사람의 평가만",
-    body: "평균 점수 없이 누가 어떤 등급을 줬는지 보여요.",
+    title: "별점 평균 대신\n누가 줬는지",
+    body: "아는 사람의 등급만 보여요. 광고는 없어요.",
     art: <TrustArt />,
     tint: "bg-[#eceef3]",
   },
@@ -57,7 +58,10 @@ export function IntroSlides() {
 
   return (
     <section aria-roledescription="캐러셀" aria-label="서비스 소개" onKeyDown={onKeyDown} className="flex min-h-0 flex-1 flex-col">
-      <p className="px-6 pt-5 text-meta font-bold tracking-tight text-ink [@media(max-height:700px)]:pt-3">마이슐랭</p>
+      <div className="flex items-center gap-2.5 px-6 pt-5 [@media(max-height:700px)]:pt-3">
+        <Wordmark size="sm" />
+        <span className="text-caption text-muted">아는 사람의 맛집 지도</span>
+      </div>
       <div
         ref={track}
         tabIndex={0}

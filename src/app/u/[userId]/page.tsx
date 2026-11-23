@@ -112,13 +112,13 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
             </div>
             <div className="flex justify-between text-meta text-muted">
               <span>
-                3스타 비율 <b className="text-ink">{Math.round(share(stats.three))}%</b>
+                수저 셋 비율 <b className="text-ink">{Math.round(share(stats.three))}%</b>
               </span>
               <span>협찬 · 이벤트 평가 {stats.sponsored}건</span>
             </div>
             {me === person.id && stats.three > 0 && (
               <Link href="/rank" className="flex h-11 items-center justify-between border-t border-line text-body font-medium">
-                내 3스타 순위
+                내 수저 셋 순위
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-subtle">
                   <path d="M9 6l6 6-6 6" />
                 </svg>
@@ -131,7 +131,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
           <div className="flex flex-col gap-1 rounded-[16px] bg-brand-soft px-4 py-3.5">
             <span className="text-body font-bold text-brand">취향 일치 {Math.round(taste.similarity * 100)}%</span>
             <span className="text-meta text-ink-2">
-              같이 평가한 곳 <b className="whitespace-nowrap text-ink">{taste.overlap}곳</b> · 둘 다 3스타 <b className="whitespace-nowrap text-ink">{taste.bothThree}곳</b>
+              같이 평가한 곳 <b className="whitespace-nowrap text-ink">{taste.overlap}곳</b> · 둘 다 수저 셋 <b className="whitespace-nowrap text-ink">{taste.bothThree}곳</b>
             </span>
           </div>
         )}
@@ -139,7 +139,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
         {me && me !== person.id && <FollowButton targetId={person.id} following={following} primary />}
         {!me && (
           <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
-            마이슐랭 시작하고 팔로우하기
+            먹킷 시작하고 팔로우하기
           </Link>
         )}
       </section>

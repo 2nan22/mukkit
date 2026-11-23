@@ -33,7 +33,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
   const [tier, setTier] = useState<Tier>(place.tier);
   const visited = RATED.includes(tier);
   const leave = useLeave(next);
-  // 3스타로 저장했고 아직 3스타 순위에 없으면 — 같은 3스타와 비교해 자리를 정한다 (첫 3스타면 바로 1위)
+  // 수저 셋으로 저장했고 아직 수저 셋 순위에 없으면 — 같은 수저 셋과 비교해 자리를 정한다 (첫 수저 셋면 바로 1위)
   const [compare, setCompare] = useState<{ target: RankPlace; ranked: RankPlace[] } | null>(null);
   useEffect(() => {
     if (!state.saved) return;
@@ -62,12 +62,12 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
         {RATED.map((tier) => (
           <label
             key={tier}
-            className={`flex h-14 cursor-pointer items-center gap-3 rounded-[14px] border border-line px-3.5 has-checked:border-[1.5px] ${PICKED[tier]}`}
+            className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-[14px] py-2 border border-line px-3.5 has-checked:border-[1.5px] ${PICKED[tier]}`}
           >
-            <span className="w-16 shrink-0">
+            <span className="w-[84px] shrink-0">
               <TierBadge tier={tier} />
             </span>
-            <span className="flex-1 text-body font-medium">{TIER_MEANING[tier]}</span>
+            <span className="flex-1 text-meta text-ink-2">{TIER_MEANING[tier]}</span>
             <input
               type="radio"
               name="tier"

@@ -1,7 +1,7 @@
 -- RLS: 남의 저장 · 비공개 리스트를 읽거나 쓸 수 없는지
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(24);
+select plan(27);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'a@test.local', '{"name":"에이"}'),
@@ -50,6 +50,15 @@ select throws_ok(
   $$insert into public.user_places (user_id, place_id) values
     ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001')$$,
   '42501', null, '남 명의 저장 추가 불가');
+select throws_ok(
+  $$insert into public.places (source, source_place_id, name, lat, lng, cuisine) values ('kakao', 'fake-1', '가짜 가게', 37.5, 127, 'korean')$$,
+  '42501', null, '로그인 사용자도 장소는 직접 추가 불가 (서버만)');
+select throws_ok(
+  $$insert into public.place_sources (source, source_place_id, place_id) values ('kakao', 'fake-1', 'aaaaaaaa-0000-0000-0000-000000000001')$$,
+  '42501', null, '출처 연결도 직접 추가 불가');
+select throws_ok(
+  $$update public.places set name = '변조' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$$,
+  '42501', null, '장소 이름도 직접 고칠 수 없음');
 select is(
   (select array_agg(name) from public.lists where owner_id = '11111111-1111-1111-1111-111111111111'),
   array['링크 공개'], '비공개 리스트는 안 보임');

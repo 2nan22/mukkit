@@ -1,4 +1,5 @@
 import { getPlaceCovers } from "@/features/place/covers";
+import { Wordmark } from "@/components/brand/Wordmark";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -6,21 +7,53 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { BottomNav } from "@/components/BottomNav";
-import { NICKNAME_SETUP, SESSION_ENDED, SIGNED_OUT_HOME } from "@/features/auth/paths";
-import { FollowingNew, RecentLists, SimilarPeople } from "@/features/home/HomeSections";
+import {
+  NICKNAME_SETUP,
+  SESSION_ENDED,
+  SIGNED_OUT_HOME,
+} from "@/features/auth/paths";
+import {
+  FollowingNew,
+  RecentLists,
+  SimilarPeople,
+} from "@/features/home/HomeSections";
 import { needsAgreement } from "@/features/legal/legal";
 import { NearbyWantToGo } from "@/features/home/NearbyWantToGo";
-import { getFeed, getFollowCounts, getMyWantToGoPoints, getPopularPublicLists, getTasteMatches } from "@/features/social/social";
+import {
+  getFeed,
+  getFollowCounts,
+  getMyWantToGoPoints,
+  getPopularPublicLists,
+  getTasteMatches,
+} from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // 홈 — 시안 1: 근처 가고 싶은 곳 · 팔로잉 새 평가 · 취향이 비슷한 사람 · 요즘 많이 저장된 리스트
 export default function HomePage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <AppHeader kind="tab" title="마이슐랭" right={
+      <AppHeader
+        kind="tab"
+        title={
+          <Wordmark />
+        }
+        right={
           <>
-            <Link href="/search" aria-label="검색" className="flex size-11 items-center justify-center">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+            <Link
+              href="/search"
+              aria-label="검색"
+              className="flex size-11 items-center justify-center"
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
                 <circle cx="11" cy="11" r="7" />
                 <path d="M20 20l-4-4" />
               </svg>
@@ -29,7 +62,8 @@ export default function HomePage() {
               <NotificationBell />
             </Suspense>
           </>
-        } />
+        }
+      />
       <main className="flex flex-1 flex-col gap-6 pt-1 pb-8">
         <Suspense fallback={<ListSkeleton hero />}>
           <HomeContent />
@@ -49,18 +83,49 @@ async function HomeContent() {
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
   // 프로필 확인과 화면 데이터를 한 번에 — 차례로 기다리지 않게 (리다이렉트면 결과는 버린다)
-  const [{ data: profile }, wantToGo, feed, matches, lists, counts, { count: visitTags }, { count: invites }] = await Promise.all([
-    supabase.from("profiles").select("nickname_set_at, terms_version").eq("id", me).single(),
+  const [
+    { data: profile },
+    wantToGo,
+    feed,
+    matches,
+    lists,
+    counts,
+    { count: visitTags },
+    { count: invites },
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("nickname_set_at, terms_version")
+      .eq("id", me)
+      .single(),
     getMyWantToGoPoints(supabase, me),
     getFeed(supabase),
     getTasteMatches(supabase, 8),
     getPopularPublicLists(supabase, 4),
     getFollowCounts(supabase, me),
-    supabase.from("visit_members").select("id", { count: "exact", head: true }).eq("user_id", me).eq("status", "invited"),
-    supabase.from("meetup_invites").select("meetup_id, meetups!inner(status)", { count: "exact", head: true }).eq("user_id", me).eq("meetups.status", "open"),
+    supabase
+      .from("visit_members")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", me)
+      .eq("status", "invited"),
+    supabase
+      .from("meetup_invites")
+      .select("meetup_id, meetups!inner(status)", {
+        count: "exact",
+        head: true,
+      })
+      .eq("user_id", me)
+      .eq("meetups.status", "open"),
   ]);
   // 리스트 카드 썸네일 — 담긴 곳의 대표 사진 (내 사진 · 팔로잉)
-  const recentCovers = Object.fromEntries([...(await getPlaceCovers(supabase, lists.flatMap((l) => l.points.map((p) => p.placeId))))].map(([id, c]) => [id, c.url]));
+  const recentCovers = Object.fromEntries(
+    [
+      ...(await getPlaceCovers(
+        supabase,
+        lists.flatMap((l) => l.points.map((p) => p.placeId)),
+      )),
+    ].map(([id, c]) => [id, c.url]),
+  );
   // 프로필이 없으면 지워진 계정의 로그인이 남은 것 — 반복 대신 로그아웃
   if (!profile) redirect(SESSION_ENDED);
   if (!profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
@@ -69,17 +134,41 @@ async function HomeContent() {
   return (
     <>
       <section className="mx-5 flex flex-col overflow-hidden rounded-[20px] bg-brand-soft">
-        <Link href="/eat" className="flex items-center justify-between gap-3 px-5 pt-5 pb-4">
+        <Link
+          href="/eat"
+          className="flex items-center justify-between gap-3 px-5 pt-5 pb-4"
+        >
           <span className="flex min-w-0 flex-col gap-1">
-            <span className="text-[20px] font-bold tracking-tight">여기서 뭐 먹지?</span>
-            <span className="text-meta text-ink-2">내 기록과 팔로잉 평가에서 골라요</span>
+            <span className="text-[20px] font-bold tracking-tight">
+              여기서 뭐 먹지?
+            </span>
+            <span className="text-meta text-ink-2">
+              내 기록과 팔로잉 평가에서 골라요
+            </span>
           </span>
-          <span className="flex h-10 shrink-0 items-center rounded-full bg-brand px-4 text-meta font-bold text-white raised-brand">찾아보기</span>
+          <span className="flex h-10 shrink-0 items-center rounded-full bg-brand px-4 text-meta font-bold text-white raised-brand">
+            찾아보기
+          </span>
         </Link>
         <NearbyWantToGo points={wantToGo} />
-        <Link href="/meet" className="flex items-center gap-3 border-t border-[#f5dccb] px-5 py-3.5">
-          <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-brand">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <Link
+          href="/meet"
+          className="flex items-center gap-3 border-t border-[#f5dccb] px-5 py-3.5"
+        >
+          <span
+            aria-hidden="true"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-brand"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="8" cy="8" r="3" />
               <circle cx="16" cy="8" r="3" />
               <path d="M3 19c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5M11 19c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5" />
@@ -87,24 +176,58 @@ async function HomeContent() {
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="text-body font-semibold">친구와 약속 잡기</span>
-            <span className={`text-meta ${invites ? "font-semibold text-brand" : "text-muted"}`}>{invites ? `받은 약속 초대 ${invites}개` : "모두 오가기 편한 곳을 찾아 드려요"}</span>
+            <span
+              className={`text-meta ${invites ? "font-semibold text-brand" : "text-muted"}`}
+            >
+              {invites
+                ? `받은 약속 초대 ${invites}개`
+                : "모두 오가기 편한 곳을 찾아 드려요"}
+            </span>
           </span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-muted"
+            aria-hidden="true"
+          >
             <path d="M9 6l6 6-6 6" />
           </svg>
         </Link>
       </section>
       {visitTags ? (
-        <Link href="/visits" className="mx-5 mt-3 flex min-h-12 items-center justify-between gap-3 rounded-[16px] bg-surface px-4">
+        <Link
+          href="/visits"
+          className="mx-5 mt-3 flex min-h-12 items-center justify-between gap-3 rounded-[16px] bg-surface px-4"
+        >
           <span className="text-meta text-ink-2">
             함께 방문 요청 <b className="font-bold text-ink">{visitTags}건</b>
           </span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-muted"
+            aria-hidden="true"
+          >
             <path d="M9 6l6 6-6 6" />
           </svg>
         </Link>
       ) : null}
-      <FollowingNew ratings={feed.slice(0, 10)} followingCount={counts.following} />
+      <FollowingNew
+        ratings={feed.slice(0, 10)}
+        followingCount={counts.following}
+      />
       <SimilarPeople matches={matches} />
       <RecentLists lists={lists} covers={recentCovers} />
     </>

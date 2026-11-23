@@ -36,7 +36,7 @@ Vercel(앱) + Supabase 호스팅(DB · 인증 · 사진). 둘 다 **서울** —
 
 ## 3. Vercel
 
-1. vercel.com › Add New › Project › GitHub `2nan22/mychelin` 가져오기
+1. vercel.com › Add New › Project › GitHub `2nan22/mukkit` 가져오기 (2026-11-23 mychelin 에서 이름 변경)
 2. Production Branch: `main` (Settings › Git)
 3. Environment Variables (Production)
 
