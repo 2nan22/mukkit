@@ -128,6 +128,8 @@ function LinkForm({ onAdd, initialLink, helpOpen }: { onAdd: (row: Row) => void;
     }
     setError(null);
     setLink("");
+    // 리스트가 담기면 안내를 접어 담긴 리스트가 바로 보이게
+    setShowHelp(false);
     onAdd({ ...res.data, link: extractLink(link), mode: guessMode(res.data.name) });
   }
 
