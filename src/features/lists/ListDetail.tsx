@@ -14,6 +14,7 @@ import { LIST_NAME_MAX, VISIBILITIES, VISIBILITY_LABEL, type ListSummary } from 
 import { RefreshImportButton } from "@/features/import/RefreshImportButton";
 import type { ImportStatus } from "@/features/import/importStatus";
 import { PlacePicker } from "./PlacePicker";
+import { useListSort } from "./ListSortBar";
 import type { PickablePlace } from "./pickablePlaces";
 
 type Props = { list: ListSummary & { placeIds: string[] }; places: PickablePlace[]; origin: string; covers?: Record<string, string>; saves?: number; imported?: ImportStatus | null };
@@ -33,7 +34,10 @@ export function ListDetail({ list, places, origin, covers = {}, saves = 0, impor
   const [undo, setUndo] = useState<{ name: string; items: RemovedItem[] } | null>(null);
 
   const inList = new Set(list.placeIds);
-  const items = list.placeIds.flatMap((id) => places.filter((p) => p.placeId === id));
+  // 담은 순서대로 — 장소를 id 로 한 번에 찾는다 (1000곳 넘는 리스트에서 매번 전체를 훑지 않게)
+  const byId = new Map(places.map((p) => [p.placeId, p]));
+  const items = list.placeIds.flatMap((id) => byId.get(id) ?? []);
+  const { shown, bar, distanceOf } = useListSort(items);
 
   const leave = useLeave("/lists");
   function act(fn: () => Promise<{ error?: string }>, after?: () => void) {
@@ -212,9 +216,10 @@ export function ListDetail({ list, places, origin, covers = {}, saves = 0, impor
             </button>
           </div>
         )}
+        {items.length > 1 && <div className="pt-2 pb-1">{bar}</div>}
         <ul className="flex flex-col">
           {items.length === 0 && <li className="py-10 text-center text-meta text-muted">아직 담은 곳이 없어요</li>}
-          {items.map((p, i) => (
+          {shown.map((p, i) => (
             <li key={p.placeId}>
               <PlaceRow
                 index={i + 1}
@@ -223,7 +228,7 @@ export function ListDetail({ list, places, origin, covers = {}, saves = 0, impor
                 name={p.name}
                 cuisine={p.cuisine}
                 tier={p.tier}
-                meta={[CUISINE_LABEL[p.cuisine], p.address.split(" ").slice(0, 2).join(" ")].filter(Boolean).join(" · ")}
+                meta={[distanceOf(p), CUISINE_LABEL[p.cuisine], p.address.split(" ").slice(0, 2).join(" ")].filter(Boolean).join(" · ")}
                 action={
                   removing && (
                 <button

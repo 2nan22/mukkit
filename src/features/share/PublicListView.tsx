@@ -1,5 +1,6 @@
 "use client";
 
+import { useListSort } from "@/features/lists/ListSortBar";
 import { useMemo, useState, useTransition } from "react";
 import { BackButton } from "@/components/BackButton";
 import { PlaceRow } from "@/components/ui/PlaceRow";
@@ -18,7 +19,9 @@ const SHARE_MAP_PADDING = [64, 36, 36, 36] as const;
 
 export function PublicListView({ list, signedIn = false, covers = {}, save = null }: { list: PublicList; signedIn?: boolean; covers?: Record<string, string>; save?: Save | null }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const pins = useMemo(() => list.places.map((p) => ({ id: p.placeId, lat: p.lat, lng: p.lng, tier: p.tier ?? "unrated" })), [list.places]);
+  const { shown, bar, distanceOf } = useListSort(list.places);
+  // 지도도 거른 곳만 — 거르면 남은 곳에 맞춰 다시 맞춘다
+  const pins = useMemo(() => shown.map((p) => ({ id: p.placeId, lat: p.lat, lng: p.lng, tier: p.tier ?? "unrated" })), [shown]);
   const [saved, setSaved] = useState(save?.saved ?? false);
   const [mine, setMine] = useState<string[]>(save?.savedPlaceIds ?? []);
   const [busy, setBusy] = useState<string | null>(null);
@@ -66,8 +69,9 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
           </button>
         </div>
       )}
+      {list.places.length > 1 && <div className="px-5 pt-3">{bar}</div>}
       <ul className="flex flex-col px-5 pt-2">
-        {list.places.map((p) => (
+        {shown.map((p) => (
           <li key={p.placeId}>
             <PlaceRow
               // 로그인한 사람은 장소 상세로, 아니면 지도에서 짚어 보기만
@@ -78,7 +82,7 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
               name={p.name}
               cuisine={p.cuisine}
               tier={p.tier}
-              meta={[CUISINE_LABEL[p.cuisine], p.categoryName, regionOf(p.address)].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i).join(" · ")}
+              meta={[distanceOf(p), CUISINE_LABEL[p.cuisine], p.categoryName, regionOf(p.address)].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i).join(" · ")}
               note={save?.seenAt && p.addedAt && new Date(p.addedAt) > new Date(save.seenAt) ? <span className="font-bold text-ink">새로 추가</span> : undefined}
               action={
                 save &&
