@@ -83,7 +83,7 @@
     - 바꿀 때 고칠 곳: components/brand/Wordmark.tsx(BRAND_NAME · 글자 로고) · manifest · 화면 문구의 '먹킷'(받침 있는 이름이라 조사 그대로) · 약관 · 처리방침
     - 외부 이름 (2026-11-23): GitHub 2nan22/mukkit · Vercel 프로젝트 mukkit · 운영 주소 https://mukkit-app.vercel.app (mukkit.vercel.app 은 남이 씀 'Eater 먹킷리스트') · 옛 주소 mychelin-bice.vercel.app 은 Vercel · Supabase Redirect URLs 에서 삭제(2026-11-23, 상표 연상 정리) · 카카오 사이트 도메인의 옛 주소는 사용자가 삭제 · Supabase 프로젝트 '먹킷 MUKKIT'(3자 이상 규칙) · Supabase Site URL · Redirect URLs 새 주소만
     - 상표(KIPRIS) · 구글플레이는 확인 못 함 — 출시 전 변리사 확인. 비슷한 기능의 경쟁 앱 '냠(NYAM)' 있음 · 앱스토어에 '맛슐랭(MatChelin)' 있음
-- 브랜드 표기 — 홈 헤더 · 공유 화면은 주황 수저 심볼 + 영문 대문자 MUKKIT(시안 4번 방향). 입체 앱 아이콘은 홈 화면 아이콘에만, 실행 화면은 흰 바탕 + 투명 바탕 심볼(manifest any 아이콘)
+- 브랜드 표기 — 주황 수저 심볼 + 한글 '먹킷' 크게 · 영문 MUKKIT 작게 두 줄 (44, 사용자 결정 2026-11-23 B안 — 영문만이면 '무킷'으로 읽힘). 두 줄 묶음의 위 · 아래를 심볼 높이에 맞추고 두 줄 너비를 같게 · 앱 아이콘은 입체 그대로(1안). 입체 앱 아이콘은 홈 화면 아이콘에만, 실행 화면은 흰 바탕 + 투명 바탕 심볼(manifest any 아이콘)
 - 네이버 가져오기 — 공개 범위 '일부 공개' · '전체 공개' 리스트의 공유 링크로 로그인 없이 수집 (비공식 내부 API)
 - 음식 종류 — 네이버 `cidPath` 코드 또는 카카오 로컬 API 카테고리
 - 지도 SDK — 카카오맵 JavaScript SDK (ADR 0001 변경 이력) · 무료 쿼터는 마이슐랭 카카오 앱 · 키 NEXT_PUBLIC_KAKAO_MAP_KEY
