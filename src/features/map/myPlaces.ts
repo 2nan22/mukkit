@@ -13,7 +13,7 @@ export type MapPlace = {
   lng: number;
   address: string;
   cuisine: Cuisine;
-  // 세부 업종 — 기본 그림 고르기 (팔로잉 지도는 없음 → 업종 그림)
+  // 세부 업종 — 사진 없는 곳의 기본 그림 고르기
   kind?: string | null;
   categoryName: string;
   available: boolean;
@@ -39,13 +39,16 @@ type FollowingRow = {
   available: boolean;
   raters: { userId: string; nickname: string; tier: string }[];
   my_tier: string | null;
+  food_kind: string | null;
 };
 
 // 팔로잉 지도 — 팔로우하는 사람이 평가한 곳 (볼 수 있는 평가만 · 협찬 제외). 핀 등급은 그중 가장 높은 실제 평가
 export async function getFollowingMapPlaces(supabase: SupabaseClient): Promise<MapPlace[]> {
-  const { data, error } = await supabase.rpc("following_map_places");
+  const { data, error } = await fetchAll<FollowingRow>(
+    (from, to) => supabase.rpc("following_map_places").range(from, to) as unknown as PromiseLike<{ data: FollowingRow[] | null; error: { code?: string } | null }>,
+  );
   if (error) throw new Error(`팔로잉 지도 조회 실패: ${error.code}`);
-  return (data as FollowingRow[]).map((r) => {
+  return data.map((r) => {
     const raters = r.raters.map((x) => ({ userId: x.userId, nickname: x.nickname, tier: tierFromDb(x.tier) }));
     return {
       placeId: r.place_id,
@@ -54,6 +57,7 @@ export async function getFollowingMapPlaces(supabase: SupabaseClient): Promise<M
       lng: r.lng,
       address: r.address,
       cuisine: r.cuisine as Cuisine,
+      kind: r.food_kind,
       categoryName: r.category_name,
       available: r.available,
       tier: raters[0]?.tier ?? "unrated",
