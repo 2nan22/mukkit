@@ -209,14 +209,14 @@ export function ListDetail({ list, places, origin, covers = {}, saves = 0, impor
 
       <section className="flex flex-col">
         {items.length > 0 && (
-          <div className="flex items-center justify-between">
-            <h3 className="text-meta font-bold text-muted">담은 곳</h3>
-            <button type="button" onClick={() => setRemoving((v) => !v)} className="flex h-9 items-center text-meta font-medium text-ink-2">
-              {removing ? "완료" : "편집"}
-            </button>
+          <div className="pb-1">
+            {bar(
+              <button type="button" onClick={() => setRemoving((v) => !v)} className="flex h-9 shrink-0 items-center pl-2 text-meta font-medium text-ink-2">
+                {removing ? "완료" : "편집"}
+              </button>,
+            )}
           </div>
         )}
-        {items.length > 1 && <div className="pt-2 pb-1">{bar}</div>}
         <ul className="flex flex-col">
           {items.length === 0 && <li className="py-10 text-center text-meta text-muted">아직 담은 곳이 없어요</li>}
           {shown.map((p, i) => (

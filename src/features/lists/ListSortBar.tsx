@@ -66,77 +66,116 @@ export function useListSort<T extends Item>(items: readonly T[]) {
   const shown = useMemo(() => sortListPlaces(items, sort, { tiers, me: sort === "near" ? me : null }), [items, sort, tiers, me]);
   const distanceOf = (p: Point) => (sort === "near" && me ? distanceLabel(metersBetween(me, p)) : null);
 
-  const bar = (
+  // trailing: 같은 줄 오른쪽 끝에 붙일 것 (내 리스트의 '편집')
+  const bar = (trailing?: React.ReactNode) => (
     <ListSortBar
       sort={sort}
       onSort={choose}
       present={present}
-      tiers={tiers}
-      onTiers={setTiers}
+      tier={tiers[0] ?? null}
+      onTier={(t) => setTiers(t ? [t] : [])}
       locating={locating}
       error={error}
       count={shown.length}
       total={items.length}
+      trailing={trailing}
     />
   );
   return { shown, bar, distanceOf };
 }
 
+// 한 줄 — 왼쪽 개수, 오른쪽 [등급 ▾] [정렬 ▾]. 누르면 아래로 고르는 목록이 열린다
 function ListSortBar({
   sort,
   onSort,
   present,
-  tiers,
-  onTiers,
+  tier,
+  onTier,
   locating,
   error,
   count,
   total,
+  trailing,
 }: {
   sort: ListSort;
   onSort: (s: ListSort) => void;
   present: Tier[];
-  tiers: Tier[];
-  onTiers: (t: Tier[]) => void;
+  tier: Tier | null;
+  onTier: (t: Tier | null) => void;
   locating: boolean;
   error: string | null;
   count: number;
   total: number;
+  trailing?: React.ReactNode;
 }) {
-  const chip = (on: boolean) => `flex h-9 shrink-0 items-center gap-1 rounded-full px-3 text-meta font-medium whitespace-nowrap ${on ? "bg-ink text-white" : "bg-surface text-ink-2"}`;
+  const [open, setOpen] = useState<"sort" | "tier" | null>(null);
+  const toggle = (m: "sort" | "tier") => setOpen((v) => (v === m ? null : m));
+  const button = (on: boolean) => `flex h-9 shrink-0 items-center gap-1 rounded-full px-3 text-meta font-medium whitespace-nowrap ${on ? "bg-ink text-white" : "bg-surface text-ink-2"}`;
+  const caret = (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+  const option = (label: React.ReactNode, on: boolean, pick: () => void, key: string) => (
+    <li key={key}>
+      <button
+        type="button"
+        role="menuitemradio"
+        aria-checked={on}
+        onClick={() => {
+          pick();
+          setOpen(null);
+        }}
+        className="flex min-h-11 w-full items-center justify-between gap-3 px-4 text-left text-body text-ink"
+      >
+        <span className="flex items-center gap-1.5">{label}</span>
+        {on && (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M5 12l5 5 9-10" />
+          </svg>
+        )}
+      </button>
+    </li>
+  );
   return (
     <div className="flex flex-col gap-2">
-      <div role="radiogroup" aria-label="정렬" className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
-        {LIST_SORTS.map((s) => (
-          <button key={s} type="button" role="radio" aria-checked={sort === s} onClick={() => onSort(s)} className={chip(sort === s)}>
-            {s === "near" && locating ? "위치 찾는 중" : LIST_SORT_LABEL[s]}
+      <div className="flex items-center gap-1.5">
+        <span className="mr-auto text-meta font-semibold text-ink-2">{tier ? `${total}곳 중 ${count}곳` : `${total}곳`}</span>
+        {present.length > 1 && (
+          <button type="button" aria-haspopup="menu" aria-expanded={open === "tier"} onClick={() => toggle("tier")} className={button(tier !== null)}>
+            {tier ? TIER_LABEL[tier] : "등급"}
+            {caret}
           </button>
-        ))}
+        )}
+        <button type="button" aria-haspopup="menu" aria-expanded={open === "sort"} onClick={() => toggle("sort")} className={button(false)}>
+          {locating ? "위치 찾는 중" : LIST_SORT_LABEL[sort]}
+          {caret}
+        </button>
+        {trailing}
       </div>
-      {present.length > 1 && (
-        <div role="group" aria-label="등급 거르기" className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
-          <button type="button" aria-pressed={tiers.length === 0} onClick={() => onTiers([])} className={chip(tiers.length === 0)}>
-            전체
-          </button>
-          {present.map((t) => {
-            const on = tiers.includes(t);
-            return (
-              <button key={t} type="button" aria-pressed={on} onClick={() => onTiers(on ? tiers.filter((x) => x !== t) : [...tiers, t])} className={chip(on)}>
-                <TierIcon tier={t} height={13} color={on ? "#ffffff" : undefined} />
-                {TIER_LABEL[t]}
-              </button>
-            );
-          })}
-        </div>
+      {open && (
+        <ul role="menu" aria-label={open === "sort" ? "정렬" : "등급"} className="flex flex-col overflow-hidden rounded-[12px] border border-line bg-white">
+          {open === "sort"
+            ? LIST_SORTS.map((s) => option(LIST_SORT_LABEL[s], sort === s, () => onSort(s), s))
+            : [
+                option("전체", tier === null, () => onTier(null), "all"),
+                ...present.map((t) =>
+                  option(
+                    <>
+                      <TierIcon tier={t} height={14} />
+                      {TIER_LABEL[t]}
+                    </>,
+                    tier === t,
+                    () => onTier(t),
+                    t,
+                  ),
+                ),
+              ]}
+        </ul>
       )}
       {error && (
         <p role="alert" className="text-meta text-danger">
           {error}
-        </p>
-      )}
-      {tiers.length > 0 && (
-        <p className="text-meta text-muted">
-          {total}곳 중 {count}곳
         </p>
       )}
     </div>
