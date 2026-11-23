@@ -190,9 +190,10 @@ html[data-splash] .launch-splash {
   from { transform: translateX(var(--launch-shift)); }
   to { transform: none; }
 }
+/* 자르는 칸은 글자 상자보다 넉넉히 — 줄 높이를 좁게 잡은 '먹킷' 위아래 · MUKKIT 끝 글자가 상자를 넘는다 */
 @keyframes launch-word {
-  from { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateX(-10px); }
-  to { opacity: 1; clip-path: inset(0 0 0 0); transform: none; }
+  from { opacity: 0; clip-path: inset(-40% 100% -40% -8px); transform: translateX(-10px); }
+  to { opacity: 1; clip-path: inset(-40% -8px -40% -8px); transform: none; }
 }
 @keyframes launch-out {
   to { opacity: 0; visibility: hidden; }
