@@ -15,7 +15,7 @@ export const TIER_LABEL: Record<Tier, string> = {
 export const TIER_MEANING: Record<Tier, string> = {
   three: "나만 알고 싶은 곳",
   two: "또 가도 좋고 권하기도 좋은 곳",
-  one: "굳이 또 가진 않을 곳",
+  one: "한 번으로 충분한 곳",
   notRecommended: "다시 가고 싶지 않은 곳",
   wantToGo: "아직 가보지 않은 곳",
   unrated: "저장만 하고 평가하지 않은 곳",
