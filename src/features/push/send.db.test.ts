@@ -38,7 +38,7 @@ describe.skipIf(!admin)("sendPush", () => {
       return { statusCode: 201 };
     });
     const { sendPush } = await import("./send");
-    const sent = await sendPush([userId, userId], { title: "약속", body: "테스트", url: "/meet" });
+    const sent = await sendPush([userId, userId], { title: "약속", body: "테스트", url: "/meet" }, "meetup");
     expect(sent).toBe(1);
     expect(sendNotification).toHaveBeenCalledTimes(2);
     expect(JSON.parse(sendNotification.mock.calls[0][1] as string)).toMatchObject({ title: "약속", url: "/meet" });
@@ -46,5 +46,15 @@ describe.skipIf(!admin)("sendPush", () => {
     expect(data).toHaveLength(1);
     expect(data![0].endpoint).toBe(ok);
     expect(data![0].last_used_at).not.toBeNull();
+  });
+
+  it("그 종류를 끈 사람에게는 보내지 않는다", async () => {
+    sendNotification.mockClear();
+    sendNotification.mockResolvedValue({ statusCode: 201 });
+    await admin!.from("profiles").update({ push_off: ["comment"] }).eq("id", userId);
+    const { sendPush } = await import("./send");
+    expect(await sendPush([userId], { title: "새 댓글", body: "테스트", url: "/" }, "comment")).toBe(0);
+    expect(sendNotification).not.toHaveBeenCalled();
+    expect(await sendPush([userId], { title: "약속", body: "테스트", url: "/meet" }, "meetup")).toBe(1);
   });
 });

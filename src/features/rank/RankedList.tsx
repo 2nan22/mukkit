@@ -159,7 +159,7 @@ export function RankedList({
       <p role="status" className="sr-only">
         {announce}
       </p>
-      <ol aria-label="3숟가락 순위" className={`flex flex-col ${editing ? "bg-surface" : ""}`}>
+      <ol aria-label="나만의 맛집 순위" className={`flex flex-col ${editing ? "bg-surface" : ""}`}>
         {ranked.map((p, i) => {
           const dragging = drag?.from === i;
           const r = shownRank(i);

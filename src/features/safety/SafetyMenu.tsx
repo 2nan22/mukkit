@@ -170,7 +170,7 @@ export function SafetyMenu({
               <>
                 <h2 className="text-section font-bold">{who}을 차단할까요?</h2>
                 <p className="pt-1 text-meta leading-normal text-ink-2">서로의 평가 · 사진 · 리스트가 보이지 않아요. 팔로우가 풀리고 약속 초대도 주고받을 수 없어요.</p>
-                <p className="pt-1 text-caption text-muted">차단한 사실은 상대에게 알리지 않아요. 설정 › 계정에서 해제할 수 있어요.</p>
+                <p className="pt-1 text-caption text-muted">차단한 사실은 상대에게 알리지 않아요. 설정 › 차단한 사람에서 해제할 수 있어요.</p>
                 {error && (
                   <p role="alert" className="text-meta text-danger">
                     {error}

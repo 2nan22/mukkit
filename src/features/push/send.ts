@@ -3,6 +3,8 @@ import webpush from "web-push";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type PushMessage = { title: string; body: string; url: string; tag?: string };
+// 설정 › 알림에서 종류별로 끌 수 있다 (profiles.push_off)
+export type PushKind = "meetup" | "comment" | "visit";
 
 let configured: boolean | null = null;
 function configure(): boolean {
@@ -17,13 +19,18 @@ function configure(): boolean {
 
 type Row = { id: string; endpoint: string; p256dh: string; auth: string };
 
-// 사람들에게 푸시 보내기 — 키가 없으면 조용히 건너뜀. 없어진 구독(404 · 410)은 지운다
+// 사람들에게 푸시 보내기 — 그 종류를 끈 사람은 빼고. 키가 없으면 조용히 건너뜀. 없어진 구독(404 · 410)은 지운다
 // 실패해도 원래 작업을 막지 않도록 after() 안에서 부른다
-export async function sendPush(userIds: string[], message: PushMessage): Promise<number> {
-  const ids = [...new Set(userIds)];
-  if (ids.length === 0 || !configure()) return 0;
+export async function sendPush(userIds: string[], message: PushMessage, kind: PushKind): Promise<number> {
+  const unique = [...new Set(userIds)];
+  if (unique.length === 0 || !configure()) return 0;
   const admin = createSupabaseAdminClient();
   if (!admin) return 0;
+  // 이 종류를 끈 사람은 뺀다
+  const off = await admin.from("profiles").select("id").in("id", unique).contains("push_off", [kind]);
+  const muted = new Set((off.data ?? []).map((r) => r.id as string));
+  const ids = unique.filter((id) => !muted.has(id));
+  if (ids.length === 0) return 0;
   const { data } = await admin.from("push_subscriptions").select("id, endpoint, p256dh, auth").in("user_id", ids);
   const rows = (data ?? []) as Row[];
   const payload = JSON.stringify(message);

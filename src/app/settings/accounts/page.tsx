@@ -1,8 +1,3 @@
-import { BlockedList } from "@/features/safety/BlockedList";
-import { getMyBlocks } from "@/features/safety/safety";
-import Link from "next/link";
-import { WithdrawSection } from "@/features/auth/WithdrawSection";
-import { PushToggle } from "@/features/push/PushToggle";
 import { ProviderMark } from "@/components/brand/BrandLogo";
 import { AppHeader } from "@/components/AppHeader";
 import { Suspense } from "react";
@@ -14,41 +9,18 @@ import { identityLabel } from "@/features/auth/identityLabel";
 import { linkErrorMessage } from "@/features/auth/linkErrors";
 import { fromSupabaseProvider, LOGIN_PROVIDER_LABEL, LOGIN_PROVIDER_ORDER } from "@/features/auth/providers";
 
+export const metadata = { title: "로그인 연결" };
+
 export default function AccountLinksPage({ searchParams }: PageProps<"/settings/accounts">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <AppHeader kind="back" fallback="/my" title="계정" />
+      <AppHeader kind="back" fallback="/settings" title="로그인 연결" />
       <p className="px-5 pb-4 text-meta leading-relaxed text-muted">
         로그인 방법을 연결하면 어느 것으로 로그인해도 같은 계정이에요.
       </p>
       <Suspense fallback={null}>
         <AccountLinks searchParams={searchParams} />
       </Suspense>
-      <section className="px-5 pt-6">
-        <PushToggle variant="row" />
-      </section>
-      <section className="px-5 pt-6">
-        <Suspense fallback={null}>
-          <Blocked />
-        </Suspense>
-      </section>
-      <form action="/auth/logout" method="post" className="px-5 pt-8">
-        <button type="submit" className="h-btn-m w-full rounded-btn-m bg-surface text-body font-medium text-ink">
-          로그아웃
-        </button>
-      </form>
-      <div className="flex-1" />
-      <div className="flex flex-col gap-3 px-5 pt-10 pb-8">
-        <div className="flex justify-center gap-4 text-meta text-muted">
-          <Link href="/terms" className="underline underline-offset-2">
-            이용약관
-          </Link>
-          <Link href="/privacy" className="underline underline-offset-2">
-            개인정보 처리방침
-          </Link>
-        </div>
-        <WithdrawSection />
-      </div>
     </main>
   );
 }
@@ -101,12 +73,4 @@ async function AccountLinks({ searchParams }: { searchParams: Promise<{ error?: 
       </ul>
     </section>
   );
-}
-
-async function Blocked() {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getClaims();
-  const me = data?.claims?.sub;
-  if (!me) return null;
-  return <BlockedList people={await getMyBlocks(supabase, me)} />;
 }

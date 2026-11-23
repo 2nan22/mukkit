@@ -6,14 +6,13 @@ import { Avatar } from "@/components/ui/Avatar";
 import { unblock } from "./actions";
 import type { BlockedPerson } from "./safety";
 
-// 설정 › 계정 — 내가 차단한 사람 · 해제
+// 설정 › 차단한 사람 — 해제
 export function BlockedList({ people }: { people: BlockedPerson[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-meta text-muted">차단한 사람</span>
       {people.length === 0 ? (
         <p className="flex min-h-12 items-center border-b border-line text-meta text-muted">차단한 사람이 없어요</p>
       ) : (
