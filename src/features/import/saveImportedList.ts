@@ -27,7 +27,7 @@ export class ImportSaveError extends Error {
   }
 }
 
-// 다시 가져와도 늘지 않고, 마이슐랭에서 고친 등급 · 메모는 덮어쓰지 않는다
+// 다시 가져와도 늘지 않고, 먹킷에서 고친 등급 · 메모는 덮어쓰지 않는다
 export async function saveImportedList(
   supabase: SupabaseClient,
   userId: string,
@@ -146,7 +146,7 @@ function toPlaceRow(p: ImportedPlace) {
   };
 }
 
-// 출처 · 리스트별 원본 — 다시 가져오면 최신 원본으로 바꾼다 (마이슐랭에서 고친 값과는 별개)
+// 출처 · 리스트별 원본 — 다시 가져오면 최신 원본으로 바꾼다 (먹킷에서 고친 값과는 별개)
 async function saveImportedItems(
   supabase: SupabaseClient,
   userId: string,

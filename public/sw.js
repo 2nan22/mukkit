@@ -1,14 +1,14 @@
-// 마이슐랭 서비스 워커 — 푸시 알림 표시 · 눌렀을 때 화면 열기만 한다 (오프라인 캐시 없음)
+// 먹킷 서비스 워커 — 푸시 알림 표시 · 눌렀을 때 화면 열기만 한다 (오프라인 캐시 없음)
 self.addEventListener("push", (event) => {
   let data = {};
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: "마이슐랭", body: event.data ? event.data.text() : "" };
+    data = { title: "먹킷", body: event.data ? event.data.text() : "" };
   }
   const url = typeof data.url === "string" && data.url.startsWith("/") ? data.url : "/home";
   event.waitUntil(
-    self.registration.showNotification(data.title || "마이슐랭", {
+    self.registration.showNotification(data.title || "먹킷", {
       body: data.body || "",
       icon: "/icon-192.png",
       badge: "/badge-96.png",

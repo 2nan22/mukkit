@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { ImportArt, RateArt, TrustArt } from "./IntroArt";
 
 // 시작하기 화면 소개 3장 — 가져오기 → 내 기준으로 평가 → 믿는 사람의 평가. 옆으로 넘긴다 (자동 넘김 없음)
@@ -57,7 +58,9 @@ export function IntroSlides() {
 
   return (
     <section aria-roledescription="캐러셀" aria-label="서비스 소개" onKeyDown={onKeyDown} className="flex min-h-0 flex-1 flex-col">
-      <p className="px-6 pt-5 text-meta font-bold tracking-tight text-ink [@media(max-height:700px)]:pt-3">마이슐랭</p>
+      <div className="px-6 pt-5 [@media(max-height:700px)]:pt-3">
+        <Wordmark size="sm" />
+      </div>
       <div
         ref={track}
         tabIndex={0}

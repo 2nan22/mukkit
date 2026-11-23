@@ -168,9 +168,9 @@ export function PushToggle({ variant, text }: { variant: "strip" | "row"; text?:
     state === "on"
       ? "이 기기에서 알림을 받고 있어요"
       : state === "denied"
-        ? "브라우저 설정에서 마이슐랭 알림을 허용해 주세요"
+        ? "브라우저 설정에서 먹킷 알림을 허용해 주세요"
         : state === "ios-install"
-          ? "홈 화면에 추가한 마이슐랭에서 켤 수 있어요"
+          ? "홈 화면에 추가한 먹킷에서 켤 수 있어요"
           : state === "unsupported"
             ? "이 브라우저에서는 알림을 받을 수 없어요"
             : "초대 · 참여 · 추천 소식을 알려 드려요";

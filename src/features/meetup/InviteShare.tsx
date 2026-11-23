@@ -34,7 +34,7 @@ export function InviteShare({ url, title }: { url: string; title: string }) {
   return (
     <div className="flex flex-col gap-2 rounded-[16px] bg-brand-soft p-4">
       <span className="text-body font-semibold">링크로 초대</span>
-      <span className="text-meta leading-normal text-ink-2">마이슐랭을 쓰지 않는 분도 링크를 받아 가입하고 참여할 수 있어요.</span>
+      <span className="text-meta leading-normal text-ink-2">먹킷을 쓰지 않는 분도 링크를 받아 가입하고 참여할 수 있어요.</span>
       <button type="button" onClick={share} className="mt-1 h-btn-m rounded-btn-m bg-brand text-body font-bold text-white raised-brand">
         {canShare ? "링크 보내기" : "링크 복사"}
       </button>

@@ -1,4 +1,5 @@
 import { getPlaceCovers } from "@/features/place/covers";
+import { Wordmark } from "@/components/brand/Wordmark";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -42,7 +43,7 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
   if (!list) {
     return (
       <section className="flex flex-1 flex-col items-start gap-3 px-6 pt-24">
-        <span className="text-body font-bold tracking-tight">마이슐랭</span>
+        <Wordmark size="sm" />
         <h1 className="text-title font-bold tracking-tight">볼 수 없는 리스트예요</h1>
         <p className="text-body leading-relaxed text-ink-2">만든 사람이 비공개로 바꿨거나 지운 리스트예요. 링크를 보낸 사람에게 다시 받아 주세요.</p>
       </section>
@@ -79,7 +80,7 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
       {!signedIn && (
         <div className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-[480px] bg-white px-5 pt-3 pb-5 shadow-sheet">
           <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
-            마이슐랭에서 내 리스트 만들기
+            먹킷에서 내 리스트 만들기
           </Link>
         </div>
       )}
