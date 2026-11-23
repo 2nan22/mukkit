@@ -16,14 +16,27 @@ export function BrandSymbol({ height = 22, className = "fill-brand" }: { height?
   );
 }
 
-// 읽는 이름은 한글(먹킷), 보이는 글자는 영문 대문자
+// 글자 로고 — 한글 '먹킷'을 크게, 영문 MUKKIT 을 아래 작게 (44, 사용자 결정 2026-11-23 B안: 영문만이면 '무킷'으로 읽힘)
+// 두 줄 글자 묶음의 위 · 아래를 수저 심볼 높이에 맞춘다
+const MARK = {
+  md: { h: 32, ko: 21, en: 8.5, gap: 9, nudge: 1 },
+  sm: { h: 26, ko: 17, en: 7, gap: 7, nudge: 0.8 },
+} as const;
+
 export function Wordmark({ size = "md" }: { size?: "sm" | "md" }) {
-  const sm = size === "sm";
+  const m = MARK[size];
   return (
-    <span className="flex items-center gap-2" role="img" aria-label={BRAND_NAME}>
-      <BrandSymbol height={sm ? 17 : 22} />
-      <span aria-hidden="true" className={`leading-none font-bold tracking-[0.1em] text-ink ${sm ? "text-[15px]" : "text-[20px]"}`}>
-        MUKKIT
+    <span className="flex items-center" style={{ gap: m.gap }} role="img" aria-label={BRAND_NAME}>
+      <BrandSymbol height={m.h} />
+      <span aria-hidden="true" className="flex flex-col justify-between" style={{ height: m.h }}>
+        {/* nudge: 한글 글자 윗선을 숟가락 머리 윗선에 맞추는 보정 */}
+        <span className="block leading-[0.8] font-bold tracking-[-0.02em] text-ink" style={{ fontSize: m.ko, marginTop: m.nudge }}>
+          먹킷
+        </span>
+        {/* 영문은 한글 묶음과 너비를 맞춘다 — 마지막 글자 뒤 자간은 빼기 */}
+        <span className="block leading-[0.75] font-bold tracking-[0.1em] text-muted" style={{ fontSize: m.en, marginRight: "-0.1em" }}>
+          MUKKIT
+        </span>
       </span>
     </span>
   );
