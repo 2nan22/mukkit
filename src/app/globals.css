@@ -12,7 +12,8 @@
   --color-ink: #17181c;
   --color-ink-2: #33363d;
   --color-muted: #5b5f69;
-  --color-subtle: #868c96;
+  /* 흰 바탕 대비 4.5:1 이상 (AA) — 꺼진 탭 · 방문일 등 보조 글자 */
+  --color-subtle: #6e737c;
   --color-line: #eeeff1;
   --color-line-strong: #dddfe3;
   --color-surface: #f4f5f6;
@@ -74,8 +75,16 @@
   }
 }
 
+/* 다크 모드는 아직 없음 — 기기 강제 어둡게에 색이 뒤섞이지 않게 밝은 화면으로 고정 */
+:root {
+  color-scheme: light;
+}
+
 body {
   background: #ffffff;
   color: var(--color-ink);
   font-feature-settings: "tnum";
+  /* 한국어 낱말 가운데서 줄이 꺾이지 않게 ('좋/아해요') */
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }

@@ -68,7 +68,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
   if (iBlocked) {
     return (
       <div className="flex flex-col items-start gap-3 px-6 pt-16">
-        <h2 className="text-title font-bold tracking-tight">차단한 사람이에요</h2>
+        <h2 className="text-title font-bold tracking-tight">{person.nickname}님을 차단했어요</h2>
         <p className="text-body leading-relaxed text-ink-2">차단을 해제하면 평가와 리스트를 다시 볼 수 있어요.</p>
         <div className="pt-2">
           <UnblockButton userId={userId} />

@@ -81,7 +81,7 @@ async function MeetVisit({ params, searchParams }: { params: Promise<{ meetupId:
                 <div className="-mb-2 flex min-h-11 items-center justify-between">
                   {rated ? (
                     <Link href={`/rate/${v.placeId}?next=${encodeURIComponent(back)}`} className="flex h-11 items-center text-meta font-semibold text-ink underline underline-offset-[3px]">
-                      고치기
+                      평가 수정
                     </Link>
                   ) : (
                     <Link href={`/rate/${v.placeId}?next=${encodeURIComponent(back)}`} className="flex h-9 items-center rounded-full bg-ink px-3.5 text-meta font-semibold text-white">

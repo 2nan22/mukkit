@@ -6,8 +6,9 @@ import { Avatar } from "@/components/ui/Avatar";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { honor } from "@/domain/honor";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
-import { getNotifications, notificationHref, type AppNotification } from "@/features/notifications/notifications";
+import { getNotifications, groupNotifications, notificationHref, type GroupedNotification } from "@/features/notifications/notifications";
 import { MarkRead } from "@/features/notifications/MarkRead";
+import { FollowButton } from "@/features/social/FollowButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "알림" };
@@ -25,12 +26,12 @@ export default function NotificationsPage() {
   );
 }
 
-function message(n: AppNotification): string {
-  const who = honor(n.actorNickname);
+function message(n: GroupedNotification): string {
+  const who = n.otherActors > 0 ? `${honor(n.actorNickname)} 외 ${n.otherActors}명` : honor(n.actorNickname);
   const rating = n.placeName ? `내 ${n.placeName} 평가` : "내 평가";
   switch (n.kind) {
     case "comment":
-      return `${who}이 ${rating}에 댓글을 남겼어요`;
+      return n.count > 1 ? `${who}이 ${rating}에 댓글 ${n.count}개를 남겼어요` : `${who}이 ${rating}에 댓글을 남겼어요`;
     case "like":
       return `${who}이 ${rating}를 좋아해요`;
     case "follow":
@@ -74,8 +75,14 @@ async function List() {
       </div>
     );
   }
-  const today = items.filter((n) => isToday(n.createdAt));
-  const earlier = items.filter((n) => !isToday(n.createdAt));
+  // 나를 팔로우한 사람 중 내가 아직 팔로우하지 않은 사람 — 알림 줄에서 바로 맞팔로우
+  const followers = [...new Set(items.filter((n) => n.kind === "follow").map((n) => n.actorId))];
+  const { data: back } = followers.length
+    ? await supabase.from("follows").select("followee_id").eq("follower_id", me).in("followee_id", followers)
+    : { data: [] };
+  const followingBack = new Set((back ?? []).map((r) => r.followee_id as string));
+  const today = groupNotifications(items.filter((n) => isToday(n.createdAt)));
+  const earlier = groupNotifications(items.filter((n) => !isToday(n.createdAt)));
   return (
     <>
       <MarkRead />
@@ -83,12 +90,12 @@ async function List() {
         ["오늘", today],
         ["이전", earlier],
       ].map(([label, group]) =>
-        (group as AppNotification[]).length === 0 ? null : (
+        (group as GroupedNotification[]).length === 0 ? null : (
           <section key={label as string} aria-label={label as string} className="flex flex-col pt-2">
             <h2 className="px-5 py-2 text-meta font-bold text-ink-2">{label as string}</h2>
             <ul className="flex flex-col">
-              {(group as AppNotification[]).map((n) => (
-                <Row key={n.id} n={n} />
+              {(group as GroupedNotification[]).map((n) => (
+                <Row key={n.id} n={n} followBack={n.kind === "follow" && !followingBack.has(n.actorId)} />
               ))}
             </ul>
           </section>
@@ -98,10 +105,10 @@ async function List() {
   );
 }
 
-function Row({ n }: { n: AppNotification }) {
+function Row({ n, followBack }: { n: GroupedNotification; followBack: boolean }) {
   return (
-        <li>
-          <Link href={notificationHref(n)} className={`flex min-h-16 items-center gap-3 px-5 py-3 ${n.read ? "" : "bg-surface"}`}>
+        <li className={`flex items-center pr-5 ${n.read ? "" : "bg-surface"}`}>
+          <Link href={notificationHref(n)} className="flex min-h-16 min-w-0 flex-1 items-center gap-3 py-3 pr-3 pl-5">
             <Avatar name={n.actorNickname} size={40} />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-body leading-snug text-ink">{message(n)}</span>
@@ -115,6 +122,7 @@ function Row({ n }: { n: AppNotification }) {
               </span>
             )}
           </Link>
+          {followBack && <FollowButton targetId={n.actorId} following={false} compact />}
         </li>
   );
 }

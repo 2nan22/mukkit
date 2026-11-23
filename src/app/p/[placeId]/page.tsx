@@ -160,15 +160,16 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         </div>
         {mine && ["three", "two", "one", "notRecommended"].includes(mine.tier) ? (
           <div className="flex flex-col gap-2.5 rounded-[16px] bg-surface p-4">
-            <div className="flex items-center gap-2">
+            {/* 좁은 폭에서 '곳' · '위' · '방문'이 한 글자씩 떨어지지 않게 항목 단위로 줄을 넘긴다 */}
+            <div className="flex flex-wrap items-center gap-x-2">
               <TierBadge tier={mine.tier} />
-              <span className="text-meta font-medium text-ink-2">{TIER_MEANING[mine.tier]}</span>
+              <span className="text-meta font-medium whitespace-nowrap text-ink-2">{TIER_MEANING[mine.tier]}</span>
               {mine.tier === "three" && (
-                <Link href="/rank" className="inline-flex min-h-11 items-center text-meta font-semibold text-ink underline underline-offset-[3px]">
+                <Link href="/rank" className="inline-flex min-h-11 items-center text-meta font-semibold whitespace-nowrap text-ink underline underline-offset-[3px]">
                   {mine.rank ? `3숟가락 중 ${mine.rank}위` : "순위 정하기"}
                 </Link>
               )}
-              {mine.visitedOn && <span className="ml-auto text-meta text-subtle">{dot(mine.visitedOn)}</span>}
+              {mine.visitedOn && <span className="ml-auto text-meta whitespace-nowrap text-subtle">{dot(mine.visitedOn)}</span>}
             </div>
             {mine.review && <p className="text-body leading-relaxed">{mine.review}</p>}
             <AteMenus menus={mine.menus} />

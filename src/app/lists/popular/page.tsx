@@ -15,7 +15,7 @@ export const metadata = { title: "공개 리스트" };
 export default function PopularListsPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <AppHeader kind="back" title="공개 리스트" fallback="/home" />
+      <AppHeader kind="back" title="많이 저장된 리스트" fallback="/home" />
       <main className="flex flex-1 flex-col pb-10">
         <Suspense fallback={<ListSkeleton />}>
           <Grid />
