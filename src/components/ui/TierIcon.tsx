@@ -32,3 +32,14 @@ export function tierIconSvg(tier: Tier, height: number, color?: string): string 
 export function TierIcon({ tier, height = 13, color }: { tier: Tier; height?: number; color?: string }) {
   return <span aria-hidden="true" className="inline-flex shrink-0" dangerouslySetInnerHTML={{ __html: tierIconSvg(tier, height, color) }} />;
 }
+
+const COUNT: Partial<Record<Tier, number>> = { three: 3, two: 2, one: 1 };
+
+// 숟가락 개수로 높낮이 — 3 · 2 · 1숟가락은 색 숟가락 n개 + 회색 나머지, 그 밖은 아이콘 하나 (리스트 탭 등급 줄)
+export function TierSpoons({ tier, height = 15 }: { tier: Tier; height?: number }) {
+  const n = COUNT[tier];
+  const html = n
+    ? [0, 1, 2].map((k) => tierIconSvg(tier, height, k < n ? undefined : "#e3e1dd")).join("")
+    : tierIconSvg(tier, height);
+  return <span aria-hidden="true" className="inline-flex w-[46px] shrink-0 items-center gap-0.5" dangerouslySetInnerHTML={{ __html: html }} />;
+}

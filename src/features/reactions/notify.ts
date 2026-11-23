@@ -14,7 +14,7 @@ export async function notifyComment(authorId: string, ownerId: string, placeId: 
   const url = commentsHref(ownerId, placeId);
   const tag = `comments-${ownerId}-${placeId}`;
   if (authorId !== ownerId) {
-    await sendPush([ownerId], { title: "새 댓글", body: `${who}이 내 평가에 댓글을 남겼어요`, url, tag });
+    await sendPush([ownerId], { title: "새 댓글", body: `${who}이 내 평가에 댓글을 남겼어요`, url, tag }, "comment");
     return;
   }
   const { data: earlier } = await admin.from("rating_comments").select("author_id").eq("owner_id", ownerId).eq("place_id", placeId).neq("author_id", ownerId);
@@ -26,5 +26,5 @@ export async function notifyComment(authorId: string, ownerId: string, placeId: 
     .select("blocker_id, blocked_id")
     .or(`blocker_id.eq.${ownerId},blocked_id.eq.${ownerId}`);
   const cut = new Set((blocked ?? []).flatMap((b) => [b.blocker_id as string, b.blocked_id as string]));
-  await sendPush(ids.filter((id) => !cut.has(id)), { title: "새 댓글", body: `${who}이 댓글을 남겼어요`, url, tag });
+  await sendPush(ids.filter((id) => !cut.has(id)), { title: "새 댓글", body: `${who}이 댓글을 남겼어요`, url, tag }, "comment");
 }

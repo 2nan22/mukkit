@@ -19,14 +19,14 @@ export async function notifyMeetup(meetupId: string, actorId: string, event: Eve
   const others = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== actorId);
 
   if (event.kind === "invited") {
-    await sendPush([event.to], { title: "약속 초대", body: `${name}이 약속에 초대했어요`, url, tag: `invite-${meetupId}` });
+    await sendPush([event.to], { title: "약속 초대", body: `${name}이 약속에 초대했어요`, url, tag: `invite-${meetupId}` }, "meetup");
     return;
   }
   if (event.kind === "joined") {
     // 이미 참여한 사람이 링크를 다시 열어도 알리지 않게 — 방금 들어온 경우만
     const { data: row } = await admin.from("meetup_members").select("joined_at").eq("meetup_id", meetupId).eq("user_id", actorId).maybeSingle();
     if (!row || Date.now() - new Date(row.joined_at as string).getTime() > 120_000) return;
-    await sendPush(others, { title: "약속", body: `${name}이 참여했어요`, url, tag: `meet-${meetupId}` });
+    await sendPush(others, { title: "약속", body: `${name}이 참여했어요`, url, tag: `meet-${meetupId}` }, "meetup");
     return;
   }
   // 위치를 넣은 사람이 둘 이상이 됐을 때만 — 추천이 새로 나오거나 바뀜
@@ -36,5 +36,6 @@ export async function notifyMeetup(meetupId: string, actorId: string, event: Eve
   await sendPush(
     others.filter((id) => ready.has(id)),
     { title: "약속", body: ready.size === 2 ? `${name}이 위치를 넣어 추천 지역이 나왔어요` : `${name}이 위치를 넣어 추천 지역이 바뀌었어요`, url, tag: `meet-${meetupId}` },
+    "meetup",
   );
 }
