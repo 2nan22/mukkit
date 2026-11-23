@@ -168,7 +168,7 @@ async function HomeContent() {
               여기서 뭐 먹지?
             </span>
             <span className="text-meta text-ink-2">
-              내 기록과 팔로잉 평가에서 골라요
+              내 기록과 믿는 사람의 평가에서 골라요
             </span>
           </span>
           <span className={`flex h-10 shrink-0 items-center rounded-full px-4 text-meta font-bold ${empty ? "bg-white text-ink" : "bg-brand text-white raised-brand"}`}>

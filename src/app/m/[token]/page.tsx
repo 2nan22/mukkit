@@ -57,7 +57,7 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
         {invite.member_count > 1 && <p className="text-meta text-muted">지금 {invite.member_count}명 참여 중</p>}
         <ol className="mt-3 flex flex-col gap-2.5 rounded-[16px] bg-surface p-4 text-meta leading-normal text-ink-2">
           <li className="flex gap-2"><b className="text-ink">1</b>로그인하고 약속에 참여해요</li>
-          <li className="flex gap-2"><b className="text-ink">2</b>출발지나 귀가지를 넣어요 — 동네 정도로만 저장하고 상대에게는 보이지 않아요</li>
+          <li className="flex gap-2"><b className="text-ink">2</b>출발지나 귀가지를 넣어요 (상대에게는 안 보여요)</li>
           <li className="flex gap-2"><b className="text-ink">3</b>모두 가기 편한 지역 3곳과 가게를 추천해 드려요</li>
         </ol>
       </section>

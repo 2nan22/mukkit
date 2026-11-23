@@ -12,10 +12,10 @@ export type RatingVisibility = (typeof RATING_VISIBILITIES)[number];
 export const RatingSchema = z.object({
   placeId: z.uuid(),
   tier: z.enum(TIERS),
-  note: z.string().trim().max(NOTE_MAX, `한 줄 평가는 ${NOTE_MAX}자까지 쓸 수 있어요`),
+  note: z.string().trim().max(NOTE_MAX, `메모는 ${NOTE_MAX}자까지 쓸 수 있어요`),
   visitedOn: z.iso.date().nullable(),
   sponsored: z.boolean(),
-  review: z.string().trim().max(REVIEW_MAX, `공개 한마디는 ${REVIEW_MAX}자까지 쓸 수 있어요`),
+  review: z.string().trim().max(REVIEW_MAX, `한 줄 평가는 ${REVIEW_MAX}자까지 쓸 수 있어요`),
   visibility: z.enum(RATING_VISIBILITIES),
   menus: z.array(z.string().trim().min(1).max(MENU_NAME_MAX)).max(MENUS_MAX),
 });

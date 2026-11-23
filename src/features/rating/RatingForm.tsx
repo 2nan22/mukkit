@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { useLeave } from "@/lib/nav/useLeave";
 import { TierBadge } from "@/components/ui/TierBadge";
+import { TierIcon } from "@/components/ui/TierIcon";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
 import { saveRating, type RatingFormState } from "./actions";
 import { NOTE_MAX, RATING_VISIBILITIES, REVIEW_MAX, type RatingVisibility, type SavedPlace } from "./rating";
@@ -74,7 +75,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
               value={tier}
               defaultChecked={tier === place.tier}
               aria-label={TIER_LABEL[tier]}
-              className="size-5 accent-brand"
+              className="size-5 accent-ink"
             />
           </label>
         ))}
@@ -85,6 +86,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
               className="flex h-btn-m cursor-pointer items-center justify-center gap-2 rounded-full bg-surface text-meta font-medium text-ink-2 has-checked:bg-ink has-checked:text-white raised"
             >
               <input type="radio" name="tier" value={tier} defaultChecked={tier === place.tier} className="sr-only" />
+              <TierIcon tier={tier} height={14} color="currentColor" />
               {tier === "unrated" ? "평가 전" : TIER_LABEL[tier]}
             </label>
           ))}
@@ -122,7 +124,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
           {RATING_VISIBILITIES.map((v) => (
             <label
               key={v}
-              className="flex h-9 cursor-pointer items-center justify-center rounded-btn-s text-meta text-muted has-checked:bg-white has-checked:font-bold has-checked:text-ink has-checked:shadow-[0_1px_3px_rgb(0_0_0/0.1)]"
+              className="flex h-9 cursor-pointer items-center justify-center rounded-btn-s text-meta text-muted has-checked:bg-ink has-checked:font-bold has-checked:text-white"
             >
               <input type="radio" name="visibility" value={v} defaultChecked={v === place.visibility} className="sr-only" />
               {VISIBILITY_TEXT[v]}

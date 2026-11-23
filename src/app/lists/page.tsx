@@ -81,9 +81,9 @@ async function ListsContent({ searchParams }: { searchParams: PageProps<"/lists"
             <Link href="/rate" className="mb-3 flex items-center justify-between gap-3 rounded-[16px] bg-ink px-4 py-3.5 text-white">
               <span className="flex flex-col gap-0.5">
                 <span className="text-body font-bold">평가 전 {unrated}곳</span>
-                <span className="text-meta text-white/70">등급만 고르면 돼요</span>
+                <span className="text-meta text-white/70">등급만 고르면 끝나요</span>
               </span>
-              <span className="flex h-8 shrink-0 items-center rounded-full bg-brand px-3 text-meta font-bold">빠르게 평가</span>
+              <span className="flex h-10 shrink-0 items-center rounded-full bg-white px-4 text-meta font-bold text-ink">빠르게 평가</span>
             </Link>
           )}
           {/* 평가 전은 위 카드가 대신하면 줄에서 뺀다 · 0곳은 빈 지도로 보내지 않는다 */}

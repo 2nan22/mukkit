@@ -197,7 +197,7 @@ export function TrustArt() {
       <div className={`${FLOAT} top-[64px] right-2.5 flex items-center gap-2 py-2 pr-3 pl-2 [@media(max-height:700px)]:top-[50px]`}>
         <Avatar name="민지" size={24} />
         <span className="flex flex-col">
-          <span className="text-[12px] leading-tight font-bold text-ink">취향 겹침 82%</span>
+          <span className="text-[12px] leading-tight font-bold text-ink">취향 일치 82%</span>
           <span className="text-[10.5px] leading-snug text-muted">민지 · 팔로잉</span>
         </span>
       </div>

@@ -118,7 +118,7 @@ export function EatView({ regions }: { regions: Region[] }) {
                 setRadius(r);
                 if (where) search(where, r);
               }}
-              className={`h-9 rounded-btn-s text-meta ${radius === r ? "bg-white font-bold text-ink shadow-float" : "text-muted"}`}
+              className={`h-9 rounded-btn-s text-meta ${radius === r ? "bg-ink font-bold text-white" : "text-muted"}`}
             >
               {km(r)} 안
             </button>
