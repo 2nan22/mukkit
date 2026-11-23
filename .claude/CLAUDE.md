@@ -1,4 +1,4 @@
-# CLAUDE.md — 먹킷 (구 마이슐랭 · 저장소 mychelin)
+# CLAUDE.md — 먹킷 (구 마이슐랭 · GitHub 2nan22/mukkit · 로컬 폴더는 2026_mychelin 그대로)
 
 ## 공통 지침 — Vault 정본 참조
 
