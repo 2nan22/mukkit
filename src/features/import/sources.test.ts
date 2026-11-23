@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractLink, sourceNameForLink } from "./sources";
+import { extractLink, extractLinks, sourceNameForLink } from "./sources";
 
 describe("sourceNameForLink", () => {
   it("링크로 네이버 · 카카오를 고른다", () => {
@@ -26,5 +26,16 @@ describe("공유 문구에서 링크 뽑기", () => {
   });
   it("링크만 있으면 그대로", () => {
     expect(extractLink("  https://naver.me/abc  ")).toBe("https://naver.me/abc");
+  });
+});
+
+describe("여러 링크 한 번에", () => {
+  it("글 속 링크를 모두 · 같은 링크는 한 번", () => {
+    const text = "[네이버지도] 먹킷리스트 https://naver.me/aaa\n[카카오맵] 그룹 https://kko.to/bbb\n다시 https://naver.me/aaa";
+    expect(extractLinks(text)).toEqual(["https://naver.me/aaa", "https://kko.to/bbb"]);
+  });
+  it("링크가 없으면 넣은 글 그대로 · 빈 글은 없음", () => {
+    expect(extractLinks(" 0123456789abcdef0123456789abcdef ")).toEqual(["0123456789abcdef0123456789abcdef"]);
+    expect(extractLinks("  ")).toEqual([]);
   });
 });
