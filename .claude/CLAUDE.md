@@ -76,6 +76,7 @@
 ### 결정 기록 (근거는 Vault)
 - 이름은 '먹킷'(MUKKIT)으로 임시 결정 (사용자 결정 2026-11-23) — 후보 수십 개(에이전트 · GPT · Gemini)를 봤지만 마땅한 게 없어 우선 사용, 떠오르면 다시 바꾼다
     - 바꿀 때 고칠 곳: components/brand/Wordmark.tsx(BRAND_NAME · 글자 로고) · manifest · 화면 문구의 '먹킷'(받침 있는 이름이라 조사 그대로) · 약관 · 처리방침
+    - 외부 이름 (2026-11-23): GitHub 2nan22/mukkit · Vercel 프로젝트 mukkit · 운영 주소 https://mukkit-app.vercel.app (mukkit.vercel.app 은 남이 씀 'Eater 먹킷리스트') · 옛 주소 mychelin-bice.vercel.app 도 당분간 같이 연결 · Supabase 프로젝트 '먹킷 MUKKIT'(3자 이상 규칙) · Supabase Site URL 새 주소 · Redirect URLs 둘 다
     - 상표(KIPRIS) · 구글플레이는 확인 못 함 — 출시 전 변리사 확인. 비슷한 기능의 경쟁 앱 '냠(NYAM)' 있음 · 앱스토어에 '맛슐랭(MatChelin)' 있음
 - 브랜드 표기 — 홈 헤더 · 공유 화면은 주황 수저 심볼 + 영문 대문자 MUKKIT(시안 4번 방향). 입체 앱 아이콘은 홈 화면 아이콘에만, 실행 화면은 흰 바탕 + 투명 바탕 심볼(manifest any 아이콘)
 - 네이버 가져오기 — 공개 범위 '일부 공개' · '전체 공개' 리스트의 공유 링크로 로그인 없이 수집 (비공식 내부 API)
