@@ -133,14 +133,17 @@ export function MeetupForm() {
       </section>
 
       <div className="flex-1" />
-      {error && (
-        <p role="alert" className="text-meta text-danger">
-          {error}
-        </p>
-      )}
-      <button type="button" onClick={submit} disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
-        {pending ? "만드는 중" : "약속 만들기"}
-      </button>
+      {/* 버튼은 화면 아래에 붙여 둠 — 홈 화면 앱에서 화면 높이가 실제보다 크게 잡혀도 가려지지 않게 (55) */}
+      <div className="sticky bottom-0 z-10 flex flex-col gap-3 bg-white pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+        {error && (
+          <p role="alert" className="text-meta text-danger">
+            {error}
+          </p>
+        )}
+        <button type="button" onClick={submit} disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
+          {pending ? "만드는 중" : "약속 만들기"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { LIST_COLOR_KEYS, listColorOf, type ListColor } from "@/domain/listColor";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Cuisine } from "@/domain/cuisine";
 import { getPlaceCovers } from "@/features/place/covers";
@@ -207,11 +208,9 @@ export type ImportedListSummary = { source: PlaceSourceName; sourceListId: strin
 
 // 가져온 원본 리스트 — 등급 리스트로 가져와 먹킷 리스트가 없는 것도 여기 남아 있다
 export async function getImportedLists(supabase: SupabaseClient, userId: string): Promise<ImportedListSummary[]> {
-  const { data, error } = await supabase
-    .from("imported_items")
-    .select("source, source_list_id, list_name")
-    .eq("user_id", userId)
-    .limit(10000);
+  const { data, error } = await fetchAll((from, to) =>
+    supabase.from("imported_items").select("source, source_list_id, list_name").eq("user_id", userId).order("source_list_id").order("source_place_id").range(from, to),
+  );
   if (error) throw new ListWriteError("imported", error.code);
   const groups = new Map<string, ImportedListSummary>();
   for (const r of data) {
@@ -223,11 +222,17 @@ export async function getImportedLists(supabase: SupabaseClient, userId: string)
   return [...groups.values()].sort((a, b) => b.count - a.count);
 }
 
+// 등급별 곳 수 — 행을 받아 세지 않고 DB 가 센 개수만 (행 수 제한 1000에 걸리지 않게, 55)
+const DB_TIER_KEYS = ["three", "two", "one", "not_recommended", "want_to_go", "unrated"] as const;
 export async function countMyTiers(supabase: SupabaseClient, userId: string): Promise<Record<string, number>> {
-  const { data, error } = await supabase.from("user_places").select("tier").eq("user_id", userId).limit(10000);
-  if (error) throw new ListWriteError("tiers", error.code);
+  const results = await Promise.all(
+    DB_TIER_KEYS.map((t) => supabase.from("user_places").select("place_id", { count: "exact", head: true }).eq("user_id", userId).eq("tier", t)),
+  );
   const counts: Record<string, number> = {};
-  for (const r of data) counts[r.tier as string] = (counts[r.tier as string] ?? 0) + 1;
+  results.forEach((r, i) => {
+    if (r.error) throw new ListWriteError("tiers", r.error.code);
+    if (r.count) counts[DB_TIER_KEYS[i]] = r.count;
+  });
   return counts;
 }
 
@@ -242,7 +247,9 @@ export async function getMyMapLists(supabase: SupabaseClient, userId: string): P
       .eq("owner_id", userId)
       .order("updated_at", { ascending: false })
       .returns<{ id: string; name: string; color: string | null; source: string | null; source_list_id: string | null; list_items: { place_id: string; added_at: string }[] }[]>(),
-    supabase.from("imported_items").select("source, source_list_id, list_name, place_id, saved_at").eq("user_id", userId).limit(10000),
+    fetchAll((from, to) =>
+      supabase.from("imported_items").select("source, source_list_id, list_name, place_id, saved_at").eq("user_id", userId).order("source_list_id").order("source_place_id").range(from, to),
+    ),
   ]);
   if (own.error) throw new ListWriteError("map", own.error.code);
   if (raw.error) throw new ListWriteError("map-imported", raw.error.code);

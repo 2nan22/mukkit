@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { TIER_LABEL, tierFromDb, type Tier } from "@/domain/tier";
 import type { Cuisine } from "@/domain/cuisine";
@@ -12,7 +13,7 @@ export type MapPlace = {
   lng: number;
   address: string;
   cuisine: Cuisine;
-  // 세부 업종 — 기본 그림 고르기 (팔로잉 지도는 없음 → 업종 그림)
+  // 세부 업종 — 사진 없는 곳의 기본 그림 고르기
   kind?: string | null;
   categoryName: string;
   available: boolean;
@@ -38,13 +39,16 @@ type FollowingRow = {
   available: boolean;
   raters: { userId: string; nickname: string; tier: string }[];
   my_tier: string | null;
+  food_kind: string | null;
 };
 
 // 팔로잉 지도 — 팔로우하는 사람이 평가한 곳 (볼 수 있는 평가만 · 협찬 제외). 핀 등급은 그중 가장 높은 실제 평가
 export async function getFollowingMapPlaces(supabase: SupabaseClient): Promise<MapPlace[]> {
-  const { data, error } = await supabase.rpc("following_map_places");
+  const { data, error } = await fetchAll<FollowingRow>(
+    (from, to) => supabase.rpc("following_map_places").range(from, to) as unknown as PromiseLike<{ data: FollowingRow[] | null; error: { code?: string } | null }>,
+  );
   if (error) throw new Error(`팔로잉 지도 조회 실패: ${error.code}`);
-  return (data as FollowingRow[]).map((r) => {
+  return data.map((r) => {
     const raters = r.raters.map((x) => ({ userId: x.userId, nickname: x.nickname, tier: tierFromDb(x.tier) }));
     return {
       placeId: r.place_id,
@@ -53,6 +57,7 @@ export async function getFollowingMapPlaces(supabase: SupabaseClient): Promise<M
       lng: r.lng,
       address: r.address,
       cuisine: r.cuisine as Cuisine,
+      kind: r.food_kind,
       categoryName: r.category_name,
       available: r.available,
       tier: raters[0]?.tier ?? "unrated",
@@ -95,12 +100,16 @@ type Row = {
 
 // 내가 저장한 장소 전부 — 원문 링크는 주소로 저장한 항목(카카오 N…)을 빼고 출처마다 하나
 export async function getMyMapPlaces(supabase: SupabaseClient, userId: string): Promise<MapPlace[]> {
-  const { data, error } = await supabase
-    .from("user_places")
-    .select("tier, note, places(id, name, lat, lng, address, cuisine, food_kind, category_name, available, place_sources(source, source_place_id))")
-    .eq("user_id", userId)
-    .order("saved_at", { ascending: false })
-    .returns<Row[]>();
+  const { data, error } = await fetchAll<Row>((from, to) =>
+    supabase
+      .from("user_places")
+      .select("tier, note, places(id, name, lat, lng, address, cuisine, food_kind, category_name, available, place_sources(source, source_place_id))")
+      .eq("user_id", userId)
+      .order("saved_at", { ascending: false })
+      .order("place_id")
+      .range(from, to)
+      .returns<Row[]>(),
+  );
   if (error) throw new Error(`지도 장소 조회 실패: ${error.code}`);
   return data.flatMap((row) => (row.places ? [toMapPlace(row, row.places)] : []));
 }

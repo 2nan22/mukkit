@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { getMyMapPlaces, type MapPlace } from "@/features/map/myPlaces";
 
@@ -9,7 +10,9 @@ export type PickablePlace = MapPlace & { origins: PlaceOrigin[] };
 export async function getPickablePlaces(supabase: SupabaseClient, userId: string): Promise<PickablePlace[]> {
   const [places, items] = await Promise.all([
     getMyMapPlaces(supabase, userId),
-    supabase.from("imported_items").select("place_id, source, source_list_id, list_name, memo").eq("user_id", userId).limit(10000),
+    fetchAll((from, to) =>
+      supabase.from("imported_items").select("place_id, source, source_list_id, list_name, memo").eq("user_id", userId).order("source_list_id").order("source_place_id").range(from, to),
+    ),
   ]);
   if (items.error) throw new Error(`원본 조회 실패: ${items.error.code}`);
   const byPlace = new Map<string, PlaceOrigin[]>();

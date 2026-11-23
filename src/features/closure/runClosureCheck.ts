@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { checkKakaoPlaces, checkNaverLists } from "./checkers";
 import { diffPlaceInfo, type InfoPatch, type PlaceInfo } from "./placeInfo";
 
@@ -48,7 +49,7 @@ async function check(admin: SupabaseClient, checkers: Checkers): Promise<Closure
   const kakao = await checkers.kakao([...kakaoByPid.keys()]);
 
   // 네이버 — 가져온 공유 리스트 중 몇 개를 무작위로
-  const listRows = await admin.from("imported_items").select("source_list_id").eq("source", "naver").limit(5000);
+  const listRows = await fetchAll((from, to) => admin.from("imported_items").select("source_list_id").eq("source", "naver").order("source_list_id").range(from, to));
   if (listRows.error) throw new Error(`naver lists ${listRows.error.code}`);
   const listIds = shuffle([...new Set((listRows.data as { source_list_id: string }[]).map((r) => r.source_list_id))]).slice(0, NAVER_LISTS);
   const naver = await checkers.naver(listIds);
