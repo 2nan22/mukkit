@@ -1,7 +1,7 @@
 import { getMyProfileFlags } from "@/features/profile/flags";
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { ACCOUNT_LINKS, NICKNAME_SETUP, safeNextPath, SIGNED_IN_HOME, ONBOARDING_IMPORT } from "@/features/auth/paths";
+import { ACCOUNT_LINKS, NICKNAME_SETUP, safeNextPath, SIGNED_IN_HOME, ONBOARDING_CHARACTER, ONBOARDING_IMPORT } from "@/features/auth/paths";
 import { isLoginProvider, LAST_LOGIN_COOKIE } from "@/features/auth/providers";
 
 // 소셜 공급자 → Supabase → 여기로 돌아온 code 를 세션으로 바꾼다 (로그인 · 계정 연결 공용)
@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
   const profile = await getMyProfileFlags(supabase);
   if (!profile?.nickname_set_at) {
     const setup = new URL(NICKNAME_SETUP, request.url);
-    // 처음 가입이면 닉네임 다음에 '저장해 둔 맛집 가져오기'(건너뛰기 가능)를 거친다
-    setup.searchParams.set("next", next === SIGNED_IN_HOME ? ONBOARDING_IMPORT : next);
+    // 처음 가입이면 닉네임 다음에 캐릭터 고르기 → '저장해 둔 맛집 가져오기'(둘 다 건너뛰기 가능)
+    setup.searchParams.set("next", next === SIGNED_IN_HOME ? `${ONBOARDING_CHARACTER}?next=${encodeURIComponent(ONBOARDING_IMPORT)}` : next);
     setup.searchParams.set("from", "auth");
     return remember(NextResponse.redirect(setup));
   }
