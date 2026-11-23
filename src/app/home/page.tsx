@@ -1,6 +1,7 @@
 import { getPlaceCovers } from "@/features/place/covers";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ListSkeleton } from "@/components/ui/Skeleton";
@@ -9,20 +10,25 @@ import { NICKNAME_SETUP, SESSION_ENDED, SIGNED_OUT_HOME } from "@/features/auth/
 import { FollowingNew, RecentLists, SimilarPeople } from "@/features/home/HomeSections";
 import { needsAgreement } from "@/features/legal/legal";
 import { NearbyWantToGo } from "@/features/home/NearbyWantToGo";
-import { getFeed, getFollowCounts, getMyWantToGoPoints, getRecentPublicLists, getTasteMatches } from "@/features/social/social";
+import { getFeed, getFollowCounts, getMyWantToGoPoints, getPopularPublicLists, getTasteMatches } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-// 홈 — 시안 1: 근처 가고 싶은 곳 · 팔로잉 새 평가 · 취향이 비슷한 사람 · 요즘 공개된 리스트
+// 홈 — 시안 1: 근처 가고 싶은 곳 · 팔로잉 새 평가 · 취향이 비슷한 사람 · 요즘 많이 저장된 리스트
 export default function HomePage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="tab" title="마이슐랭" right={
-          <Link href="/search" aria-label="검색" className="flex size-11 items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-4-4" />
-            </svg>
-          </Link>
+          <>
+            <Link href="/search" aria-label="검색" className="flex size-11 items-center justify-center">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-4-4" />
+              </svg>
+            </Link>
+            <Suspense fallback={<span className="size-11" />}>
+              <NotificationBell />
+            </Suspense>
+          </>
         } />
       <main className="flex flex-1 flex-col gap-6 pt-1 pb-8">
         <Suspense fallback={<ListSkeleton hero />}>
@@ -48,7 +54,7 @@ async function HomeContent() {
     getMyWantToGoPoints(supabase, me),
     getFeed(supabase),
     getTasteMatches(supabase, 8),
-    getRecentPublicLists(supabase, 4),
+    getPopularPublicLists(supabase, 4),
     getFollowCounts(supabase, me),
     supabase.from("visit_members").select("id", { count: "exact", head: true }).eq("user_id", me).eq("status", "invited"),
     supabase.from("meetup_invites").select("meetup_id, meetups!inner(status)", { count: "exact", head: true }).eq("user_id", me).eq("meetups.status", "open"),

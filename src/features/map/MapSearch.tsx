@@ -21,7 +21,10 @@ export function MapSearch({
   onClear,
   mineLabel = "내 장소",
   freshLabel = "저장하지 않은 가게",
+  near = null,
 }: {
+  // 지금 보는 지도의 가운데 — 카카오 검색을 이 근처부터
+  near?: { lat: number; lng: number } | null;
   places: MapPlace[];
   mineLabel?: string;
   freshLabel?: string;
@@ -31,6 +34,11 @@ export function MapSearch({
   onClear?: () => void;
 }) {
   const [query, setQuery] = useState("");
+  // 검색을 시작하는 순간의 지도 가운데 (입력 중 지도가 움직여도 다시 묻지 않게 ref)
+  const nearRef = useRef(near);
+  useEffect(() => {
+    nearRef.current = near;
+  }, [near]);
   const [open, setOpen] = useState(false);
   // 검색어별 결과 — 지금 검색어의 결과만 보여 준다
   const [result, setResult] = useState<{ q: string; places: NewPlaceHit[] } | null>(null);
@@ -44,7 +52,7 @@ export function MapSearch({
   }, [panel, onOpenChange]);
   useEffect(() => {
     if (!q) return;
-    const t = setTimeout(() => start(async () => setResult({ q, places: (await searchAll(q, null)).places })), 300);
+    const t = setTimeout(() => start(async () => setResult({ q, places: (await searchAll(q, nearRef.current, false)).places })), 300);
     return () => clearTimeout(t);
   }, [q]);
 

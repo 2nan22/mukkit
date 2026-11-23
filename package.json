@@ -16,6 +16,7 @@
     "auth:naver": "scripts/register-naver-provider.sh"
   },
   "dependencies": {
+    "@litert-lm/core": "0.19.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.2",
     "next": "16.4.6",

@@ -34,6 +34,12 @@ type Near = { lat: number; lng: number; radius?: number };
 
 // null = 키가 없어 검색할 수 없음, [] = 결과 없음
 export async function searchKakaoKeyword(query: string, near?: Near, size = 15): Promise<KakaoHit[] | null> {
+  const r = await searchKakaoKeywordOrFail(query, near, size);
+  return r === "failed" ? [] : r;
+}
+
+// 실패(오류 · 한도 초과 · 네트워크)를 '0건'과 구분해야 하는 곳 — 'failed', 키가 없으면 null
+export async function searchKakaoKeywordOrFail(query: string, near?: Near, size = 15): Promise<KakaoHit[] | null | "failed"> {
   const key = process.env.KAKAO_REST_API_KEY;
   if (!key) return null;
   const params = new URLSearchParams({ query, size: String(size) });
@@ -47,10 +53,10 @@ export async function searchKakaoKeyword(query: string, near?: Near, size = 15):
     // 키는 남기지 않는다 — 상태 코드와 카카오 오류 종류만
     const body = res ? await res.json().catch(() => null) : null;
     console.warn("[kakao local] 검색 실패", res?.status ?? "network", body?.errorType ?? "", body?.message ?? "");
-    return [];
+    return "failed";
   }
   const parsed = ResponseSchema.safeParse(await res.json().catch(() => null));
-  if (!parsed.success) return [];
+  if (!parsed.success) return "failed";
   return parsed.data.documents.map(toHit);
 }
 
