@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ImportedList } from "@/domain/importedPlace";
 import type { NaverSharedListSource } from "@/features/import/naver/naverSharedListSource";
-import { checkKakaoPlaces, checkNaverLists } from "./checkers";
+import { checkKakaoPlaces, checkNaverLists, kakaoInfoOf } from "./checkers";
 
 function respond(status: number, body?: unknown) {
   return new Response(body === undefined ? null : JSON.stringify(body), { status });
@@ -36,5 +36,31 @@ describe("checkNaverLists", () => {
     expect(results.get("n1")).toBe(true);
     expect(results.get("n2")).toBe(false);
     expect(failedLists).toBe(1);
+  });
+});
+
+describe("kakaoInfoOf", () => {
+  it("카카오 상세 응답에서 이름 · 주소 · 좌표 · 업종을 꺼낸다 (2026-11 응답 형식)", () => {
+    const body = {
+      summary: {
+        name: "더딤섬",
+        address: { disp: "서울 종로구 종로12길 7 지하1층 (관철동)", road: "서울 종로구 종로12길 7 지하1층" },
+        category: { name: "중식", id1: "9", id2: "2810", name1: "음식점", name2: "중식" },
+        point: { lat: 37.5686, lon: 126.9862 },
+      },
+    };
+    expect(kakaoInfoOf(body)).toEqual({
+      name: "더딤섬",
+      address: "서울 종로구 종로12길 7 지하1층 (관철동)",
+      lat: 37.5686,
+      lng: 126.9862,
+      categoryName: "중식",
+      categoryPath: ["음식점", "중식"],
+      cuisine: "chinese",
+    });
+  });
+
+  it("좌표가 없으면 정보 없음", () => {
+    expect(kakaoInfoOf({ summary: { name: "가게" } })).toBeNull();
   });
 });
