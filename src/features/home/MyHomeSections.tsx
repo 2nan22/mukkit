@@ -1,55 +1,43 @@
 import Link from "next/link";
 import { CUISINE_ICON_PATH } from "@/components/ui/CuisineIcon";
 import { TierIcon, TierSpoons } from "@/components/ui/TierIcon";
-import { TIER_LABEL } from "@/domain/tier";
-import type { RankPlace } from "@/features/rank/rank";
 import { CUISINE_LABEL } from "@/domain/cuisine";
+import { TIER_LABEL, type Tier } from "@/domain/tier";
+import type { RankPlace } from "@/features/rank/rank";
+import { SectionHead } from "./HomeSections";
 import { HomeMiniMap } from "./HomeMiniMap";
 import type { MyHome } from "./myHome";
 
-const CHEVRON = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-    <path d="M9 6l6 6-6 6" />
-  </svg>
-);
+// 등급 집계 (DB 값 기준 키) — countMyTiers
+export type TierCounts = Record<string, number>;
 
-function Head({ title, href, more }: { title: string; href?: string; more?: string }) {
-  return (
-    <div className="flex items-center justify-between px-5">
-      <h2 className="text-section font-bold">{title}</h2>
-      {href && (
-        <Link href={href} className="flex h-11 items-center gap-0.5 text-meta text-muted">
-          {more}
-          {CHEVRON}
-        </Link>
-      )}
-    </div>
-  );
-}
-
-// 평가 전이 있으면 — 등급만 고르면 지도가 색으로 채워진다
+// 평가 전이 있으면 — 리스트 탭 등급 보기와 같은 카드
 export function QuickRate({ count }: { count: number }) {
   if (count === 0) return null;
   return (
     <Link href="/rate" className="mx-5 flex items-center justify-between gap-3 rounded-[16px] bg-ink px-4 py-3.5 text-white">
       <span className="flex flex-col gap-0.5">
         <span className="text-body font-bold">평가 전 {count}곳</span>
-        <span className="text-meta text-white/70">등급만 고르면 지도가 색으로 채워져요</span>
+        <span className="text-meta text-white/70">등급만 고르면 끝나요</span>
       </span>
-      <span className="flex h-9 shrink-0 items-center rounded-full bg-white px-3.5 text-meta font-bold text-ink">빠르게 평가</span>
+      <span className="flex h-10 shrink-0 items-center rounded-full bg-white px-4 text-meta font-bold text-ink">빠르게 평가</span>
     </Link>
   );
 }
 
-// 내 지도 — 실제 카카오맵에 내 장소 핀, 누르면 지도 탭으로
-export function MyMap({ home }: { home: MyHome }) {
-  if (home.saved === 0) {
+// 내 지도 — 실제 카카오맵 미리보기(만지지 않음) · 카드 전체가 지도 탭으로 가는 링크
+export function MyMap({ home, tiers }: { home: MyHome; tiers: TierCounts }) {
+  const saved = Object.values(tiers).reduce((a, b) => a + b, 0);
+  const three = tiers.three ?? 0;
+  const want = tiers.want_to_go ?? 0;
+  if (saved === 0) {
     return (
       <section className="flex flex-col gap-2">
-        <Head title="내 지도" />
-        <div className="mx-5 flex flex-col items-center gap-3 rounded-[16px] bg-surface px-4 py-6 text-center">
+        <SectionHead title="내 지도" />
+        <div className="mx-5 flex flex-col items-center gap-1 rounded-[16px] bg-surface px-4 py-6 text-center">
           <span className="text-body font-semibold">아직 저장한 곳이 없어요</span>
-          <Link href="/import" className="flex h-11 items-center rounded-btn-m bg-white px-4 text-body font-bold text-ink">
+          <span className="text-meta text-muted">네이버 · 카카오 리스트를 링크로 가져와요</span>
+          <Link href="/import" className="mt-2 flex h-11 items-center rounded-btn-m bg-white px-4 text-body font-bold text-ink">
             저장한 장소 가져오기
           </Link>
         </div>
@@ -58,33 +46,37 @@ export function MyMap({ home }: { home: MyHome }) {
   }
   return (
     <section className="flex flex-col gap-2">
-      <Head title="내 지도" href="/map" more="지도" />
-      <Link href="/map" aria-label={`내 지도 열기 · 저장 ${home.saved}곳`} className="mx-5 flex flex-col overflow-hidden rounded-[16px] border border-line">
+      <SectionHead title="내 지도" />
+      <div className="relative mx-5 flex flex-col overflow-hidden rounded-[16px] border border-line">
         <HomeMiniMap points={home.points} />
-        <span className="grid grid-cols-3 divide-x divide-line py-2.5 text-body">
+        <div className="grid grid-cols-3 divide-x divide-line py-2.5 text-meta text-ink-2">
           <span className="flex items-center justify-center gap-1">
-            저장 <b>{home.saved}</b>곳
+            저장 <b className="text-ink">{saved}</b>곳
           </span>
-          <span className="flex items-center justify-center gap-1.5">
-            <TierSpoons tier="three" height={12} />
-            <b>{home.three}</b>
+          <span className="flex items-center justify-center gap-1">
+            <TierSpoons tier="three" height={11} />
+            <b className="text-ink">{three}</b>곳
           </span>
-          <span className="flex items-center justify-center gap-1.5">
-            <TierIcon tier="wantToGo" height={13} />
-            <b>{home.wantToGo}</b>
+          <span className="flex items-center justify-center gap-1">
+            <TierIcon tier="wantToGo" height={12} />
+            <b className="text-ink">{want}</b>곳
           </span>
-        </span>
-      </Link>
+        </div>
+        {/* 지도 · 숫자 위를 덮는 링크 — 지도 안 핀 버튼과 겹치지 않게 형제로 */}
+        <Link href="/map" aria-label={`내 지도 열기 · 저장 ${saved}곳 · 3숟가락 ${three}곳 · 가고 싶은 곳 ${want}곳`} className="absolute inset-0" />
+      </div>
     </section>
   );
 }
 
-// 최근 저장한 곳 — 사진(내 사진 · 팔로잉) 없으면 업종 아이콘 · 아래에 등급 아이콘
+const RATED: Tier[] = ["three", "two", "one", "notRecommended"];
+
+// 최근 저장한 곳 — 사진(내 사진 · 팔로잉) 없으면 업종 아이콘 · 아래에 등급(평가 전은 업종)
 export function RecentSaved({ home, covers }: { home: MyHome; covers: Record<string, string> }) {
   if (home.recent.length === 0) return null;
   return (
     <section className="flex flex-col gap-2">
-      <Head title="최근 저장한 곳" href="/map" more="모두" />
+      <SectionHead title="최근 저장한 곳" />
       <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
         {home.recent.map((p) => (
           <li key={p.placeId} className="shrink-0">
@@ -100,9 +92,15 @@ export function RecentSaved({ home, covers }: { home: MyHome; covers: Record<str
                 </span>
               )}
               <span className="truncate text-body font-semibold">{p.name}</span>
-              <span className="flex items-center gap-1 text-meta text-muted">
-                <TierIcon tier={p.tier} height={12} />
-                {TIER_LABEL[p.tier]}
+              <span className="flex items-center gap-1 truncate text-meta text-muted">
+                {RATED.includes(p.tier) || p.tier === "wantToGo" ? (
+                  <>
+                    <TierIcon tier={p.tier} height={12} />
+                    {TIER_LABEL[p.tier]}
+                  </>
+                ) : (
+                  CUISINE_LABEL[p.cuisine]
+                )}
               </span>
             </Link>
           </li>
@@ -112,17 +110,29 @@ export function RecentSaved({ home, covers }: { home: MyHome; covers: Record<str
   );
 }
 
-// 나만의 맛집 순위 — 정한 순위가 있을 때 1 ~ 3위
-export function RankTop({ ranked }: { ranked: RankPlace[] }) {
-  if (ranked.length === 0) return null;
+// 나만의 맛집 순위 — 정한 순위가 2곳 이상이면 1 ~ 3위, 안 정한 3숟가락이 2곳 이상이면 정해 보기
+export function RankTop({ ranked, unranked }: { ranked: RankPlace[]; unranked: number }) {
+  if (ranked.length < 2) {
+    if (unranked + ranked.length < 2) return null;
+    return (
+      <Link href="/rank" className="mx-5 flex min-h-12 items-center justify-between gap-3 rounded-[16px] bg-surface px-4">
+        <span className="text-body">
+          3숟가락 <b>{unranked + ranked.length}곳</b>의 순위를 정해 보세요
+        </span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="shrink-0 text-muted" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </Link>
+    );
+  }
   return (
     <section className="flex flex-col gap-2">
-      <Head title="나만의 맛집 순위" href="/rank" more="순위" />
+      <SectionHead title="나만의 맛집 순위" more="/rank" />
       <ol className="mx-5 flex flex-col rounded-[16px] border border-line">
         {ranked.slice(0, 3).map((p, i) => (
           <li key={p.placeId} className="border-b border-line last:border-b-0">
             <Link href={`/p/${p.placeId}`} className="flex h-12 items-center gap-3 px-4">
-              <b className="w-4 text-body text-tier-3">{i + 1}</b>
+              <b className="w-4 text-body text-ink">{i + 1}</b>
               <span className="min-w-0 flex-1 truncate text-body font-semibold">{p.name}</span>
               <span className="shrink-0 text-meta text-muted">{CUISINE_LABEL[p.cuisine]}</span>
             </Link>
