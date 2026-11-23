@@ -44,5 +44,5 @@ export async function disconnectSource(source: string, sourceListId: string, del
     if (res.error) console.warn("[import] 끊은 원본 사진 삭제 실패: count=%d", paths.length);
   }
   for (const p of ["/import/sources", "/lists", "/map", "/my"]) revalidatePath(p);
-  return { done: deletePlaces ? "가져온 곳을 지웠어요" : "가져오기를 끊었어요" };
+  return { done: deletePlaces ? "가져온 곳을 지웠어요" : "연결을 끊었어요" };
 }

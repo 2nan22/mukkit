@@ -9,6 +9,8 @@ import { identityLabel } from "@/features/auth/identityLabel";
 import { linkErrorMessage } from "@/features/auth/linkErrors";
 import { fromSupabaseProvider, LOGIN_PROVIDER_LABEL, LOGIN_PROVIDER_ORDER } from "@/features/auth/providers";
 
+export const metadata = { title: "로그인 연결" };
+
 export default function AccountLinksPage({ searchParams }: PageProps<"/settings/accounts">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">

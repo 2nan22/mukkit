@@ -61,7 +61,7 @@ async function ListsContent({ searchParams }: { searchParams: PageProps<"/lists"
           { href: "/lists", label: "리스트", on: !byTier },
           { href: "/lists?view=tier", label: "등급", on: byTier },
         ].map((t) => (
-          <Link key={t.label} href={t.href} replace aria-current={t.on ? "page" : undefined} className={`flex h-9 items-center justify-center rounded-full text-body ${t.on ? "bg-ink font-bold text-white" : "text-muted"}`}>
+          <Link key={t.label} href={t.href} replace aria-current={t.on ? "page" : undefined} className={`flex h-11 items-center justify-center rounded-full text-body ${t.on ? "bg-ink font-bold text-white" : "text-muted"}`}>
             {t.label}
           </Link>
         ))}
@@ -78,20 +78,32 @@ async function ListsContent({ searchParams }: { searchParams: PageProps<"/lists"
               <span className="flex h-8 shrink-0 items-center rounded-full bg-brand px-3 text-meta font-bold">빠르게 평가</span>
             </Link>
           )}
-          {TIERS.map((t) => {
+          {/* 평가 전은 위 카드가 대신하면 줄에서 뺀다 · 0곳은 빈 지도로 보내지 않는다 */}
+          {TIERS.filter((t) => !(t === "unrated" && unrated > 0)).map((t) => {
             const n = tiers[tierToDb(t)] ?? 0;
-            return (
-              <Link key={t} href={`/map?tier=${t}`} className={`flex h-14 items-center gap-3 border-b border-line ${n === 0 ? "opacity-50" : ""}`}>
+            const inner = (
+              <>
                 <TierSpoons tier={t} />
                 <span className="flex-1 text-body">{TIER_LABEL[t]}</span>
                 <b className="text-body">{n}곳</b>
-                <span className="flex items-center text-meta text-subtle">
-                  지도
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-                    <path d="M9 5l7 7-7 7" />
-                  </svg>
-                </span>
+                {n > 0 && (
+                  <span className="flex items-center text-meta text-subtle">
+                    지도
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+                      <path d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                )}
+              </>
+            );
+            return n > 0 ? (
+              <Link key={t} href={`/map?tier=${t}`} className="flex h-14 items-center gap-3 border-b border-line">
+                {inner}
               </Link>
+            ) : (
+              <div key={t} className="flex h-14 items-center gap-3 border-b border-line opacity-50">
+                {inner}
+              </div>
             );
           })}
         </section>

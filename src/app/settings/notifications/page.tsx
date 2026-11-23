@@ -17,7 +17,8 @@ export default function NotificationSettingsPage() {
         <PushToggle variant="row" />
       </section>
       <section className="flex flex-col px-5 pt-6">
-        <h2 className="pb-1 text-meta text-muted">받을 알림</h2>
+        <h2 className="text-meta text-muted">받을 알림</h2>
+        <p className="pb-1 text-caption text-subtle">이 기기 알림이 켜져 있을 때 받아요</p>
         <Suspense fallback={null}>
           <Kinds />
         </Suspense>

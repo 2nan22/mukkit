@@ -54,11 +54,15 @@ export async function getImportSources(supabase: SupabaseClient, userId: string)
   return [...groups.values()].sort((a, b) => b.count - a.count);
 }
 
-// 마지막 확인 한 줄 — '오늘 확인' · 'N일 전 확인' · 볼 수 없음
+// 마지막 확인 한 줄 — '오늘 확인' · 'N일 전 확인' · 비공개 · 실패 (한국 시각 날짜 기준)
 export function syncLine(sync: ImportSourceRow["sync"], now = Date.now()): { text: string; warn: boolean } {
-  if (!sync) return { text: "새로 고침 안 함", warn: false };
-  if (sync.status === "unavailable") return { text: "원본을 볼 수 없어요 · 공개 범위 확인", warn: true };
+  if (!sync) return { text: "자동 새로 고침 안 함", warn: false };
+  if (sync.status === "unavailable") return { text: "원본이 비공개예요 · 공개 범위를 확인해 주세요", warn: true };
+  // error 는 마지막 확인이 실패한 것 (다음 새벽에 다시)
+  if (sync.status === "error") return { text: "최근 확인 실패 · 다시 시도해요", warn: true };
   if (!sync.lastSyncedAt) return { text: "확인 전", warn: false };
-  const days = Math.floor((now - new Date(sync.lastSyncedAt).getTime()) / 86_400_000);
-  return { text: days < 1 ? "오늘 확인" : `${days}일 전 확인`, warn: false };
+  // 날짜(달력) 기준 — 어제 밤 확인은 '어제'
+  const day = (t: number) => Math.floor((t + 9 * 3_600_000) / 86_400_000);
+  const days = day(now) - day(new Date(sync.lastSyncedAt).getTime());
+  return { text: days <= 0 ? "오늘 확인" : days === 1 ? "어제 확인" : `${days}일 전 확인`, warn: false };
 }

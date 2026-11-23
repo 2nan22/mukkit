@@ -79,7 +79,7 @@ async function MyContent() {
             저장 <b>{saved}</b>곳 · 평가 <b>{rated}</b>곳
           </span>
           <span className="flex items-center gap-0.5 text-meta font-semibold">
-            등급별
+            등급별 보기
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
               <path d="M9 5l7 7-7 7" />
             </svg>

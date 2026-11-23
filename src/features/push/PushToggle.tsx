@@ -170,7 +170,7 @@ export function PushToggle({ variant, text }: { variant: "strip" | "row"; text?:
       : state === "denied"
         ? "브라우저 설정에서 먹킷 알림을 허용해 주세요"
         : state === "ios-install"
-          ? "홈 화면에 추가한 먹킷에서 켤 수 있어요"
+          ? "Safari 공유 버튼 › 홈 화면에 추가한 뒤 켤 수 있어요"
           : state === "unsupported"
             ? "이 브라우저에서는 알림을 받을 수 없어요"
             : "약속 · 댓글 · 함께 방문 소식을 알려 드려요";

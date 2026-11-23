@@ -26,7 +26,7 @@ export default function SettingsPage() {
           <SourcesRow />
         </Suspense>
       </Group>
-      <Group title="개인정보">
+      <Group title="차단">
         <Row href="/settings/blocked" label="차단한 사람" />
       </Group>
       <Group title="정보">
@@ -37,7 +37,7 @@ export default function SettingsPage() {
       <div className="flex-1" />
       <div className="flex flex-col items-center gap-3 px-5 pt-10 pb-8">
         <form action="/auth/logout" method="post">
-          <button type="submit" className="h-10 px-3 text-meta text-muted">
+          <button type="submit" className="h-11 px-3 text-meta text-muted">
             로그아웃
           </button>
         </form>

@@ -8,11 +8,20 @@ import { Toast } from "@/components/ui/Toast";
 import { syncLine, type ImportSourceRow } from "./importSources";
 import { countDeletable, disconnectSource } from "./sourceActions";
 
+function nameOf(r: ImportSourceRow): string {
+  return r.name || "이름 없는 리스트";
+}
+
 // 원본 목록 — 줄을 누르면 먹킷 리스트로, ⋯ 은 끊기 시트
 export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
   const [open, setOpen] = useState<ImportSourceRow | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const opener = useRef<HTMLButtonElement | null>(null);
   const now = useNow();
+  const close = () => {
+    setOpen(null);
+    opener.current?.focus();
+  };
   return (
     <>
       <ul className="flex flex-col px-5">
@@ -22,9 +31,9 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
             <>
               <span className="flex items-center gap-1.5">
                 <SourceMark source={r.source} size={16} />
-                <span className="truncate text-body font-semibold">{r.name || "이름 없는 리스트"}</span>
+                <span className="truncate text-body font-semibold">{nameOf(r)}</span>
               </span>
-              <span className={`text-meta ${line.warn ? "text-danger" : "text-muted"}`}>
+              <span className={`text-meta ${line.warn ? "font-semibold text-ink" : "text-muted"}`}>
                 {r.count}곳 · {line.text}
               </span>
             </>
@@ -36,13 +45,23 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
                   {body}
                 </Link>
               ) : (
-                // 등급 리스트로 가져와 먹킷 리스트가 없는 원본 — 원하면 리스트로
-                <Link href={`/lists/new?from=${r.source}:${encodeURIComponent(r.sourceListId)}`} className="flex min-w-0 flex-1 items-center gap-2 py-3">
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">{body}</span>
-                  <span className="flex h-8 shrink-0 items-center rounded-full bg-surface px-3 text-meta font-semibold text-ink">리스트로 만들기</span>
-                </Link>
+                <>
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-3">{body}</span>
+                  {/* 등급 리스트로 가져와 먹킷 리스트가 없는 원본 — 원하면 리스트로 */}
+                  <Link href={`/lists/new?from=${r.source}:${encodeURIComponent(r.sourceListId)}`} className="flex h-11 shrink-0 items-center">
+                    <span className="flex h-8 items-center rounded-full bg-surface px-3 text-meta font-semibold text-ink">리스트 만들기</span>
+                  </Link>
+                </>
               )}
-              <button type="button" aria-label={`${r.name} 더 보기`} onClick={() => setOpen(r)} className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
+              <button
+                type="button"
+                aria-label={`${nameOf(r)} 관리`}
+                onClick={(e) => {
+                  opener.current = e.currentTarget;
+                  setOpen(r);
+                }}
+                className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted"
+              >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <circle cx="5" cy="12" r="1.6" />
                   <circle cx="12" cy="12" r="1.6" />
@@ -53,9 +72,18 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
           );
         })}
       </ul>
-      <p className="px-5 pt-3 text-meta text-muted">원본은 매일 새벽 새로 고쳐요</p>
-      {open && <DisconnectSheet row={open} onClose={() => setOpen(null)} onDone={(m) => (setOpen(null), setToast(m))} />}
-      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+      <p className="px-5 pt-3 text-meta text-muted">원본이 바뀌면 새벽에 먹킷에도 반영해요</p>
+      {open && (
+        <DisconnectSheet
+          row={open}
+          onClose={close}
+          onDone={(m) => {
+            setOpen(null);
+            setToast(m);
+          }}
+        />
+      )}
+      {toast && <Toast message={toast} onClose={() => setToast(null)} bottom={96} />}
     </>
   );
 }
@@ -67,32 +95,48 @@ function useNow(): number {
 }
 
 type Step = "choose" | "confirm";
+// 장소까지 지우면 지워질 곳 수 — 세는 중(null) · 실패(error)
+type Count = number | null | "error";
 
 function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClose: () => void; onDone: (message: string) => void }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("choose");
   const [wipe, setWipe] = useState(false);
-  const [deletable, setDeletable] = useState<number | null>(null);
+  const [count, setCount] = useState<Count>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const sheet = useRef<HTMLElement>(null);
+  const name = nameOf(row);
 
   useEffect(() => {
-    sheet.current?.focus();
     let live = true;
-    countDeletable(row.source, row.sourceListId).then((n) => live && setDeletable(n));
+    countDeletable(row.source, row.sourceListId).then((n) => live && setCount(n ?? "error"));
     return () => {
       live = false;
     };
   }, [row.source, row.sourceListId]);
+  // 단계가 바뀌어도 시트에 포커스 — 사라진 버튼에 남지 않게
+  useEffect(() => sheet.current?.focus(), [step]);
+  // Esc 는 어디에 포커스가 있든 닫기 · 뒤 화면 스크롤 막기
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !pending && onClose();
+    document.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+    };
+  }, [pending, onClose]);
 
-  const kept = deletable === null ? 0 : row.count - deletable;
+  const deletable = typeof count === "number" ? count : 0;
+  const canWipe = typeof count === "number" && count > 0;
   const run = (deletePlaces: boolean) =>
     start(async () => {
       const res = await disconnectSource(row.source, row.sourceListId, deletePlaces);
       if (res.error) return setError(res.error);
       router.refresh();
-      onDone(deletePlaces ? `${deletable}곳을 지웠어요` : "가져오기를 끊었어요");
+      onDone(res.done ?? "");
     });
 
   return (
@@ -102,34 +146,36 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label={step === "confirm" ? "장소 지우기 확인" : "가져오기 끊기"}
+        aria-label={step === "confirm" ? "장소 지우기 확인" : "연결 끊기"}
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.key === "Escape" && !pending && onClose()}
         className="flex w-full max-w-[480px] flex-col gap-3 rounded-t-[20px] bg-white px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] outline-none"
       >
         <span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-line-strong" />
         {step === "choose" ? (
           <>
             <div className="flex flex-col gap-1 pt-1">
-              <h2 className="text-[18px] leading-snug font-bold">&lsquo;{row.name}&rsquo; 가져오기를 끊을까요?</h2>
-              <p className="text-meta text-muted">{row.sync ? "새벽마다 새로 고치지 않아요." : "원본 기록이 목록에서 빠져요."}</p>
+              <h2 className="text-[18px] leading-snug font-bold">&lsquo;{name}&rsquo; 연결을 끊을까요?</h2>
+              <p className="text-meta text-muted">{row.sync ? "끊으면 원본이 바뀌어도 먹킷에 반영되지 않아요" : "가져온 원본 목록에서 빠져요"}</p>
             </div>
-            <div role="radiogroup" aria-label="끊는 방법" className="flex flex-col gap-2">
-              <Option checked={!wipe} onPick={() => setWipe(false)} title="연결만 끊기" desc={`저장한 ${row.count}곳 · 등급 · 메모는 그대로예요`} />
+            <fieldset className="flex flex-col gap-2">
+              <legend className="sr-only">끊는 방법</legend>
+              <Option checked={!wipe} onPick={() => setWipe(false)} title="연결만 끊기" desc="저장한 곳 · 등급 · 메모는 그대로예요" />
               <Option
                 checked={wipe}
-                disabled={deletable === 0}
+                disabled={!canWipe}
                 onPick={() => setWipe(true)}
                 title="장소까지 지우기"
                 desc={
-                  deletable === null
-                    ? "지울 곳을 세는 중이에요"
-                    : deletable === 0
-                      ? "지울 곳이 없어요. 모두 다른 리스트에도 담겨 있어요"
-                      : `${deletable}곳을 등급 · 메모 · 사진까지 지워요${kept > 0 ? `. 다른 리스트에도 담긴 ${kept}곳은 남아요` : ""}`
+                  count === null
+                    ? "지울 곳을 세고 있어요"
+                    : count === "error"
+                      ? "지울 곳을 세지 못했어요. 잠시 뒤 다시 열어 주세요"
+                      : count === 0
+                        ? "지울 곳이 없어요. 모두 다른 리스트나 원본에도 있어요"
+                        : `${count}곳의 등급 · 메모 · 사진을 지워요. 다른 리스트 · 원본에도 있는 곳은 남아요`
                 }
               />
-            </div>
+            </fieldset>
             {error && (
               <p role="alert" className="text-meta text-danger">
                 {error}
@@ -137,23 +183,25 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
             )}
             <button
               type="button"
-              disabled={pending || (wipe && !deletable)}
+              disabled={pending || (wipe && !canWipe)}
               onClick={() => (wipe ? setStep("confirm") : run(false))}
               className="mt-1 h-btn-l rounded-btn-m bg-ink text-body font-bold text-white disabled:opacity-40"
             >
-              {wipe ? "다음" : pending ? "끊는 중…" : "끊기"}
+              {wipe ? "다음" : pending ? "끊는 중…" : "연결 끊기"}
             </button>
-            <button type="button" disabled={pending} onClick={onClose} className="h-10 text-body text-muted">
+            <button type="button" disabled={pending} onClick={onClose} className="h-11 text-body text-muted">
               취소
             </button>
           </>
         ) : (
           <>
             <div className="flex flex-col gap-1 pt-1">
-              <h2 className="text-[18px] leading-snug font-bold">{deletable}곳을 지울까요?</h2>
+              <h2 className="text-[18px] leading-snug font-bold">
+                &lsquo;{name}&rsquo;에서 온 {deletable}곳을 지울까요?
+              </h2>
               <p className="text-meta leading-relaxed text-muted">
-                등급 · 메모 · 사진과 받은 좋아요 · 댓글도 지워지고 되돌릴 수 없어요.
-                {row.listId && " 이 원본으로 만든 리스트도 지워져요."}
+                등급 · 메모 · 사진, 받은 좋아요 · 댓글까지 지워져요. 되돌릴 수 없어요.
+                {row.listId && " 이 원본으로 만든 리스트도 함께 지워져요."}
               </p>
             </div>
             {error && (
@@ -164,7 +212,7 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
             <button type="button" disabled={pending} onClick={() => run(true)} className="mt-1 h-btn-l rounded-btn-m bg-danger text-body font-bold text-white disabled:opacity-40">
               {pending ? "지우는 중…" : `${deletable}곳 지우기`}
             </button>
-            <button type="button" disabled={pending} onClick={() => setStep("choose")} className="h-10 text-body text-muted">
+            <button type="button" disabled={pending} onClick={() => setStep("choose")} className="h-11 text-body text-muted">
               돌아가기
             </button>
           </>
@@ -174,21 +222,18 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
   );
 }
 
+// 진짜 라디오 — 방향키로 옮기고 탭 정지는 하나
 function Option({ checked, disabled = false, onPick, title, desc }: { checked: boolean; disabled?: boolean; onPick: () => void; title: string; desc: string }) {
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={checked}
-      disabled={disabled}
-      onClick={onPick}
-      className={`flex items-start gap-3 rounded-[14px] border px-4 py-3.5 text-left disabled:opacity-50 ${checked ? "border-ink ring-1 ring-ink" : "border-line"}`}
+    <label
+      className={`flex items-start gap-3 rounded-[14px] border px-4 py-3.5 ${disabled ? "opacity-50" : "cursor-pointer"} ${checked ? "border-ink ring-1 ring-ink" : "border-line"} has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ink`}
     >
+      <input type="radio" name="disconnect" checked={checked} disabled={disabled} onChange={onPick} className="peer sr-only" />
       <span aria-hidden="true" className={`mt-0.5 size-5 shrink-0 rounded-full ${checked ? "border-[6px] border-ink" : "border-2 border-line-strong"}`} />
       <span className="flex flex-col gap-0.5">
         <span className="text-body font-bold">{title}</span>
         <span className="text-meta leading-relaxed text-muted">{desc}</span>
       </span>
-    </button>
+    </label>
   );
 }
