@@ -1,3 +1,4 @@
+import { getMyProfileFlags } from "@/features/profile/flags";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -36,7 +37,7 @@ async function NicknameFormLoader({ searchParams }: { searchParams: Promise<{ ne
   const userId = data?.claims?.sub;
   if (!userId) redirect(SIGNED_OUT_HOME);
 
-  const { data: profile } = await supabase.from("profiles").select("nickname_set_at").eq("id", userId).single();
+  const profile = await getMyProfileFlags(supabase);
   if (profile?.nickname_set_at) redirect(nextPath);
 
   const metadata = data.claims.user_metadata as Record<string, unknown> | undefined;
