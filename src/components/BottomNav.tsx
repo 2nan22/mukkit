@@ -53,7 +53,7 @@ const ITEMS: Item[] = [
   },
   {
     href: "/my",
-    label: "MY",
+    label: "내 정보",
     match: ["/my", "/settings", "/people"],
     icon: (a) => (
       <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
@@ -64,7 +64,7 @@ const ITEMS: Item[] = [
   },
 ];
 
-// 로그인 뒤 큰 화면(홈 · 피드 · 지도 · 리스트 · MY) 아래에 공통으로
+// 로그인 뒤 큰 화면(홈 · 피드 · 지도 · 리스트 · 내 정보) 아래에 공통으로
 export function BottomNav() {
   const pathname = usePathname();
   return (

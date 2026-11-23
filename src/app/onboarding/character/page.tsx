@@ -11,7 +11,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "캐릭터 고르기" };
 
-// 처음 가입할 때 한 번 — 평가할수록 자라는 캐릭터 고르기 (건너뛰면 MY 에서 고른다)
+// 처음 가입할 때 한 번 — 평가할수록 자라는 캐릭터 고르기 (건너뛰면 내 정보 탭에서 고른다)
 export default function OnboardingCharacterPage({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
@@ -49,7 +49,7 @@ async function Gate({ searchParams }: { searchParams: Promise<{ next?: string | 
           <br />
           골라 주세요
         </h1>
-        <p className="text-body leading-normal text-ink-2">평가할수록 자라요. 나중에 MY에서 바꿀 수 있어요.</p>
+        <p className="text-body leading-normal text-ink-2">평가할수록 자라요. 나중에 내 정보에서 바꿀 수 있어요.</p>
       </div>
       <div className="px-5">
         <CharacterPicker done={nextPath} />

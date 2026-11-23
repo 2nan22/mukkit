@@ -12,13 +12,13 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyGrowth } from "@/features/growth/growth";
 import { GrowthCard } from "@/features/growth/GrowthCard";
 
-export const metadata = { title: "MY" };
+export const metadata = { title: "내 정보" };
 
 
 export default function MyPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <AppHeader kind="tab" title="MY" right={
+      <AppHeader kind="tab" title="내 정보" right={
           <Link href="/settings" aria-label="설정" className="flex size-11 items-center justify-center">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="3" />
@@ -91,7 +91,7 @@ async function MyContent() {
         </Link>
       </section>
 
-      <nav aria-label="MY 메뉴" className="flex flex-col px-5 pt-4 pb-6">
+      <nav aria-label="내 정보 메뉴" className="flex flex-col px-5 pt-4 pb-6">
         {[
           { href: "/meet", label: "약속", icon: "M7 3v3M17 3v3M4 9h16M5 5h14v15H5z" },
           { href: "/rank", label: "나만의 맛집 순위", icon: "M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" },
