@@ -46,7 +46,7 @@ function readDismissed(): boolean {
   }
 }
 
-// 약속 알림 켜기 — strip: 약속 화면 · 목록의 한 줄 안내(켜져 있거나 닫으면 숨김) · row: 설정 화면(끄기 포함)
+// 알림 켜기 — strip: 약속 화면 · 목록의 한 줄 안내(켜져 있거나 닫으면 숨김) · row: 설정 › 알림(끄기 포함)
 export function PushToggle({ variant, text }: { variant: "strip" | "row"; text?: string }) {
   const [state, setState] = useState<State>("loading");
   const [busy, setBusy] = useState(false);
@@ -173,14 +173,13 @@ export function PushToggle({ variant, text }: { variant: "strip" | "row"; text?:
           ? "홈 화면에 추가한 먹킷에서 켤 수 있어요"
           : state === "unsupported"
             ? "이 브라우저에서는 알림을 받을 수 없어요"
-            : "초대 · 참여 · 추천 소식을 알려 드려요";
+            : "약속 · 댓글 · 함께 방문 소식을 알려 드려요";
   const canToggle = state === "on" || state === "off";
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-meta text-muted">알림</span>
       <div className="flex min-h-16 items-center gap-3 border-b border-line">
         <span className="flex flex-1 flex-col gap-0.5">
-          <span className="text-body font-bold">약속 알림</span>
+          <span className="text-body font-bold">이 기기에서 알림 받기</span>
           {error ? (
             <span role="alert" className="text-meta text-danger">
               {error}
@@ -194,7 +193,7 @@ export function PushToggle({ variant, text }: { variant: "strip" | "row"; text?:
             type="button"
             role="switch"
             aria-checked={state === "on"}
-            aria-label="약속 알림"
+            aria-label="이 기기에서 알림 받기"
             disabled={busy}
             onClick={state === "on" ? turnOff : turnOn}
             className={`relative h-7 w-12 shrink-0 rounded-full transition-colors before:absolute before:-inset-2 before:content-[''] disabled:opacity-50 ${state === "on" ? "bg-ink" : "bg-line-strong"}`}
