@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { checkKakaoPlaces, checkNaverLists } from "./checkers";
+import { diffPlaceInfo, type InfoPatch, type PlaceInfo } from "./placeInfo";
 
 export const JOB_NAME = "closure_check";
 const KAKAO_BATCH = 150;
@@ -7,12 +8,15 @@ const NAVER_LISTS = 10;
 // 한 번에 이만큼 넘게 폐업으로 나오면 출처 쪽 이상으로 보고 바꾸지 않는다
 const MAX_CLOSED_RATIO = 0.3;
 const MIN_FOR_GUARD = 20;
+// 가게 정보가 한 번에 이만큼 넘게 바뀌면 출처 쪽 이상으로 보고 반영하지 않는다
+const MAX_CHANGED_RATIO = 0.3;
 
 export type ClosureCheckResult = { ok: boolean; checked: number; closed: number; reopened: number; detail: Record<string, unknown>; error?: string };
 
 type Checkers = { kakao: typeof checkKakaoPlaces; naver: typeof checkNaverLists };
 
 // 매일 새벽 — 확인한 지 오래된 카카오 장소 N곳 + 가져온 네이버 리스트 몇 개를 다시 읽어 폐업 여부를 갱신
+// 영업 중인 곳은 가게 정보(이름 · 주소 · 좌표 · 업종)가 바뀌었으면 같이 반영 (46)
 export async function runClosureCheck(admin: SupabaseClient, checkers: Checkers = { kakao: checkKakaoPlaces, naver: checkNaverLists }): Promise<ClosureCheckResult> {
   const started = await admin.from("job_runs").insert({ job: JOB_NAME }).select("id").single();
   const runId = started.data?.id as number | undefined;
@@ -62,11 +66,14 @@ async function check(admin: SupabaseClient, checkers: Checkers): Promise<Closure
   const closed = [...decided].filter(([pid, open]) => !open && before.get(pid) !== false).map(([pid]) => pid);
   const reopened = [...decided].filter(([pid, open]) => open && before.get(pid) === false).map(([pid]) => pid);
   const closedTotal = [...decided.values()].filter((v) => !v).length;
-  const detail = { kakaoChecked: kakao.results.size, kakaoUnknown: kakao.unknown, naverLists: listIds.length, naverFailedLists: naver.failedLists, naverChecked: naver.results.size };
+  const detail: Record<string, unknown> = { kakaoChecked: kakao.results.size, kakaoUnknown: kakao.unknown, naverLists: listIds.length, naverFailedLists: naver.failedLists, naverChecked: naver.results.size };
 
   if (decided.size >= MIN_FOR_GUARD && closedTotal / decided.size > MAX_CLOSED_RATIO) {
     return { ok: false, checked: decided.size, closed: 0, reopened: 0, detail: { ...detail, closedTotal }, error: "폐업 비율이 비정상적으로 높아 갱신하지 않음" };
   }
+
+  const info = await applyPlaceInfo(admin, kakao.info, kakaoByPid, naver.info, naverByPid, new Set(closed));
+  Object.assign(detail, info);
 
   const now = new Date().toISOString();
   await updatePlaces(admin, closed, { available: false, source_checked_at: now });
@@ -86,6 +93,54 @@ async function placeIdsFor(admin: SupabaseClient, source: string, sids: string[]
     for (const r of data as { place_id: string; source_place_id: string }[]) out.set(r.source_place_id, r.place_id);
   }
   return out;
+}
+
+// 가게 정보 반영 — 장소의 대표 출처(places.source)가 알려 준 정보만 공용 장소에 쓴다
+// 한 번에 너무 많이 바뀌면 출처 쪽 이상으로 보고 쓰지 않는다 · 너무 멀리 옮겨졌다는 곳은 건너뛴다
+async function applyPlaceInfo(
+  admin: SupabaseClient,
+  kakaoInfo: Map<string, PlaceInfo>,
+  kakaoByPid: Map<string, string>,
+  naverInfo: Map<string, PlaceInfo>,
+  naverByPid: Map<string, string>,
+  closed: Set<string>,
+): Promise<{ infoChecked: number; infoChanged: number; infoFar: number; infoSkipped?: boolean }> {
+  const fresh = { kakao: new Map<string, PlaceInfo>(), naver: new Map<string, PlaceInfo>() };
+  for (const [sid, i] of kakaoInfo) {
+    const pid = kakaoByPid.get(sid);
+    if (pid && !closed.has(pid)) fresh.kakao.set(pid, i);
+  }
+  for (const [sid, i] of naverInfo) {
+    const pid = naverByPid.get(sid);
+    if (pid && !closed.has(pid)) fresh.naver.set(pid, i);
+  }
+  const ids = [...new Set([...fresh.kakao.keys(), ...fresh.naver.keys()])];
+  const patches: [string, InfoPatch][] = [];
+  let checked = 0;
+  let far = 0;
+  for (const part of chunks(ids)) {
+    const { data, error } = await admin.from("places").select("id, source, name, address, lat, lng, category_name, category_path, cuisine").in("id", part);
+    if (error) throw new Error(`places info ${error.code}`);
+    for (const row of data as { id: string; source: string; name: string; address: string; lat: number; lng: number; category_name: string; category_path: string[]; cuisine: string }[]) {
+      const now = row.source === "kakao" ? fresh.kakao.get(row.id) : row.source === "naver" ? fresh.naver.get(row.id) : undefined;
+      if (!now) continue;
+      checked += 1;
+      const d = diffPlaceInfo(
+        { id: row.id, name: row.name, address: row.address, lat: row.lat, lng: row.lng, categoryName: row.category_name, categoryPath: row.category_path ?? [], cuisine: row.cuisine },
+        now,
+      );
+      if (d.far) far += 1;
+      else if (Object.keys(d.patch).length > 0) patches.push([row.id, d.patch]);
+    }
+  }
+  if (checked >= MIN_FOR_GUARD && patches.length / checked > MAX_CHANGED_RATIO) {
+    return { infoChecked: checked, infoChanged: 0, infoFar: far, infoSkipped: true };
+  }
+  for (const [id, patch] of patches) {
+    const { error } = await admin.from("places").update(patch).eq("id", id);
+    if (error) throw new Error(`places info update ${error.code}`);
+  }
+  return { infoChecked: checked, infoChanged: patches.length, infoFar: far };
 }
 
 async function currentAvailability(admin: SupabaseClient, ids: string[]): Promise<Map<string, boolean>> {
