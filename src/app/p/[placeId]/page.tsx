@@ -65,7 +65,7 @@ function OtherRow({ r, placeId, reaction }: { r: OtherRating; placeId: string; r
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-body font-bold">{r.nickname}</span>
             <span className="truncate text-meta text-muted">
-              평가 {r.ratedCount}곳 · 수저 셋 비율 {r.threeRatio}%
+              평가 {r.ratedCount}곳 · 3숟가락 비율 {r.threeRatio}%
             </span>
           </span>
         </Link>
@@ -162,7 +162,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
               <span className="text-meta font-medium text-ink-2">{TIER_MEANING[mine.tier]}</span>
               {mine.tier === "three" && (
                 <Link href="/rank" className="inline-flex min-h-11 items-center text-meta font-semibold text-ink underline underline-offset-[3px]">
-                  {mine.rank ? `수저 셋 중 ${mine.rank}위` : "순위 정하기"}
+                  {mine.rank ? `3숟가락 중 ${mine.rank}위` : "순위 정하기"}
                 </Link>
               )}
               {mine.visitedOn && <span className="ml-auto text-meta text-subtle">{dot(mine.visitedOn)}</span>}
