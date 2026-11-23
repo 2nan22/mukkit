@@ -1,15 +1,18 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { ImportFlow } from "@/features/import/ImportFlow";
 import { TEXT_IMPORT_ENABLED } from "@/features/textImport/enabled";
 
 export const metadata = { title: "가져오기" };
 
-export default function ImportPage() {
+export default function ImportPage({ searchParams }: PageProps<"/import">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="close" fallback="/home" title="저장한 장소 가져오기" />
-      <ImportFlow />
+      <Suspense fallback={<ImportFlow />}>
+        <SharedLink searchParams={searchParams} />
+      </Suspense>
       {/* 리스트 링크가 아닌 SNS · 블로그 글에서 */}
       {TEXT_IMPORT_ENABLED && (
         <Link href="/import/text" className="mx-5 mb-8 flex min-h-14 items-center justify-between gap-3 rounded-[14px] bg-surface px-4">
@@ -24,4 +27,10 @@ export default function ImportPage() {
       )}
     </main>
   );
+}
+
+// 앱 공유 시트로 들어온 링크(?link=)는 바로 확인
+async function SharedLink({ searchParams }: { searchParams: Promise<{ link?: string | string[] }> }) {
+  const { link } = await searchParams;
+  return <ImportFlow initialLink={typeof link === "string" ? link.slice(0, 500) : ""} />;
 }

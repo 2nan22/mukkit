@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { importList, previewList, type ListPreview } from "./actions";
 import { extractLink, SOURCE_LABEL } from "./sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
@@ -26,7 +26,8 @@ type Phase = "select" | "running" | "done";
 
 const ERROR_TEXT = "text-danger";
 
-export function ImportFlow() {
+// initialLink: 앱 공유 시트에서 넘어온 링크 — 바로 확인한다 · helpOpen: 링크 찾는 법을 펼친 채로 (처음 가입)
+export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink?: string; helpOpen?: boolean } = {}) {
   const [rows, setRows] = useState<Row[]>([]);
   const [phase, setPhase] = useState<Phase>("select");
   const [status, setStatus] = useState<Record<string, RowStatus>>({});
@@ -59,6 +60,8 @@ export function ImportFlow() {
   return (
     <div className="flex flex-1 flex-col">
       <LinkForm
+        initialLink={initialLink}
+        helpOpen={helpOpen}
         onAdd={(row) => setRows((rs) => (rs.some((r) => r.listId === row.listId) ? rs : [...rs, row]))}
       />
       <section className="flex flex-1 flex-col px-5 pt-4">
@@ -102,11 +105,16 @@ export function ImportFlow() {
   );
 }
 
-function LinkForm({ onAdd }: { onAdd: (row: Row) => void }) {
-  const [link, setLink] = useState("");
+function LinkForm({ onAdd, initialLink, helpOpen }: { onAdd: (row: Row) => void; initialLink: string; helpOpen: boolean }) {
+  const [link, setLink] = useState(initialLink);
+  const form = useRef<HTMLFormElement>(null);
+  // 공유 시트로 들어온 링크는 바로 확인
+  useEffect(() => {
+    if (initialLink) form.current?.requestSubmit();
+  }, [initialLink]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<{ text: string; privateList: boolean; source: PlaceSourceName | null } | null>(null);
-  const [showHelp, setShowHelp] = useState(false);
+  const [showHelp, setShowHelp] = useState(helpOpen);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -125,7 +133,7 @@ function LinkForm({ onAdd }: { onAdd: (row: Row) => void }) {
 
   return (
     <div className="flex flex-col border-b-8 border-surface">
-      <form onSubmit={submit} className="flex flex-col gap-2 px-5 pt-3 pb-4">
+      <form ref={form} onSubmit={submit} className="flex flex-col gap-2 px-5 pt-3 pb-4">
         <label htmlFor="link" className="text-meta font-bold">
           공유 링크
         </label>
@@ -174,41 +182,72 @@ function LinkForm({ onAdd }: { onAdd: (row: Row) => void }) {
   );
 }
 
-const HELP: Record<PlaceSourceName, { app: string; url: string; find: ReactNode[]; open: ReactNode[] }> = {
+// 앱 화면 순서는 2026-11 네이버 지도 · 카카오맵 앱 기준 (사용자 캡처로 확인)
+const HELP: Record<PlaceSourceName, { app: string; url: string; find: ReactNode[]; pc: ReactNode; open: ReactNode[]; art: string[] }> = {
   naver: {
     app: "네이버 지도",
     url: "https://map.naver.com/",
     find: [
-      <>네이버 지도 <b>저장</b>에서 가져올 리스트의 <b>⋮</b>를 눌러요</>,
-      <><b>공유</b>를 누르고 <b>링크 복사</b>를 골라요</>,
-      <>복사한 링크를 위 칸에 붙여 넣어요. 비공개 리스트는 <b>일부 공개</b> 이상으로 바꿔야 해요</>,
+      <>네이버 지도 앱 <b>저장</b>에서 가져올 리스트의 <b>⋮</b>를 눌러요</>,
+      <><b>공유</b>를 누르고 <b>복사</b>를 골라요. 리스트 이름이 같이 복사돼도 괜찮아요</>,
+      <>위 칸에 붙여 넣어요. 비공개 리스트는 <b>일부 공개</b> 이상으로 바꿔야 해요</>,
     ],
+    pc: <>PC에서는 리스트의 <b>⋮ › 공유</b>에서 링크 <b>복사</b></>,
     open: [
       <>네이버 지도 <b>저장</b>에서 가져올 리스트의 <b>⋮</b>를 눌러요</>,
       <><b>수정 › 공개 범위</b>를 <b>일부 공개</b>나 <b>전체 공개</b>로 바꿔요</>,
       <>다시 <b>⋮ › 공유</b>로 받은 링크를 위 칸에 넣어요</>,
     ],
+    art: ["⋮", "공유", "복사"],
   },
   kakao: {
     app: "카카오맵",
     url: "https://map.kakao.com/",
     find: [
-      <>카카오맵 <b>즐겨찾기</b>에서 가져올 폴더의 <b>⋮</b>를 눌러요</>,
-      <><b>공유</b>를 누르고 <b>링크 복사</b>를 골라요</>,
-      <>복사한 링크를 위 칸에 붙여 넣어요. 비공개 폴더는 <b>공개</b>로 바꿔야 해요</>,
+      <>카카오맵 앱 <b>즐겨찾기</b>에서 가져올 그룹을 열어요</>,
+      <>위쪽 <b>공유</b> 버튼을 누르고 <b>URL 복사</b>를 골라요</>,
+      <>위 칸에 붙여 넣어요. 비공개 그룹은 <b>공개</b>로 바꿔야 해요</>,
     ],
+    pc: <>PC에서는 그룹의 <b>⋮ › 그룹 공유</b>에서 <b>복사</b></>,
     open: [
-      <>카카오맵 <b>즐겨찾기</b>에서 가져올 폴더의 <b>⋮</b>를 눌러요</>,
-      <><b>편집</b>에서 폴더를 <b>공개</b>로 바꿔요</>,
-      <>다시 <b>⋮ › 공유</b>로 받은 링크를 위 칸에 넣어요</>,
+      <>카카오맵 <b>즐겨찾기</b>에서 가져올 그룹의 <b>⋮</b>를 눌러요</>,
+      <><b>그룹 수정</b>에서 <b>공개</b>로 바꿔요</>,
+      <>다시 <b>공유 › URL 복사</b>로 받은 링크를 위 칸에 넣어요</>,
     ],
+    art: ["그룹", "공유", "URL 복사"],
   },
 };
+
+// 순서 그림 — 누를 곳만 굵게 (각 앱 화면을 그대로 옮기지 않는다)
+function HelpArt({ steps }: { steps: string[] }) {
+  return (
+    <div aria-hidden="true" className="flex items-center gap-1.5">
+      {steps.map((label, i) => (
+        <div key={label} className="flex flex-1 items-center gap-1.5">
+          <div className="flex h-16 flex-1 flex-col justify-center gap-1.5 rounded-[12px] bg-surface px-2.5">
+            <span className="h-1.5 w-3/4 rounded-full bg-line-strong" />
+            <span className="flex h-6 items-center justify-center self-start rounded-full bg-ink px-2.5 text-caption font-bold text-white">{label}</span>
+          </div>
+          {i < steps.length - 1 && (
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0 text-subtle">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function LinkHelp({ source, privateList }: { source: PlaceSourceName | null; privateList: boolean }) {
   const shown: PlaceSourceName[] = source ? [source] : ["naver", "kakao"];
   return (
     <div className="flex flex-col gap-6 px-5 pt-1 pb-5">
+      {!privateList && (
+        <p className="rounded-[12px] bg-surface px-3.5 py-3 text-meta leading-normal text-ink-2">
+          홈 화면에 먹킷을 추가했다면, 네이버 지도 · 카카오맵 앱의 <b>공유</b>에서 <b>먹킷</b>을 바로 골라도 돼요. (안드로이드)
+        </p>
+      )}
       {shown.map((name) => {
         const help = HELP[name];
         const steps = privateList ? help.open : help.find;
@@ -218,6 +257,7 @@ function LinkHelp({ source, privateList }: { source: PlaceSourceName | null; pri
               <SourceMark source={name} size={20} />
               {privateList ? `${help.app}에서 공개 범위 바꾸기` : `${help.app} 공유 링크 찾는 법`}
             </h2>
+            {!privateList && <HelpArt steps={help.art} />}
             <ol className="flex flex-col gap-3.5">
               {steps.map((step, i) => (
                 <li key={i} className="flex items-start gap-3">
@@ -228,6 +268,7 @@ function LinkHelp({ source, privateList }: { source: PlaceSourceName | null; pri
                 </li>
               ))}
             </ol>
+            {!privateList && <p className="text-meta text-muted">{help.pc}</p>}
             <a
               href={help.url}
               target="_blank"
