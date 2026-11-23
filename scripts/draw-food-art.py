@@ -230,9 +230,9 @@ A['nonFood'] = shadow(32, 56, 8) + g('#8b8f98', '<path d="M32 56s-15-14-15-26a15
 
 DEF = {'korean': 'baekban', 'japanese': 'sushi', 'chinese': 'jjajang', 'western': 'pasta', 'asian': 'pho', 'snack': 'tteokbokki', 'bar': 'beer', 'cafe': 'coffee'}
 for k, v in DEF.items(): A[k] = A[v]
-os.makedirs('out2', exist_ok=True)
+os.makedirs('out3', exist_ok=True)
 for k, v in A.items():
-    open(f'out2/{k}.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{v}</svg>')
+    open(f'out3/{k}.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{v}</svg>')
 print(len(A))
 
 # 족발 다시 — 큰 반달 조각 다섯을 부채꼴로 겹침: 굵은 갈색 껍질 띠(면) + 분홍빛 살 + 비계 선, 뒤 가운데 뼈 마디
@@ -242,7 +242,7 @@ def jok2(x, y, rot):
 A['jokbal'] = (plate() + g('#fbf3e4', '<path d="M32 30V16"/><circle cx="29.5" cy="13" r="3.6"/><circle cx="34.5" cy="13" r="3.6"/>')
   + jok2(32, 44, -50) + jok2(32, 44, -25) + jok2(32, 44, 0) + jok2(32, 44, 25) + jok2(32, 44, 50)
   + leaf(12, 36, -30, 1.3, '#7cbf5a') + g(WHITE, '<circle cx="53" cy="44" r="4.6"/>', IN) + nf('#f5c9b8', '<circle cx="53" cy="44" r="2.4"/>'))
-open('out2/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
+open('out3/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
 
 # 족발 다시 2 — 조각을 왼쪽에서 오른쪽으로 펼쳐 겹침(각자 기울기), 뼈 마디는 뒤에 사선
 def jok3(x, y, rot):
@@ -251,9 +251,116 @@ def jok3(x, y, rot):
 A['jokbal'] = (plate() + g('#fbf3e4', '<path d="M40 34L51 20"/><circle cx="51" cy="16.5" r="3.4"/><circle cx="55" cy="19.5" r="3.4"/>')
   + jok3(15, 45, -22) + jok3(24, 42, -10) + jok3(33, 41, 0) + jok3(42, 42, 10) + jok3(50, 45, 22)
   + leaf(13, 33, -30, 1.3, '#7cbf5a'))
-open('out2/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
+open('out3/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
 
 # 족발 뼈를 굵은 뼈 모양(면)으로
 BONE = '<g transform="translate(45 27) rotate(-35)">' + g('#fbf3e4', '<rect x="-10" y="-3.2" width="20" height="6.4" rx="3"/><circle cx="-10" cy="-3" r="3.6"/><circle cx="-10" cy="3" r="3.6"/><circle cx="10" cy="-3" r="3.6"/><circle cx="10" cy="3" r="3.6"/>') + nf('#fbf3e4', '<rect x="-9" y="-2" width="18" height="4"/>') + '</g>'
 A['jokbal'] = (plate() + BONE + jok3(15, 45, -22) + jok3(24, 42, -10) + jok3(33, 41, 0) + jok3(42, 42, 10) + jok3(50, 45, 22) + leaf(13, 33, -30, 1.3, '#7cbf5a'))
-open('out2/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
+open('out3/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
+
+# ===== v3 — 디자인팀 재검토 반영 =====
+def steam(xs, y0=8, y1=18): return ln(''.join(f'<path d="M{x} {y1}c-2-3 2-5 0-{y1 - y0}"/>' for x in xs), O, IN)
+# 곱창 — 둥근 무쇠판 + 짧은 원통(구운 띠 · 끝 구멍) + 부추 다발 (새우색 금지)
+def tube(x, y, rot):
+    return (f'<g transform="rotate({rot} {x} {y})">' + g('#e9c49a', f'<rect x="{x - 6.5}" y="{y - 3.5}" width="13" height="7" rx="3.5"/>')
+      + ln(f'<path d="M{x - 3} {y}h5"/>', '#b8742f', IN) + g('#8a5a3a', f'<ellipse cx="{x + 4.6}" cy="{y}" rx="2.2" ry="2.6"/>', IN) + '</g>')
+A['gopchang'] = (shadow(32, 53, 22) + g('#3a3c42', '<ellipse cx="32" cy="38" rx="25" ry="11"/>') + g('#4a4d55', '<ellipse cx="32" cy="37" rx="21" ry="8"/>', IN)
+  + tube(21, 35, -10) + tube(34, 33, 8) + tube(27, 41, 4) + tube(41, 40, -6) + g(LEAF, '<rect x="43" y="28" width="12" height="5" rx="2" transform="rotate(-20 49 30)"/>', IN))
+# 김밥 — 썬 조각 셋을 사선으로 겹침 (속 세 칸)
+def gim3(x, y):
+    return (g('#26302a', f'<ellipse cx="{x}" cy="{y}" rx="10" ry="9"/>') + nf(RICE, f'<ellipse cx="{x}" cy="{y}" rx="7.2" ry="6.4"/>')
+      + nf(YOLK, f'<rect x="{x - 5.5}" y="{y - 3}" width="5" height="5" rx="1"/>') + nf('#f28c3c', f'<rect x="{x + .5}" y="{y - 4.5}" width="5" height="5" rx="1"/>')
+      + nf(LEAF, f'<rect x="{x - 1}" y="{y + .8}" width="5" height="5" rx="1"/>'))
+A['gimbap'] = shadow(32, 54, 20) + g('#26302a', '<path d="M46 21h4v18h-4z"/>') + gim3(46, 30) + gim3(31, 36) + gim3(16, 42)
+# 파스타 — 낮은 면 타래 + 사선 포크(면 머리) + 감긴 면 한 가닥 + 앞쪽 소스
+A['pasta'] = (plate() + g(NOODLE, '<path d="M12 44c-1-9 9-14 20-14s21 5 20 14z"/>') + ln('<path d="M19 41c4-6 22-6 26 0M24 36c3-3 13-3 16 0"/>', '#c9962e', IN)
+  + g(RED, '<path d="M14 42c2-4 10-5 13-1-3 3-10 3-13 1z"/>', IN) + leaf(23, 37, -20, 1)
+  + duo('M52 10L38 30', STEEL, 3) + '<g transform="rotate(-35 51 12)">' + g(STEEL, '<rect x="47.5" y="5" width="7" height="9" rx="2"/>') + ln('<path d="M49.8 6v5M52.2 6v5"/>', O, IN) + '</g>'
+  + duo('M36 34c3-3 6-1 8-4', NOODLE, 2.6))
+# 마라탕 · 훠궈 — 스텐 원앙솥, 외곽색 S자 칸막이, 밝은 홍탕 + 큰 마른 고추, 백탕 + 청경채
+A['mala'] = (shadow(32, 53, 21) + g(STEEL, '<ellipse cx="10" cy="33" rx="3.4" ry="2.6"/><ellipse cx="54" cy="33" rx="3.4" ry="2.6"/>')
+  + g(STEEL, '<path d="M10 32h44l-3 12a7 7 0 0 1-7 6H20a7 7 0 0 1-7-6z"/>') + rim(STEEL, y=32, rx=22, ry=7)
+  + rim(RED, y=32.5, rx=18.5, ry=5, sw=IN) + g('#f6ead2', '<path d="M32 27.5A18.5 5 0 0 1 32 37.5c4-3-4-7 0-10z"/>', IN)
+  + ln('<path d="M32 27.5c4 3-4 7 0 10"/>', O, OUT)
+  + g('#8f1f14', '<path d="M15 31c3-5 11-5 13-1-5 1-9 1-13 1z"/><path d="M17 35c4-3 10-3 12 0-5 1-8 1-12 0z"/>', IN)
+  + g(LEAF, '<path d="M38 32c2-4 8-5 11-2-2 3-7 4-11 2z"/>', IN) + ln('<path d="M39 32l8-2"/>', '#d9ecb8', IN))
+# 해물 · 생선 — 스케일 없이 가로 48, 지느러미, 큰 눈
+A['seafood'] = (shadow(30, 50, 19) + g('#7fb3d5', '<path d="M8 34c8-12 26-14 38-4l10-7v22l-10-7c-12 10-30 8-38-4z"/><path d="M24 25l6-6 4 6z"/><path d="M26 42l5 5 3-6z"/>')
+  + nf(O, '<circle cx="17" cy="32" r="2.6"/>') + ln('<path d="M27 26c3 4 3 10 0 14"/>', O, IN))
+# 기타 — 탑뷰 접시 + 굵은 포크 · 나이프 + 그림자
+A['other'] = (shadow(32, 52, 15) + g(WHITE, '<circle cx="32" cy="31" r="15"/>') + ln('<circle cx="32" cy="31" r="10"/>', '#c9c5bd', IN)
+  + g(STEEL, '<rect x="7" y="11" width="8" height="11" rx="2"/><rect x="9.5" y="21" width="3" height="28" rx="1.5"/>') + ln('<path d="M10 12v6M12 12v6"/>', O, IN)
+  + g(STEEL, '<path d="M54 11c-3 1-5 6-5 13h3v25h3V11z"/>'))
+# 짜장면 — 가운데로 · 종지 안쪽 · 노란 면은 면으로
+A['jjajang'] = (shadow(30, 54, 18) + bowl(WHITE, cx=29, y=31, w=40, h=18) + rim(NOODLE, cx=29, y=31, rx=20, ry=5)
+  + g('#3b2f2a', '<path d="M20 31c1-10 25-11 27-1z"/>') + g(NOODLE, '<path d="M11 31c2-4 6-5 10-4l-1 5z"/>', IN)
+  + ln('<path d="M29 25c2-2 5-2 7-1"/>', '#6b5a50', IN) + g(LEAF, '<rect x="31" y="19" width="12" height="3.4" rx="1.4" transform="rotate(-15 37 20)"/>', IN)
+  + g(WHITE, '<ellipse cx="49" cy="49" rx="8" ry="3.2"/>', IN) + g(YOLK, '<path d="M43.5 48.5a3.2 2.8 0 0 1 6.4 0z"/><path d="M48 49a3.2 2.8 0 0 1 6.4 0z"/>', IN))
+# 태국 — 연한 황갈 면 + 큰 분홍빨강 새우 + 큰 라임 + 숙주 · 쪽파
+def shrimp2(x, y, rot):
+    return f'<g transform="translate({x} {y}) rotate({rot}) scale(1.3)">' + g('#f0705a', '<path d="M-7 2a7 7 0 1 1 13 1l-4 1a3.5 3.5 0 1 0-6-1z"/>', 1.8) + g('#f0705a', '<path d="M-7 2l-4 3 5 2z"/>', 1.8) + ln('<path d="M-2-4.5l1 3M3-4l-1 3"/>', '#b8402a', 1.6) + '</g>'
+A['thai'] = (plate() + g('#e9c48a', '<path d="M12 44c-1-8 9-13 20-13s21 5 20 13z"/>') + ln('<path d="M18 41c4-5 22-5 26 0"/>', '#c9a06a', IN)
+  + shrimp2(23, 33, -10) + shrimp2(39, 32, 15) + g(LIME, '<circle cx="49" cy="44" r="6.5"/>', IN) + ln('<path d="M49 39v10M44 44h10"/>', '#7ea84f', IN)
+  + duo('M14 38l6-3', LEAF, 2) + duo('M28 42l7-2', WHITE, 2))
+# 닭요리 — 다리 하나만 크게 + 반대쪽 날개 호
+A['dak'] = (plate() + g('#c9772f', '<path d="M11 40c0-10 9-16 19-16s19 6 19 15c0 4-9 7-19 7s-19-2-19-6z"/>')
+  + ln('<path d="M16 37c2-5 6-7 10-7"/>', O, IN) + ln('<path d="M24 30c4-2 10-2 14 0"/>', '#f3c07a', IN)
+  + g('#c9772f', '<ellipse cx="42" cy="26" rx="9" ry="6" transform="rotate(-35 42 26)"/>')
+  + '<g transform="rotate(-35 50 18)">' + g('#fbf3e4', '<rect x="47" y="16.3" width="8" height="3.4" rx="1.5"/><circle cx="56" cy="16" r="3"/><circle cx="56" cy="20" r="3"/>', IN) + '</g>')
+# 백반 — 숟가락 머리 + 젓가락 한 쌍을 안쪽으로 + 반찬 종지 크게
+def side2(x, y, c): return g(WHITE, f'<ellipse cx="{x}" cy="{y}" rx="7" ry="3.8"/>', IN) + nf(c, f'<ellipse cx="{x}" cy="{y - .3}" rx="4.8" ry="2.4"/>')
+A['baekban'] = (shadow(30, 55, 22) + side2(12, 24, LEAF) + side2(26, 22, RED) + side2(40, 24, YOLK)
+  + bowl(WHITE, cx=17, y=38, w=22, h=13) + g(RICE, '<path d="M6.5 38c0-9 21-9 21 0z"/>') + rim(WHITE, cx=17, y=38, rx=11, ry=3, sw=IN)
+  + bowl('#3a3c42', cx=38, y=38, w=22, h=13) + rim('#c98a4a', cx=38, y=38, rx=11, ry=3) + g(LEAF, '<ellipse cx="36" cy="38" rx="2.6" ry="1.2"/>', IN)
+  + duo('M52 26v26', STEEL, 2.4) + g(STEEL, '<ellipse cx="52" cy="22" rx="3.4" ry="4.6"/>', IN) + duo('M55.5 18v34', WOOD, 1.8) + duo('M58 18v34', WOOD, 1.8))
+# 냉면 — 메밀 회갈 면 + 큰 달걀 + 림에 걸친 큰 얼음
+A['naengmyeon'] = (shadow(32, 54, 20) + bowl('#d5dae1', y=30, h=20) + ln('<path d="M13 37c12 4 26 4 38 0"/>', WHITE, IN)
+  + rim('#e9eef0', y=30) + g('#b7a48d', '<path d="M17 30c1-12 29-12 30 0z"/>') + ln('<path d="M22 27c3-4 7-5 10-5M27 29c3-5 9-6 13-4"/>', '#8c7560', IN)
+  + g(WHITE, '<path d="M24.5 19a7.5 6.5 0 0 1 15 0z"/>', IN) + g(YOLK, '<path d="M28.4 19a3.6 3.6 0 0 1 7.2 0z"/>', IN)
+  + g(LEAF, '<rect x="40" y="22" width="11" height="3.6" rx="1.4" transform="rotate(-20 45 24)"/>', IN)
+  + g('#e8f4fb', '<rect x="8" y="24" width="8" height="8" rx="1.6" transform="rotate(12 12 28)"/>', IN))
+# 돈카츠 — 큰 조각 셋, 맨 오른쪽만 단면 · 얇은 소스 · 양배추 선 2.0
+def cut2(x, side=False):
+    s = g(FRY, f'<path d="M{x} 45l6-16h9l-6 16z"/>')
+    if side: s += g('#f6e3c6', f'<path d="M{x + 9} 45l6-16 3.6 1-6 16z"/>', IN)
+    return s
+A['donkatsu'] = (plate() + g('#d9ecb8', '<path d="M38 40c0-9 6-14 12-14s9 6 7 14z"/>', IN) + ln('<path d="M44 30c2 2 4 4 5 8M50 29c1 3 2 6 2 10"/>', '#9cc47a', IN)
+  + cut2(10) + cut2(19) + cut2(28, True) + ln('<path d="M15 35l3-2 2 2 3-2M24 35l3-2 2 2 3-2"/>', '#7a4a2e', IN))
+# 족발 — 조각 넷 1.15배 · 밝은 껍질 · 짧은 뼈 · 큰 상추
+def jok4(x, y, rot):
+    return (f'<g transform="rotate({rot} {x} {y})">' + g('#8a4a2e', f'<path d="M{x - 10.4} {y}a10.4 10.4 0 0 1 20.8 0z"/>')
+      + g('#f0cdb4', f'<path d="M{x - 7} {y}a7 7 0 0 1 14 0z"/>', IN) + ln(f'<path d="M{x - 3.2} {y - .4}a3.2 3.2 0 0 1 6.4 0"/>', '#fbe9da', IN) + '</g>')
+BONE2 = '<g transform="translate(44 30) rotate(-35)">' + g('#fbf3e4', '<rect x="-8" y="-3" width="16" height="6" rx="3"/><circle cx="-8" cy="-2.8" r="3.3"/><circle cx="-8" cy="2.8" r="3.3"/><circle cx="8" cy="-2.8" r="3.3"/><circle cx="8" cy="2.8" r="3.3"/>') + nf('#fbf3e4', '<rect x="-7" y="-2" width="14" height="4"/>') + '</g>'
+A['jokbal'] = plate() + BONE2 + jok4(17, 45, -18) + jok4(27, 42, -6) + jok4(37, 42, 6) + jok4(47, 45, 18) + leaf(13, 34, -30, 1.5, '#7cbf5a')
+# 포차 — 스케일 없이 다시 계산한 병 + 외곽선 있는 잔 속 술
+A['pocha'] = (shadow(30, 55, 19) + g(SOJU, '<path d="M23 13h8v6c0 2 3 4 4 7 1 2 1 4 1 6v19a3 3 0 0 1-3 3H21a3 3 0 0 1-3-3V32c0-2 0-4 1-6 1-3 4-5 4-7z"/>')
+  + g('#2e7d46', '<rect x="22.5" y="8" width="9" height="6" rx="1.5"/>', IN) + g('#fbf8f3', '<rect x="20" y="35" width="14" height="11" rx="2"/>', IN)
+  + ln('<path d="M23 40.5h8"/>', '#2e7d46', IN) + g('#eef6f8', '<path d="M38 38h14l-1.6 16h-10.8z"/>') + g('#d7eef3', '<path d="M39.2 44h11.6l-1 9h-9.6z"/>', IN))
+# 디저트 — 딸기 꼭지를 잎 면으로
+A['dessert'] = (shadow(33, 54, 21) + g('#fff3e0', '<path d="M10 44l26-20 18 6v14z"/>') + g('#f4c2c2', '<path d="M10 44h44v8H10z"/>') + ln('<path d="M10 47.5h44"/>', WHITE, IN)
+  + g('#fbf8f3', '<path d="M10 44l26-20 18 6-26 14z"/>') + g(RED, '<path d="M34 14c-4 0-6 4-5 7 1 3 4 4 5 4s4-1 5-4c1-3-1-7-5-7z"/>') + leaf(35, 12, -20, .8))
+# 칼국수 · 라멘 — 젓가락 끝을 안쪽으로
+A['noodle'] = A['noodle'].replace("M50 4L35 21", "M48 9L35 22").replace("M56 7L40 22", "M54 11L40 23")
+A['ramen'] = A['ramen'].replace("M50 4L36 27", "M48 9L36 27").replace("M56 7L40 28", "M54 11L40 28")
+# 양꼬치 — 안쪽으로 옮기고 그림자, 큐민 점 삭제
+A['yangkkochi'] = (shadow(30, 57, 16) + '<g transform="translate(-2 -4)">' + duo('M9 55L49 15', WOOD, 2.2) + duo('M17 59L57 19', WOOD, 2.2)
+  + cube(21, 43) + cube(29, 35, '#f6dcc4') + cube(37, 27) + cube(29, 47) + cube(37, 39) + cube(45, 31, '#f6dcc4') + '</g>')
+# 딤섬 김 · 아이스크림 · 치킨 뼈 · 찌개 손잡이 · 떡볶이 접시 점 · 버거 깨
+A['dimsum'] = A['dimsum'].replace(steam([27, 37], 4, 14), steam([27, 37], 6, 15))
+A['icecream'] = (shadow(32, 56, 6) + '<g transform="translate(0 2)">' + g('#e3b066', '<path d="M20 30h24L32 54z"/>') + ln('<path d="M25 35l10 10M39 35L29 45"/>', '#b98a3e', IN)
+  + g('#f4a6b8', '<path d="M18 30a8 8 0 0 1 14-8 8 8 0 0 1 14 8z"/>') + g('#fbf3e4', '<circle cx="32" cy="16" r="8"/>') + g(RED, '<circle cx="32" cy="9" r="3"/>', IN) + '</g>')
+A['chicken'] = A['chicken'].replace('<path d="M14 24l-5-5"/><circle cx="8" cy="17.5" r="2.6"/><circle cx="10.5" cy="15" r="2.6"/>', '<path d="M15 24l-3-4"/><circle cx="10" cy="18.5" r="2.6"/><circle cx="12.5" cy="16" r="2.6"/>')
+A['jjigae'] = A['jjigae'].replace('<ellipse cx="9" cy="32" rx="4.5" ry="3.2"/><ellipse cx="55" cy="32" rx="4.5" ry="3.2"/>', '<ellipse cx="10" cy="32" rx="4" ry="3"/><ellipse cx="54" cy="32" rx="4" ry="3"/>')
+A['tteokbokki'] = A['tteokbokki'].replace(nf(WHITE, '<circle cx="12" cy="45" r="1.4"/><circle cx="52" cy="44" r="1.4"/><circle cx="32" cy="51" r="1.4"/>'), '')
+A['burger'] = A['burger'].replace('rx="2" ry="1.3"', 'rx="2.4" ry="2"')
+for k, v in DEF.items(): A[k] = A[v]
+os.makedirs('out3', exist_ok=True)
+for k, v in A.items():
+    open(f'out3/{k}.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{v}</svg>')
+print('v3', len(A))
+
+# 딤섬 김 — 안쪽에서 시작 (치환이 안 맞아 다시 씀)
+A['dimsum'] = (shadow(32, 54, 22) + g('#d8b47c', '<path d="M8 33h48v13a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6z"/>') + ln('<path d="M8 39h48M8 45h48"/>', '#b89159', IN)
+  + g(WHITE, '<path d="M11 33c0-9 6-13 10-13s10 4 10 13z"/><path d="M33 33c0-9 6-13 10-13s10 4 10 13z"/>')
+  + ln('<path d="M21 21l-4 6M21 21v7M21 21l4 6M43 21l-4 6M43 21v7M43 21l4 6"/>', O, IN) + steam([27, 37], 7, 16))
+open('out3/dimsum.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["dimsum"]}</svg>')
