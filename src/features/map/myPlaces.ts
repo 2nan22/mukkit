@@ -12,6 +12,8 @@ export type MapPlace = {
   lng: number;
   address: string;
   cuisine: Cuisine;
+  // 세부 업종 — 기본 그림 고르기 (팔로잉 지도는 없음 → 업종 그림)
+  kind?: string | null;
   categoryName: string;
   available: boolean;
   tier: Tier;
@@ -84,6 +86,7 @@ type Row = {
     lng: number;
     address: string;
     cuisine: string;
+    food_kind: string | null;
     category_name: string;
     available: boolean;
     place_sources: { source: string; source_place_id: string }[];
@@ -94,7 +97,7 @@ type Row = {
 export async function getMyMapPlaces(supabase: SupabaseClient, userId: string): Promise<MapPlace[]> {
   const { data, error } = await supabase
     .from("user_places")
-    .select("tier, note, places(id, name, lat, lng, address, cuisine, category_name, available, place_sources(source, source_place_id))")
+    .select("tier, note, places(id, name, lat, lng, address, cuisine, food_kind, category_name, available, place_sources(source, source_place_id))")
     .eq("user_id", userId)
     .order("saved_at", { ascending: false })
     .returns<Row[]>();
@@ -115,6 +118,7 @@ function toMapPlace(row: Row, p: NonNullable<Row["places"]>): MapPlace {
     lng: p.lng,
     address: p.address,
     cuisine: p.cuisine as Cuisine,
+    kind: p.food_kind,
     categoryName: p.category_name,
     available: p.available,
     tier: tierFromDb(row.tier),

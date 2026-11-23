@@ -661,7 +661,7 @@ export function MapView({
                     onClick={() => setSelectedId(p.placeId)}
                     className="flex min-h-16 w-full items-center gap-3 border-b border-line py-2 text-left"
                   >
-                    <PlaceThumb src={covers[p.placeId]} cuisine={p.cuisine} />
+                    <PlaceThumb src={covers[p.placeId]} cuisine={p.cuisine} kind={p.kind} />
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate text-body font-semibold">{p.name}</span>
                       <span className="truncate text-meta text-muted">{p.raters ? `${ratersLine(p.raters)} · ${placeMeta(p)}` : placeMeta(p)}</span>
