@@ -27,7 +27,7 @@ select is((select tier_rank from public.user_places where user_id = 'e2222222-22
 update public.user_places set tier = 'two' where user_id = 'e1111111-1111-1111-1111-111111111111' and place_id = 'a9500000-0000-0000-0000-000000000002';
 select is((select tier_rank from public.user_places where user_id = 'e1111111-1111-1111-1111-111111111111' and place_id = 'a9500000-0000-0000-0000-000000000002'), null, '등급 바뀌면 순위 지움');
 update public.user_places set note = '메모' where user_id = 'e1111111-1111-1111-1111-111111111111' and place_id = 'a9500000-0000-0000-0000-000000000001';
-select is((select tier_rank from public.user_places where user_id = 'e1111111-1111-1111-1111-111111111111' and place_id = 'a9500000-0000-0000-0000-000000000001'), 1, '등급 그대로면 순위 유지');
+select is((select tier_rank from public.user_places where user_id = 'e1111111-1111-1111-1111-111111111111' and place_id = 'a9500000-0000-0000-0000-000000000001'), 0, '1위가 빠지면 2위가 1위로 · 메모만 고치면 그대로');
 
 select * from finish();
 rollback;

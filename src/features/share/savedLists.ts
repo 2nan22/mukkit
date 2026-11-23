@@ -1,3 +1,4 @@
+import { selectInChunks } from "@/lib/supabase/inChunks";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Cuisine } from "@/domain/cuisine";
 
@@ -29,6 +30,7 @@ export async function getMySavedLists(supabase: SupabaseClient): Promise<SavedLi
 // 이 리스트의 장소 중 내가 이미 저장한 곳
 export async function getMySavedPlaceIds(supabase: SupabaseClient, me: string, placeIds: string[]): Promise<string[]> {
   if (placeIds.length === 0) return [];
-  const { data } = await supabase.from("user_places").select("place_id").eq("user_id", me).in("place_id", placeIds.slice(0, 500));
-  return (data ?? []).map((r) => r.place_id as string);
+  const { data, error } = await selectInChunks(placeIds, (part) => supabase.from("user_places").select("place_id").eq("user_id", me).in("place_id", part));
+  if (error) throw new Error(`저장 확인 실패: ${error.code}`);
+  return data.map((r) => r.place_id as string);
 }

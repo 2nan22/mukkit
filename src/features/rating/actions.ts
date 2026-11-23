@@ -16,6 +16,7 @@ import {
   updateUserPlace,
   UserPlaceNotFoundError,
   type SavedPlace,
+  type UnratedCursor,
 } from "./rating";
 
 export type RatingFormState = { error?: string; saved?: boolean };
@@ -87,13 +88,18 @@ export async function setTier(placeId: string, tier: Tier): Promise<{ error?: st
   if (!parsed.success) return { error: SAVE_FAILED };
   const { supabase, userId } = await requireUser();
   const error = await runUpdate(() => updateUserPlace(supabase, userId, parsed.data.placeId, { tier: parsed.data.tier }));
-  return error ? { error } : {};
+  if (error) return { error };
+  // 돌아간 홈 · 리스트의 평가 전 · 등급 숫자가 낡지 않게
+  revalidatePath("/", "layout");
+  return {};
 }
 
-export async function loadNextUnrated(skipped: string[]): Promise<{ place: SavedPlace | null; remaining: number }> {
-  const ids = z.array(z.uuid()).max(500).parse(skipped);
+const Cursor = z.object({ savedAt: z.iso.datetime({ offset: true }), placeId: z.uuid() }).nullable();
+
+export async function loadNextUnrated(after: UnratedCursor | null): Promise<{ place: (SavedPlace & { cursor: UnratedCursor }) | null; remaining: number }> {
+  const cursor = Cursor.parse(after);
   const { supabase, userId } = await requireUser();
-  const [place, remaining] = await Promise.all([nextUnrated(supabase, userId, ids), countUnrated(supabase, userId)]);
+  const [place, remaining] = await Promise.all([nextUnrated(supabase, userId, cursor), countUnrated(supabase, userId)]);
   return { place, remaining };
 }
 

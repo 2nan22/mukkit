@@ -1,3 +1,4 @@
+import { getMyProfileFlags } from "@/features/profile/flags";
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ACCOUNT_LINKS, NICKNAME_SETUP, safeNextPath, SIGNED_IN_HOME, ONBOARDING_IMPORT } from "@/features/auth/paths";
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
   if (!code) return failed(params.get("error_code") ?? params.get("error") ?? "missing_code");
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) return failed(error.code ?? "exchange_failed");
 
   // 로그인이 성공한 방법을 이 기기에 기억 — 시작 화면에서 '최근 로그인' 으로 보여 준다
@@ -30,11 +31,7 @@ export async function GET(request: NextRequest) {
   };
 
   // 닉네임을 아직 직접 정하지 않았으면 정하기 화면을 먼저 거친다
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("nickname_set_at")
-    .eq("id", data.user.id)
-    .single();
+  const profile = await getMyProfileFlags(supabase);
   if (!profile?.nickname_set_at) {
     const setup = new URL(NICKNAME_SETUP, request.url);
     // 처음 가입이면 닉네임 다음에 '저장해 둔 맛집 가져오기'(건너뛰기 가능)를 거친다

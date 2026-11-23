@@ -1,13 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MENU_NAME_MAX, MENUS_MAX } from "./rating";
 
 // 먹은 메뉴 (선택) — 가게 메뉴판에서 고르거나 직접 적기
-export function MenuPicker({ initial, options }: { initial: string[]; options: string[] }) {
+// 메뉴판은 늦게 올 수 있어(외부 조회) 폼을 막지 않고 도착하면 뒤에 붙인다
+export function MenuPicker({ initial, options }: { initial: string[]; options: Promise<string[]> }) {
   const [picked, setPicked] = useState<string[]>(initial);
-  // 순서는 처음에 한 번만 — 누를 때 칩이 자리를 옮기지 않게 (직접 적은 메뉴만 앞에)
-  const [order, setOrder] = useState<string[]>(() => [...new Set([...initial, ...options])]);
+  // 순서는 한 번 정하면 그대로 — 누를 때 칩이 자리를 옮기지 않게 (직접 적은 메뉴만 앞에)
+  const [order, setOrder] = useState<string[]>(initial);
+  const [hasMenu, setHasMenu] = useState(false);
+  useEffect(() => {
+    let live = true;
+    options.then((list) => {
+      if (!live) return;
+      setHasMenu(list.length > 0);
+      setOrder((prev) => [...new Set([...prev, ...list])]);
+    }, () => {});
+    return () => {
+      live = false;
+    };
+  }, [options]);
   const [text, setText] = useState("");
   const [showAll, setShowAll] = useState(false);
   const full = picked.length >= MENUS_MAX;
@@ -71,7 +84,7 @@ export function MenuPicker({ initial, options }: { initial: string[]; options: s
               }
             }}
             maxLength={MENU_NAME_MAX}
-            placeholder={options.length ? "메뉴판에 없는 메뉴 적기" : "메뉴 이름"}
+            placeholder={hasMenu ? "메뉴판에 없는 메뉴 적기" : "메뉴 이름"}
             aria-label="먹은 메뉴 직접 적기"
             className="h-11 min-w-0 flex-1 rounded-[12px] bg-surface px-3.5 text-body outline-none focus:bg-white focus:ring-1 focus:ring-ink"
           />

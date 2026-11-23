@@ -1,3 +1,4 @@
+import { chunks, selectInChunks } from "@/lib/supabase/inChunks";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ImportedList, ImportedPlace } from "@/domain/importedPlace";
 import { isSamePlace } from "@/domain/samePlace";
@@ -9,7 +10,6 @@ const LIST_NAME_MAX = 40;
 const LIST_DESCRIPTION_MAX = 200;
 const FALLBACK_LIST_NAME = "가져온 리스트";
 // in() 필터가 URL 에 실리므로 나눠서 묻는다
-const CHUNK = 200;
 
 export type ImportResult = {
   listId: string | null;
@@ -233,14 +233,16 @@ export async function applyToSavedPlaces(
 ): Promise<void> {
   if (saved.size === 0) return;
   if (mode.kind === "tier") {
-    const update = await supabase
-      .from("user_places")
-      .update({ tier: mode.tier, updated_at: new Date().toISOString() })
-      .eq("user_id", userId)
-      .in("tier", ["unrated", "want_to_go"])
-      .neq("tier", mode.tier)
-      .in("place_id", [...saved]);
-    if (update.error) throw new ImportSaveError("user_places_tier", update.error.code);
+    for (const part of chunks([...saved])) {
+      const update = await supabase
+        .from("user_places")
+        .update({ tier: mode.tier, updated_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .in("tier", ["unrated", "want_to_go"])
+        .neq("tier", mode.tier)
+        .in("place_id", part);
+      if (update.error) throw new ImportSaveError("user_places_tier", update.error.code);
+    }
   }
   await fillImportedMemos(supabase, userId, places, placeIds, saved, emptyOnly);
 }
@@ -259,8 +261,8 @@ async function fillImportedMemos(
   if (withMemo.length === 0) return;
   const ids = withMemo.map((p) => placeIds.get(p.sourcePlaceId)!);
   const [mine, imported] = await Promise.all([
-    supabase.from("user_places").select("place_id, note").eq("user_id", userId).in("place_id", ids),
-    supabase.from("imported_items").select("place_id, source, memo").eq("user_id", userId).in("place_id", ids),
+    selectInChunks(ids, (part) => supabase.from("user_places").select("place_id, note").eq("user_id", userId).in("place_id", part)),
+    selectInChunks(ids, (part) => supabase.from("imported_items").select("place_id, source, memo").eq("user_id", userId).in("place_id", part)),
   ]);
   if (mine.error) throw new ImportSaveError("user_places_note", mine.error.code);
   if (imported.error) throw new ImportSaveError("imported_memos", imported.error.code);
@@ -328,8 +330,3 @@ async function saveList(
   return listId;
 }
 
-function chunks<T>(items: T[]): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < items.length; i += CHUNK) out.push(items.slice(i, i + CHUNK));
-  return out;
-}

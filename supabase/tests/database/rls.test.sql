@@ -61,7 +61,7 @@ select throws_ok(
   '42501', null, '장소 이름도 직접 고칠 수 없음');
 select is(
   (select array_agg(name) from public.lists where owner_id = '11111111-1111-1111-1111-111111111111'),
-  array['링크 공개'], '비공개 리스트는 안 보임');
+  null, '비공개 · 링크 리스트는 직접 읽기로 안 보임');
 select is(
   (select count(*)::int from public.list_items where list_id = 'bbbbbbbb-0000-0000-0000-000000000001'),
   0, '비공개 리스트 항목도 안 보임');
@@ -119,7 +119,7 @@ select is(
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 
 select is((select count(*)::int from public.places where id::text like 'aaaaaaaa-%'), 2, '비로그인도 장소는 읽음');
-select is((select array_agg(name) from public.lists where owner_id = '11111111-1111-1111-1111-111111111111'), array['링크 공개'], '비로그인은 공개 리스트만');
+select is((select array_agg(name) from public.lists where owner_id = '11111111-1111-1111-1111-111111111111'), null, '비로그인은 링크 리스트를 직접 못 읽음 (공개 통로로만)');
 
 select * from finish();
 rollback;

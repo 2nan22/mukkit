@@ -1,3 +1,4 @@
+import { timedFetch } from "@/lib/http/timedFetch";
 import { z } from "zod";
 import { KAKAO_FOLDER } from "@/features/import/kakao/config";
 import { kakaoCuisineOf } from "@/features/import/kakao/kakaoCuisine";
@@ -37,7 +38,7 @@ export function kakaoInfoOf(body: unknown): PlaceInfo | null {
 // info: 영업 중인 곳의 지금 가게 정보 (이름 · 주소 · 좌표 · 업종)
 export async function checkKakaoPlaces(
   ids: string[],
-  fetchImpl: FetchLike = fetch,
+  fetchImpl: FetchLike = timedFetch,
 ): Promise<{ results: Map<string, boolean>; unknown: number; info: Map<string, PlaceInfo> }> {
   const results = new Map<string, boolean>();
   const info = new Map<string, PlaceInfo>();

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { PlaceMap } from "@/features/map/PlaceMap";
 import type { Tier } from "@/domain/tier";
@@ -69,6 +70,17 @@ export function EatView({ regions }: { regions: Region[] }) {
 
   return (
     <div className="flex flex-col gap-5 px-5 pb-10">
+      {/* 저장한 곳이 없으면 추천 재료가 없다 — 빈 결과보다 먼저 무엇을 하면 되는지 */}
+      {regions.length === 0 && (
+        <section className="flex flex-col gap-2 rounded-card bg-surface p-4">
+          <p className="text-body font-semibold">아직 내 기록이 없어 추천이 적어요</p>
+          <p className="text-meta text-ink-2">저장한 맛집을 가져오거나 취향 비슷한 사람을 팔로우하면 여기서 골라 드려요.</p>
+          <div className="flex gap-3 pt-1 text-meta font-semibold text-ink">
+            <Link href="/import" className="h-11 content-center underline underline-offset-[3px]">맛집 가져오기</Link>
+            <Link href="/people" className="h-11 content-center underline underline-offset-[3px]">사람 찾기</Link>
+          </div>
+        </section>
+      )}
       <section className="flex flex-col gap-3">
         <button type="button" onClick={useHere} disabled={pending} className="flex h-btn-l items-center justify-center gap-2 rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -106,7 +118,7 @@ export function EatView({ regions }: { regions: Region[] }) {
                 setRadius(r);
                 if (where) search(where, r);
               }}
-              className={`h-9 rounded-btn-s text-meta ${radius === r ? "bg-white font-bold text-ink shadow-float" : "text-muted"}`}
+              className={`h-9 rounded-btn-s text-meta ${radius === r ? "bg-ink font-bold text-white" : "text-muted"}`}
             >
               {km(r)} 안
             </button>

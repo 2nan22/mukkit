@@ -68,7 +68,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
   if (iBlocked) {
     return (
       <div className="flex flex-col items-start gap-3 px-6 pt-16">
-        <h2 className="text-title font-bold tracking-tight">차단한 사람이에요</h2>
+        <h2 className="text-title font-bold tracking-tight">{person.nickname}님을 차단했어요</h2>
         <p className="text-body leading-relaxed text-ink-2">차단을 해제하면 평가와 리스트를 다시 볼 수 있어요.</p>
         <div className="pt-2">
           <UnblockButton userId={userId} />
@@ -138,7 +138,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
 
         {me && me !== person.id && <FollowButton targetId={person.id} following={following} primary />}
         {!me && (
-          <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+          <Link href={`/?next=${encodeURIComponent(`/u/${person.id}`)}`} className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
             먹킷 시작하고 팔로우하기
           </Link>
         )}

@@ -1,5 +1,6 @@
 "use server";
 
+import { allowCall } from "@/lib/rateLimit";
 import { redirect } from "next/navigation";
 import { ImportError, type ImportErrorCode } from "@/domain/importedPlace";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -22,10 +23,14 @@ const ERROR_MESSAGE: Record<ImportErrorCode, string> = {
   UNEXPECTED_RESPONSE: "리스트를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
 };
 const SAVE_FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
+const TOO_FAST = "잠깐만요. 1분쯤 뒤에 다시 시도해 주세요.";
+// 원본(비공식 API) 호출 — 사용자당 1분에 20번까지 (한 번에 여러 링크를 담아 가져와도 넉넉한 값)
+const SOURCE_CALLS_PER_MINUTE = 20;
 
 // 링크만 받아 리스트 이름 · 개수를 먼저 보여 준다 — 저장은 방식을 고른 뒤
 export async function previewList(input: string): Promise<ActionResult<ListPreview>> {
-  await requireUserId();
+  const { userId } = await requireUserId();
+  if (!allowCall(`import:${userId}`, SOURCE_CALLS_PER_MINUTE, 60_000)) return { ok: false, error: TOO_FAST, code: "UPSTREAM_ERROR" };
   const link = extractLink(input);
   const source = sourceNameForLink(link);
   if (!source) return { ok: false, error: ERROR_MESSAGE.INVALID_LINK, code: "INVALID_LINK" };
@@ -45,6 +50,7 @@ export async function importList(input: string, mode: ImportMode): Promise<Actio
   const parsedMode = ImportModeSchema.safeParse(mode);
   if (!parsedMode.success) return { ok: false, error: SAVE_FAILED, code: "SAVE_FAILED" };
   const { supabase, userId } = await requireUserId();
+  if (!allowCall(`import:${userId}`, SOURCE_CALLS_PER_MINUTE, 60_000)) return { ok: false, error: TOO_FAST, code: "UPSTREAM_ERROR" };
   const source = sourceNameForLink(link);
   if (!source) return { ok: false, error: ERROR_MESSAGE.INVALID_LINK, code: "INVALID_LINK" };
   try {

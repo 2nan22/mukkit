@@ -9,7 +9,7 @@ import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { upsertPlaces } from "@/features/import/saveImportedList";
 import { searchPeople, type Person } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { hitToImportedPlace, searchKakaoKeyword } from "./kakaoLocal";
+import { hitToImportedPlace, isFoodHit, searchKakaoKeyword } from "./kakaoLocal";
 import { cleanQuery, knownKakaoPlaces, searchMyPlaces, type MyPlaceHit } from "./search";
 
 export type NewPlaceHit = {
@@ -23,7 +23,8 @@ export type NewPlaceHit = {
   placeId: string | null;
   tier: Tier | null;
 };
-export type SearchResult = { mine: MyPlaceHit[]; places: NewPlaceHit[]; people: Person[]; placeSearch: boolean };
+// mineFailed: 내 장소 검색이 실패했을 때 — '결과 없음'과 구분해 안내한다
+export type SearchResult = { mine: MyPlaceHit[]; places: NewPlaceHit[]; people: Person[]; placeSearch: boolean; mineFailed?: boolean };
 
 const Near = z.object({ lat: z.number().min(33).max(39), lng: z.number().min(124).max(132) }).nullable();
 
@@ -35,19 +36,24 @@ function km(m: number): string {
 export async function searchAll(query: string, near: { lat: number; lng: number } | null, dedupeMine = true): Promise<SearchResult> {
   const q = cleanQuery(query);
   const empty = { mine: [], places: [], people: [], placeSearch: true };
+  let mineFailed = false;
   if (q.length < 1) return empty;
   const at = Near.safeParse(near).success ? near : null;
   const { supabase, me } = await requireUser();
 
   const [mine, hits, people] = await Promise.all([
-    searchMyPlaces(supabase, me, q),
+    searchMyPlaces(supabase, me, q).catch(() => {
+      mineFailed = true;
+      return [];
+    }),
     // 근처(20km)에서 못 찾으면 전국으로 다시
     searchKakaoKeyword(q, at ? { ...at, radius: 20000 } : undefined).then((h) => (at && h !== null && h.length === 0 ? searchKakaoKeyword(q) : h)),
     searchPeople(supabase, q, me).catch(() => []),
   ]);
-  const known = await knownKakaoPlaces(supabase, me, (hits ?? []).map((h) => h.id));
+  const food = (hits ?? []).filter(isFoodHit);
+  const known = await knownKakaoPlaces(supabase, me, food.map((h) => h.id));
   const mineIds = new Set(mine.map((m) => m.placeId));
-  const places = (hits ?? [])
+  const places = food
     .map((h) => {
       const k = known.get(h.id);
       return {
@@ -64,7 +70,7 @@ export async function searchAll(query: string, near: { lat: number; lng: number 
     // 내 장소에 이미 나온 곳은 빼기 — 같은 장소 id, 또는 다른 출처로 저장해 id 가 달라도 이름 · 거리로 같은 가게
     .filter((p) => !(p.placeId && mineIds.has(p.placeId)))
     .filter((p) => !dedupeMine || !mine.some((m) => sameShop(m, p)));
-  return { mine, places, people: people.slice(0, 5), placeSearch: hits !== null };
+  return { mine, places, people: people.slice(0, 5), placeSearch: hits !== null, mineFailed };
 }
 
 const OpenInput = z.object({ kakaoId: z.string().regex(/^\d{1,20}$/), name: z.string().min(1).max(100), lat: z.number(), lng: z.number() });
@@ -76,7 +82,7 @@ export async function openKakaoPlace(input: z.infer<typeof OpenInput>): Promise<
   await requireUser();
   const { kakaoId, name, lat, lng } = parsed.data;
   const hits = await searchKakaoKeyword(name, { lat, lng, radius: 300 }, 15);
-  const hit = hits?.find((h) => h.id === kakaoId && isSamePlace({ name, lat, lng }, h));
+  const hit = hits?.find((h) => h.id === kakaoId && isFoodHit(h) && isSamePlace({ name, lat, lng }, h));
   if (!hit) return { error: "장소 정보를 확인하지 못했어요. 다시 검색해 주세요." };
   try {
     const ids = await upsertPlaces([hitToImportedPlace(hit)]);

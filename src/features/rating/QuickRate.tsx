@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
 import { useLeave } from "@/lib/nav/useLeave";
 import { loadNextUnrated, setTier } from "./actions";
-import type { SavedPlace } from "./rating";
+import type { SavedPlace, UnratedCursor } from "./rating";
 
 const CHOICES: { tier: Tier; className: string }[] = [
   { tier: "three", className: "bg-tier-3-soft text-tier-3" },
@@ -14,17 +15,21 @@ const CHOICES: { tier: Tier; className: string }[] = [
   { tier: "notRecommended", className: "bg-surface-2 text-ink-2" },
 ];
 
-export function QuickRate({ initial, total }: { initial: SavedPlace | null; total: number }) {
+type Current = SavedPlace & { cursor: UnratedCursor };
+
+export function QuickRate({ initial, total }: { initial: Current | null; total: number }) {
   const [place, setPlace] = useState(initial);
-  const [done, setDone] = useState<SavedPlace[]>([]);
+  const [done, setDone] = useState<Current[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
+  // 마지막으로 건너뛴 자리 — 다음 장소는 그 뒤에서 찾는다
+  const [cursor, setCursor] = useState<UnratedCursor | null>(null);
   const [remaining, setRemaining] = useState(total);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const leave = useLeave("/my");
 
-  function loadNext(skip: string[]) {
-    return loadNextUnrated(skip).then((res) => {
+  function loadNext(after: UnratedCursor | null) {
+    return loadNextUnrated(after).then((res) => {
       setPlace(res.place);
       setRemaining(res.remaining);
     });
@@ -38,15 +43,15 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
       if (res.error) return setError(res.error);
       setError(null);
       setDone((d) => [...d, current]);
-      await loadNext(skipped);
+      await loadNext(cursor);
     });
   }
 
   function skip() {
     if (!place) return;
-    const next = [...skipped, place.placeId];
-    setSkipped(next);
-    startTransition(() => loadNext(next));
+    setSkipped((s) => [...s, place.placeId]);
+    setCursor(place.cursor);
+    startTransition(() => loadNext(place.cursor));
   }
 
   function undo() {
@@ -64,9 +69,11 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
 
   function retrySkipped() {
     setSkipped([]);
-    startTransition(() => loadNext([]));
+    setCursor(null);
+    startTransition(() => loadNext(null));
   }
 
+  const nothing = skipped.length === 0 && done.length === 0;
   // 이번에 평가한 수 대 아직 남은 평가 전 — 건너뛴 곳은 남은 쪽에 그대로 있다
   const scale = done.length + remaining;
 
@@ -154,11 +161,14 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
         </>
       ) : (
         <section className="flex flex-1 flex-col gap-3 px-5 pt-16 text-center">
-          <span aria-hidden="true" className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-soft text-brand">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12l5 5 9-10" />
-            </svg>
-          </span>
+          {/* 처음부터 비었으면 다 끝낸 것처럼 보이지 않게 체크를 빼고 가져오기로 잇는다 */}
+          {!nothing && (
+            <span aria-hidden="true" className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-soft text-brand">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12l5 5 9-10" />
+              </svg>
+            </span>
+          )}
           <h2 className="text-title font-bold tracking-tight">
             {skipped.length > 0 ? `건너뛴 ${skipped.length}곳이 남았어요` : done.length > 0 ? `${done.length}곳을 평가했어요` : "평가 전인 곳이 없어요"}
           </h2>
@@ -177,9 +187,20 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
                 건너뛴 곳 다시 보기
               </button>
             )}
-            <button type="button" onClick={leave} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
-              완료
-            </button>
+            {nothing ? (
+              <>
+                <Link href="/import" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+                  저장한 맛집 가져오기
+                </Link>
+                <button type="button" onClick={leave} className="h-btn-l text-[16px] font-semibold text-ink-2">
+                  닫기
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={leave} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+                완료
+              </button>
+            )}
           </div>
         </section>
       )}

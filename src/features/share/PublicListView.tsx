@@ -13,6 +13,9 @@ import type { PublicList } from "./publicList";
 // seenAt: 저장해 둔 리스트를 마지막으로 본 때 — 그 뒤 담긴 곳에 '새로 추가'
 type Save = { saved: boolean; savedPlaceIds: string[]; seenAt: string | null };
 
+// 아래 목록 시트가 없는 지도 — 위는 뒤로 버튼 자리만
+const SHARE_MAP_PADDING = [64, 36, 36, 36] as const;
+
 export function PublicListView({ list, signedIn = false, covers = {}, save = null }: { list: PublicList; signedIn?: boolean; covers?: Record<string, string>; save?: Save | null }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const pins = useMemo(() => list.places.map((p) => ({ id: p.placeId, lat: p.lat, lng: p.lng, tier: p.tier ?? "unrated" })), [list.places]);
@@ -51,7 +54,7 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
     <>
       <div className="relative h-[42dvh] shrink-0">
         <div className="absolute inset-0">
-          <PlaceMap pins={pins} selectedId={selectedId} onSelect={setSelectedId} />
+          <PlaceMap pins={pins} selectedId={selectedId} onSelect={setSelectedId} padding={SHARE_MAP_PADDING} />
         </div>
         <BackButton fallback="/" className="absolute top-3 left-3 z-10 rounded-full bg-white shadow-float" />
       </div>

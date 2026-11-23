@@ -54,3 +54,26 @@ export function notificationHref(n: AppNotification): string {
       return "/visits";
   }
 }
+
+// 같은 평가의 댓글 · 좋아요는 한 줄로 — 최근 것 하나를 대표로, 함께 묶인 수와 다른 사람 수를 붙인다
+export type GroupedNotification = AppNotification & { count: number; otherActors: number };
+
+export function groupNotifications(items: AppNotification[]): GroupedNotification[] {
+  const out: GroupedNotification[] = [];
+  const byKey = new Map<string, { row: GroupedNotification; actors: Set<string> }>();
+  for (const n of items) {
+    const key = (n.kind === "comment" || n.kind === "like") && n.ownerId && n.placeId ? `${n.kind}:${n.ownerId}:${n.placeId}` : null;
+    const hit = key ? byKey.get(key) : undefined;
+    if (hit) {
+      hit.row.count += 1;
+      hit.actors.add(n.actorId);
+      hit.row.otherActors = hit.actors.size - 1;
+      if (!n.read) hit.row.read = false;
+      continue;
+    }
+    const row = { ...n, count: 1, otherActors: 0 };
+    out.push(row);
+    if (key) byKey.set(key, { row, actors: new Set([n.actorId]) });
+  }
+  return out;
+}

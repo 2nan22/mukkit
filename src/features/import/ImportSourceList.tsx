@@ -132,7 +132,7 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
           );
         })}
       </ul>
-      <p className="px-5 pt-3 text-meta text-muted">새로 고침을 누르면 바로 원본을 확인해요. 새벽에도 자동으로 반영해요</p>
+      <p className="px-5 pt-3 text-meta text-muted">원본이 바뀌면 새벽마다 자동으로 반영해요.</p>
       {open && (
         <SourceSheet
           row={open.row}

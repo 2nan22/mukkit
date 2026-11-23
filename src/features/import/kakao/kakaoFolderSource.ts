@@ -1,3 +1,4 @@
+import { timedFetch } from "@/lib/http/timedFetch";
 import { z } from "zod";
 import {
   ImportError,
@@ -53,7 +54,7 @@ const PlaceSummarySchema = z.object({
 type Favorite = z.infer<typeof FavoriteSchema>;
 
 export class KakaoFolderSource implements PlaceSource {
-  constructor(private readonly fetchImpl: FetchLike = fetch) {}
+  constructor(private readonly fetchImpl: FetchLike = timedFetch) {}
 
   async fetchList(input: string, opts: { knownIds?: ReadonlySet<string> } = {}): Promise<ImportedList> {
     const folderId = await this.resolveFolderId(input.trim());

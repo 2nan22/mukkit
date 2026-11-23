@@ -81,9 +81,9 @@ async function ListsContent({ searchParams }: { searchParams: PageProps<"/lists"
             <Link href="/rate" className="mb-3 flex items-center justify-between gap-3 rounded-[16px] bg-ink px-4 py-3.5 text-white">
               <span className="flex flex-col gap-0.5">
                 <span className="text-body font-bold">평가 전 {unrated}곳</span>
-                <span className="text-meta text-white/70">등급만 고르면 돼요</span>
+                <span className="text-meta text-white/70">등급만 고르면 끝나요</span>
               </span>
-              <span className="flex h-8 shrink-0 items-center rounded-full bg-brand px-3 text-meta font-bold">빠르게 평가</span>
+              <span className="flex h-10 shrink-0 items-center rounded-full bg-white px-4 text-meta font-bold text-ink">빠르게 평가</span>
             </Link>
           )}
           {/* 평가 전은 위 카드가 대신하면 줄에서 뺀다 · 0곳은 빈 지도로 보내지 않는다 */}
@@ -152,9 +152,14 @@ async function ListsContent({ searchParams }: { searchParams: PageProps<"/lists"
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <span className="text-body font-semibold">아직 만든 리스트가 없어요</span>
               <span className="text-meta text-muted">지역 · 음식 종류 · 테마로 저장한 곳을 묶어 보세요</span>
-              <Link href="/lists/new" className="flex h-10 items-center rounded-btn-m bg-brand-soft px-4 text-body font-bold text-brand">
-                새 리스트 만들기
-              </Link>
+              <div className="flex gap-2">
+                <Link href="/lists/new" className="flex h-11 items-center rounded-btn-m bg-brand-soft px-4 text-body font-bold text-brand">
+                  새 리스트 만들기
+                </Link>
+                <Link href="/import" className="flex h-11 items-center rounded-btn-m bg-surface px-4 text-body font-bold text-ink">
+                  리스트 가져오기
+                </Link>
+              </div>
             </div>
           )}
         </section>

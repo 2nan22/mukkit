@@ -207,8 +207,12 @@ export function RankedList({
                 </button>
               ) : (
                 ranked.length > 1 && (
-                  <button type="button" disabled={busy} onClick={() => onRedo(p)} aria-label={`${p.name} 순위 다시 정하기`} className="h-11 min-w-11 shrink-0 px-2 text-meta text-ink-2">
-                    다시 정하기
+                  // 행마다 같은 글자가 반복되지 않게 아이콘만 — 뜻은 aria-label 이 전한다
+                  <button type="button" disabled={busy} onClick={() => onRedo(p)} aria-label={`${p.name} 순위 다시 정하기`} title="순위 다시 정하기" className="flex size-11 shrink-0 items-center justify-center text-subtle">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+                      <path d="M20 4v7h-7" />
+                    </svg>
                   </button>
                 )
               )}

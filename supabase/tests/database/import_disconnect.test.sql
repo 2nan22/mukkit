@@ -46,17 +46,16 @@ select results_eq(
 
 -- 연결만 끊기 (저장점으로 되돌려 지우기도 시험)
 savepoint keep;
-select is((select count(*)::int from public.disconnect_import_source('naver', 'L1', false)), 0, '연결만 끊으면 지울 파일 없음');
+select is(public.disconnect_import_source('naver', 'L1', false), '{}'::text[], '연결만 끊으면 지울 파일 없음');
 select is((select count(*)::int from public.user_places where user_id = '71111111-1111-1111-1111-111111111111'), 3, '연결만 끊으면 장소 그대로');
 select is((select source from public.lists where id = 'f7100000-0000-0000-0000-000000000001'), null, '먹킷 리스트는 보통 리스트로');
 select is((select count(*)::int from public.imported_items where user_id = '71111111-1111-1111-1111-111111111111' and source_list_id = 'L1')
         + (select count(*)::int from public.import_sources where user_id = '71111111-1111-1111-1111-111111111111' and source_list_id = 'L1'), 0, '원본 기록 · 새로 고침 지움');
 rollback to savepoint keep;
 
-select results_eq(
-  $$select * from public.disconnect_import_source('naver', 'L1', true)$$,
-  $$values ('71111111-1111-1111-1111-111111111111/f7000000-0000-0000-0000-000000000001/a.jpg'::text)$$,
-  '지운 평가의 사진 경로를 돌려줌');
+select is(public.disconnect_import_source('naver', 'L1', true),
+  array['71111111-1111-1111-1111-111111111111/f7000000-0000-0000-0000-000000000001/a.jpg'],
+  '지운 평가의 사진 경로를 배열 하나로 돌려줌');
 select is((select array_agg(place_id order by place_id) from public.user_places where user_id = '71111111-1111-1111-1111-111111111111'),
   array['f7000000-0000-0000-0000-000000000002', 'f7000000-0000-0000-0000-000000000003']::uuid[], '다른 리스트 · 다른 원본에 있는 곳은 남김');
 select is((select count(*)::int from public.lists where id = 'f7100000-0000-0000-0000-000000000001'), 0, '이 원본으로 만든 리스트 지움');

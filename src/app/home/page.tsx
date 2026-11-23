@@ -1,3 +1,4 @@
+import { getMyProfileFlags } from "@/features/profile/flags";
 import { getPlaceCovers } from "@/features/place/covers";
 import { Wordmark } from "@/components/brand/Wordmark";
 import Link from "next/link";
@@ -88,7 +89,7 @@ async function HomeContent() {
   if (!me) redirect(SIGNED_OUT_HOME);
   // 프로필 확인과 화면 데이터를 한 번에 — 차례로 기다리지 않게 (리다이렉트면 결과는 버린다)
   const [
-    { data: profile },
+    profile,
     wantToGo,
     feed,
     matches,
@@ -100,11 +101,7 @@ async function HomeContent() {
     ranking,
     tiers,
   ] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("nickname_set_at, terms_version")
-      .eq("id", me)
-      .single(),
+    getMyProfileFlags(supabase),
     getMyWantToGoPoints(supabase, me),
     getFeed(supabase),
     getTasteMatches(supabase, 8),
@@ -142,8 +139,25 @@ async function HomeContent() {
   if (!profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
   if (needsAgreement(profile)) redirect("/onboarding/terms?next=/home");
 
+  // 저장한 곳이 하나도 없으면 첫 행동은 가져오기 — 주 버튼(주황)은 이 카드 하나로
+  const empty = Object.values(tiers).reduce((n, c) => n + c, 0) === 0;
+
   return (
     <>
+      {empty && (
+        <section className="mx-5 flex flex-col gap-3 rounded-[20px] border border-line p-5">
+          <span className="flex flex-col gap-1">
+            <span className="text-[20px] font-bold tracking-tight">저장해 둔 맛집부터 가져와요</span>
+            <span className="text-meta text-ink-2">네이버 · 카카오맵 리스트를 붙이면 지도가 바로 채워져요</span>
+          </span>
+          <Link href="/import" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+            저장한 맛집 가져오기
+          </Link>
+          <Link href="/people" className="flex h-11 items-center justify-center text-meta font-semibold text-ink">
+            아는 사람 찾아 팔로우하기
+          </Link>
+        </section>
+      )}
       <section className="mx-5 flex flex-col overflow-hidden rounded-[20px] bg-brand-soft">
         <Link
           href="/eat"
@@ -154,10 +168,10 @@ async function HomeContent() {
               여기서 뭐 먹지?
             </span>
             <span className="text-meta text-ink-2">
-              내 기록과 팔로잉 평가에서 골라요
+              내 기록과 믿는 사람의 평가에서 골라요
             </span>
           </span>
-          <span className="flex h-10 shrink-0 items-center rounded-full bg-brand px-4 text-meta font-bold text-white raised-brand">
+          <span className={`flex h-10 shrink-0 items-center rounded-full px-4 text-meta font-bold ${empty ? "bg-white text-ink" : "bg-brand text-white raised-brand"}`}>
             찾아보기
           </span>
         </Link>

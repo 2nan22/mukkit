@@ -86,12 +86,28 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
           {error}
         </p>
       )}
-      {empty && !searching && <p className="pt-6 text-center text-meta text-muted">검색 결과가 없어요</p>}
+      {result?.mineFailed && (
+        <p role="alert" className="text-meta text-danger">
+          저장한 곳을 찾지 못했어요. 잠시 뒤 다시 검색해 주세요.
+        </p>
+      )}
+      {empty && !searching && !result?.mineFailed && <p className="pt-6 text-center text-meta text-muted">검색 결과가 없어요</p>}
 
       {result && result.mine.length > 0 && (
         <Section title="내가 저장한 곳">
           {result.mine.map((p) => (
             <PlaceRow key={p.placeId} href={`/p/${p.placeId}`} name={p.name} cuisine={p.cuisine} tier={p.tier} meta={[CUISINE_LABEL[p.cuisine], p.region].filter(Boolean).join(" · ")} />
+          ))}
+        </Section>
+      )}
+
+      {result && result.people.length > 0 && (
+        <Section title="사람">
+          {result.people.map((p) => (
+            <Link key={p.id} href={`/u/${p.id}`} className="flex min-h-14 items-center gap-3">
+              <Avatar name={p.nickname} size={40} />
+              <span className="truncate text-body font-semibold">{p.nickname}</span>
+            </Link>
           ))}
         </Section>
       )}
@@ -114,16 +130,6 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
         </Section>
       )}
 
-      {result && result.people.length > 0 && (
-        <Section title="사람">
-          {result.people.map((p) => (
-            <Link key={p.id} href={`/u/${p.id}`} className="flex min-h-14 items-center gap-3">
-              <Avatar name={p.nickname} size={40} />
-              <span className="truncate text-body font-semibold">{p.nickname}</span>
-            </Link>
-          ))}
-        </Section>
-      )}
     </div>
   );
 }

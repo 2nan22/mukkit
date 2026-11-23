@@ -98,7 +98,8 @@ const PIN_STYLE: Record<Tier, { size: number; bg: string; ring: string; text: st
   // 평가 아닌 핀은 등급 아이콘을 넣어 서로 갈리게 — 추천 안 함 회색 바탕 흰 숟가락 · 가고 싶은 곳 깃발 · 평가 전 빈 숟가락 (41)
   notRecommended: { size: 20, bg: "#8a8e96", ring: "#ffffff", text: "#ffffff", label: "", icon: { color: "#ffffff" } },
   wantToGo: { size: 20, bg: "#ffffff", ring: "#17181c", text: "#17181c", label: "", icon: { color: "#17181c" } },
-  unrated: { size: 20, bg: "#ffffff", ring: "#5b5f69", text: "#5b5f69", label: "", icon: { color: "#5b5f69" } },
+  // 평가 전은 가장 많아 조금 작게 — 등급 핀이 먼저 보이게
+  unrated: { size: 17, bg: "#ffffff", ring: "#5b5f69", text: "#5b5f69", label: "", icon: { color: "#5b5f69" } },
 };
 
 // 지도 검색으로 찾은 가게 — 내 등급 핀과 헷갈리지 않는 검정 핀
@@ -136,8 +137,10 @@ function pinElement(tier: Tier, selected: boolean, onClick: () => void, color?: 
 // 내 위치 색 — 장소 핀(빨강 · 주황 · 노랑 · 회색)과 겹치지 않는 지도 앱 관례의 파랑 (globals.css --color-me 와 같은 값)
 const ME_COLOR = "#2f6fde";
 
+// 평가한 곳이 평가 전 · 가고 싶은 곳 핀에 묻히지 않게 등급 높은 순으로 위에
+const PIN_Z: Record<Tier, number> = { three: 400, two: 300, one: 250, notRecommended: 150, wantToGo: 120, unrated: 100 };
 function zOf(tier: Tier, selected: boolean): number {
-  return selected ? 1000 : tier === "three" ? 300 : tier === "two" ? 200 : 100;
+  return selected ? 1000 : PIN_Z[tier];
 }
 
 // 내 위치 점 — 장소 핀과 헷갈리지 않게 파란 점 · 흰 테두리
@@ -151,6 +154,17 @@ function meElement(): HTMLElement {
 
 // padding: 핀을 다 넣을 때 위 · 오른쪽 · 아래 · 왼쪽 여백 — 지도 위에 겹치는 칩 · 시트만큼
 const SHEET_PADDING = [160, 40, 220, 40] as const;
+
+// 여백이 지도보다 크면 핀을 넣을 자리가 없어 가장 멀리(전국)로 물러난다 — 지도 크기의 60% 안으로 줄인다
+export function fitPadding([top, right, bottom, left]: readonly [number, number, number, number], width: number, height: number): [number, number, number, number] {
+  const shrink = (a: number, b: number, size: number) => {
+    const room = size * 0.6;
+    return size > 0 && a + b > room ? [(a * room) / (a + b), (b * room) / (a + b)] : [a, b];
+  };
+  const [t, b] = shrink(top, bottom, height);
+  const [l, r] = shrink(left, right, width);
+  return [Math.round(t), Math.round(r), Math.round(b), Math.round(l)];
+}
 
 export function PlaceMap({
   pins,
@@ -319,7 +333,8 @@ export function PlaceMap({
       }
       const bounds = new maps.LatLngBounds();
       pins.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
-      m.setBounds(bounds, top, right, bottom, left);
+      const [t, r, b, l] = fitPadding([top, right, bottom, left], el.current?.clientWidth ?? 0, el.current?.clientHeight ?? 0);
+      m.setBounds(bounds, t, r, b, l);
     });
   }, [ready, pins, top, right, bottom, left, refit]);
 

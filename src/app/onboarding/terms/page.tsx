@@ -1,3 +1,4 @@
+import { getMyProfileFlags } from "@/features/profile/flags";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { safeNextPath, SESSION_ENDED, SIGNED_OUT_HOME } from "@/features/auth/paths";
@@ -33,7 +34,7 @@ async function Loader({ searchParams }: { searchParams: Promise<{ next?: string 
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
-  const { data: profile } = await supabase.from("profiles").select("terms_version").eq("id", me).single();
+  const profile = await getMyProfileFlags(supabase);
   if (!profile) redirect(SESSION_ENDED);
   if (!needsAgreement(profile)) redirect(nextPath);
   return <AgreeForm next={nextPath} />;

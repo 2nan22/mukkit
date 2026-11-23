@@ -14,7 +14,7 @@ export function TasteMatches({ matches: all, title = "취향이 비슷한 사람
       </div>
       {matches.length === 0 ? (
         <p className="rounded-[16px] bg-surface p-4 text-meta leading-normal text-muted">
-          같은 가게를 평가한 사람이 생기면 여기에 보여요. 평가를 늘리거나 닉네임으로 찾아보세요.
+          아직 나와 같은 가게를 평가한 사람이 없어요. 닉네임으로 찾아볼 수 있어요.
         </p>
       ) : (
         <ul>

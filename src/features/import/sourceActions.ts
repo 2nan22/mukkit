@@ -21,9 +21,10 @@ export async function countDeletable(source: string, sourceListId: string): Prom
   const t = Target.safeParse({ source, sourceListId });
   if (!t.success) return null;
   const supabase = await signedIn();
-  const { data, error } = await supabase.rpc("import_source_delete_targets", { p_source: t.data.source, p_source_list_id: t.data.sourceListId });
+  // 목록은 1000행에서 잘리므로 개수만 센다
+  const { count, error } = await supabase.rpc("import_source_delete_targets", { p_source: t.data.source, p_source_list_id: t.data.sourceListId }, { count: "exact", head: true });
   if (error) return null;
-  return (data as unknown[]).length;
+  return count ?? 0;
 }
 
 // 가져오기 끊기 — deletePlaces 면 이 원본에서만 온 곳의 평가 · 사진과 먹킷 리스트까지

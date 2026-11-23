@@ -1,3 +1,4 @@
+import { timedFetch } from "@/lib/http/timedFetch";
 import { z } from "zod";
 import type { Cuisine } from "@/domain/cuisine";
 import type { ImportedPlace } from "@/domain/importedPlace";
@@ -15,6 +16,7 @@ const DocSchema = z.object({
   x: z.string(),
   y: z.string(),
   distance: z.string().optional(),
+  category_group_code: z.string().optional(),
 });
 const ResponseSchema = z.object({ documents: z.array(DocSchema) });
 
@@ -28,7 +30,16 @@ export type KakaoHit = {
   categoryName: string;
   cuisine: Cuisine;
   distance: number | null;
+  // 카카오 업종 묶음 — FD6 음식점 · CE7 카페 (그 밖은 병원 · 증권사 등)
+  group: string;
 };
+
+const FOOD_GROUPS = new Set(["FD6", "CE7"]);
+
+// 먹킷 장소가 될 수 있는 곳 — 음식점 · 카페만 (검색에 성형외과 · 증권사가 섞여 장소로 만들어지던 것)
+export function isFoodHit(hit: KakaoHit): boolean {
+  return FOOD_GROUPS.has(hit.group);
+}
 
 type Near = { lat: number; lng: number; radius?: number };
 
@@ -48,7 +59,7 @@ export async function searchKakaoKeywordOrFail(query: string, near?: Near, size 
     params.set("y", String(near.lat));
     if (near.radius) params.set("radius", String(near.radius));
   }
-  const res = await fetch(`${SEARCH_URL}?${params}`, { headers: { Authorization: `KakaoAK ${key}` } }).catch(() => null);
+  const res = await timedFetch(`${SEARCH_URL}?${params}`, { headers: { Authorization: `KakaoAK ${key}` } }).catch(() => null);
   if (!res?.ok) {
     // 키는 남기지 않는다 — 상태 코드와 카카오 오류 종류만
     const body = res ? await res.json().catch(() => null) : null;
@@ -72,6 +83,7 @@ function toHit(d: z.infer<typeof DocSchema>): KakaoHit {
     categoryName: categoryPath.at(-1) ?? "",
     cuisine: kakaoCuisineOf(categoryPath).cuisine,
     distance: d.distance ? Number(d.distance) : null,
+    group: d.category_group_code ?? "",
   };
 }
 

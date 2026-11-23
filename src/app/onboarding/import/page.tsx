@@ -1,3 +1,4 @@
+import { getMyProfileFlags } from "@/features/profile/flags";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -39,8 +40,8 @@ async function Gate({ searchParams }: { searchParams: Promise<{ preview?: string
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
-  const [{ data: profile }, { count }] = await Promise.all([
-    supabase.from("profiles").select("terms_version").eq("id", me).single(),
+  const [profile, { count }] = await Promise.all([
+    getMyProfileFlags(supabase),
     supabase.from("user_places").select("place_id", { count: "exact", head: true }).eq("user_id", me),
   ]);
   if (!profile) redirect(SESSION_ENDED);

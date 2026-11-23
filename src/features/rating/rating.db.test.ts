@@ -43,13 +43,16 @@ describe.skipIf(!hasLocalDb)("평가 저장 (로컬 DB)", () => {
     const { supabase, userId } = await signUpTestUser();
     const [a, b, c] = await savePlaces(supabase, userId, ["가", "나", "다"]);
     expect(await countUnrated(supabase, userId)).toBe(3);
-    expect((await nextUnrated(supabase, userId, []))?.placeId).toBe(c);
-    expect((await nextUnrated(supabase, userId, [c]))?.placeId).toBe(b);
+    const first = await nextUnrated(supabase, userId, null);
+    expect(first?.placeId).toBe(c);
+    // c 를 건너뛰면 c 자리 다음부터
+    expect((await nextUnrated(supabase, userId, first!.cursor))?.placeId).toBe(b);
 
     await updateUserPlace(supabase, userId, b, { tier: "wantToGo" });
-    expect((await nextUnrated(supabase, userId, [c]))?.placeId).toBe(a);
+    const afterC = await nextUnrated(supabase, userId, first!.cursor);
+    expect(afterC?.placeId).toBe(a);
     expect(await countUnrated(supabase, userId)).toBe(2);
-    expect(await nextUnrated(supabase, userId, [a, c])).toBeNull();
+    expect(await nextUnrated(supabase, userId, afterC!.cursor)).toBeNull();
   }, 20_000);
 
   it("남의 저장은 고칠 수 없다", async () => {

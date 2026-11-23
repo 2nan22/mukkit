@@ -65,3 +65,6 @@ next-env.d.ts
 
 # 예시 파일은 추적 (위 .env* 규칙 예외)
 !.env.example
+
+# QA 캡처 (보고서 아티팩트에만)
+docs/qa/*/shots/

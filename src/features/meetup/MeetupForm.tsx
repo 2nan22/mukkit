@@ -28,6 +28,18 @@ function hhmm(m: number): string {
   return `${h < 12 ? "오전" : "오후"} ${h % 12 === 0 ? 12 : h % 12}:${String(m % 60).padStart(2, "0")}`;
 }
 
+// 자정을 넘긴 시각은 두 목록 모두 '새벽' — 만나는 시간에만 '오전 12:00'으로 보이던 것
+export function timeLabel(m: number): string {
+  return m >= 24 * 60 ? `새벽 ${hhmm(m).replace("오전 ", "")}` : hhmm(m);
+}
+
+// 한 번도 고르지 않은 헤어지는 시간은 만나는 시간에서 2시간 반 뒤 — 기본 만나는 시간이 지나 밀려도 30분짜리 약속이 되지 않게
+export const DEFAULT_LENGTH = 150;
+export function endFor(startAt: number, end: number, touched: boolean, last: number): number {
+  if (touched && end > startAt) return end;
+  return Math.min(Math.max(end, startAt + DEFAULT_LENGTH), last);
+}
+
 // 한국 시간 기준 날짜 + 분 → ISO (분이 24시를 넘으면 다음 날 새벽)
 function toIso(dayOffset: number, minutes: number): string {
   const now = new Date(Date.now() + 9 * 3600_000);
@@ -41,13 +53,14 @@ export function MeetupForm() {
   const [calendar, setCalendar] = useState(false);
   const [start, setStart] = useState(19 * 60);
   const [end, setEnd] = useState(21 * 60 + 30);
+  const [endTouched, setEndTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   // 오늘이면 이미 지난 시각은 빼고 고른다
   const startOptions = TIMES.slice(0, -2).filter((t) => day > 0 || t > nowMinutesKst());
   // 고른 시각이 목록에 없으면(오늘 이미 지남) 첫 시각으로 — 화면과 값이 어긋나지 않게
   const startAt = startOptions.includes(start) ? start : (startOptions[0] ?? start);
-  const endAt = end > startAt ? end : Math.min(startAt + 150, TIMES.at(-1)!);
+  const endAt = endFor(startAt, end, endTouched, TIMES.at(-1)!);
 
   function submit() {
     if (endAt <= startAt) return setError("헤어지는 시간을 만나는 시간보다 늦게 골라 주세요");
@@ -113,17 +126,24 @@ export function MeetupForm() {
             >
               {startOptions.map((t) => (
                 <option key={t} value={t}>
-                  {hhmm(t)}
+                  {timeLabel(t)}
                 </option>
               ))}
             </select>
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-meta text-muted">헤어지는 시간</span>
-            <select value={endAt} onChange={(e) => setEnd(Number(e.target.value))} className={select}>
+            <select
+              value={endAt}
+              onChange={(e) => {
+                setEnd(Number(e.target.value));
+                setEndTouched(true);
+              }}
+              className={select}
+            >
               {TIMES.filter((t) => t > startAt).map((t) => (
                 <option key={t} value={t}>
-                  {t >= 24 * 60 ? `새벽 ${hhmm(t).replace("오전 ", "")}` : hhmm(t)}
+                  {timeLabel(t)}
                 </option>
               ))}
             </select>

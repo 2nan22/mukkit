@@ -1,3 +1,4 @@
+import { timedFetch } from "@/lib/http/timedFetch";
 import { z } from "zod";
 import {
   ImportError,
@@ -38,7 +39,7 @@ const ResponseSchema = z.object({
 const ErrorBodySchema = z.object({ apiErrorCode: z.union([z.number(), z.string()]) });
 
 export class NaverSharedListSource implements PlaceSource {
-  constructor(private readonly fetchImpl: FetchLike = fetch) {}
+  constructor(private readonly fetchImpl: FetchLike = timedFetch) {}
 
   async fetchList(input: string): Promise<ImportedList> {
     const shareId = await this.resolveShareId(input.trim());
