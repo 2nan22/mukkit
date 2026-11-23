@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CUISINE_ICON_PATH } from "@/components/ui/CuisineIcon";
+import { FoodArt } from "@/components/ui/CuisineIcon";
 import { TierIcon, TierSpoons } from "@/components/ui/TierIcon";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
@@ -71,7 +71,7 @@ export function MyMap({ home, tiers }: { home: MyHome; tiers: TierCounts }) {
 
 const RATED: Tier[] = ["three", "two", "one", "notRecommended"];
 
-// 최근 저장한 곳 — 사진(내 사진 · 팔로잉) 없으면 업종 아이콘 · 아래에 등급(평가 전은 업종)
+// 최근 저장한 곳 — 사진(내 사진 · 팔로잉) 없으면 세부 업종 기본 그림 · 아래에 등급(평가 전은 업종)
 export function RecentSaved({ home, covers }: { home: MyHome; covers: Record<string, string> }) {
   if (home.recent.length === 0) return null;
   return (
@@ -85,10 +85,8 @@ export function RecentSaved({ home, covers }: { home: MyHome; covers: Record<str
                 // eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다
                 <img src={covers[p.placeId]} alt="" loading="lazy" className="size-[112px] rounded-[14px] bg-surface object-cover" />
               ) : (
-                <span aria-hidden="true" className="flex size-[112px] items-center justify-center rounded-[14px] bg-surface text-ink-2">
-                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d={CUISINE_ICON_PATH[p.cuisine]} />
-                  </svg>
+                <span aria-hidden="true" className="flex size-[112px] items-center justify-center rounded-[14px] bg-surface">
+                  <FoodArt cuisine={p.cuisine} kind={p.kind} size={64} />
                 </span>
               )}
               <span className="truncate text-body font-semibold">{p.name}</span>

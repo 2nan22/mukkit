@@ -74,7 +74,7 @@ export function PeekCards({
       {places.slice(0, SHOWN).map((p) => (
         <li key={p.placeId} className="shrink-0 snap-start">
           <button type="button" onClick={() => onPick(p.placeId)} className="flex h-16 w-56 items-center gap-2.5 rounded-[14px] border border-line bg-white px-2.5 text-left">
-            <PlaceThumb src={covers[p.placeId]} cuisine={p.cuisine} />
+            <PlaceThumb src={covers[p.placeId]} cuisine={p.cuisine} kind={p.kind} />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-body font-semibold">{p.name}</span>
               {listOf ? (
