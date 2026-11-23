@@ -1,0 +1,683 @@
+<title>먹킷 QA 56</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 왼쪽 정렬 한 단 — 위에 숫자 요약, 아래 우선순위 목록, 맨 아래 구역별 캡처 격자 */
+:root {
+  --bg: #fbfaf8; --fg: #1c1a17; --muted: #6b655d; --line: #e6e1da; --card: #ffffff;
+  --brand: #c8410b; --p0: #b42330; --p1: #b8730a; --p2: #5b6b7a; --tint: #f3eee8;
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #161412; --fg: #ece7e0; --muted: #a39b90; --line: #2f2b27; --card: #1f1c19;
+  --brand: #f0763d; --p0: #f06d76; --p1: #e8a840; --p2: #9fb0c0; --tint: #26221e; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #161412; --fg: #ece7e0; --muted: #a39b90; --line: #2f2b27; --card: #1f1c19;
+  --brand: #f0763d; --p0: #f06d76; --p1: #e8a840; --p2: #9fb0c0; --tint: #26221e; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--sans); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; }
+h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.02em; }
+h1 small { color: var(--brand); font-size: 14px; display: block; letter-spacing: 0.04em; }
+h2 { font-size: 21px; margin: 40px 0 12px; }
+.sub { color: var(--muted); margin: 0 0 20px; }
+.lead { max-width: 68ch; }
+.tally { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.tally div { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; color: var(--muted); font-size: 13px; }
+.tally b { display: block; font-size: 24px; color: var(--fg); font-variant-numeric: tabular-nums; }
+.pgroup { font-size: 17px; margin: 28px 0 8px; }
+.pgroup span { color: var(--muted); font-weight: 500; }
+.findings { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.finding { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--p2); border-radius: 8px; padding: 12px 16px; }
+.finding.p0 { border-left-color: var(--p0); } .finding.p1 { border-left-color: var(--p1); }
+.fhead { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.fhead h4 { margin: 0; font-size: 15px; flex: 1 1 240px; min-width: 0; }
+.pri { font-weight: 700; font-size: 12px; } .p0 .pri { color: var(--p0); } .p1 .pri { color: var(--p1); } .p2 .pri { color: var(--p2); }
+.fid, .size { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.finding p { margin: 6px 0 0; min-width: 0; overflow-wrap: anywhere; }
+.ev, .who { font-size: 13px; color: var(--muted); }
+.ev a { color: var(--brand); margin-left: 4px; }
+.plain { padding-left: 20px; } .plain li { margin: 4px 0; } .muted { color: var(--muted); }
+.zone h3 { display: flex; align-items: center; gap: 10px; font-size: 17px; margin: 32px 0 12px; }
+.zl { background: var(--fg); color: var(--bg); border-radius: 6px; width: 26px; height: 26px; display: grid; place-items: center; font-size: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+.shot { margin: 0; min-width: 0; }
+.thumb { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--tint); cursor: zoom-in; aspect-ratio: 390 / 844; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.thumb:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+figcaption { font-size: 12.5px; margin-top: 6px; line-height: 1.45; }
+figcaption .meta { display: block; color: var(--muted); overflow-wrap: anywhere; }
+.chip { display: inline-block; font-size: 11px; border: 1px solid var(--line); border-radius: 99px; padding: 0 7px; margin: 3px 4px 0 0; color: var(--muted); overflow-wrap: anywhere; }
+.chip.bad { color: var(--p0); border-color: var(--p0); } .chip.warn { color: var(--p1); border-color: var(--p1); }
+#lb { position: fixed; inset: 0; background: rgba(0,0,0,.82); display: grid; place-items: center; overflow: auto; padding: max(16px, env(safe-area-inset-top, 0px)) 16px; z-index: 20; }
+#lb img { max-width: min(420px, 100%); height: auto; border-radius: 12px; }
+#lb button { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); font: inherit; background: #fff; color: #111; border: 0; border-radius: 99px; padding: 8px 16px; cursor: pointer; }
+</style>
+<div class="wrap">
+<h1><small>세션 56 · 로컬 · 가짜 시드 데이터</small>먹킷 전체 화면 QA</h1>
+<p class="sub">390×844 · 계정 다섯(많이 저장 1120곳 · 막 가입 · 팔로잉 · 빈 계정 · 차단됨) · 디자인 · 기능 · 기획 · 개발 네 팀 검토</p>
+<div class="tally"><div><b>3</b>P0 고장</div><div><b>23</b>P1 사용성</div><div><b>21</b>P2 다듬기</div><div><b>72</b>캡처</div></div>
+<p class="lead">화면 63장을 네 팀이 따로 보고 지적 90건을 냈어요. 겹친 것을 합치고 캡처 · 코드로 다시 확인한 47건만 남겼어요. P0 는 세 건 모두 메인이 직접 재현했어요. 비협상 목표(가게 레버 없음 · 가게 평균 점수 없음)를 어긴 곳은 찾지 못했어요.</p>
+<section id="findings"><h2>통합 목록</h2><h3 class="pgroup">P0 고장 <span>3</span></h3><ol class="findings"><li class="finding p0">
+  <div class="fhead"><span class="pri">P0</span><span class="fid">Q01</span><h4>&#x27;링크가 있는 사람만&#x27; 리스트를 누구나 통째로 열람</h4><span class="size">S</span></div>
+  <p>lists · list_items 읽기 정책이 visibility in (link, public) 이면 누구에게나 열려 있어, 공개 키만으로 링크 리스트 이름 · 담긴 장소 · 원본 리스트 id 를 모두 나열할 수 있어요. 링크 공개의 뜻(링크를 아는 사람만)이 DB 에서 지켜지지 않아요.</p>
+  <p class="ev"><b>근거</b> supabase/migrations/20261120110210_init_schema.sql:121 · :130 — 비로그인 REST 조회로 link 리스트 2개 · list_items 1528행 확인 <a href="#s-D06">D06</a> <a href="#s-D09">D09</a></p>
+  <p class="sg"><b>제안</b> 직접 읽기는 owner · public 만 허용하고, link 는 public_list 같은 id 지정 security definer 함수로만 읽게. 정책 시험 추가</p>
+  <p class="who">개발 · 메인 재현 · 다음 57</p>
+</li>
+<li class="finding p0">
+  <div class="fhead"><span class="pri">P0</span><span class="fid">Q02</span><h4>1000곳 넘는 리스트가 1000곳에서 잘림</h4><span class="size">S</span></div>
+  <p>내 리스트 상세는 머리에 1120곳인데 행은 1000개라 나머지를 보거나 뺄 수 없고, 공유 리스트(/l)는 개수까지 &#x27;1000곳&#x27;으로 틀려요. 결정 55(행 수 제한)를 어긴 곳이에요.</p>
+  <p class="ev"><b>근거</b> src/features/lists/lists.ts:189 (list_items 를 fetchAll 없이) · src/features/share/publicList.ts:45 (public_list RPC range 없음) · QA 재현 qa_shots/P70 · P71 <a href="#s-D03">D03</a> <a href="#s-D06">D06</a></p>
+  <p class="sg"><b>제안</b> list_items 는 fetchAll, public_list 는 range 로 끝까지 · 개수는 count head</p>
+  <p class="who">기능 · 개발 · 기능팀 재현 · 메인 코드 확인 · 다음 58</p>
+</li>
+<li class="finding p0">
+  <div class="fhead"><span class="pri">P0</span><span class="fid">Q03</span><h4>공유 리스트 지도가 핀에 맞춰 확대되지 않음</h4><span class="size">M</span></div>
+  <p>비로그인이 처음 보는 화면인데 지도가 늘 전국(128km)으로 열려요. 성수 10곳만 담은 리스트도 전국이 보이고, 넓게 퍼진 리스트는 타일이 비어 회색 · 흰 칸만 남았어요.</p>
+  <p class="ev"><b>근거</b> src/features/share/PublicListView.tsx:52 (PlaceMap 에 초기 범위 없음) · 메인 재현 verify_share_map.jpg(빈 타일) · verify_share_map_small.jpg(성수 10곳인데 128km) <a href="#s-D06">D06</a> <a href="#s-D07">D07</a></p>
+  <p class="sg"><b>제안</b> 핀 범위로 첫 화면 맞추기(focusOn 재사용) · 빈 타일은 실기기에서 다시 확인</p>
+  <p class="who">디자인 · 기획 · 메인 · 메인 재현 (빈 타일은 헤드리스 Chromium, 실기기 확인 필요) · 다음 59</p>
+</li></ol><h3 class="pgroup">P1 사용성 <span>23</span></h3><ol class="findings"><li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q04</span><h4>로그인 뒤 이동(next)으로 외부 사이트에 보낼 수 있음</h4><span class="size">S</span></div>
+  <p>safeNextPath 가 &#x27;/\t/evil.com&#x27; 같은 탭 · 줄바꿈 섞인 값을 통과시키고 브라우저가 이를 외부 주소로 풀어요. 로그인 콜백 · 닉네임 · 약관 · 평가 뒤 이동이 모두 이 함수를 써요.</p>
+  <p class="ev"><b>근거</b> src/features/auth/paths.ts:17 — new URL(&#x27;/\t/evil.com&#x27;, base) → http://evil.com/ (메인 재현) <a href="#s-A04">A04</a> <a href="#s-A05">A05</a> <a href="#s-C08">C08</a></p>
+  <p class="sg"><b>제안</b> URL 로 풀어 origin 이 같은지 비교 · 제어 문자 거절 · 단위 시험</p>
+  <p class="who">개발 · 메인 재현 · 다음 57</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q05</span><h4>차단한 사이에도 리스트 · 팔로우 · 공개 리스트가 보임</h4><span class="size">M</span></div>
+  <p>차단당한 사람이 차단한 사람의 리스트 · list_items · follows 를 직접 조회할 수 있고 profile_lists 도 차단을 확인하지 않아요. is_blocked 는 비로그인도 아무 두 사람에 대해 불러 차단 관계를 알아낼 수 있어요. 약속 참여는 만든 사람과의 차단만 봐요.</p>
+  <p class="ev"><b>근거</b> init_schema.sql:121 · :130 · :137 · 20261121180000_taste.sql:63 · 20261124100000_report_block.sql:19 · :159 · :200 — 개발팀 재현(차단당한 계정 claims 로 380행 조회) <a href="#s-E05">E05</a> <a href="#s-E06">E06</a> <a href="#s-D06">D06</a></p>
+  <p class="sg"><b>제안</b> 읽기 정책 · profile_lists 에 차단 조건 · is_blocked 는 본인이 낀 쌍만 · join_meetup 은 참여자 전원과 확인</p>
+  <p class="who">개발 · 개발팀 재현 · 다음 57</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q06</span><h4>닉네임 · 약관 동의 전에 다른 화면을 다 씀</h4><span class="size">M</span></div>
+  <p>닉네임 · 약관 확인이 /home 에만 있어 막 가입한 계정이 /map · /lists/new 를 쓰고 초대 링크로 약속에도 참여돼요. 상대 화면엔 &#x27;사용자1bc20941&#x27;로 보여요. 약관 동의 없이 데이터가 쌓여요.</p>
+  <p class="ev"><b>근거</b> src/app/home/page.tsx:142 만 확인 · QA 재현 qa_shots/P81 · P82 <a href="#s-A04">A04</a> <a href="#s-A05">A05</a> <a href="#s-F06">F06</a></p>
+  <p class="sg"><b>제안</b> proxy 또는 공용 레이아웃에서 nickname_set_at · terms_version 확인 후 온보딩으로</p>
+  <p class="who">기능 · 기능팀 재현 · 다음 57</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q07</span><h4>가져온 원본 새로 고침이 큰 원본에서 잘리고 멈출 수 있음</h4><span class="size">M</span></div>
+  <p>refreshImport 의 원본 기록 조회 두 곳이 1000행에서 잘려 남아 있는 곳을 빠진 곳으로 볼 수 있어요. .in() 을 묶지 않아 수백 개 id 가 주소에 실리고, 외부 fetch 에 시간 제한이 없어 크론이 300초에 잘리면 job_runs 가 끝나지 않은 채 남아요.</p>
+  <p class="ev"><b>근거</b> src/features/import/refreshImport.ts:64 · :87-91 · :121-126 · naverSharedListSource.ts:41 · kakaoFolderSource.ts:56 (코드 확인, 로컬 원본 최대 345곳이라 실측 못 함) <a href="#s-D09">D09</a></p>
+  <p class="sg"><b>제안</b> fetchAll · 200개 묶음(saveImportedList 와 같게) · AbortSignal.timeout · 조회 오류 확인</p>
+  <p class="who">개발 · 코드 확인 · 다음 58</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q08</span><h4>원본 끊기 · 탈퇴에서 1000개 넘는 개수 · 사진이 빠짐</h4><span class="size">S</span></div>
+  <p>원본 끊기 확인 창의 &#x27;지울 곳&#x27; 숫자와 지울 사진 경로가 1000에서 잘려, 숫자가 작게 나오고 1000장 넘는 사진 파일은 Storage 에 남아요. 탈퇴도 사진 폴더 1000개를 넘으면 같아요.</p>
+  <p class="ev"><b>근거</b> src/features/import/sourceActions.ts:25 · :40 · 20261130100000_import_source_disconnect.sql · src/features/auth/withdraw.ts:36-46 (코드 확인) <a href="#s-D09">D09</a> <a href="#s-E08">E08</a></p>
+  <p class="sg"><b>제안</b> count head · 경로는 페이지로 끝까지 받아 지우기</p>
+  <p class="who">개발 · 코드 확인 · 다음 58</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q09</span><h4>큰 공유 리스트에서 &#x27;모두 저장&#x27; 실패 · &#x27;내 장소에 있음&#x27; 사라짐</h4><span class="size">S</span></div>
+  <p>500곳 넘는 공유 리스트는 &#x27;모두 가고 싶은 곳으로 저장&#x27;이 늘 &#x27;담지 못했어요&#x27;예요. 이미 저장한 곳 확인도 in() 500개 요청이 조용히 실패해 &#x27;내 장소에 있음&#x27;이 0개로 보여요.</p>
+  <p class="ev"><b>근거</b> src/features/share/actions.ts:33 (max 500) · src/features/share/savedLists.ts:32 · QA 재현 qa_shots/P72 <a href="#s-D06">D06</a> <a href="#s-D07">D07</a></p>
+  <p class="sg"><b>제안</b> 묶음으로 나눠 저장 · 확인 · 실패를 삼키지 않기</p>
+  <p class="who">기능 · 개발 · 기능팀 재현 · 다음 58</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q10</span><h4>빠르게 평가하기를 200번쯤 건너뛰면 오류 화면</h4><span class="size">S</span></div>
+  <p>건너뛴 장소 id 를 모두 GET 주소에 실어 204번째에 500 오류로 막혀요. 서버 로그에는 &#x27;평가 저장 실패&#x27;로 잘못 남아요.</p>
+  <p class="ev"><b>근거</b> src/features/rating/rating.ts:158 (not in 에 skipped 전부) · QA 재현 qa_shots/P120 <a href="#s-C07">C07</a></p>
+  <p class="sg"><b>제안</b> 건너뛴 목록 대신 saved_at 커서로 다음 장소 · 오류 이름 바로잡기</p>
+  <p class="who">기능 · 기능팀 재현 · 다음 58</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q11</span><h4>3숟가락에서 한 곳이 빠지면 순위가 한 칸씩 틀림</h4><span class="size">S</span></div>
+  <p>1위를 다른 등급으로 내리면 남은 tier_rank 가 1부터 남아, 새 1위가 장소 상세 · 평가 화면에 &#x27;2위&#x27;로 보여요.</p>
+  <p class="ev"><b>근거</b> 20261125120000_three_rank.sql:6-16 · src/features/rating/rating.ts:120 — 개발팀 재현(롤백 트랜잭션) <a href="#s-C04">C04</a> <a href="#s-C08">C08</a> <a href="#s-C09">C09</a></p>
+  <p class="sg"><b>제안</b> 등급이 바뀔 때 남은 순위를 당겨 채우거나 표시할 때 순번으로 계산</p>
+  <p class="who">개발 · 개발팀 재현 · 다음 58</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q12</span><h4>로그인을 거치면 보던 화면을 잃음</h4><span class="size">S</span></div>
+  <p>공유 리스트 · 프로필의 시작 버튼이 next 없이 &#x27;/&#x27;로 가고, 보호 화면(댓글 알림 링크 · 폰 공유 시트)을 비로그인으로 열어도 돌아갈 곳이 없어요. 공유에서 새 사용자로 이어지는 루프가 여기서 끊겨요. 초대 링크(/m)만 next 를 넘겨요.</p>
+  <p class="ev"><b>근거</b> src/app/l/[listId]/page.tsx:82 · src/proxy.ts:27 · QA 재현(/l · /u · /import/share) <a href="#s-D06">D06</a> <a href="#s-E04">E04</a> <a href="#s-A07">A07</a></p>
+  <p class="sg"><b>제안</b> 시작 버튼 · proxy 리다이렉트에 next 싣기(Q04 고친 safeNextPath 로)</p>
+  <p class="who">기획 · 기능 · 기능팀 재현 · 다음 59</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q13</span><h4>검색에서 음식점 아닌 곳이 나오고 장소로도 만들어짐</h4><span class="size">S</span></div>
+  <p>카카오 키워드 검색에 업종 제한이 없어 성형외과 · 증권사가 &#x27;장소&#x27;로 나오고, 누르면 &#x27;음식점 아님&#x27; 장소가 공용 places 에 생겨 저장 · 평가까지 돼요. 사람 결과는 장소 아래로 밀려요.</p>
+  <p class="ev"><b>근거</b> src/features/search/kakaoLocal.ts:45 (category_group_code 없음) · QA 재현 qa_shots/P90 · P91 <a href="#s-B10">B10</a> <a href="#s-B11">B11</a></p>
+  <p class="sg"><b>제안</b> FD6 · CE7 로 거르기 · 서버 생성에서도 음식점 · 카페만 · 사람 결과 위로</p>
+  <p class="who">기획 · 기능 · 디자인 · 기능팀 재현 · 다음 59</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q14</span><h4>저장하지 않은 가게는 바로 평가할 수 없음</h4><span class="size">M</span></div>
+  <p>장소 상세의 버튼이 &#x27;리스트에 담기&#x27; · &#x27;가고 싶은 곳 저장&#x27;뿐이라 다녀온 곳도 먼저 가고 싶은 곳으로 저장한 뒤 평가해야 해요.</p>
+  <p class="ev"><b>근거</b> src/features/place/PlaceBottomBar.tsx · QA 재현 qa_shots/P30 <a href="#s-C06">C06</a></p>
+  <p class="sg"><b>제안</b> 저장 안 한 곳에 &#x27;평가하기&#x27;(저장 + 평가 한 번에) — 사용자 결정 필요</p>
+  <p class="who">기능 · 기능팀 재현 · 다음 59</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q15</span><h4>기본 시간이 지나면 30분짜리 약속이 만들어짐</h4><span class="size">S</span></div>
+  <p>저녁 8시 40분대에 기본값 그대로 만들면 &#x27;오후 9:00~9:30쯤&#x27; 약속이 돼요.</p>
+  <p class="ev"><b>근거</b> src/features/meetup/MeetupForm.tsx · QA 재현 qa_shots/P52 <a href="#s-F03">F03</a></p>
+  <p class="sg"><b>제안</b> 기본 시작 · 끝을 지금 기준으로 다시 계산 · 최소 길이</p>
+  <p class="who">기능 · 기능팀 재현 · 다음 59</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q16</span><h4>빈 상태에 다음 할 일이 없음</h4><span class="size">M</span></div>
+  <p>빈 지도는 &#x27;지도를 축소하면 더 보여요&#x27;, 빈 순위는 &#x27;아래에서 하나씩 정해 보세요&#x27;인데 아래가 비었고, 빈 빠르게 평가는 체크 아이콘과 &#x27;완료&#x27;라 다 끝낸 것처럼 보여요. 빈 뭐 먹지 · 리스트 탭도 가져오기로 이어지지 않아요.</p>
+  <p class="ev"><b>근거</b> C03 · C10 · C11 · B08 · D11 · MapView.tsx:693 · RankBoard.tsx:62 · QuickRate.tsx:166 <a href="#s-C03">C03</a> <a href="#s-C10">C10</a> <a href="#s-C11">C11</a> <a href="#s-B08">B08</a> <a href="#s-D11">D11</a></p>
+  <p class="sg"><b>제안</b> 빈 상태 틀 하나(무엇이 비었나 한 줄 + 가져오기 버튼)로 통일</p>
+  <p class="who">디자인 · 기획 · 캡처 확인 · 다음 59</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q17</span><h4>빈 계정 홈에서 첫 행동이 가져오기가 아님</h4><span class="size">S</span></div>
+  <p>빈 계정 홈 맨 위 주 버튼이 &#x27;여기서 뭐 먹지 찾아보기&#x27;이고, 가져오기는 내 지도 카드 안 흰 버튼으로 밀려 있어요. 사람 찾기 · 친구 초대도 없어요. 홈 순서(결정 49)는 데이터가 있는 사람 기준이라 빈 계정 분기만 다뤄요.</p>
+  <p class="ev"><b>근거</b> B02 캡처 <a href="#s-B02">B02</a></p>
+  <p class="sg"><b>제안</b> 저장 0곳일 때만 가져오기 카드를 맨 위 주 버튼으로 · 사람 찾기 한 줄</p>
+  <p class="who">기획 · 캡처 확인 · 다음 59</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q18</span><h4>공유 리스트에서 주인 프로필 · 팔로우로 갈 길이 없음</h4><span class="size">S</span></div>
+  <p>&#x27;큐에이많이님의 리스트&#x27; 글자가 링크가 아니라 사람 단위 신뢰로 이어지지 않아요.</p>
+  <p class="ev"><b>근거</b> D06 · D07 캡처 · src/app/l/[listId]/page.tsx <a href="#s-D06">D06</a> <a href="#s-D07">D07</a></p>
+  <p class="sg"><b>제안</b> 주인 이름을 프로필 링크로 · 로그인 상태면 팔로우 버튼</p>
+  <p class="who">기획 · 캡처 확인 · 다음 59</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q19</span><h4>없는 페이지 화면에 뒤로 · 하단 탭이 없음</h4><span class="size">S</span></div>
+  <p>404 화면(나를 차단한 사람 프로필 포함)에서 나갈 길이 브라우저 뒤로뿐이에요. 여백도 다른 화면과 달라요.</p>
+  <p class="ev"><b>근거</b> src/components/ui/StatusScreen.tsx:6 · src/app/not-found.tsx <a href="#s-C12">C12</a> <a href="#s-E06">E06</a> <a href="#s-D10">D10</a></p>
+  <p class="sg"><b>제안</b> AppHeader(뒤로) + 홈으로 버튼</p>
+  <p class="who">디자인 · 캡처 확인 · 다음 59</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q20</span><h4>선택 표시 색 규칙과 다른 곳</h4><span class="size">S</span></div>
+  <p>평가 작성의 등급 라디오가 주황(accent-brand)이라 &#x27;선택은 검정&#x27; 규칙과 어긋나고 저장 버튼과 겹쳐요. 세그먼트 선택도 뭐 먹지 거리 · 공개 범위는 흰 칸, 리스트 탭 · 지도 머리는 검정 칸으로 갈려요.</p>
+  <p class="ev"><b>근거</b> src/features/rating/RatingForm.tsx:77 · src/features/eat · C08 · B07 · D01 · C01 <a href="#s-C08">C08</a> <a href="#s-B07">B07</a></p>
+  <p class="sg"><b>제안</b> 라디오 accent-ink · 세그먼트 컴포넌트 하나로</p>
+  <p class="who">디자인 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q21</span><h4>&#x27;가고 싶은 곳 · 평가 전&#x27; 버튼에 등급 아이콘이 없음</h4><span class="size">S</span></div>
+  <p>평가 작성 · 빠르게 평가의 이 두 버튼만 글자 알약이라 결정 41(모두 TierIcon)과 어긋나요.</p>
+  <p class="ev"><b>근거</b> src/features/rating/RatingForm.tsx:82-89 · C07 · C08 <a href="#s-C07">C07</a> <a href="#s-C08">C08</a></p>
+  <p class="sg"><b>제안</b> TierIcon 붙이기</p>
+  <p class="who">디자인 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q22</span><h4>390px 에서 단어 가운데 · 한 글자씩 줄이 꺾임</h4><span class="size">S</span></div>
+  <p>전역에 word-break: keep-all 이 없어 &#x27;좋/아해요&#x27;처럼 꺾이고, 장소 상세 내 평가 머리 줄은 &#x27;곳&#x27; · &#x27;위&#x27; · &#x27;방문&#x27;이 한 글자씩 다음 줄로 떨어져요.</p>
+  <p class="ev"><b>근거</b> src/app/globals.css (keep-all 0건) · src/app/p/[placeId]/page.tsx:160-167 <a href="#s-C04">C04</a> <a href="#s-B05">B05</a> <a href="#s-F08">F08</a> <a href="#s-D09">D09</a></p>
+  <p class="sg"><b>제안</b> body 에 break-keep · 머리 줄 shrink-0 · whitespace-nowrap</p>
+  <p class="who">디자인 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q23</span><h4>보조 글자색 대비 부족 (3.38:1)</h4><span class="size">S</span></div>
+  <p>--color-subtle #868c96 이 흰 바탕에서 AA(4.5:1)에 못 미쳐요. 꺼진 하단 탭 이름 · 방문일 등 31곳에 쓰여요.</p>
+  <p class="ev"><b>근거</b> src/app/globals.css:15 · src/components/BottomNav.tsx:79 <a href="#s-B01">B01</a> <a href="#s-C04">C04</a></p>
+  <p class="sg"><b>제안</b> 한 단계 진하게(#6b7280 근처) · 토큰 한 곳만 바꾸기</p>
+  <p class="who">디자인 · 코드 확인 · 다음 60</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q24</span><h4>약관 동의 화면 가운데가 통째로 빔</h4><span class="size">S</span></div>
+  <p>제목 아래 화면 절반이 비고 동의 상자만 맨 아래에 있어 무엇에 동의하는지 안 보여요.</p>
+  <p class="ev"><b>근거</b> src/app/onboarding/terms/page.tsx:20 · A05 <a href="#s-A05">A05</a> <a href="#s-A06">A06</a></p>
+  <p class="sg"><b>제안</b> 핵심 세 줄 요약(무엇을 저장 · 누가 보나 · 지우기) 을 가운데에</p>
+  <p class="who">디자인 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q25</span><h4>1000곳 넘는 지도에서 핀이 뭉쳐 등급이 묻힘</h4><span class="size">M</span></div>
+  <p>평가 전 · 가고 싶은 곳 회색 핀이 대부분이라 숟가락 등급 핀이 가려져요.</p>
+  <p class="ev"><b>근거</b> C01 캡처 (가짜 데이터라 고르게 퍼진 상태 — 실데이터로 다시 보기) <a href="#s-C01">C01</a></p>
+  <p class="sg"><b>제안</b> 등급 핀을 위로 · 평가 전 핀은 작게, 또는 기본 거르기를 &#x27;평가한 곳&#x27;으로</p>
+  <p class="who">디자인 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p1">
+  <div class="fhead"><span class="pri">P1</span><span class="fid">Q26</span><h4>평가 작성 · 공유 리스트 조회 낭비</h4><span class="size">S</span></div>
+  <p>평가 작성은 세 번을 차례로 기다려(623ms) 메뉴 조회가 폼 전체를 막고, 공유 리스트는 generateMetadata 와 본문이 public_list 를 각각 불러 두 번 호출해요.</p>
+  <p class="ev"><b>근거</b> src/app/rate/[placeId]/page.tsx:38-44 · src/app/l/[listId]/page.tsx:13 · :39 · results.json loadMs <a href="#s-C08">C08</a> <a href="#s-D06">D06</a></p>
+  <p class="sg"><b>제안</b> Promise.all · 메뉴는 Suspense 로 따로 · React cache()</p>
+  <p class="who">개발 · 코드 확인 · 다음 58</p>
+</li></ol><h3 class="pgroup">P2 다듬기 <span>21</span></h3><ol class="findings"><li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q27</span><h4>빠르게 평가 뒤 홈 · 리스트 숫자가 그대로</h4><span class="size">S</span></div>
+  <p>setTier 뒤 revalidatePath 가 없어 돌아가면 평가 전 숫자가 낡아요.</p>
+  <p class="ev"><b>근거</b> src/features/rating/actions.ts:85-91 <a href="#s-C07">C07</a> <a href="#s-B01">B01</a></p>
+  <p class="sg"><b>제안</b> revalidatePath 추가</p>
+  <p class="who">개발 · 코드 확인 · 다음 58</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q28</span><h4>보호 경로 목록이 실제와 어긋남</h4><span class="size">S</span></div>
+  <p>/meet/new 는 비로그인에게 폼이 열리고 만들기를 누르면 시작 화면으로 튕겨요. /rank · /notifications 도 목록 밖이에요.</p>
+  <p class="ev"><b>근거</b> src/features/auth/paths.ts:2 · QA qa_shots/P50 <a href="#s-F03">F03</a></p>
+  <p class="sg"><b>제안</b> 목록에 meet · rank · notifications · visits 추가</p>
+  <p class="who">개발 · 기능 · 기능팀 재현 · 다음 57</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q29</span><h4>원본(비공식 API) 호출에 사용자별 속도 제한 없음</h4><span class="size">M</span></div>
+  <p>가져오기 · 직접 새로 고침을 연달아 부를 수 있어 네이버 · 카카오에 막힐 위험이 있어요.</p>
+  <p class="ev"><b>근거</b> src/features/import/actions.ts:27-59 · refreshActions.ts:52-60 <a href="#s-D08">D08</a> <a href="#s-D09">D09</a></p>
+  <p class="sg"><b>제안</b> 사용자당 분당 횟수 제한</p>
+  <p class="who">개발 · 코드 확인 · 다음 58</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q30</span><h4>리스트 카드 썸네일 조회가 리스트 26개 넘으면 잘림</h4><span class="size">S</span></div>
+  <p>리스트 수 × 40행을 한 번에 받아 1000행 제한에 걸려요.</p>
+  <p class="ev"><b>근거</b> src/features/lists/lists.ts:158-178 <a href="#s-D01">D01</a> <a href="#s-B01">B01</a></p>
+  <p class="sg"><b>제안</b> 리스트별 4장만 받는 함수</p>
+  <p class="who">개발 · 코드 확인 · 다음 58</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q31</span><h4>평가를 더는 못 보는 사람에게도 댓글 푸시</h4><span class="size">S</span></div>
+  <p>주인 댓글 푸시 대상에 볼 수 있는지 확인이 없어요.</p>
+  <p class="ev"><b>근거</b> src/features/reactions/notify.ts:20-29 <a href="#s-C05">C05</a></p>
+  <p class="sg"><b>제안</b> is_viewable_rating 로 거르기</p>
+  <p class="who">개발 · 코드 확인 · 다음 57</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q32</span><h4>profiles 전체 칸을 비로그인에게 공개</h4><span class="size">S</span></div>
+  <p>약관 동의 시각 · push_off 같은 칸까지 읽혀요.</p>
+  <p class="ev"><b>근거</b> init_schema.sql:101 <a href="#s-E04">E04</a></p>
+  <p class="sg"><b>제안</b> 공개 칸만 고른 뷰 또는 열 권한</p>
+  <p class="who">개발 · 코드 확인 · 다음 57</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q33</span><h4>메모 · 한 줄 평가 글자 수 오류 문구 뒤바뀜</h4><span class="size">S</span></div>
+  <p>한 줄 평가가 길 때 메모가 길다고 나와요.</p>
+  <p class="ev"><b>근거</b> src/features/rating/rating.ts:15 · :18 <a href="#s-C08">C08</a></p>
+  <p class="sg"><b>제안</b> 문구 바로잡기</p>
+  <p class="who">개발 · 코드 확인 · 다음 60</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q34</span><h4>내 장소 검색 오류를 빈 결과로 삼킴</h4><span class="size">S</span></div>
+  <p>조회가 실패해도 &#x27;없어요&#x27;로 보여요.</p>
+  <p class="ev"><b>근거</b> src/features/search/search.ts:14-21 <a href="#s-B10">B10</a></p>
+  <p class="sg"><b>제안</b> 오류 안내 따로</p>
+  <p class="who">개발 · 코드 확인 · 다음 59</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q35</span><h4>크론 인증 함수 중복 · 숨긴 기능 서버 액션 열림</h4><span class="size">S</span></div>
+  <p>크론 두 곳이 같은 인증 함수를 따로 갖고, 숨긴 &#x27;글에서 가게 찾기&#x27; 서버 액션은 아직 호출돼요.</p>
+  <p class="ev"><b>근거</b> src/app/api/cron/*/route.ts:17-29 · src/features/textImport/actions.ts:33 · :73 <a href="#s-D10">D10</a></p>
+  <p class="sg"><b>제안</b> 공용 함수 · TEXT_IMPORT_ENABLED 를 액션에서도 확인</p>
+  <p class="who">개발 · 코드 확인 · 다음 57</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q36</span><h4>차단 · 링크 리스트 RLS 시험 빈 곳 · 시험 잔여 데이터</h4><span class="size">S</span></div>
+  <p>Q01 · Q05 를 잡는 DB 시험이 없고 fetchAll 시험이 사용자를 남겨요.</p>
+  <p class="ev"><b>근거</b> supabase/tests/database/report_block.test.sql · src/lib/supabase/fetchAll.db.test.ts:7-11 </p>
+  <p class="sg"><b>제안</b> 정책 시험 추가 · 정리</p>
+  <p class="who">개발 · 코드 확인 · 다음 57</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q37</span><h4>같은 뜻에 다른 말</h4><span class="size">S</span></div>
+  <p>취향 겹침/취향 일치 · 팔로잉 평가/믿는 사람의 평가 · 수정/고치기 · 요즘 많이 저장된 리스트/공개 리스트가 섞여요.</p>
+  <p class="ev"><b>근거</b> IntroArt.tsx:200 · u/[userId]/page.tsx:132 · lists/popular/page.tsx:18 · PlaceBottomBar.tsx:60 <a href="#s-A01">A01</a> <a href="#s-B07">B07</a> <a href="#s-D05">D05</a> <a href="#s-C04">C04</a></p>
+  <p class="sg"><b>제안</b> 하나씩 정해 통일 — 사용자 결정</p>
+  <p class="who">기획 · 디자인 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q38</span><h4>설명 한 줄에 두 가지</h4><span class="size">S</span></div>
+  <p>원본 관리 · 초대 단계 설명이 한 줄에 두 내용이에요(규칙: 한 줄 한 가지).</p>
+  <p class="ev"><b>근거</b> ImportSourceList.tsx:135 · m/[token]/page.tsx:60 <a href="#s-D09">D09</a> <a href="#s-F06">F06</a></p>
+  <p class="sg"><b>제안</b> 둘로 나누거나 하나 빼기</p>
+  <p class="who">기획 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q39</span><h4>알림이 줄줄이 반복 · 맞팔로우 버튼 없음</h4><span class="size">M</span></div>
+  <p>같은 평가의 댓글 · 좋아요가 묶이지 않고 팔로우 알림에서 바로 맞팔로우를 못 해요.</p>
+  <p class="ev"><b>근거</b> B05 <a href="#s-B05">B05</a></p>
+  <p class="sg"><b>제안</b> 같은 평가 알림 묶기 · 팔로우 줄에 버튼</p>
+  <p class="who">기획 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q40</span><h4>나만의 맛집 순위가 잘 안 보이고 행마다 &#x27;다시 정하기&#x27; 반복</h4><span class="size">S</span></div>
+  <p>들어가는 길이 MY 메뉴 · 상세 작은 링크뿐이고, 순위 화면은 모든 행에 같은 버튼이 붙어 있어요.</p>
+  <p class="ev"><b>근거</b> RankedList.tsx:210 · E01 <a href="#s-C09">C09</a> <a href="#s-C04">C04</a></p>
+  <p class="sg"><b>제안</b> 홈 1~3위 카드 강조 · 버튼은 편집 모드로</p>
+  <p class="who">기획 · 디자인 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q41</span><h4>평가가 237곳인데 &#x27;평가를 늘리라&#x27;는 안내</h4><span class="size">S</span></div>
+  <p>취향 비슷한 사람이 없을 때 문구가 평가 수와 상관없이 같아요.</p>
+  <p class="ev"><b>근거</b> src/features/social/TasteMatches.tsx · E07 <a href="#s-E07">E07</a></p>
+  <p class="sg"><b>제안</b> 평가 수에 따라 문구 분기</p>
+  <p class="who">기획 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q42</span><h4>버튼 · 스위치 모양이 화면마다 다름</h4><span class="size">S</span></div>
+  <p>&#x27;빠르게 평가&#x27;가 홈(흰)과 리스트 탭(주황 32px)에서 다르고, 함께 방문 수락 주 버튼은 검정, 알림 스위치는 켜졌는데 흐려 보여요.</p>
+  <p class="ev"><b>근거</b> MyHomeSections.tsx:23 · lists/page.tsx:86 · TagAnswer.tsx:29 · PushKinds.tsx:67 <a href="#s-B01">B01</a> <a href="#s-D02">D02</a> <a href="#s-F08">F08</a> <a href="#s-E10">E10</a></p>
+  <p class="sg"><b>제안</b> 공용 버튼 · 스위치로</p>
+  <p class="who">디자인 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q43</span><h4>지도 칩 줄에 넘김 신호 없음 · 차단한 사람 프로필에 누구인지 없음</h4><span class="size">S</span></div>
+  <p>칩 줄 오른쪽이 잘려도 더 있다는 표시가 없고, 차단한 사람 프로필엔 이름이 안 보여요.</p>
+  <p class="ev"><b>근거</b> C01 · E05 · E11 <a href="#s-C01">C01</a> <a href="#s-E05">E05</a></p>
+  <p class="sg"><b>제안</b> 오른쪽 흐림 · 이름 표시</p>
+  <p class="who">디자인 · 캡처 확인 · 다음 60</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q44</span><h4>다크 모드 · color-scheme 지정 없음</h4><span class="size">M</span></div>
+  <p>기기 강제 어둡게에서 색이 뒤섞일 수 있어요.</p>
+  <p class="ev"><b>근거</b> src/app/globals.css · src/app/layout.tsx:19 </p>
+  <p class="sg"><b>제안</b> 우선 color-scheme: light 명시, 다크는 나중</p>
+  <p class="who">디자인 · 코드 확인 · 다음 60</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q45</span><h4>자정 이후 시간이 &#x27;오전 12:00&#x27;</h4><span class="size">S</span></div>
+  <p>만나는 시간 목록은 &#x27;오전 12:00&#x27;, 헤어지는 시간 목록은 &#x27;새벽&#x27;이라 갈려요.</p>
+  <p class="ev"><b>근거</b> src/features/meetup/MeetupForm.tsx:121 <a href="#s-F03">F03</a></p>
+  <p class="sg"><b>제안</b> 같은 표기 함수</p>
+  <p class="who">기능 · 기능팀 재현 · 다음 59</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q46</span><h4>리스트 담기 시트에 이미 담긴 표시 없음</h4><span class="size">S</span></div>
+  <p>이미 담긴 리스트를 다시 누르면 &#x27;담았어요&#x27;라고 나와요.</p>
+  <p class="ev"><b>근거</b> QA qa_shots/P150 · P151 <a href="#s-C04">C04</a></p>
+  <p class="sg"><b>제안</b> 담긴 리스트에 체크 · 누르면 빼기</p>
+  <p class="who">기능 · 기능팀 재현 · 다음 59</p>
+</li>
+<li class="finding p2">
+  <div class="fhead"><span class="pri">P2</span><span class="fid">Q47</span><h4>같은 사람의 평가 수가 화면마다 다름</h4><span class="size">S</span></div>
+  <p>장소 상세 209곳 · 프로필 210곳 — 협찬 포함 여부 차이예요.</p>
+  <p class="ev"><b>근거</b> QA 재현 (c 계정으로 a 보기) <a href="#s-C06">C06</a> <a href="#s-E04">E04</a></p>
+  <p class="sg"><b>제안</b> 한 함수로 세기</p>
+  <p class="who">기능 · 기능팀 재현 · 다음 58</p>
+</li></ol>
+<h3 class="pgroup">다음 세션 묶음</h3><ul class="plain"><li><b>57_security_rls.md</b> Q01 · Q04 · Q05 · Q06 · Q28 · Q31 · Q32 · Q35 · Q36 — 링크 리스트 RLS · 오픈 리다이렉트 · 차단 · 온보딩 우회</li><li><b>58_large_data.md</b> Q02 · Q07 ~ Q11 · Q26 · Q27 · Q29 · Q30 · Q47 — 1000행 · 큰 리스트 · 새로 고침 · 순위 · 조회 낭비</li><li><b>59_flow_gaps.md</b> Q03 · Q12 ~ Q19 · Q34 · Q45 · Q46 — 공유 지도 · 로그인 뒤 복귀 · 검색 업종 · 빈 상태 · 404</li><li><b>60_design_polish.md</b> Q20 ~ Q25 · Q33 · Q37 ~ Q44 — 선택 색 · 아이콘 · 줄바꿈 · 대비 · 용어 · 알림 묶기</li></ul>
+<h3 class="pgroup">출시 전 꼭 (이번 범위 밖)</h3><ul class="plain"><li>약관 · 처리방침 법률 검토 · 문의처 · 국외 이전 국가 채우기</li><li>상표(KIPRIS) · 구글플레이 이름 확인</li><li>네이버 · 카카오 비공식 내부 API 의존 점검(막히면 가져오기 · 메뉴가 멈춤)</li></ul>
+<h3 class="pgroup">검토 뒤 버린 지적</h3><ul class="plain muted"><li>홈 &#x27;내 지도&#x27;가 하단 탭을 덮음 — 전체 길이 캡처에서만 생긴 착시, 화면 크기 캡처에선 탭이 위(verify_home_map)</li><li>남의 장소 상세에 내 메모가 샌다는 의심 — 시드가 c 에게도 같은 메모 · 순위를 넣은 우연</li><li>지도가 부산에서 열림 — 결정 50(가장 많이 모인 동네), 가짜 데이터가 고르게 퍼진 탓</li><li>가짜 사진 단색 · 로그인 연결 없음 · /import/text 404 — 시드 · 숨김 결정 그대로</li></ul></section>
+<h2>화면 캡처 72장</h2>
+<p class="sub">썸네일을 누르면 크게 보여요. 긴 화면은 전체 길이로 찍었어요.</p>
+<section class="zone"><h3><span class="zl">A</span>시작 · 가입</h3><div class="grid"><figure class="shot" id="s-A01">
+  <button class="thumb" data-full="shots/A01.jpg" aria-label="A01 시작 화면 (비로그인) 크게 보기"><img loading="lazy" src="shots/A01.jpg" alt="시작 화면 (비로그인) 화면"></button>
+  <figcaption><b>A01</b> 시작 화면 (비로그인)<span class="meta">/ · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-A02">
+  <button class="thumb" data-full="shots/A02.jpg" aria-label="A02 로그인 실패 안내 크게 보기"><img loading="lazy" src="shots/A02.jpg" alt="로그인 실패 안내 화면"></button>
+  <figcaption><b>A02</b> 로그인 실패 안내<span class="meta">/?error=login · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-A03">
+  <button class="thumb" data-full="shots/A03.jpg" aria-label="A03 세션 만료 안내 크게 보기"><img loading="lazy" src="shots/A03.jpg" alt="세션 만료 안내 화면"></button>
+  <figcaption><b>A03</b> 세션 만료 안내<span class="meta">/?error=session · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-A04">
+  <button class="thumb" data-full="shots/A04.jpg" aria-label="A04 닉네임 정하기 (막 가입) 크게 보기"><img loading="lazy" src="shots/A04.jpg" alt="닉네임 정하기 (막 가입) 화면"></button>
+  <figcaption><b>A04</b> 닉네임 정하기 (막 가입)<span class="meta">/onboarding/nickname · B 막 가입</span></figcaption>
+</figure>
+<figure class="shot" id="s-A05">
+  <button class="thumb" data-full="shots/A05.jpg" aria-label="A05 약관 동의 크게 보기"><img loading="lazy" src="shots/A05.jpg" alt="약관 동의 화면"></button>
+  <figcaption><b>A05</b> 약관 동의<span class="meta">/onboarding/terms · B 막 가입</span></figcaption>
+</figure>
+<figure class="shot" id="s-A06">
+  <button class="thumb" data-full="shots/A06.jpg" aria-label="A06 가입 직후 가져오기 크게 보기"><img loading="lazy" src="shots/A06.jpg" alt="가입 직후 가져오기 화면"></button>
+  <figcaption><b>A06</b> 가입 직후 가져오기<span class="meta">/onboarding/import · B 막 가입</span><span class="chip">→ /onboarding/terms?next=/onboarding/impor</span></figcaption>
+</figure>
+<figure class="shot" id="s-A07">
+  <button class="thumb" data-full="shots/A07.jpg" aria-label="A07 비로그인으로 보호 화면 접근 크게 보기"><img loading="lazy" src="shots/A07.jpg" alt="비로그인으로 보호 화면 접근 화면"></button>
+  <figcaption><b>A07</b> 비로그인으로 보호 화면 접근<span class="meta">/home · -</span><span class="chip">→ /</span></figcaption>
+</figure></div></section><section class="zone"><h3><span class="zl">B</span>홈 · 피드 · 알림 · 찾기</h3><div class="grid"><figure class="shot" id="s-B01">
+  <button class="thumb" data-full="shots/B01.jpg" aria-label="B01 홈 (데이터 많음) 크게 보기"><img loading="lazy" src="shots/B01.jpg" alt="홈 (데이터 많음) 화면"></button>
+  <figcaption><b>B01</b> 홈 (데이터 많음)<span class="meta">/home · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-B02">
+  <button class="thumb" data-full="shots/B02.jpg" aria-label="B02 홈 (빈 계정) 크게 보기"><img loading="lazy" src="shots/B02.jpg" alt="홈 (빈 계정) 화면"></button>
+  <figcaption><b>B02</b> 홈 (빈 계정)<span class="meta">/home · D 빈 계정</span></figcaption>
+</figure>
+<figure class="shot" id="s-B03">
+  <button class="thumb" data-full="shots/B03.jpg" aria-label="B03 피드 크게 보기"><img loading="lazy" src="shots/B03.jpg" alt="피드 화면"></button>
+  <figcaption><b>B03</b> 피드<span class="meta">/feed · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-B04">
+  <button class="thumb" data-full="shots/B04.jpg" aria-label="B04 피드 (빈) 크게 보기"><img loading="lazy" src="shots/B04.jpg" alt="피드 (빈) 화면"></button>
+  <figcaption><b>B04</b> 피드 (빈)<span class="meta">/feed · D 빈 계정</span></figcaption>
+</figure>
+<figure class="shot" id="s-B05">
+  <button class="thumb" data-full="shots/B05.jpg" aria-label="B05 알림함 크게 보기"><img loading="lazy" src="shots/B05.jpg" alt="알림함 화면"></button>
+  <figcaption><b>B05</b> 알림함<span class="meta">/notifications · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-B06">
+  <button class="thumb" data-full="shots/B06.jpg" aria-label="B06 알림함 (빈) 크게 보기"><img loading="lazy" src="shots/B06.jpg" alt="알림함 (빈) 화면"></button>
+  <figcaption><b>B06</b> 알림함 (빈)<span class="meta">/notifications · D 빈 계정</span></figcaption>
+</figure>
+<figure class="shot" id="s-B07">
+  <button class="thumb" data-full="shots/B07.jpg" aria-label="B07 여기서 뭐 먹지 크게 보기"><img loading="lazy" src="shots/B07.jpg" alt="여기서 뭐 먹지 화면"></button>
+  <figcaption><b>B07</b> 여기서 뭐 먹지<span class="meta">/eat · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-B08">
+  <button class="thumb" data-full="shots/B08.jpg" aria-label="B08 여기서 뭐 먹지 (빈) 크게 보기"><img loading="lazy" src="shots/B08.jpg" alt="여기서 뭐 먹지 (빈) 화면"></button>
+  <figcaption><b>B08</b> 여기서 뭐 먹지 (빈)<span class="meta">/eat · D 빈 계정</span></figcaption>
+</figure>
+<figure class="shot" id="s-B09">
+  <button class="thumb" data-full="shots/B09.jpg" aria-label="B09 검색 크게 보기"><img loading="lazy" src="shots/B09.jpg" alt="검색 화면"></button>
+  <figcaption><b>B09</b> 검색<span class="meta">/search · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-B10">
+  <button class="thumb" data-full="shots/B10.jpg" aria-label="B10 검색 결과 (국밥) 크게 보기"><img loading="lazy" src="shots/B10.jpg" alt="검색 결과 (국밥) 화면"></button>
+  <figcaption><b>B10</b> 검색 결과 (국밥)<span class="meta">/search?q=%EA%B5%AD%EB%B0%A5 · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-B11">
+  <button class="thumb" data-full="shots/B11.jpg" aria-label="B11 검색 결과 (사람) 크게 보기"><img loading="lazy" src="shots/B11.jpg" alt="검색 결과 (사람) 화면"></button>
+  <figcaption><b>B11</b> 검색 결과 (사람)<span class="meta">/search?q=%ED%81%90%EC%97%90%EC%9D%B4 · A 많이 저장</span></figcaption>
+</figure></div></section><section class="zone"><h3><span class="zl">C</span>지도 · 장소 · 평가</h3><div class="grid"><figure class="shot" id="s-C01">
+  <button class="thumb" data-full="shots/C01.jpg" aria-label="C01 지도 내 장소 (1120곳) 크게 보기"><img loading="lazy" src="shots/C01.jpg" alt="지도 내 장소 (1120곳) 화면"></button>
+  <figcaption><b>C01</b> 지도 내 장소 (1120곳)<span class="meta">/map · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-C02">
+  <button class="thumb" data-full="shots/C02.jpg" aria-label="C02 팔로잉 지도 크게 보기"><img loading="lazy" src="shots/C02.jpg" alt="팔로잉 지도 화면"></button>
+  <figcaption><b>C02</b> 팔로잉 지도<span class="meta">/map?view=following · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-C03">
+  <button class="thumb" data-full="shots/C03.jpg" aria-label="C03 지도 (빈) 크게 보기"><img loading="lazy" src="shots/C03.jpg" alt="지도 (빈) 화면"></button>
+  <figcaption><b>C03</b> 지도 (빈)<span class="meta">/map · D 빈 계정</span></figcaption>
+</figure>
+<figure class="shot" id="s-C04">
+  <button class="thumb" data-full="shots/C04.jpg" aria-label="C04 장소 상세 크게 보기"><img loading="lazy" src="shots/C04.jpg" alt="장소 상세 화면"></button>
+  <figcaption><b>C04</b> 장소 상세<span class="meta">/p/011e17fd-3a3c-471a-9c48-8c4c66d09cd3 · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-C05">
+  <button class="thumb" data-full="shots/C05.jpg" aria-label="C05 평가 댓글 화면 크게 보기"><img loading="lazy" src="shots/C05.jpg" alt="평가 댓글 화면 화면"></button>
+  <figcaption><b>C05</b> 평가 댓글 화면<span class="meta">/p/011e17fd-3a3c-471a-9c48-8c4c66d09cd3/r/5ed8dd · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-C06">
+  <button class="thumb" data-full="shots/C06.jpg" aria-label="C06 장소 상세 (남이 볼 때 · C) 크게 보기"><img loading="lazy" src="shots/C06.jpg" alt="장소 상세 (남이 볼 때 · C) 화면"></button>
+  <figcaption><b>C06</b> 장소 상세 (남이 볼 때 · C)<span class="meta">/p/011e17fd-3a3c-471a-9c48-8c4c66d09cd3 · C 팔로잉</span></figcaption>
+</figure>
+<figure class="shot" id="s-C07">
+  <button class="thumb" data-full="shots/C07.jpg" aria-label="C07 빠르게 평가하기 크게 보기"><img loading="lazy" src="shots/C07.jpg" alt="빠르게 평가하기 화면"></button>
+  <figcaption><b>C07</b> 빠르게 평가하기<span class="meta">/rate · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-C08">
+  <button class="thumb" data-full="shots/C08.jpg" aria-label="C08 평가 작성 크게 보기"><img loading="lazy" src="shots/C08.jpg" alt="평가 작성 화면"></button>
+  <figcaption><b>C08</b> 평가 작성<span class="meta">/rate/011e17fd-3a3c-471a-9c48-8c4c66d09cd3 · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-C09">
+  <button class="thumb" data-full="shots/C09.jpg" aria-label="C09 나만의 맛집 순위 크게 보기"><img loading="lazy" src="shots/C09.jpg" alt="나만의 맛집 순위 화면"></button>
+  <figcaption><b>C09</b> 나만의 맛집 순위<span class="meta">/rank · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-C10">
+  <button class="thumb" data-full="shots/C10.jpg" aria-label="C10 순위 (빈) 크게 보기"><img loading="lazy" src="shots/C10.jpg" alt="순위 (빈) 화면"></button>
+  <figcaption><b>C10</b> 순위 (빈)<span class="meta">/rank · D 빈 계정</span></figcaption>
+</figure>
+<figure class="shot" id="s-C11">
+  <button class="thumb" data-full="shots/C11.jpg" aria-label="C11 빠르게 평가 (빈) 크게 보기"><img loading="lazy" src="shots/C11.jpg" alt="빠르게 평가 (빈) 화면"></button>
+  <figcaption><b>C11</b> 빠르게 평가 (빈)<span class="meta">/rate · D 빈 계정</span></figcaption>
+</figure>
+<figure class="shot" id="s-C12">
+  <button class="thumb" data-full="shots/C12.jpg" aria-label="C12 없는 장소 크게 보기"><img loading="lazy" src="shots/C12.jpg" alt="없는 장소 화면"></button>
+  <figcaption><b>C12</b> 없는 장소<span class="meta">/p/00000000-0000-0000-0000-000000000000 · A 많이 저장</span></figcaption>
+</figure></div></section><section class="zone"><h3><span class="zl">D</span>리스트 · 가져오기 · 공유</h3><div class="grid"><figure class="shot" id="s-D01">
+  <button class="thumb" data-full="shots/D01.jpg" aria-label="D01 리스트 탭 크게 보기"><img loading="lazy" src="shots/D01.jpg" alt="리스트 탭 화면"></button>
+  <figcaption><b>D01</b> 리스트 탭<span class="meta">/lists · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-D02">
+  <button class="thumb" data-full="shots/D02.jpg" aria-label="D02 리스트 탭 등급 보기 크게 보기"><img loading="lazy" src="shots/D02.jpg" alt="리스트 탭 등급 보기 화면"></button>
+  <figcaption><b>D02</b> 리스트 탭 등급 보기<span class="meta">/lists?view=tier · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-D03">
+  <button class="thumb" data-full="shots/D03.jpg" aria-label="D03 리스트 상세 크게 보기"><img loading="lazy" src="shots/D03.jpg" alt="리스트 상세 화면"></button>
+  <figcaption><b>D03</b> 리스트 상세<span class="meta">/lists/62b55f62-97f1-457b-aaab-d29c7b83d312 · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-D04">
+  <button class="thumb" data-full="shots/D04.jpg" aria-label="D04 새 리스트 크게 보기"><img loading="lazy" src="shots/D04.jpg" alt="새 리스트 화면"></button>
+  <figcaption><b>D04</b> 새 리스트<span class="meta">/lists/new · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-D05">
+  <button class="thumb" data-full="shots/D05.jpg" aria-label="D05 많이 저장된 리스트 크게 보기"><img loading="lazy" src="shots/D05.jpg" alt="많이 저장된 리스트 화면"></button>
+  <figcaption><b>D05</b> 많이 저장된 리스트<span class="meta">/lists/popular · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-D06">
+  <button class="thumb" data-full="shots/D06.jpg" aria-label="D06 공유 리스트 (비로그인) 크게 보기"><img loading="lazy" src="shots/D06.jpg" alt="공유 리스트 (비로그인) 화면"></button>
+  <figcaption><b>D06</b> 공유 리스트 (비로그인)<span class="meta">/l/62b55f62-97f1-457b-aaab-d29c7b83d312 · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-D07">
+  <button class="thumb" data-full="shots/D07.jpg" aria-label="D07 공유 리스트 (C 로그인) 크게 보기"><img loading="lazy" src="shots/D07.jpg" alt="공유 리스트 (C 로그인) 화면"></button>
+  <figcaption><b>D07</b> 공유 리스트 (C 로그인)<span class="meta">/l/62b55f62-97f1-457b-aaab-d29c7b83d312 · C 팔로잉</span></figcaption>
+</figure>
+<figure class="shot" id="s-D08">
+  <button class="thumb" data-full="shots/D08.jpg" aria-label="D08 가져오기 크게 보기"><img loading="lazy" src="shots/D08.jpg" alt="가져오기 화면"></button>
+  <figcaption><b>D08</b> 가져오기<span class="meta">/import · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-D09">
+  <button class="thumb" data-full="shots/D09.jpg" aria-label="D09 가져온 원본 관리 크게 보기"><img loading="lazy" src="shots/D09.jpg" alt="가져온 원본 관리 화면"></button>
+  <figcaption><b>D09</b> 가져온 원본 관리<span class="meta">/import/sources · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-D10">
+  <button class="thumb" data-full="shots/D10.jpg" aria-label="D10 글에서 가게 찾기 (숨김) 크게 보기"><img loading="lazy" src="shots/D10.jpg" alt="글에서 가게 찾기 (숨김) 화면"></button>
+  <figcaption><b>D10</b> 글에서 가게 찾기 (숨김)<span class="meta">/import/text · A 많이 저장</span><span class="chip bad">404</span><span class="chip warn">콘솔 오류 2</span></figcaption>
+</figure>
+<figure class="shot" id="s-D11">
+  <button class="thumb" data-full="shots/D11.jpg" aria-label="D11 리스트 (빈) 크게 보기"><img loading="lazy" src="shots/D11.jpg" alt="리스트 (빈) 화면"></button>
+  <figcaption><b>D11</b> 리스트 (빈)<span class="meta">/lists · D 빈 계정</span></figcaption>
+</figure></div></section><section class="zone"><h3><span class="zl">E</span>사람 · MY · 설정 · 약관</h3><div class="grid"><figure class="shot" id="s-E01">
+  <button class="thumb" data-full="shots/E01.jpg" aria-label="E01 MY 크게 보기"><img loading="lazy" src="shots/E01.jpg" alt="MY 화면"></button>
+  <figcaption><b>E01</b> MY<span class="meta">/my · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-E02">
+  <button class="thumb" data-full="shots/E02.jpg" aria-label="E02 MY (빈) 크게 보기"><img loading="lazy" src="shots/E02.jpg" alt="MY (빈) 화면"></button>
+  <figcaption><b>E02</b> MY (빈)<span class="meta">/my · D 빈 계정</span></figcaption>
+</figure>
+<figure class="shot" id="s-E03">
+  <button class="thumb" data-full="shots/E03.jpg" aria-label="E03 프로필 고치기 크게 보기"><img loading="lazy" src="shots/E03.jpg" alt="프로필 고치기 화면"></button>
+  <figcaption><b>E03</b> 프로필 고치기<span class="meta">/my/edit · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-E04">
+  <button class="thumb" data-full="shots/E04.jpg" aria-label="E04 남의 프로필 (C) 크게 보기"><img loading="lazy" src="shots/E04.jpg" alt="남의 프로필 (C) 화면"></button>
+  <figcaption><b>E04</b> 남의 프로필 (C)<span class="meta">/u/69681216-c4a5-4ebb-b7ba-ce5d7277b1df · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-E05">
+  <button class="thumb" data-full="shots/E05.jpg" aria-label="E05 차단한 사람 프로필 크게 보기"><img loading="lazy" src="shots/E05.jpg" alt="차단한 사람 프로필 화면"></button>
+  <figcaption><b>E05</b> 차단한 사람 프로필<span class="meta">/u/9836d142-1ad4-4bc0-acf2-d17c4db73b3e · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-E06">
+  <button class="thumb" data-full="shots/E06.jpg" aria-label="E06 나를 차단한 사람 프로필 크게 보기"><img loading="lazy" src="shots/E06.jpg" alt="나를 차단한 사람 프로필 화면"></button>
+  <figcaption><b>E06</b> 나를 차단한 사람 프로필<span class="meta">/u/5ed8dde4-0843-4d02-8884-8408ace1eb0c · E 차단됨</span></figcaption>
+</figure>
+<figure class="shot" id="s-E07">
+  <button class="thumb" data-full="shots/E07.jpg" aria-label="E07 사람 찾기 크게 보기"><img loading="lazy" src="shots/E07.jpg" alt="사람 찾기 화면"></button>
+  <figcaption><b>E07</b> 사람 찾기<span class="meta">/people · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-E08">
+  <button class="thumb" data-full="shots/E08.jpg" aria-label="E08 설정 크게 보기"><img loading="lazy" src="shots/E08.jpg" alt="설정 화면"></button>
+  <figcaption><b>E08</b> 설정<span class="meta">/settings · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-E09">
+  <button class="thumb" data-full="shots/E09.jpg" aria-label="E09 로그인 연결 크게 보기"><img loading="lazy" src="shots/E09.jpg" alt="로그인 연결 화면"></button>
+  <figcaption><b>E09</b> 로그인 연결<span class="meta">/settings/accounts · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-E10">
+  <button class="thumb" data-full="shots/E10.jpg" aria-label="E10 알림 설정 크게 보기"><img loading="lazy" src="shots/E10.jpg" alt="알림 설정 화면"></button>
+  <figcaption><b>E10</b> 알림 설정<span class="meta">/settings/notifications · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-E11">
+  <button class="thumb" data-full="shots/E11.jpg" aria-label="E11 차단한 사람 크게 보기"><img loading="lazy" src="shots/E11.jpg" alt="차단한 사람 화면"></button>
+  <figcaption><b>E11</b> 차단한 사람<span class="meta">/settings/blocked · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-E12">
+  <button class="thumb" data-full="shots/E12.jpg" aria-label="E12 이용약관 크게 보기"><img loading="lazy" src="shots/E12.jpg" alt="이용약관 화면"></button>
+  <figcaption><b>E12</b> 이용약관<span class="meta">/terms · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-E13">
+  <button class="thumb" data-full="shots/E13.jpg" aria-label="E13 처리방침 크게 보기"><img loading="lazy" src="shots/E13.jpg" alt="처리방침 화면"></button>
+  <figcaption><b>E13</b> 처리방침<span class="meta">/privacy · -</span></figcaption>
+</figure></div></section><section class="zone"><h3><span class="zl">F</span>약속 · 함께 방문</h3><div class="grid"><figure class="shot" id="s-F01">
+  <button class="thumb" data-full="shots/F01.jpg" aria-label="F01 약속 목록 크게 보기"><img loading="lazy" src="shots/F01.jpg" alt="약속 목록 화면"></button>
+  <figcaption><b>F01</b> 약속 목록<span class="meta">/meet · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-F02">
+  <button class="thumb" data-full="shots/F02.jpg" aria-label="F02 약속 (빈) 크게 보기"><img loading="lazy" src="shots/F02.jpg" alt="약속 (빈) 화면"></button>
+  <figcaption><b>F02</b> 약속 (빈)<span class="meta">/meet · D 빈 계정</span></figcaption>
+</figure>
+<figure class="shot" id="s-F03">
+  <button class="thumb" data-full="shots/F03.jpg" aria-label="F03 약속 만들기 크게 보기"><img loading="lazy" src="shots/F03.jpg" alt="약속 만들기 화면"></button>
+  <figcaption><b>F03</b> 약속 만들기<span class="meta">/meet/new · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-F04">
+  <button class="thumb" data-full="shots/F04.jpg" aria-label="F04 약속 상세 크게 보기"><img loading="lazy" src="shots/F04.jpg" alt="약속 상세 화면"></button>
+  <figcaption><b>F04</b> 약속 상세<span class="meta">/meet/ba3ffe16-9494-4887-a743-f6e255225a89 · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-F05">
+  <button class="thumb" data-full="shots/F05.jpg" aria-label="F05 어디서 만났어요 크게 보기"><img loading="lazy" src="shots/F05.jpg" alt="어디서 만났어요 화면"></button>
+  <figcaption><b>F05</b> 어디서 만났어요<span class="meta">/meet/1eeab894-4350-4033-a915-74862669ff3e/visit · C 팔로잉</span></figcaption>
+</figure>
+<figure class="shot" id="s-F06">
+  <button class="thumb" data-full="shots/F06.jpg" aria-label="F06 초대 링크 (D) 크게 보기"><img loading="lazy" src="shots/F06.jpg" alt="초대 링크 (D) 화면"></button>
+  <figcaption><b>F06</b> 초대 링크 (D)<span class="meta">/m/03f899053f6593294b794918 · D 빈 계정</span></figcaption>
+</figure>
+<figure class="shot" id="s-F07">
+  <button class="thumb" data-full="shots/F07.jpg" aria-label="F07 초대 링크 (비로그인) 크게 보기"><img loading="lazy" src="shots/F07.jpg" alt="초대 링크 (비로그인) 화면"></button>
+  <figcaption><b>F07</b> 초대 링크 (비로그인)<span class="meta">/m/03f899053f6593294b794918 · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-F08">
+  <button class="thumb" data-full="shots/F08.jpg" aria-label="F08 함께 방문 크게 보기"><img loading="lazy" src="shots/F08.jpg" alt="함께 방문 화면"></button>
+  <figcaption><b>F08</b> 함께 방문<span class="meta">/visits · A 많이 저장</span></figcaption>
+</figure>
+<figure class="shot" id="s-F09">
+  <button class="thumb" data-full="shots/F09.jpg" aria-label="F09 함께 방문 (빈) 크게 보기"><img loading="lazy" src="shots/F09.jpg" alt="함께 방문 (빈) 화면"></button>
+  <figcaption><b>F09</b> 함께 방문 (빈)<span class="meta">/visits · D 빈 계정</span></figcaption>
+</figure></div></section><section class="zone"><h3><span class="zl">R</span>재현 · 재확인 캡처</h3><div class="grid"><figure class="shot" id="s-R01">
+  <button class="thumb" data-full="shots/R01.jpg" aria-label="R01 공유 리스트 지도 빈 타일 (Q03) 크게 보기"><img loading="lazy" src="shots/R01.jpg" alt="공유 리스트 지도 빈 타일 (Q03) 화면"></button>
+  <figcaption><b>R01</b> 공유 리스트 지도 빈 타일 (Q03)<span class="meta">/l/… · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-R02">
+  <button class="thumb" data-full="shots/R02.jpg" aria-label="R02 성수 10곳인데 전국 배율 (Q03) 크게 보기"><img loading="lazy" src="shots/R02.jpg" alt="성수 10곳인데 전국 배율 (Q03) 화면"></button>
+  <figcaption><b>R02</b> 성수 10곳인데 전국 배율 (Q03)<span class="meta">/l/… · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-R03">
+  <button class="thumb" data-full="shots/R03.jpg" aria-label="R03 화면 크기 캡처 — 탭 겹침 없음 (버린 지적) 크게 보기"><img loading="lazy" src="shots/R03.jpg" alt="화면 크기 캡처 — 탭 겹침 없음 (버린 지적) 화면"></button>
+  <figcaption><b>R03</b> 화면 크기 캡처 — 탭 겹침 없음 (버린 지적)<span class="meta">/home · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-R04">
+  <button class="thumb" data-full="shots/R04.jpg" aria-label="R04 1120곳인데 1000에서 끝 (Q02) 크게 보기"><img loading="lazy" src="shots/R04.jpg" alt="1120곳인데 1000에서 끝 (Q02) 화면"></button>
+  <figcaption><b>R04</b> 1120곳인데 1000에서 끝 (Q02)<span class="meta">/lists/… · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-R05">
+  <button class="thumb" data-full="shots/R05.jpg" aria-label="R05 모두 저장 실패 (Q09) 크게 보기"><img loading="lazy" src="shots/R05.jpg" alt="모두 저장 실패 (Q09) 화면"></button>
+  <figcaption><b>R05</b> 모두 저장 실패 (Q09)<span class="meta">/l/… · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-R06">
+  <button class="thumb" data-full="shots/R06.jpg" aria-label="R06 약관 전 약속 참여 (Q06) 크게 보기"><img loading="lazy" src="shots/R06.jpg" alt="약관 전 약속 참여 (Q06) 화면"></button>
+  <figcaption><b>R06</b> 약관 전 약속 참여 (Q06)<span class="meta">/m/… · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-R07">
+  <button class="thumb" data-full="shots/R07.jpg" aria-label="R07 음식점 아닌 장소 생성 (Q13) 크게 보기"><img loading="lazy" src="shots/R07.jpg" alt="음식점 아닌 장소 생성 (Q13) 화면"></button>
+  <figcaption><b>R07</b> 음식점 아닌 장소 생성 (Q13)<span class="meta">/p/… · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-R08">
+  <button class="thumb" data-full="shots/R08.jpg" aria-label="R08 200번 건너뛰기 오류 (Q10) 크게 보기"><img loading="lazy" src="shots/R08.jpg" alt="200번 건너뛰기 오류 (Q10) 화면"></button>
+  <figcaption><b>R08</b> 200번 건너뛰기 오류 (Q10)<span class="meta">/rate · -</span></figcaption>
+</figure>
+<figure class="shot" id="s-R09">
+  <button class="thumb" data-full="shots/R09.jpg" aria-label="R09 30분 약속 (Q15) 크게 보기"><img loading="lazy" src="shots/R09.jpg" alt="30분 약속 (Q15) 화면"></button>
+  <figcaption><b>R09</b> 30분 약속 (Q15)<span class="meta">/meet/… · -</span></figcaption>
+</figure></div></section>
+</div>
+<div id="lb" hidden><button type="button" id="lbclose">닫기</button><img id="lbimg" alt=""></div>
+<script>
+const lb = document.getElementById("lb"), img = document.getElementById("lbimg");
+document.querySelectorAll(".thumb").forEach((b) => b.addEventListener("click", () => { img.src = b.dataset.full; img.alt = b.getAttribute("aria-label"); lb.hidden = false; document.getElementById("lbclose").focus(); }));
+const close = () => { lb.hidden = true; img.src = ""; };
+document.getElementById("lbclose").addEventListener("click", close);
+lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+</script>
