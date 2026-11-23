@@ -1,5 +1,21 @@
-// 불러오는 동안 화면 자리 — 흰 화면 대신 모양만
+import { EatingLoader } from "./EatingLoader";
+
+// 불러오는 동안 화면 자리 — 흰 화면 대신 모양만 + 화면 가운데 젓가락 로딩
 export function ListSkeleton({ rows = 5, hero = false }: { rows?: number; hero?: boolean }) {
+  return (
+    <div className="relative">
+      {/* 페이지 옮길 때 로딩(NavLoading)과 같은 자리 — 화면 정가운데에서 그대로 이어지게 */}
+      <div className="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center">
+        <span className="rounded-full bg-white/90 p-3 shadow-float">
+          <EatingLoader size={40} />
+        </span>
+      </div>
+      <Bones rows={rows} hero={hero} />
+    </div>
+  );
+}
+
+function Bones({ rows, hero }: { rows: number; hero: boolean }) {
   return (
     <div aria-hidden="true" className="flex animate-pulse flex-col gap-4 px-5 pt-2">
       {hero && <div className="h-36 rounded-[20px] bg-surface" />}

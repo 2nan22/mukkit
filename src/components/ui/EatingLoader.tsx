@@ -15,11 +15,13 @@ export function EatingLoader({ size = 40, label = "불러오는 중" }: { size?:
   );
 }
 
-// 화면 하나가 통째로 기다릴 때 — 가운데에
+// 화면 하나가 통째로 기다릴 때 — 페이지 옮길 때 로딩 · 회색 틀과 같은 모양 · 같은 자리(화면 정가운데)
 export function PageLoader({ label }: { label?: string }) {
   return (
-    <div className="flex flex-1 items-center justify-center py-24">
-      <EatingLoader size={44} label={label} />
+    <div className="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center">
+      <span className="rounded-full bg-white/90 p-3 shadow-float">
+        <EatingLoader size={40} label={label} />
+      </span>
     </div>
   );
 }
