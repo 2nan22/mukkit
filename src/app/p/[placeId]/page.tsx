@@ -147,6 +147,10 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             카카오
           </a>
         </div>
+        {/* 이 가게를 기준으로 근처 추천 — 1차 뒤 2차 · 이 동네에서 다른 곳 찾기 */}
+        <Link href={`/eat?at=${place.lat.toFixed(5)},${place.lng.toFixed(5)}&label=${encodeURIComponent(place.name)}`} className="flex h-11 items-center gap-1.5 self-start text-meta font-semibold text-ink underline underline-offset-[3px]">
+          이 근처에서 뭐 먹지
+        </Link>
       </section>
 
       {/* 메뉴는 카카오(없으면 네이버)에 묻느라 늦을 수 있어 따로 — 나머지 화면을 막지 않는다 */}
