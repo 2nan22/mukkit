@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Cuisine } from "@/domain/cuisine";
 
-// 내 수저 셋 순위 — tier_rank 0 이 1위, null 은 아직 안 정함
+// 내 3숟가락 순위 — tier_rank 0 이 1위, null 은 아직 안 정함
 export type RankPlace = { placeId: string; name: string; address: string; cuisine: Cuisine; visitedOn: string | null; rank: number | null };
 
 type Row = { place_id: string; tier_rank: number | null; visited_on: string | null; places: { name: string; address: string; cuisine: string } | null };
@@ -15,7 +15,7 @@ export async function getThreeRanking(supabase: SupabaseClient, userId: string):
     .order("tier_rank", { ascending: true, nullsFirst: false })
     .order("updated_at", { ascending: false })
     .returns<Row[]>();
-  if (error) throw new Error(`수저 셋 순위 조회 실패: ${error.code}`);
+  if (error) throw new Error(`3숟가락 순위 조회 실패: ${error.code}`);
   const all = data.flatMap((r) =>
     r.places ? [{ placeId: r.place_id, name: r.places.name, address: r.places.address, cuisine: r.places.cuisine as Cuisine, visitedOn: r.visited_on, rank: r.tier_rank }] : [],
   );

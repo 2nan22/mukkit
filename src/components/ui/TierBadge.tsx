@@ -12,7 +12,7 @@ const TIER_STYLE: Record<Tier, string> = {
 
 const STARRED: Tier[] = ["three", "two", "one"];
 
-// 수저 셋 · 둘 · 하나는 수저 심볼을 붙여 훈장처럼, 가고 싶은 곳은 가장 흔하니 조용하게
+// 3 · 2 · 1숟가락는 수저 심볼을 붙여 훈장처럼, 가고 싶은 곳은 가장 흔하니 조용하게
 export function TierBadge({ tier }: { tier: Tier }) {
   return (
     <span

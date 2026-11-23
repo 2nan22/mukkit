@@ -38,7 +38,7 @@ export async function placeInThree(placeId: string, afterPlaceId: string | null)
   return { rank: order.indexOf(placeId) + 1 };
 }
 
-// 순서 바꾸기(끌어서 옮기기) — 정한 수저 셋의 새 순서를 한 번에. 그 사이 바뀐 것은 뒤에 붙인다
+// 순서 바꾸기(끌어서 옮기기) — 정한 3숟가락의 새 순서를 한 번에. 그 사이 바뀐 것은 뒤에 붙인다
 export async function saveThreeOrder(placeIds: string[]): Promise<{ error?: string }> {
   if (!z.array(z.uuid()).max(1000).safeParse(placeIds).success) return { error: "순서를 저장하지 못했어요." };
   const { supabase, userId } = await requireUser();
