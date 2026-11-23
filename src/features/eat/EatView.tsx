@@ -7,7 +7,7 @@ import type { Tier } from "@/domain/tier";
 import { PlaceRow } from "@/components/ui/PlaceRow";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import type { CuisineGroup } from "@/domain/eatScore";
-import { findEats } from "./actions";
+import { findEats, findSpots, type Spot } from "./actions";
 import type { Region } from "./eat";
 
 const RADII = [500, 1000, 3000] as const;
@@ -22,13 +22,32 @@ function km(m: number): string {
   return m < 1000 ? `${Math.round(m / 10) * 10}m` : `${(m / 1000).toFixed(1)}km`;
 }
 
-export function EatView({ regions }: { regions: Region[] }) {
-  const [where, setWhere] = useState<Where | null>(null);
+// initial: 장소 상세에서 '이 근처에서 뭐 먹지'로 왔을 때 — 서버가 그 가게 기준 1km 추천을 미리 계산해 둔다
+export function EatView({ regions, initial = null }: { regions: Region[]; initial?: { where: Where; groups: CuisineGroup[] } | null }) {
+  const [where, setWhere] = useState<Where | null>(initial?.where ?? null);
   const [radius, setRadius] = useState<(typeof RADII)[number]>(1000);
-  const [groups, setGroups] = useState<CuisineGroup[] | null>(null);
+  const [groups, setGroups] = useState<CuisineGroup[] | null>(initial?.groups ?? null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [selected, setSelected] = useState<string | null>(null);
+  // 기준 위치 찾기 — 역 · 동네 · 가게 이름 (누를 때만 찾는다: 외부 검색 횟수를 아끼게)
+  const [spotQuery, setSpotQuery] = useState("");
+  const [spots, setSpots] = useState<Spot[] | null>(null);
+  const [findingSpots, startSpots] = useTransition();
+  function lookupSpots() {
+    const q = spotQuery.trim();
+    if (!q) return;
+    startSpots(async () => {
+      const res = await findSpots(q);
+      setSpots(res.spots ?? []);
+      if (res.error) setError(res.error);
+    });
+  }
+  function pickSpot(s: Spot) {
+    setSpots(null);
+    setSpotQuery(s.name);
+    search({ label: s.name, lat: s.lat, lng: s.lng });
+  }
   const pins = useMemo(
     () =>
       (groups ?? []).flatMap((g) =>
@@ -89,6 +108,44 @@ export function EatView({ regions }: { regions: Region[] }) {
           </svg>
           지금 위치에서 찾기
         </button>
+        <form
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            lookupSpots();
+          }}
+          className="flex gap-1.5"
+        >
+          <input
+            type="search"
+            value={spotQuery}
+            onChange={(e) => {
+              setSpotQuery(e.target.value);
+              setSpots(null);
+            }}
+            maxLength={40}
+            enterKeyHint="search"
+            placeholder="역 · 동네 · 가게 이름으로 기준 정하기"
+            aria-label="기준 위치 찾기"
+            className="h-11 min-w-0 flex-1 rounded-[12px] bg-surface px-3.5 text-body outline-none focus:bg-white focus:ring-1 focus:ring-ink [&::-webkit-search-cancel-button]:hidden"
+          />
+          <button type="submit" disabled={!spotQuery.trim() || findingSpots} className="h-11 shrink-0 rounded-[12px] bg-surface px-4 text-meta font-semibold text-ink disabled:opacity-40">
+            {findingSpots ? "찾는 중" : "찾기"}
+          </button>
+        </form>
+        {spots && (
+          <ul aria-label="기준 위치 후보" className="flex flex-col overflow-hidden rounded-[12px] border border-line">
+            {spots.length === 0 && <li className="px-4 py-3 text-meta text-muted">찾는 곳이 없어요. 다른 이름으로 찾아 주세요.</li>}
+            {spots.map((s) => (
+              <li key={s.id} className="border-b border-line last:border-b-0">
+                <button type="button" onClick={() => pickSpot(s)} className="flex min-h-12 w-full flex-col items-start justify-center px-4 py-2 text-left">
+                  <span className="text-body font-semibold text-ink">{s.name}</span>
+                  {s.meta && <span className="text-meta text-muted">{s.meta}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         {regions.length > 0 && (
           <div className="flex flex-col gap-1.5">
             <span className="text-meta text-muted">자주 저장한 지역</span>
