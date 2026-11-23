@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { LoginButtons } from "@/features/onboarding/LoginButtons";
 import { LoginErrorNotice } from "@/features/onboarding/LoginErrorNotice";
 import { IntroSlides } from "@/features/onboarding/IntroSlides";
+import { safeNextPath } from "@/features/auth/paths";
 
 export default function StartPage({ searchParams }: PageProps<"/">) {
   return (
@@ -13,7 +14,9 @@ export default function StartPage({ searchParams }: PageProps<"/">) {
         <Suspense fallback={null}>
           <LoginErrorNotice searchParams={searchParams} />
         </Suspense>
-        <LoginButtons />
+        <Suspense fallback={<LoginButtons />}>
+          <StartLoginButtons searchParams={searchParams} />
+        </Suspense>
         <p className="pt-2 text-center text-caption leading-normal text-muted">
           시작하기 전에{" "}
           <Link href="/terms" className="underline underline-offset-2">
@@ -28,4 +31,10 @@ export default function StartPage({ searchParams }: PageProps<"/">) {
       </div>
     </main>
   );
+}
+
+// 공유 리스트 · 프로필 · 보호 화면에서 왔으면 로그인 뒤 그 화면으로 (next)
+async function StartLoginButtons({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+  const { next } = await searchParams;
+  return <LoginButtons next={typeof next === "string" ? safeNextPath(next) : undefined} />;
 }

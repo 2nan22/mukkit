@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
@@ -72,6 +73,7 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
     startTransition(() => loadNext(null));
   }
 
+  const nothing = skipped.length === 0 && done.length === 0;
   // 이번에 평가한 수 대 아직 남은 평가 전 — 건너뛴 곳은 남은 쪽에 그대로 있다
   const scale = done.length + remaining;
 
@@ -159,11 +161,14 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
         </>
       ) : (
         <section className="flex flex-1 flex-col gap-3 px-5 pt-16 text-center">
-          <span aria-hidden="true" className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-soft text-brand">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12l5 5 9-10" />
-            </svg>
-          </span>
+          {/* 처음부터 비었으면 다 끝낸 것처럼 보이지 않게 체크를 빼고 가져오기로 잇는다 */}
+          {!nothing && (
+            <span aria-hidden="true" className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-soft text-brand">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12l5 5 9-10" />
+              </svg>
+            </span>
+          )}
           <h2 className="text-title font-bold tracking-tight">
             {skipped.length > 0 ? `건너뛴 ${skipped.length}곳이 남았어요` : done.length > 0 ? `${done.length}곳을 평가했어요` : "평가 전인 곳이 없어요"}
           </h2>
@@ -182,9 +187,20 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
                 건너뛴 곳 다시 보기
               </button>
             )}
-            <button type="button" onClick={leave} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
-              완료
-            </button>
+            {nothing ? (
+              <>
+                <Link href="/import" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+                  저장한 맛집 가져오기
+                </Link>
+                <button type="button" onClick={leave} className="h-btn-l text-[16px] font-semibold text-ink-2">
+                  닫기
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={leave} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+                완료
+              </button>
+            )}
           </div>
         </section>
       )}

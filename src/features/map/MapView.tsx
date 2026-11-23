@@ -642,7 +642,7 @@ export function MapView({
               (inView.length > 0 ? (
                 <PeekCards places={inView} covers={covers} onPick={(id) => (setFound(null), setSelectedId(id))} onMore={() => setSnap("half")} onFocus={setPeekId} listOf={byList ? (id) => { const t = topList(id); return t ? { name: t.list.name, hex: LIST_COLORS[t.list.color].hex, more: t.more } : null; } : undefined} />
               ) : (
-                <EmptyHere filtered={filtered} onReset={resetFilters} />
+                <EmptyHere filtered={filtered} onReset={resetFilters} none={!isFollowing && places.length === 0} />
               ))}
             <ul
               ref={listRef}
@@ -651,7 +651,7 @@ export function MapView({
             >
               {listed.length === 0 && (
                 <li>
-                  <EmptyHere filtered={filtered} onReset={resetFilters} />
+                  <EmptyHere filtered={filtered} onReset={resetFilters} none={!isFollowing && places.length === 0} />
                 </li>
               )}
               {listed.map((p) => (
@@ -679,10 +679,18 @@ export function MapView({
 }
 
 // 보이는 지도에 저장한 곳이 없을 때 — 거르기가 켜져 있으면 지우기
-function EmptyHere({ filtered, onReset }: { filtered: boolean; onReset: () => void }) {
+// none: 저장한 곳이 하나도 없을 때 — 축소해도 그대로라 가져오기로 잇는다
+function EmptyHere({ filtered, onReset, none = false }: { filtered: boolean; onReset: () => void; none?: boolean }) {
   return (
     <div className="flex h-16 items-center gap-3 text-meta text-muted">
-      {filtered ? (
+      {none ? (
+        <>
+          아직 저장한 곳이 없어요
+          <Link href="/import" className="h-11 content-center text-meta font-semibold text-ink underline underline-offset-[3px]">
+            저장한 맛집 가져오기
+          </Link>
+        </>
+      ) : filtered ? (
         <>
           조건에 맞는 곳이 없어요
           <button type="button" onClick={onReset} className="h-11 text-meta font-semibold text-ink underline underline-offset-[3px]">

@@ -43,7 +43,7 @@ describe("searchKakaoKeyword", () => {
 
 describe("hitToImportedPlace", () => {
   it("카카오 출처 장소로 — 가져오기와 같은 경로로 합치기 · 만들기", () => {
-    const p = hitToImportedPlace({ id: "1", name: "a", lat: 1, lng: 2, address: "", categoryPath: ["음식점", "한식"], categoryName: "한식", cuisine: "korean", distance: null });
+    const p = hitToImportedPlace({ id: "1", name: "a", lat: 1, lng: 2, address: "", categoryPath: ["음식점", "한식"], categoryName: "한식", cuisine: "korean", distance: null, group: "FD6" });
     expect(p).toMatchObject({ source: "kakao", sourcePlaceId: "1", cuisine: "korean", memo: "" });
   });
 });

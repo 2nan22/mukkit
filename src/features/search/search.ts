@@ -18,7 +18,7 @@ export async function searchMyPlaces(supabase: SupabaseClient, me: string, q: st
     .eq("user_id", me)
     .ilike("places.name", `%${q}%`)
     .limit(10);
-  if (error) return [];
+  if (error) throw new Error(`내 장소 검색 실패: ${error.code}`);
   return (data as unknown as { tier: string; places: { id: string; name: string; address: string; cuisine: Cuisine; lat: number; lng: number } }[]).map((r) => ({
     placeId: r.places.id,
     name: r.places.name,

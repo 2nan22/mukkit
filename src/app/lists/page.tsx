@@ -152,9 +152,14 @@ async function ListsContent({ searchParams }: { searchParams: PageProps<"/lists"
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <span className="text-body font-semibold">아직 만든 리스트가 없어요</span>
               <span className="text-meta text-muted">지역 · 음식 종류 · 테마로 저장한 곳을 묶어 보세요</span>
-              <Link href="/lists/new" className="flex h-10 items-center rounded-btn-m bg-brand-soft px-4 text-body font-bold text-brand">
-                새 리스트 만들기
-              </Link>
+              <div className="flex gap-2">
+                <Link href="/lists/new" className="flex h-11 items-center rounded-btn-m bg-brand-soft px-4 text-body font-bold text-brand">
+                  새 리스트 만들기
+                </Link>
+                <Link href="/import" className="flex h-11 items-center rounded-btn-m bg-surface px-4 text-body font-bold text-ink">
+                  리스트 가져오기
+                </Link>
+              </div>
             </div>
           )}
         </section>
