@@ -1,4 +1,4 @@
-import { EatingLoader } from "./EatingLoader";
+import { LoaderBubble } from "./EatingLoader";
 
 // 불러오는 동안 화면 자리 — 흰 화면 대신 모양만 + 화면 가운데 젓가락 로딩
 export function ListSkeleton({ rows = 5, hero = false }: { rows?: number; hero?: boolean }) {
@@ -6,9 +6,7 @@ export function ListSkeleton({ rows = 5, hero = false }: { rows?: number; hero?:
     <div className="relative">
       {/* 페이지 옮길 때 로딩(NavLoading)과 같은 자리 — 화면 정가운데에서 그대로 이어지게 */}
       <div className="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center">
-        <span className="rounded-full bg-white/90 p-3 shadow-float">
-          <EatingLoader size={40} />
-        </span>
+        <LoaderBubble />
       </div>
       <Bones rows={rows} hero={hero} />
     </div>

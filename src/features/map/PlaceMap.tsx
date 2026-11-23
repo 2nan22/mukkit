@@ -432,7 +432,7 @@ export function PlaceMap({
         }}
         onError={() => setFailed(true)}
       />
-      <div ref={el} className="h-full w-full bg-map-land" aria-label="내 장소 지도" role="application" />
+      <div ref={el} className="isolate h-full w-full bg-map-land" aria-label="내 장소 지도" role="application" />
       {!ready && (
         <div className="pointer-events-none absolute inset-0 animate-pulse bg-map-land">
           <span className="sr-only">지도를 불러오는 중이에요</span>

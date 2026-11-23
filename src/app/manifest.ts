@@ -15,7 +15,8 @@ export default function manifest(): MetadataRoute.Manifest {
     // 네이버 · 카카오 앱 공유 시트에서 먹킷으로 바로 보내기 (안드로이드 · 홈 화면에 추가한 앱)
     share_target: { action: "/import/share", method: "GET", params: { title: "title", text: "text", url: "url" } },
     icons: [
-      // 실행 화면(안드로이드)은 이 아이콘을 바탕색 위에 그린다 — 사각 아이콘이 붙어 보이지 않게 투명 바탕 심볼
+      // 실행 화면(안드로이드)은 큰 아이콘(512)을 바탕색 위에 그린다 — 빈 그림이라 흰 화면만 뜨고 심볼은 앱의 실행 애니메이션에서
+      // 설치 안내 등 작은 자리는 192 를 쓴다 — 거기엔 심볼이 보이게
       { src: "/splash-192.png", sizes: "192x192", type: "image/png" },
       { src: "/splash-512.png", sizes: "512x512", type: "image/png" },
       // 홈 화면 아이콘은 꽉 찬 앱 아이콘

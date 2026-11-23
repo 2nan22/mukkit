@@ -74,7 +74,7 @@ export default function HomePage() {
           <HomeContent />
         </Suspense>
       </main>
-      <div className="sticky bottom-0">
+      <div className="sticky bottom-0 z-30">
         <BottomNav />
       </div>
     </div>
