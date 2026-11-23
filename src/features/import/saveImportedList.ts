@@ -214,18 +214,73 @@ async function saveUserPlaces(
       if (insert.error) throw new ImportSaveError("user_places", insert.error.code);
     }
 
-    // 등급 리스트를 다시 가져오면 아직 평가 전인 곳만 그 등급으로
-    if (mode.kind === "tier" && saved.size > 0) {
-      const update = await supabase
-        .from("user_places")
-        .update({ tier, updated_at: new Date().toISOString() })
-        .eq("user_id", userId)
-        .eq("tier", "unrated")
-        .in("place_id", [...saved]);
-      if (update.error) throw new ImportSaveError("user_places_tier", update.error.code);
-    }
+    if (saved.size > 0) await applyToSavedPlaces(supabase, userId, part, placeIds, saved, mode);
   }
   return alreadySaved;
+}
+
+// 이미 내 장소인 곳에 원본을 다시 맞춤 (54) — 가져올 때 · 새로 고칠 때마다(원본에 그대로 있는 곳 포함)
+// 등급 리스트면 아직 평가 전 · 가고 싶은 곳만 그 등급으로 (직접 매긴 3 · 2 · 1숟가락 · 추천 안 함은 그대로) + 원본 메모 채우기
+export async function applyToSavedPlaces(
+  supabase: SupabaseClient,
+  userId: string,
+  places: ImportedPlace[],
+  placeIds: Map<string, string>,
+  saved: Set<string>,
+  mode: ImportMode,
+  // 새로 고침에서 원본에 그대로 있는 곳은 빈 메모만 — 바뀐 원본 메모는 새로 고침의 메모 단계가 맡는다
+  emptyOnly = false,
+): Promise<void> {
+  if (saved.size === 0) return;
+  if (mode.kind === "tier") {
+    const update = await supabase
+      .from("user_places")
+      .update({ tier: mode.tier, updated_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .in("tier", ["unrated", "want_to_go"])
+      .neq("tier", mode.tier)
+      .in("place_id", [...saved]);
+    if (update.error) throw new ImportSaveError("user_places_tier", update.error.code);
+  }
+  await fillImportedMemos(supabase, userId, places, placeIds, saved, emptyOnly);
+}
+
+// 이미 내 장소인 곳의 원본 메모 (54) — 내 메모가 비었거나, 같은 지도 앱(네이버 · 카카오)의 원본 메모 그대로일 때만 새 원본 메모로
+// 같은 앱 안에서 리스트를 옮긴 경우를 반영하고, 먹킷에서 직접 쓴 메모 · 다른 앱에서 가져온 메모는 덮지 않는다
+async function fillImportedMemos(
+  supabase: SupabaseClient,
+  userId: string,
+  places: ImportedPlace[],
+  placeIds: Map<string, string>,
+  saved: Set<string>,
+  emptyOnly = false,
+): Promise<void> {
+  const withMemo = places.filter((p) => p.memo.trim() && saved.has(placeIds.get(p.sourcePlaceId) ?? ""));
+  if (withMemo.length === 0) return;
+  const ids = withMemo.map((p) => placeIds.get(p.sourcePlaceId)!);
+  const [mine, imported] = await Promise.all([
+    supabase.from("user_places").select("place_id, note").eq("user_id", userId).in("place_id", ids),
+    supabase.from("imported_items").select("place_id, source, memo").eq("user_id", userId).in("place_id", ids),
+  ]);
+  if (mine.error) throw new ImportSaveError("user_places_note", mine.error.code);
+  if (imported.error) throw new ImportSaveError("imported_memos", imported.error.code);
+  const noteOf = new Map(mine.data.map((r) => [r.place_id as string, (r.note as string) ?? ""]));
+  const importedMemos = new Map<string, Set<string>>();
+  for (const r of imported.data) {
+    const key = `${r.place_id}:${r.source}`;
+    const set = importedMemos.get(key) ?? new Set<string>();
+    set.add(((r.memo as string) ?? "").slice(0, NOTE_MAX));
+    importedMemos.set(key, set);
+  }
+  for (const p of withMemo) {
+    const id = placeIds.get(p.sourcePlaceId)!;
+    const note = noteOf.get(id) ?? "";
+    const memo = p.memo.slice(0, NOTE_MAX);
+    if (note === memo) continue;
+    if (note !== "" && (emptyOnly || !importedMemos.get(`${id}:${p.source}`)?.has(note))) continue;
+    const res = await supabase.from("user_places").update({ note: memo }).eq("user_id", userId).eq("place_id", id).eq("note", note);
+    if (res.error) throw new ImportSaveError("user_places_note_update", res.error.code);
+  }
 }
 
 // 같은 네이버 리스트는 한 사람에게 하나 — 부분 고유 인덱스라 upsert 대신 찾고 없으면 만든다
