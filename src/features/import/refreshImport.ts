@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ImportError, type ImportedList, type PlaceSource, type PlaceSourceName } from "@/domain/importedPlace";
 import type { ImportMode } from "./importMode";
-import { saveImportedList } from "./saveImportedList";
+import { applyToSavedPlaces, saveImportedList } from "./saveImportedList";
 import { placeSourceFor } from "./sources";
 
 const NOTE_MAX = 300;
@@ -81,6 +81,13 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
   if (partial || tooMany) {
     await markFailed(client, userId, key, "error");
     return { status: "error" };
+  }
+
+  // 원본에 그대로 있는 곳도 등급 · 빈 메모를 원본에 맞춤 — 다른 리스트에서 옮겨 와 전에 반영이 안 된 곳 (54)
+  const knownNow = list.places.filter((p) => known.has(p.sourcePlaceId));
+  if (knownNow.length > 0) {
+    const ids = new Map(oldItems.map((o) => [o.source_place_id, o.place_id]));
+    await applyToSavedPlaces(client, userId, knownNow, ids, new Set(knownNow.map((p) => ids.get(p.sourcePlaceId)!)), key.mode, true);
   }
 
   const prev = await client.from("import_sources").select("last_hash, list_name").match(where).maybeSingle();
