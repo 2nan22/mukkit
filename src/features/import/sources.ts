@@ -12,6 +12,12 @@ export function extractLink(input: string): string {
   return (url ? url[0] : input).trim();
 }
 
+// 여러 링크를 한 번에 붙여 넣은 글 — 링크를 모두 (같은 링크는 한 번)
+export function extractLinks(input: string): string[] {
+  const urls = [...new Set(input.match(/https?:\/\/[^\s<>"']+/g) ?? [])];
+  return urls.length ? urls : input.trim() ? [input.trim()] : [];
+}
+
 export function sourceNameForLink(link: string): PlaceSourceName | null {
   const text = extractLink(link);
   if (/^[0-9a-f]{32}$/.test(text)) return "naver";
