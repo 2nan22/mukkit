@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MANIFEST="$ROOT/.claude/context.manifest"
-VAULT="${MYCHELIN_VAULT_CONTEXT:-$HOME/Documents/Obsidian/llm-wiki-new/10_llm-context}"
+VAULT="${MUKKIT_VAULT_CONTEXT:-${MYCHELIN_VAULT_CONTEXT:-$HOME/Documents/Obsidian/llm-wiki-new/10_llm-context}}"
 DEST_VAULT="$ROOT/.claude/vault"
 DEST_SKILLS="$ROOT/.claude/skills"
 SYNCED_LIST="$DEST_VAULT/.synced-skills"
@@ -20,7 +20,7 @@ for arg in "$@"; do
 done
 
 if [ ! -d "$VAULT" ]; then
-  echo "[sync-context] Vault 없음: $VAULT · 커밋된 사본으로 진행 (MYCHELIN_VAULT_CONTEXT 로 경로 지정 가능)" >&2
+  echo "[sync-context] Vault 없음: $VAULT · 커밋된 사본으로 진행 (MUKKIT_VAULT_CONTEXT 로 경로 지정 가능)" >&2
   [ "$mode" = check ] && exit 1
   exit 0
 fi
