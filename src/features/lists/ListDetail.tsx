@@ -7,7 +7,8 @@ import { useState, useSyncExternalStore, useTransition } from "react";
 import { PlaceRow } from "@/components/ui/PlaceRow";
 import { Toast } from "@/components/ui/Toast";
 import { CUISINE_LABEL } from "@/domain/cuisine";
-import { addPlacesToList, removeList, removePlacesFromList, restorePlacesToList, saveListInfo, setListVisibility } from "./actions";
+import { addPlacesToList, removeList, removePlacesFromList, restorePlacesToList, saveListInfo, setListColor, setListVisibility } from "./actions";
+import { LIST_COLOR_KEYS, LIST_COLORS } from "@/domain/listColor";
 import type { RemovedItem } from "./lists";
 import { LIST_NAME_MAX, VISIBILITIES, VISIBILITY_LABEL, type ListSummary } from "./lists";
 import { RefreshImportButton } from "@/features/import/RefreshImportButton";
@@ -27,6 +28,7 @@ export function ListDetail({ list, places, origin, covers = {}, saves = 0, impor
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [name, setName] = useState(list.name);
   const [visibilityOpen, setVisibilityOpen] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [undo, setUndo] = useState<{ name: string; items: RemovedItem[] } | null>(null);
 
@@ -105,7 +107,7 @@ export function ListDetail({ list, places, origin, covers = {}, saves = 0, impor
           <span aria-hidden="true">·</span>
           <button
             type="button"
-            onClick={() => setVisibilityOpen((v) => !v)}
+            onClick={() => (setVisibilityOpen((v) => !v), setColorOpen(false))}
             aria-expanded={visibilityOpen}
             className="flex h-7 items-center gap-1 rounded-full bg-surface px-2.5 font-medium text-ink-2"
           >
@@ -114,7 +116,43 @@ export function ListDetail({ list, places, origin, covers = {}, saves = 0, impor
               <path d="M6 9l6 6 6-6" />
             </svg>
           </button>
+          <button
+            type="button"
+            onClick={() => (setColorOpen((v) => !v), setVisibilityOpen(false))}
+            aria-expanded={colorOpen}
+            className="flex h-7 items-center gap-1.5 rounded-full bg-surface px-2.5 font-medium text-ink-2"
+          >
+            <span aria-hidden="true" className="size-3 rounded-full" style={{ background: LIST_COLORS[list.color].hex }} />
+            지도 색
+          </button>
         </div>
+        {colorOpen && (
+          <div role="radiogroup" aria-label="지도 핀 색" className="flex flex-wrap gap-1 rounded-[16px] border border-line p-2">
+            {LIST_COLOR_KEYS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                role="radio"
+                aria-checked={list.color === c}
+                aria-label={LIST_COLORS[c].label}
+                disabled={pending}
+                onClick={() => act(() => setListColor(list.id, c), () => setColorOpen(false))}
+                className="flex size-11 items-center justify-center"
+              >
+                <span
+                  className={`flex size-8 items-center justify-center rounded-full ${list.color === c ? "ring-2 ring-ink ring-offset-2" : ""}`}
+                  style={{ background: LIST_COLORS[c].hex }}
+                >
+                  {list.color === c && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={LIST_COLORS[c].text} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M5 12l5 5 9-10" />
+                    </svg>
+                  )}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
         {visibilityOpen && (
           <div role="radiogroup" aria-label="공개 범위" className="flex flex-col overflow-hidden rounded-[16px] border border-line">
             {VISIBILITIES.map((v) => (

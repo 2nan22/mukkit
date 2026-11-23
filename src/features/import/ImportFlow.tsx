@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { importList, previewList, type ListPreview } from "./actions";
-import { SOURCE_LABEL } from "./sources";
+import { extractLink, SOURCE_LABEL } from "./sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import {
@@ -120,7 +120,7 @@ function LinkForm({ onAdd }: { onAdd: (row: Row) => void }) {
     }
     setError(null);
     setLink("");
-    onAdd({ ...res.data, link: link.trim(), mode: guessMode(res.data.name) });
+    onAdd({ ...res.data, link: extractLink(link), mode: guessMode(res.data.name) });
   }
 
   return (

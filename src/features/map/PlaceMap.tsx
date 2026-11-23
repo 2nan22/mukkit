@@ -66,7 +66,8 @@ declare global {
   }
 }
 
-export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found" };
+// color: 리스트로 보기 — 리스트 색 핀(등급 숫자는 그대로) · text 는 그 색 위 글자색 · null 은 어느 리스트에도 없음(흰 빈 핀)
+export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found"; color?: { bg: string; text: string } | null };
 export type MyLocation = { lat: number; lng: number; accuracy: number };
 export type MapViewport = { south: number; west: number; north: number; east: number; center: { lat: number; lng: number }; height: number };
 
@@ -110,8 +111,15 @@ function foundElement(): HTMLElement {
   return el;
 }
 
-function pinElement(tier: Tier, selected: boolean, onClick: () => void): HTMLElement {
-  const s = PIN_STYLE[tier];
+const NUMBER: Partial<Record<Tier, string>> = { three: "3", two: "2", one: "1" };
+
+function pinElement(tier: Tier, selected: boolean, onClick: () => void, color?: Pin["color"]): HTMLElement {
+  const s =
+    color === null
+      ? { size: 14, bg: "#ffffff", ring: "#8a8e96", text: "#5b5f69", label: "" }
+      : color
+        ? { size: 20, bg: color.bg, ring: "#ffffff", text: color.text, label: NUMBER[tier] ?? "", dot: NUMBER[tier] ? undefined : color.text }
+        : PIN_STYLE[tier];
   const size = selected ? s.size + 8 : s.size;
   // 빈 원 핀(평가 전)은 커져도 눈에 덜 띄어 검정 테두리로
   const ring = selected && tier === "unrated" ? "#17181c" : s.ring;
@@ -236,7 +244,7 @@ export function PlaceMap({
       const selected = p.id === selectedRef.current || p.id === highlightRef.current;
       const overlay = new maps.CustomOverlay({
         position: new maps.LatLng(p.lat, p.lng),
-        content: p.kind === "found" ? foundElement() : pinElement(p.tier, selected, () => onSelectRef.current(p.id)),
+        content: p.kind === "found" ? foundElement() : pinElement(p.tier, selected, () => onSelectRef.current(p.id), p.color),
         map: useCluster && p.kind !== "found" ? undefined : m,
         xAnchor: 0.5,
         yAnchor: 0.5,
@@ -258,7 +266,7 @@ export function PlaceMap({
       const hit = id ? overlays.current.get(id) : undefined;
       if (!hit || hit.pin.kind === "found") continue;
       const on = id === selectedId;
-      hit.overlay.setContent(pinElement(hit.pin.tier, on, () => onSelectRef.current(hit.pin.id)));
+      hit.overlay.setContent(pinElement(hit.pin.tier, on, () => onSelectRef.current(hit.pin.id), hit.pin.color));
       hit.overlay.setZIndex(zOf(hit.pin.tier, on));
     }
   }, [ready, selectedId]);
@@ -272,7 +280,7 @@ export function PlaceMap({
       const hit = id ? overlays.current.get(id) : undefined;
       if (!hit || hit.pin.kind === "found" || id === selectedRef.current) continue;
       const on = id === highlightId;
-      hit.overlay.setContent(pinElement(hit.pin.tier, on, () => onSelectRef.current(hit.pin.id)));
+      hit.overlay.setContent(pinElement(hit.pin.tier, on, () => onSelectRef.current(hit.pin.id), hit.pin.color));
       hit.overlay.setZIndex(zOf(hit.pin.tier, on));
     }
   }, [ready, highlightId]);
