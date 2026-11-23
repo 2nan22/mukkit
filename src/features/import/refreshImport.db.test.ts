@@ -79,4 +79,43 @@ describe.skipIf(!hasLocalDb)("가져온 리스트 새로 고침 (로컬 DB)", ()
     expect(await refreshImport(supabase, userId, key, { placeSource: sourceOf(next) })).toEqual({ status: "dropped" });
     expect((await supabase.from("import_sources").select("user_id").eq("user_id", userId)).data).toHaveLength(0);
   }, 30_000);
+
+  it("원본에서 다른 등급 리스트로 옮긴 곳 — 평가 전 · 가고 싶은 곳은 그 등급으로, 빈 메모 · 원본 메모는 새 메모로 (54)", async () => {
+    const { supabase, userId } = await signUp();
+    const mk = (id: string, name: string, places: ImportedPlace[]): ImportedList => ({ source: "naver", sourceListId: `${id}-${run}`, name, memo: "", places, expectedCount: places.length, skipped: [] });
+    // 가고 싶은 곳 리스트에 세 곳 (메모 없음 · 원본 메모 · 직접 매긴 3숟가락)
+    const want = mk("mv-want", "먹킷리스트", [place(11, { memo: "" }), place(12, { memo: "원본 메모" }), place(13, { memo: "" })]);
+    await saveImportedList(supabase, userId, want, { kind: "tier", tier: "want_to_go" });
+    await recordImportSource(supabase, userId, want, { kind: "tier", tier: "want_to_go" });
+    const p13 = await supabase.from("imported_items").select("place_id").eq("user_id", userId).eq("source_place_id", `rf-${run}-13`).single();
+    await supabase.from("user_places").update({ tier: "three", note: "내가 쓴 메모" }).eq("user_id", userId).eq("place_id", p13.data!.place_id);
+
+    // 네이버에서 2스타 리스트로 옮기고 메모를 남김
+    const two = mk("mv-two", "2스타", [place(11, { memo: "또 가도 좋음" }), place(12, { memo: "바뀐 메모" }), place(13, { memo: "원본에서 쓴 메모" })]);
+    await recordImportSource(supabase, userId, { ...two, places: [] }, { kind: "tier", tier: "two" });
+    const res = await refreshImport(supabase, userId, { source: "naver", sourceListId: two.sourceListId, mode: { kind: "tier", tier: "two" } }, { placeSource: sourceOf(two) });
+    expect(res.status).toBe("updated");
+
+    const rows = await supabase.from("imported_items").select("source_place_id, place_id").eq("user_id", userId).eq("source_list_id", two.sourceListId);
+    const idOf = new Map(rows.data!.map((r) => [r.source_place_id as string, r.place_id as string]));
+    const mine = await supabase.from("user_places").select("place_id, tier, note").eq("user_id", userId);
+    const by = new Map(mine.data!.map((r) => [r.place_id as string, r]));
+    expect(by.get(idOf.get(`rf-${run}-11`)!)).toMatchObject({ tier: "two", note: "또 가도 좋음" });
+    expect(by.get(idOf.get(`rf-${run}-12`)!)).toMatchObject({ tier: "two", note: "바뀐 메모" });
+    // 직접 매긴 등급 · 직접 쓴 메모는 그대로
+    expect(by.get(idOf.get(`rf-${run}-13`)!)).toMatchObject({ tier: "three", note: "내가 쓴 메모" });
+  });
+
+  it("전에 반영이 안 된 채 원본에 그대로 있는 곳도 새로 고치면 등급 · 빈 메모를 맞춤 (54)", async () => {
+    const { supabase, userId } = await signUp();
+    const two = { source: "naver" as const, sourceListId: `mv-known-${run}`, name: "2스타", memo: "", places: [place(21, { memo: "맛있음" })], expectedCount: 1, skipped: [] };
+    await saveImportedList(supabase, userId, two, { kind: "tier", tier: "two" });
+    await recordImportSource(supabase, userId, two, { kind: "tier", tier: "two" });
+    // 예전 규칙으로 남은 상태 — 가고 싶은 곳 · 빈 메모
+    await supabase.from("user_places").update({ tier: "want_to_go", note: "" }).eq("user_id", userId);
+    const res = await refreshImport(supabase, userId, { source: "naver", sourceListId: two.sourceListId, mode: { kind: "tier", tier: "two" } }, { placeSource: sourceOf(two) });
+    expect(res.status).toBe("unchanged");
+    const mine = await supabase.from("user_places").select("tier, note").eq("user_id", userId).single();
+    expect(mine.data).toEqual({ tier: "two", note: "맛있음" });
+  });
 });
