@@ -142,21 +142,25 @@ export async function countUnrated(supabase: SupabaseClient, userId: string): Pr
   return count ?? 0;
 }
 
-// 평가 전 중 가장 최근에 저장한 곳 하나 — 이번에 건너뛴 곳은 뺀다
+export type UnratedCursor = { savedAt: string; placeId: string };
+
+// 평가 전 중 가장 최근에 저장한 곳 하나 — 건너뛴 곳은 그 자리(커서) 다음부터 (건너뛴 id 를 모두 실으면 주소가 길어져 실패)
 export async function nextUnrated(
   supabase: SupabaseClient,
   userId: string,
-  skipped: string[],
-): Promise<SavedPlace | null> {
+  after: UnratedCursor | null,
+): Promise<(SavedPlace & { cursor: UnratedCursor }) | null> {
   let query = supabase
     .from("user_places")
-    .select(SAVED_PLACE_COLUMNS)
+    .select(`${SAVED_PLACE_COLUMNS}, saved_at`)
     .eq("user_id", userId)
     .eq("tier", "unrated")
     .order("saved_at", { ascending: false })
+    .order("place_id")
     .limit(1);
-  if (skipped.length > 0) query = query.not("place_id", "in", `(${skipped.join(",")})`);
-  const { data, error } = await query.returns<SavedPlaceRow[]>();
+  if (after) query = query.or(`saved_at.lt."${after.savedAt}",and(saved_at.eq."${after.savedAt}",place_id.gt.${after.placeId})`);
+  const { data, error } = await query.returns<(SavedPlaceRow & { saved_at: string })[]>();
   if (error) throw new RatingSaveError(error.code);
-  return data[0] ? toSavedPlace(data[0]) : null;
+  const row = data[0];
+  return row ? { ...toSavedPlace(row), cursor: { savedAt: row.saved_at, placeId: row.place_id } } : null;
 }

@@ -3,14 +3,18 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { cache } from "react";
 import { getPublicList } from "@/features/share/publicList";
 import { PublicListView } from "@/features/share/PublicListView";
 import { getListMeta, getMySavedPlaceIds } from "@/features/share/savedLists";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+// 머리말(metadata)과 본문이 같은 요청 안에서 한 번만 부르게
+const loadPublicList = cache(async (listId: string) => getPublicList(await createSupabaseServerClient(), listId));
+
 export async function generateMetadata({ params }: PageProps<"/l/[listId]">): Promise<Metadata> {
   const { listId } = await params;
-  const list = await getPublicList(await createSupabaseServerClient(), listId);
+  const list = await loadPublicList(listId);
   if (!list) return { title: "볼 수 없는 리스트", robots: { index: false } };
   const description = `${list.ownerNickname}님의 리스트 · ${list.places.length}곳${list.description ? ` · ${list.description}` : ""}`;
   return {
@@ -36,7 +40,7 @@ export default function PublicListPage({ params }: PageProps<"/l/[listId]">) {
 async function PublicListLoader({ params }: { params: Promise<{ listId: string }> }) {
   const { listId } = await params;
   const supabase = await createSupabaseServerClient();
-  const [list, { data: claims }, meta] = await Promise.all([getPublicList(supabase, listId), supabase.auth.getClaims(), getListMeta(supabase, listId).catch(() => null)]);
+  const [list, { data: claims }, meta] = await Promise.all([loadPublicList(listId), supabase.auth.getClaims(), getListMeta(supabase, listId).catch(() => null)]);
   const me = claims?.claims?.sub ?? null;
   const signedIn = Boolean(me);
 

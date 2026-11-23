@@ -1,5 +1,6 @@
 "use server";
 
+import { timedFetch } from "@/lib/http/timedFetch";
 import { getMyProfileFlags } from "@/features/profile/flags";
 import { needsAgreement } from "@/features/legal/legal";
 import { revalidatePath } from "next/cache";
@@ -152,7 +153,7 @@ export async function regionNameAt(lat: number, lng: number): Promise<string> {
   await requireUser();
   const key = process.env.KAKAO_REST_API_KEY;
   if (!key || !Number.isFinite(lat) || !Number.isFinite(lng)) return "현재 위치 근처";
-  const res = await fetch(`https://dapi.kakao.com/v2/local/geo/coord2regioncode.json?x=${lng}&y=${lat}`, { headers: { Authorization: `KakaoAK ${key}` } }).catch(() => null);
+  const res = await timedFetch(`https://dapi.kakao.com/v2/local/geo/coord2regioncode.json?x=${lng}&y=${lat}`, { headers: { Authorization: `KakaoAK ${key}` } }).catch(() => null);
   const body = res?.ok ? ((await res.json().catch(() => null)) as { documents?: { region_type: string; region_2depth_name: string; region_3depth_name: string }[] } | null) : null;
   const doc = body?.documents?.find((d) => d.region_type === "H") ?? body?.documents?.[0];
   return doc ? `${doc.region_2depth_name} ${doc.region_3depth_name}`.trim() : "현재 위치 근처";
