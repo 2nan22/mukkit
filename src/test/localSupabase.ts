@@ -16,3 +16,8 @@ export async function signUpTestUser(): Promise<{ supabase: SupabaseClient; user
   if (error || !data.user) throw error ?? new Error("가입 실패");
   return { supabase, userId: data.user.id };
 }
+
+// 장소 행은 서비스 키로만 만든다 — 검사 준비용
+export function testAdminClient(): SupabaseClient {
+  return createClient(localUrl!, process.env.SUPABASE_TEST_SECRET_KEY!, { auth: { persistSession: false } });
+}

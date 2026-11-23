@@ -85,9 +85,9 @@ describe.skipIf(!hasLocalDb)("가져오기 저장 (로컬 DB)", () => {
   it("네이버 · 카카오의 같은 가게는 장소 하나, 출처별 메모 · 리스트 이름은 원본으로 남는다", async () => {
     const { supabase, userId } = await signUp();
     const lat = 37.5 + Math.random() / 100;
-    const naver = place(7, { name: "엉터리해장국 서여의도점", lat, lng: 126.92, memo: "네이버 메모" });
-    const kakao = place(7, { source: "kakao", name: "엉터리 해장국(서여의도점)", lat: lat + 0.0001, lng: 126.92, memo: "카카오 메모" });
-    const far = place(8, { source: "kakao", name: "엉터리해장국 서여의도점", lat: lat + 0.01, lng: 126.92 });
+    const naver = place(7, { name: `엉터리해장국${run} 서여의도점`, lat, lng: 126.92, memo: "네이버 메모" });
+    const kakao = place(7, { source: "kakao", name: `엉터리 해장국${run}(서여의도점)`, lat: lat + 0.0001, lng: 126.92, memo: "카카오 메모" });
+    const far = place(8, { source: "kakao", name: `엉터리해장국${run} 서여의도점`, lat: lat + 0.01, lng: 126.92 });
 
     await saveImportedList(supabase, userId, { ...list("n", [naver]), name: "난슐랭 2star" }, { kind: "tier", tier: "two" });
     const second = await saveImportedList(supabase, userId, { ...list("k", [kakao, far]), source: "kakao", name: "먹킷리스트" }, { kind: "tier", tier: "want_to_go" });
