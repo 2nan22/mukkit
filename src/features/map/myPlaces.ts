@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { TIER_LABEL, tierFromDb, type Tier } from "@/domain/tier";
 import type { Cuisine } from "@/domain/cuisine";
@@ -95,12 +96,16 @@ type Row = {
 
 // 내가 저장한 장소 전부 — 원문 링크는 주소로 저장한 항목(카카오 N…)을 빼고 출처마다 하나
 export async function getMyMapPlaces(supabase: SupabaseClient, userId: string): Promise<MapPlace[]> {
-  const { data, error } = await supabase
-    .from("user_places")
-    .select("tier, note, places(id, name, lat, lng, address, cuisine, food_kind, category_name, available, place_sources(source, source_place_id))")
-    .eq("user_id", userId)
-    .order("saved_at", { ascending: false })
-    .returns<Row[]>();
+  const { data, error } = await fetchAll<Row>((from, to) =>
+    supabase
+      .from("user_places")
+      .select("tier, note, places(id, name, lat, lng, address, cuisine, food_kind, category_name, available, place_sources(source, source_place_id))")
+      .eq("user_id", userId)
+      .order("saved_at", { ascending: false })
+      .order("place_id")
+      .range(from, to)
+      .returns<Row[]>(),
+  );
   if (error) throw new Error(`지도 장소 조회 실패: ${error.code}`);
   return data.flatMap((row) => (row.places ? [toMapPlace(row, row.places)] : []));
 }

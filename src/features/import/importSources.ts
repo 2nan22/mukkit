@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { IMPORT_TIERS, type ImportTier } from "./importMode";
 
@@ -25,10 +26,12 @@ export class ImportSourceReadError extends Error {
 // 가져온 원본 관리 — 원본 리스트마다 이름 · 곳 수 · 먹킷 리스트 · 마지막 확인 (많이 담긴 순)
 export async function getImportSources(supabase: SupabaseClient, userId: string): Promise<ImportSourceRow[]> {
   const [items, lists, syncs, tiers] = await Promise.all([
-    supabase.from("imported_items").select("source, source_list_id, list_name, place_id").eq("user_id", userId).limit(10000),
+    fetchAll((from, to) =>
+      supabase.from("imported_items").select("source, source_list_id, list_name, place_id").eq("user_id", userId).order("source_list_id").order("source_place_id").range(from, to),
+    ),
     supabase.from("lists").select("id, source, source_list_id").eq("owner_id", userId).not("source", "is", null),
     supabase.from("import_sources").select("source, source_list_id, status, last_synced_at").eq("user_id", userId),
-    supabase.from("user_places").select("place_id, tier").eq("user_id", userId).limit(10000),
+    fetchAll((from, to) => supabase.from("user_places").select("place_id, tier").eq("user_id", userId).order("place_id").range(from, to)),
   ]);
   if (items.error) throw new ImportSourceReadError("items", items.error.code);
   if (lists.error) throw new ImportSourceReadError("lists", lists.error.code);

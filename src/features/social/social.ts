@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { Cuisine } from "@/domain/cuisine";
 import { tierFromDb, type Tier } from "@/domain/tier";
 import { getBlockedIds } from "@/features/safety/safety";
@@ -175,7 +176,9 @@ export async function getBio(supabase: SupabaseClient, id: string): Promise<stri
 export type RecentList = { id: string; name: string; ownerNickname: string; count: number; points: { placeId: string; cuisine: Cuisine; lat: number; lng: number; tier: string | null }[]; saves?: number };
 
 export async function getMyWantToGoPoints(supabase: SupabaseClient, me: string): Promise<{ lat: number; lng: number }[]> {
-  const { data, error } = await supabase.from("user_places").select("places(lat, lng)").eq("user_id", me).eq("tier", "want_to_go").limit(2000);
+  const { data, error } = await fetchAll((from, to) =>
+    supabase.from("user_places").select("places(lat, lng)").eq("user_id", me).eq("tier", "want_to_go").order("place_id").range(from, to),
+  );
   if (error) throw new SocialError("want_to_go", error.code);
   return (data as unknown as { places: { lat: number; lng: number } | null }[]).flatMap((r) => (r.places ? [r.places] : []));
 }
