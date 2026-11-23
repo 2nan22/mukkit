@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { honor } from "@/domain/honor";
@@ -213,6 +213,13 @@ export function MapView({
   const [searchOpen, setSearchOpen] = useState(false);
   // 접힌 목록에서 맨 앞 카드 — 그 핀을 강조
   const [peekId, setPeekId] = useState<string | null>(null);
+  // 카드를 넘기면 그 가게를 지도 가운데로 — 옮기는 동안은 카드 순서를 다시 매기지 않는다(넘기던 카드가 튀지 않게)
+  const [centerOn, setCenterOn] = useState<{ id: string; n: number } | null>(null);
+  const holdViewUntil = useRef(0);
+  const onSwipe = useCallback((id: string) => {
+    holdViewUntil.current = Date.now() + 900;
+    setCenterOn({ id, n: Date.now() });
+  }, []);
   const zoomRef = useRef<((step: number) => void) | null>(null);
   // 지금 지도에 보이는 범위 — 접힌 목록 카드가 따른다
   // bottomCover: 지도가 멈춘 순간 접힌 시트가 덮은 높이 (이벤트에서 잰다)
@@ -367,7 +374,11 @@ export function MapView({
           highlightId={snap === "peek" && !selected && !found ? peekId : null}
           onSelect={(id) => (id === FOUND_PIN ? undefined : (setFound(null), setSelectedId(id)))}
           zoomRef={zoomRef}
-          onViewChange={(v) => setViewport({ ...v, bottomCover: snap === "peek" ? (sheetRef.current?.offsetHeight ?? 0) : PEEK_COVER_PX })}
+          onViewChange={(v) => {
+            if (Date.now() < holdViewUntil.current) return;
+            setViewport({ ...v, bottomCover: snap === "peek" ? (sheetRef.current?.offsetHeight ?? 0) : PEEK_COVER_PX });
+          }}
+          centerOn={centerOn}
           cluster
           focus={focus}
           refit="hidden"
@@ -640,7 +651,7 @@ export function MapView({
             {snap === "peek" &&
               viewport &&
               (inView.length > 0 ? (
-                <PeekCards places={inView} covers={covers} onPick={(id) => (setFound(null), setSelectedId(id))} onMore={() => setSnap("half")} onFocus={setPeekId} listOf={byList ? (id) => { const t = topList(id); return t ? { name: t.list.name, hex: LIST_COLORS[t.list.color].hex, more: t.more } : null; } : undefined} />
+                <PeekCards places={inView} covers={covers} onPick={(id) => (setFound(null), setSelectedId(id))} onMore={() => setSnap("half")} onFocus={setPeekId} onSwipe={onSwipe} listOf={byList ? (id) => { const t = topList(id); return t ? { name: t.list.name, hex: LIST_COLORS[t.list.color].hex, more: t.more } : null; } : undefined} />
               ) : (
                 <EmptyHere filtered={filtered} onReset={resetFilters} none={!isFollowing && places.length === 0} />
               ))}
