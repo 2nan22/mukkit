@@ -9,7 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const metadata = { title: "저장해 둔 맛집 가져오기" };
 
 // 처음 가입 직후 한 번 — 비어 있는 지도 대신 네이버 · 카카오에 저장해 둔 맛집부터 (건너뛰기 가능)
-export default function OnboardingImportPage() {
+export default function OnboardingImportPage({ searchParams }: PageProps<"/onboarding/import">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <header className="flex h-14 shrink-0 items-center justify-end pr-2">
@@ -26,14 +26,15 @@ export default function OnboardingImportPage() {
         <p className="text-body leading-normal text-ink-2">네이버 지도 · 카카오맵 리스트를 링크로 가져오면 첫 화면부터 내 지도가 채워져요.</p>
       </div>
       <Suspense fallback={null}>
-        <Gate />
+        <Gate searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-// 약관 동의 전이면 약관부터 · 이미 장소가 있으면 홈으로
-async function Gate() {
+// 약관 동의 전이면 약관부터 · 이미 장소가 있으면 홈으로 (?preview=1 이면 장소가 있어도 이 화면 — 확인용)
+async function Gate({ searchParams }: { searchParams: Promise<{ preview?: string | string[] }> }) {
+  const { preview } = await searchParams;
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
@@ -44,6 +45,6 @@ async function Gate() {
   ]);
   if (!profile) redirect(SESSION_ENDED);
   if (needsAgreement(profile)) redirect(`/onboarding/terms?next=${ONBOARDING_IMPORT}`);
-  if ((count ?? 0) > 0) redirect(SIGNED_IN_HOME);
+  if ((count ?? 0) > 0 && preview !== "1") redirect(SIGNED_IN_HOME);
   return <ImportFlow helpOpen />;
 }
