@@ -2,7 +2,8 @@ import { CHOPSTICKS, MARK, SPOON_HEAD, SPOON_STICK, SYMBOL_VIEWBOX, TAGLINE } fr
 
 // 처음 들어올 때 한 번 — 가운데에 수저가 놓이고, 심볼이 비켜서며 '먹킷 / MUKKIT' 이 펼쳐지고, 아래에 태그라인이 떠오른다 (약 2.7초 · 누르면 바로 넘어감)
 // 보일지는 그리기 전에 아래 스크립트가 정한다: 홈 화면 앱으로 열었거나 시작 · 홈 화면으로 들어온 세션의 첫 화면만
-export const SPLASH_SCRIPT = `try{var d=document.documentElement,s=sessionStorage;if(!s.getItem("mk_splash")&&!matchMedia("(prefers-reduced-motion: reduce)").matches&&(matchMedia("(display-mode: standalone)").matches||location.pathname==="/"||location.pathname==="/home")){s.setItem("mk_splash","1");d.dataset.splash="1";addEventListener("pointerdown",function(){delete d.dataset.splash},{once:true})}}catch(e){}`;
+// 홈 화면 앱(app)은 휴대폰 실행 화면이 같은 자리에 심볼을 먼저 띄우므로 놓이는 움직임 없이 이어서 시작 — public/splash-*.png 와 크기를 맞춤
+export const SPLASH_SCRIPT = `try{var d=document.documentElement,s=sessionStorage,a=matchMedia("(display-mode: standalone)").matches;if(!s.getItem("mk_splash")&&!matchMedia("(prefers-reduced-motion: reduce)").matches&&(a||location.pathname==="/"||location.pathname==="/home")){s.setItem("mk_splash","1");d.dataset.splash=a?"app":"web";addEventListener("pointerdown",function(){delete d.dataset.splash},{once:true})}}catch(e){}`;
 
 const m = MARK.lg;
 const symbolWidth = Math.round(m.h * 0.7);
