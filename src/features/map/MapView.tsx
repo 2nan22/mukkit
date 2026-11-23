@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { honor } from "@/domain/honor";
 import { regionOf } from "@/domain/region";
 import { BrandSymbol } from "@/components/brand/Wordmark";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
+import { LIST_COLORS } from "@/domain/listColor";
+import type { MapList } from "@/features/lists/lists";
 import { SOURCE_LABEL } from "@/features/import/sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
 import { PlaceMap, type MapViewport, type MyLocation } from "./PlaceMap";
@@ -32,6 +34,29 @@ const TIER_DOT: Record<Tier, string> = {
   unrated: "border border-pin-none bg-white",
 };
 // 수저 등급 칩은 지도 핀과 같은 색의 수저 심볼로 (선택돼 검정 바탕이어도 색 유지)
+const BY_LIST_KEY = "mukkit-map-by-list";
+const BY_LIST_EVENT = "mukkit-map-by-list";
+// 저장소가 막힌 브라우저에서도 이번 화면 동안은 바꾼 기준을 쓴다
+let byListNow: boolean | null = null;
+function readByList(): boolean {
+  if (byListNow !== null) return byListNow;
+  try {
+    return localStorage.getItem(BY_LIST_KEY) === "on";
+  } catch {
+    return false;
+  }
+}
+function setByList(on: boolean) {
+  byListNow = on;
+  try {
+    localStorage.setItem(BY_LIST_KEY, on ? "on" : "off");
+  } catch {}
+  window.dispatchEvent(new Event(BY_LIST_EVENT));
+}
+function subscribeByList(cb: () => void) {
+  window.addEventListener(BY_LIST_EVENT, cb);
+  return () => window.removeEventListener(BY_LIST_EVENT, cb);
+}
 const SPOON_FILL: Partial<Record<Tier, string>> = { three: "fill-tier-3", two: "fill-pin-2", one: "fill-pin-1" };
 const CUISINE_ORDER: Cuisine[] = ["korean", "chinese", "japanese", "western", "asian", "snack", "chicken", "bar", "cafe", "other", "nonFood"];
 
@@ -76,14 +101,27 @@ export function MapView({
   at = null,
   view = "mine",
   following = 0,
+  lists = [],
 }: {
   places: MapPlace[];
   initialTiers?: Tier[];
   at?: { lat: number; lng: number } | null;
   view?: "mine" | "following";
   following?: number;
+  lists?: MapList[];
 }) {
   const isFollowing = view === "following";
+  // 핀 색 기준 — 등급(기본) · 리스트. 고른 기준은 이 기기에 기억
+  const canByList = !isFollowing && lists.length > 0;
+  const byList = useSyncExternalStore(subscribeByList, () => canByList && readByList(), () => false);
+  const [pickedLists, setPickedLists] = useState<string[]>([]);
+  // 장소마다 담긴 리스트 — 최근에 담은 순
+  const listsOfPlace = useMemo(() => {
+    const m = new Map<string, { id: string; addedRank: number }[]>();
+    for (const l of lists) l.placeIds.forEach((pid, i) => m.set(pid, [...(m.get(pid) ?? []), { id: l.id, addedRank: i }]));
+    return m;
+  }, [lists]);
+  const listById = useMemo(() => new Map(lists.map((l) => [l.id, l])), [lists]);
   // 팔로잉 지도 사람 거르기 — 고른 사람의 평가만 남기고, 핀 색도 그 사람들 중 가장 높은 등급으로
   const [people, setPeople] = useState<string[]>([]);
   const [peopleOpen, setPeopleOpen] = useState(false);
@@ -267,19 +305,34 @@ export function MapView({
   const up1 = (s: Snap) => ORDER[Math.min(2, ORDER.indexOf(s) + 1)];
   const down1 = (s: Snap) => ORDER[Math.max(0, ORDER.indexOf(s) - 1)];
 
+  // 리스트로 보기 핀 색 — 고른 리스트가 있으면 그중, 없으면 전체 중 가장 최근에 담은 리스트 · 어느 리스트에도 없으면 회색
+  function topList(placeId: string): { list: MapList; more: number } | null {
+    const mine = (listsOfPlace.get(placeId) ?? []).filter((x) => pickedLists.length === 0 || pickedLists.includes(x.id));
+    const top = [...mine].sort((a, b) => a.addedRank - b.addedRank)[0];
+    return top ? { list: listById.get(top.id)!, more: mine.length - 1 } : null;
+  }
+  function pinColor(placeId: string): { bg: string; text: string } | undefined {
+    const t = topList(placeId);
+    if (!t) return undefined;
+    const c = LIST_COLORS[t.list.color];
+    return { bg: c.hex, text: c.text };
+  }
   const shown = useMemo(
     () =>
       places.filter(
-        (p) => tierMatch(p, tiers) && (cuisines.length === 0 || cuisines.includes(p.cuisine)),
+        (p) =>
+          (byList ? pickedLists.length === 0 || (listsOfPlace.get(p.placeId) ?? []).some((x) => pickedLists.includes(x.id)) : tierMatch(p, tiers)) &&
+          (cuisines.length === 0 || cuisines.includes(p.cuisine)),
       ),
-    [places, tiers, cuisines],
+    [places, tiers, cuisines, byList, pickedLists, listsOfPlace],
   );
   const pins = useMemo(
     () => [
-      ...shown.map((p) => ({ id: p.placeId, lat: p.lat, lng: p.lng, tier: p.tier })),
+      ...shown.map((p) => ({ id: p.placeId, lat: p.lat, lng: p.lng, tier: p.tier, color: byList ? (pinColor(p.placeId) ?? null) : undefined })),
       ...(found ? [{ id: FOUND_PIN, lat: found.lat, lng: found.lng, tier: "unrated" as const, kind: "found" as const }] : []),
     ],
-    [shown, found],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pinColor 는 byList · pickedLists · listsOfPlace 로 정해진다
+    [shown, found, byList, pickedLists, listsOfPlace],
   );
   // 보이는 지도 안의 내 장소 · 보이는 가운데에서 가까운 순
   // 위 검색창 · 칩, 아래 접힌 시트에 가려진 줄은 뺀다
@@ -299,8 +352,8 @@ export function MapView({
   }, [shown, viewport, me]);
   // 펼친 목록도 화면 안 · 가까운 순 (지도가 아직 안 떴으면 전체)
   const listed: MapPlace[] = viewport ? inView : shown;
-  const filtered = tiers.length > 0 || cuisines.length > 0 || people.length > 0;
-  const resetFilters = () => (setTiers([]), setCuisines([]), setPeople([]));
+  const filtered = tiers.length > 0 || cuisines.length > 0 || people.length > 0 || pickedLists.length > 0;
+  const resetFilters = () => (setTiers([]), setCuisines([]), setPeople([]), setPickedLists([]));
   const coverKey = listed.slice(0, 20).map((p) => p.placeId).join(",");
   useEffect(() => {
     const ids = coverKey ? coverKey.split(",").filter((id) => !askedCovers.current.has(id)) : [];
@@ -367,15 +420,53 @@ export function MapView({
               <span aria-hidden="true" className="mx-0.5 h-5 w-px shrink-0 self-center bg-line-strong" />
             </>
           )}
-          <Chip pressed={tiers.length === 0 && people.length === 0} onClick={() => (setTiers([]), setPeople([]))}>
-            전체
-          </Chip>
-          {(isFollowing ? RATED_FILTERS : TIER_FILTERS).map((t) => (
-            <Chip key={t} pressed={tiers.includes(t)} onClick={() => setTiers(toggle(tiers, t))}>
-              {SPOON_FILL[t] ? <BrandSymbol height={13} className={SPOON_FILL[t]} /> : <span aria-hidden="true" className={`size-2.5 rounded-full ${TIER_DOT[t]}`} />}
-              {TIER_LABEL[t]}
-            </Chip>
-          ))}
+          {canByList && (
+            <>
+              <div role="radiogroup" aria-label="핀 색 기준" className="pointer-events-auto flex h-11 shrink-0 items-center">
+                <span className="flex h-8 items-center gap-0.5 rounded-full bg-white p-0.5 shadow-float">
+                  {[false, true].map((on) => (
+                    <button
+                      key={String(on)}
+                      type="button"
+                      role="radio"
+                      aria-checked={byList === on}
+                      onClick={() => setByList(on)}
+                      className={`h-7 rounded-full px-2.5 text-meta whitespace-nowrap ${byList === on ? "font-bold text-ink ring-[1.5px] ring-ink ring-inset" : "text-muted"}`}
+                    >
+                      {on ? "리스트" : "등급"}
+                    </button>
+                  ))}
+                </span>
+              </div>
+              <span aria-hidden="true" className="mx-0.5 h-5 w-px shrink-0 self-center bg-line-strong" />
+            </>
+          )}
+          {byList ? (
+            <>
+              <Chip pressed={pickedLists.length === 0} onClick={() => setPickedLists([])}>
+                전체
+              </Chip>
+              {lists.map((l) => (
+                <Chip key={l.id} pressed={pickedLists.includes(l.id)} onClick={() => setPickedLists(toggle(pickedLists, l.id))}>
+                  <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full ring-1 ring-white" style={{ background: LIST_COLORS[l.color].hex }} />
+                  <span className="max-w-[9rem] truncate">{l.name}</span>
+                  {l.imported && l.source && <SourceMark source={l.source} size={14} />}
+                </Chip>
+              ))}
+            </>
+          ) : (
+            <>
+              <Chip pressed={tiers.length === 0 && people.length === 0} onClick={() => (setTiers([]), setPeople([]))}>
+                전체
+              </Chip>
+              {(isFollowing ? RATED_FILTERS : TIER_FILTERS).map((t) => (
+                <Chip key={t} pressed={tiers.includes(t)} onClick={() => setTiers(toggle(tiers, t))}>
+                  {SPOON_FILL[t] ? <BrandSymbol height={13} className={SPOON_FILL[t]} /> : <span aria-hidden="true" className={`size-2.5 rounded-full ${TIER_DOT[t]}`} />}
+                  {TIER_LABEL[t]}
+                </Chip>
+              ))}
+            </>
+          )}
           <Chip pressed={cuisines.length > 0} onClick={() => setFilterOpen(true)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M4 6h16M7 12h10M10 18h4" />
@@ -559,7 +650,7 @@ export function MapView({
             {snap === "peek" &&
               viewport &&
               (inView.length > 0 ? (
-                <PeekCards places={inView} covers={covers} onPick={(id) => (setFound(null), setSelectedId(id))} onMore={() => setSnap("half")} onFocus={setPeekId} />
+                <PeekCards places={inView} covers={covers} onPick={(id) => (setFound(null), setSelectedId(id))} onMore={() => setSnap("half")} onFocus={setPeekId} listOf={byList ? (id) => { const t = topList(id); return t ? { name: t.list.name, hex: LIST_COLORS[t.list.color].hex, more: t.more } : null; } : undefined} />
               ) : (
                 <EmptyHere filtered={filtered} onReset={resetFilters} />
               ))}

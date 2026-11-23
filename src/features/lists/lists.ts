@@ -1,3 +1,4 @@
+import { LIST_COLOR_KEYS, listColorOf, type ListColor } from "@/domain/listColor";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Cuisine } from "@/domain/cuisine";
 import { getPlaceCovers } from "@/features/place/covers";
@@ -43,6 +44,7 @@ export type ListSummary = {
   source: PlaceSourceName | null;
   count: number;
   updatedAt: string;
+  color: ListColor;
 };
 
 // 쓰기는 모두 owner_id 로 좁힌다 — RLS 가 막지만, 맞는 줄이 없으면 오류로 알린다
@@ -60,7 +62,7 @@ export async function updateList(
   supabase: SupabaseClient,
   userId: string,
   listId: string,
-  patch: { name?: string; description?: string; visibility?: Visibility },
+  patch: { name?: string; description?: string; visibility?: Visibility; color?: ListColor },
 ): Promise<void> {
   const { data, error } = await supabase
     .from("lists")
@@ -131,6 +133,7 @@ type ListRow = {
   description: string;
   visibility: Visibility;
   source: string | null;
+  color: string | null;
   updated_at: string;
   list_items: { count: number }[];
 };
@@ -138,7 +141,7 @@ type ListRow = {
 export async function getMyLists(supabase: SupabaseClient, userId: string): Promise<ListSummary[]> {
   const { data, error } = await supabase
     .from("lists")
-    .select("id, name, description, visibility, source, updated_at, list_items(count)")
+    .select("id, name, description, visibility, source, color, updated_at, list_items(count)")
     .eq("owner_id", userId)
     .order("updated_at", { ascending: false })
     .returns<ListRow[]>();
@@ -176,7 +179,7 @@ export async function getMyListThumbs(supabase: SupabaseClient, listIds: string[
 export async function getMyList(supabase: SupabaseClient, userId: string, listId: string): Promise<(ListSummary & { placeIds: string[] }) | null> {
   const { data, error } = await supabase
     .from("lists")
-    .select("id, name, description, visibility, source, updated_at, list_items(count)")
+    .select("id, name, description, visibility, source, color, updated_at, list_items(count)")
     .eq("id", listId)
     .eq("owner_id", userId)
     .maybeSingle<ListRow>();
@@ -196,6 +199,7 @@ function toSummary(row: ListRow): ListSummary {
     source: (row.source as PlaceSourceName | null) ?? null,
     count: row.list_items[0]?.count ?? 0,
     updatedAt: row.updated_at,
+    color: listColorOf(row.id, row.color),
   };
 }
 
@@ -225,4 +229,46 @@ export async function countMyTiers(supabase: SupabaseClient, userId: string): Pr
   const counts: Record<string, number> = {};
   for (const r of data) counts[r.tier as string] = (counts[r.tier as string] ?? 0) + 1;
   return counts;
+}
+
+export type MapList = { id: string; name: string; color: ListColor; placeIds: string[]; source: PlaceSourceName | null; imported?: boolean };
+
+// 지도 '리스트로 보기' — 내 리스트(최근에 담은 순) + 먹킷 리스트로 만들지 않은 가져온 원본 리스트(등급 리스트로 가져온 것)
+export async function getMyMapLists(supabase: SupabaseClient, userId: string): Promise<MapList[]> {
+  const [own, raw] = await Promise.all([
+    supabase
+      .from("lists")
+      .select("id, name, color, source, source_list_id, updated_at, list_items(place_id, added_at)")
+      .eq("owner_id", userId)
+      .order("updated_at", { ascending: false })
+      .returns<{ id: string; name: string; color: string | null; source: string | null; source_list_id: string | null; list_items: { place_id: string; added_at: string }[] }[]>(),
+    supabase.from("imported_items").select("source, source_list_id, list_name, place_id, saved_at").eq("user_id", userId).limit(10000),
+  ]);
+  if (own.error) throw new ListWriteError("map", own.error.code);
+  if (raw.error) throw new ListWriteError("map-imported", raw.error.code);
+  const lists: MapList[] = own.data.map((l) => ({
+    id: l.id,
+    name: l.name,
+    color: listColorOf(l.id, l.color),
+    source: (l.source as PlaceSourceName | null) ?? null,
+    placeIds: [...l.list_items].sort((a, b) => b.added_at.localeCompare(a.added_at)).map((i) => i.place_id),
+  }));
+  const madeFrom = new Set(own.data.flatMap((l) => (l.source && l.source_list_id ? [`${l.source}:${l.source_list_id}`] : [])));
+  const groups = new Map<string, { name: string; source: PlaceSourceName; items: { placeId: string; at: string }[] }>();
+  for (const r of raw.data) {
+    const key = `${r.source}:${r.source_list_id}`;
+    if (madeFrom.has(key) || !r.place_id) continue;
+    const g = groups.get(key) ?? { name: r.list_name as string, source: r.source as PlaceSourceName, items: [] };
+    g.items.push({ placeId: r.place_id as string, at: (r.saved_at as string | null) ?? "" });
+    groups.set(key, g);
+  }
+  // 가져온 원본 리스트는 색을 저장하지 않으니, 내 리스트가 안 쓴 색부터 차례로 (많이 담긴 리스트 먼저)
+  const used = new Map<ListColor, number>(LIST_COLOR_KEYS.map((c) => [c, 0]));
+  for (const l of lists) used.set(l.color, (used.get(l.color) ?? 0) + 1);
+  for (const [key, g] of [...groups.entries()].sort((a, b) => b[1].items.length - a[1].items.length)) {
+    const color = LIST_COLOR_KEYS.reduce((best, c) => (used.get(c)! < used.get(best)! ? c : best));
+    used.set(color, used.get(color)! + 1);
+    lists.push({ id: `imported:${key}`, name: g.name, color, source: g.source, imported: true, placeIds: g.items.sort((a, b) => b.at.localeCompare(a.at)).map((i) => i.placeId) });
+  }
+  return lists;
 }
