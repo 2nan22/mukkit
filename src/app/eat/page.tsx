@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -16,7 +17,7 @@ export default function EatPage({ searchParams }: PageProps<"/eat">) {
       <p className="px-5 pb-4 text-meta leading-normal text-muted">
         내 기록과 믿는 사람의 평가에서만 골라요.
       </p>
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <EatLoader searchParams={searchParams} />
       </Suspense>
     </main>

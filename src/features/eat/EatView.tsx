@@ -1,5 +1,6 @@
 "use client";
 
+import { EatingLoader } from "@/components/ui/EatingLoader";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { PlaceMap } from "@/features/map/PlaceMap";
@@ -188,7 +189,11 @@ export function EatView({ regions, initial = null }: { regions: Region[]; initia
           {error}
         </p>
       )}
-      {pending && <p className="text-meta text-muted">찾는 중이에요</p>}
+      {pending && (
+        <div className="flex justify-center py-6">
+          <EatingLoader size={40} label="추천을 찾는 중" />
+        </div>
+      )}
 
       {groups && where && pins.length > 0 && (
         <div className="relative -mx-5 h-[38dvh] min-h-60 overflow-hidden border-y border-line">

@@ -1,5 +1,6 @@
 "use client";
 
+import { EatingLoader } from "@/components/ui/EatingLoader";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -80,7 +81,11 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
       </label>
 
       {!query.trim() && <p className="whitespace-pre-line pt-6 text-center text-meta leading-normal text-muted">가게 이름으로 저장한 곳과 새 장소를,{"\n"}닉네임으로 사람을 찾을 수 있어요.</p>}
-      {searching && !result && <p className="text-center text-meta text-muted">찾는 중이에요</p>}
+      {searching && !result && (
+        <div className="flex justify-center pt-6">
+          <EatingLoader size={36} label="찾는 중" />
+        </div>
+      )}
       {error && (
         <p role="alert" className="text-meta text-danger">
           {error}

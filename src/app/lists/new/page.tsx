@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -12,7 +13,7 @@ export default function NewListPage({ searchParams }: PageProps<"/lists/new">) {
   return (
     <main className="mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden">
       <AppHeader kind="close" fallback="/lists" title="새 리스트" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <NewListLoader searchParams={searchParams} />
       </Suspense>
     </main>

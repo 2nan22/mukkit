@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { getMyProfileFlags } from "@/features/profile/flags";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -20,7 +21,7 @@ export default function TermsAgreePage({ searchParams }: PageProps<"/onboarding/
         </h1>
         <p className="text-body text-ink-2">내 기록을 어떻게 보관하고 보여주는지 정리했어요. 동의하면 그대로 계속 쓸 수 있어요.</p>
       </div>
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <Loader searchParams={searchParams} />
       </Suspense>
     </main>

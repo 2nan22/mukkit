@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AppHeader } from "@/components/AppHeader";
@@ -11,7 +12,7 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/home" title="검색" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <SearchLoader searchParams={searchParams} />
       </Suspense>
     </main>

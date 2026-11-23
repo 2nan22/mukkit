@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -12,7 +13,7 @@ export default function QuickRatePage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="close" fallback="/home" title="빠르게 평가하기" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <QuickRateLoader />
       </Suspense>
     </main>

@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { getPlaceCovers } from "@/features/place/covers";
 import { Wordmark } from "@/components/brand/Wordmark";
 import type { Metadata } from "next";
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/l/[listId]">): Pr
 export default function PublicListPage({ params }: PageProps<"/l/[listId]">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col pb-28">
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <PublicListLoader params={params} />
       </Suspense>
     </main>
