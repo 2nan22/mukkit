@@ -6,7 +6,8 @@ import { Character, CHARACTER_INFO, CHARACTERS, type CharacterId } from "@/compo
 import { chooseCharacter } from "./actions";
 
 // 셋 중 하나 고르기 — 고른 뒤에도 레벨 화면에서 바꿀 수 있다
-export function CharacterPicker({ current = null, stage = 1 }: { current?: CharacterId | null; stage?: number }) {
+// done: 고른 뒤 갈 곳 (가입 흐름) — 없으면 이 화면을 다시 그린다
+export function CharacterPicker({ current = null, stage = 1, done }: { current?: CharacterId | null; stage?: number; done?: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +16,9 @@ export function CharacterPicker({ current = null, stage = 1 }: { current?: Chara
     start(async () => {
       const res = await chooseCharacter(id);
       setError(res.error ?? null);
-      if (!res.error) router.refresh();
+      if (res.error) return;
+      if (done) router.replace(done);
+      else router.refresh();
     });
   }
   return (

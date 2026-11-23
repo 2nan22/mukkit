@@ -5,6 +5,8 @@ export const SIGNED_IN_HOME = "/home";
 export const SIGNED_OUT_HOME = "/";
 export const NICKNAME_SETUP = "/onboarding/nickname";
 export const ONBOARDING_IMPORT = "/onboarding/import";
+// 처음 가입: 닉네임 → 약관 → 캐릭터 고르기 → 가져오기
+export const ONBOARDING_CHARACTER = "/onboarding/character";
 export const ACCOUNT_LINKS = "/settings/accounts";
 // 로그인은 남았는데 계정이 없을 때 — 로그아웃 후 시작 화면
 export const SESSION_ENDED = "/auth/session-ended";
