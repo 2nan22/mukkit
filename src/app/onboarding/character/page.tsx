@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -15,7 +16,7 @@ export const metadata = { title: "캐릭터 고르기" };
 export default function OnboardingCharacterPage({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <Gate searchParams={searchParams} />
       </Suspense>
     </main>

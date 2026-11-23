@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Suspense } from "react";
 import { NavTracker } from "@/lib/nav/NavTracker";
+import { LaunchSplash, SPLASH_SCRIPT } from "@/components/brand/LaunchSplash";
 
 const pretendard = localFont({
   src: "../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
@@ -23,8 +24,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${pretendard.variable} h-full antialiased`}>
+    // data-splash 는 그리기 전 스크립트가 붙인다 — 서버 그림과 달라도 경고하지 않게
+    <html lang="ko" className={`${pretendard.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col font-sans">
+        <LaunchSplash />
         <Suspense fallback={null}>
           <NavTracker />
         </Suspense>

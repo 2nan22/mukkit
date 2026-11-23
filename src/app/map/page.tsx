@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { redirect } from "next/navigation";
@@ -20,7 +21,7 @@ export default function MapPage({ searchParams }: PageProps<"/map">) {
         kind="tab"
         title="지도"
         right={
-          <Suspense fallback={null}>
+          <Suspense fallback={<PageLoader />}>
             <MapViewSwitch searchParams={searchParams} />
           </Suspense>
         }

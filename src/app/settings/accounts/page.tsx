@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { ProviderMark } from "@/components/brand/BrandLogo";
 import { AppHeader } from "@/components/AppHeader";
 import { Suspense } from "react";
@@ -18,7 +19,7 @@ export default function AccountLinksPage({ searchParams }: PageProps<"/settings/
       <p className="px-5 pb-4 text-meta leading-relaxed text-muted">
         로그인 방법을 연결하면 어느 것으로 로그인해도 같은 계정이에요.
       </p>
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <AccountLinks searchParams={searchParams} />
       </Suspense>
     </main>

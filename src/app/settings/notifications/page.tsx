@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { getMyProfileFlags } from "@/features/profile/flags";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -13,7 +14,7 @@ export default function NotificationSettingsPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/settings" title="알림" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <Settings />
       </Suspense>
     </main>

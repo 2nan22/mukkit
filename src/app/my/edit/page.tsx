@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { AppHeader } from "@/components/AppHeader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -12,7 +13,7 @@ export default function EditProfilePage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/my" title="프로필 수정" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <EditLoader />
       </Suspense>
     </main>

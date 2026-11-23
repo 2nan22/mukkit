@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { redirect } from "next/navigation";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { Suspense } from "react";
@@ -12,7 +13,7 @@ export const metadata = { title: "약속 초대", robots: { index: false } };
 export default function InvitePage({ params }: PageProps<"/m/[token]">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col px-5 pt-16 pb-6">
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <Invite params={params} />
       </Suspense>
     </main>

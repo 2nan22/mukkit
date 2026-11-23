@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AppHeader } from "@/components/AppHeader";
@@ -14,7 +15,7 @@ export default function BlockedPage() {
       <AppHeader kind="back" fallback="/settings" title="차단한 사람" />
       <p className="px-5 pb-2 text-meta text-muted">차단하면 서로의 평가 · 리스트가 보이지 않아요.</p>
       <section className="px-5">
-        <Suspense fallback={null}>
+        <Suspense fallback={<PageLoader />}>
           <Blocked />
         </Suspense>
       </section>
