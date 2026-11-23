@@ -146,9 +146,9 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         </div>
       </section>
 
-      {/* 메뉴는 카카오에 묻느라 늦을 수 있어 따로 — 나머지 화면을 막지 않는다 */}
+      {/* 메뉴는 카카오(없으면 네이버)에 묻느라 늦을 수 있어 따로 — 나머지 화면을 막지 않는다 */}
       <Suspense fallback={null}>
-        <PlaceMenu name={place.name} lat={place.lat} lng={place.lng} kakaoPlaceId={kakaoSource?.sourcePlaceId ?? null} />
+        <PlaceMenu name={place.name} lat={place.lat} lng={place.lng} kakaoPlaceId={kakaoSource?.sourcePlaceId ?? null} naverPlaceId={place.sources.find((s) => s.source === "naver")?.sourcePlaceId ?? null} />
       </Suspense>
 
       <section className="flex flex-col gap-2 border-b-8 border-surface px-5 pt-4 pb-5">
@@ -215,7 +215,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
   );
 }
 
-async function PlaceMenu(target: { name: string; lat: number; lng: number; kakaoPlaceId: string | null }) {
+async function PlaceMenu(target: { name: string; lat: number; lng: number; kakaoPlaceId: string | null; naverPlaceId: string | null }) {
   const menu = await getMenu(target).catch(() => null);
-  return menu ? <MenuSection menu={menu} kakaoUrl={`https://place.map.kakao.com/${menu.kakaoPlaceId}`} /> : null;
+  return menu ? <MenuSection menu={menu} /> : null;
 }

@@ -15,3 +15,15 @@ export const NAVER_SHARED_LIST = {
   // 없는 공유 · 비공개 리스트 모두 이 코드로 온다 (둘을 구분할 수 없음)
   notSharedApiErrorCode: 1603,
 } as const;
+
+// 네이버 장소 메뉴 — 카카오맵에 메뉴가 없을 때만 쓰는 차선책 (47). 모바일 장소 페이지 안의 데이터에서 메뉴만 꺼낸다 (사진은 쓰지 않음)
+export const NAVER_PLACE = {
+  menuUrl: (placeId: string) => `https://m.place.naver.com/place/${placeId}/menu/list`,
+  // 화면의 원문 링크 — 네이버 지도 앱 · 웹이 여는 주소
+  pageUrl: (placeId: string) => `https://map.naver.com/p/entry/place/${placeId}`,
+  headers: {
+    "User-Agent":
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    "Accept-Language": "ko-KR,ko;q=0.9",
+  },
+} as const;
