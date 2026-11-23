@@ -12,7 +12,7 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "마이슐랭",
+  title: "먹킷",
   description: "믿을 만한 사람의 평가로 맛집을 고르세요",
 };
 

@@ -74,7 +74,7 @@ describe.skipIf(!hasLocalDb)("가져온 리스트 새로 고침 (로컬 DB)", ()
     const src = await supabase.from("import_sources").select("status, fail_count").eq("user_id", userId).single();
     expect(src.data).toEqual({ status: "unavailable", fail_count: 3 });
 
-    // 마이슐랭 리스트를 지우면 새로 고침을 멈춤
+    // 먹킷 리스트를 지우면 새로 고침을 멈춤
     await supabase.from("lists").delete().eq("id", saved.listId!);
     expect(await refreshImport(supabase, userId, key, { placeSource: sourceOf(next) })).toEqual({ status: "dropped" });
     expect((await supabase.from("import_sources").select("user_id").eq("user_id", userId)).data).toHaveLength(0);

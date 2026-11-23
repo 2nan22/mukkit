@@ -201,7 +201,7 @@ function toSummary(row: ListRow): ListSummary {
 
 export type ImportedListSummary = { source: PlaceSourceName; sourceListId: string; name: string; count: number };
 
-// 가져온 원본 리스트 — 등급 리스트로 가져와 마이슐랭 리스트가 없는 것도 여기 남아 있다
+// 가져온 원본 리스트 — 등급 리스트로 가져와 먹킷 리스트가 없는 것도 여기 남아 있다
 export async function getImportedLists(supabase: SupabaseClient, userId: string): Promise<ImportedListSummary[]> {
   const { data, error } = await supabase
     .from("imported_items")

@@ -19,7 +19,7 @@ export type NewPlaceHit = {
   lng: number;
   cuisine: Cuisine;
   meta: string;
-  // 이미 마이슐랭에 있는 장소면 바로 상세로
+  // 이미 먹킷에 있는 장소면 바로 상세로
   placeId: string | null;
   tier: Tier | null;
 };

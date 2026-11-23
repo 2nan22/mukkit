@@ -5,7 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { findInvitees, inviteUser, type InviteCandidate } from "./actions";
 
-// 마이슐랭 사용자 초대 — 팔로잉 먼저, 닉네임으로 찾기
+// 먹킷 사용자 초대 — 팔로잉 먼저, 닉네임으로 찾기
 export function InvitePicker({ meetupId, invited, memberIds }: { meetupId: string; invited: { id: string; nickname: string }[]; memberIds: string[] }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -32,7 +32,7 @@ export function InvitePicker({ meetupId, invited, memberIds }: { meetupId: strin
 
   return (
     <div className="flex flex-col gap-2 rounded-[16px] bg-surface p-4">
-      <span className="text-body font-semibold">마이슐랭에서 찾기</span>
+      <span className="text-body font-semibold">먹킷에서 찾기</span>
       {invited.length > 0 && <span className="text-meta text-ink-2">초대 보냄 · {invited.map((i) => i.nickname).join(", ")} — 수락을 기다리는 중</span>}
       <input
         value={query}
