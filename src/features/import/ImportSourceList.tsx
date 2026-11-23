@@ -58,8 +58,11 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
       }
       setBusy(null);
       setProgress(null);
-      const parts = [`${ready.length - recent}개 확인`, changed ? `${changed}개 바뀜` : "바뀐 곳 없음", failed ? `${failed}개 실패` : "", recent ? `${recent}개는 조금 전에 확인함` : ""].filter(Boolean);
-      setToast(parts.join(" · "));
+      // 개수 제한은 없다 — 1시간 안에 확인한 곳 · 등급을 정해야 하는 옛 원본만 건너뛴다
+      const skipped = rows.length - ready.length;
+      const head = `원본 ${rows.length}개 중 ${ready.length - recent}개 확인 · ${changed ? `${changed}개 바뀜` : "바뀐 곳 없음"}${failed ? ` · ${failed}개 실패` : ""}`;
+      const notes = [recent ? `${recent}개는 1시간 안에 확인해서 건너뜀` : "", skipped ? `${skipped}개는 등급을 정해야 해서 빠짐` : ""].filter(Boolean);
+      setToast(notes.length ? `${head}\n${notes.join(" · ")}` : head);
       router.refresh();
     });
   return (
@@ -141,7 +144,7 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
           }}
         />
       )}
-      {toast && <Toast message={toast} onClose={() => setToast(null)} bottom={96} />}
+      {toast && <Toast message={toast} onClose={() => setToast(null)} place="top" />}
     </>
   );
 }
