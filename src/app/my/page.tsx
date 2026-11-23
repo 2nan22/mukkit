@@ -9,6 +9,8 @@ import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { countMyTiers } from "@/features/lists/lists";
 import { getBio, getFollowCounts, getPerson } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getMyGrowth } from "@/features/growth/growth";
+import { GrowthCard } from "@/features/growth/GrowthCard";
 
 export const metadata = { title: "MY" };
 
@@ -42,11 +44,12 @@ async function MyContent() {
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
-  const [person, bio, counts, tiers] = await Promise.all([
+  const [person, bio, counts, tiers, growth] = await Promise.all([
     getPerson(supabase, me),
     getBio(supabase, me),
     getFollowCounts(supabase, me),
     countMyTiers(supabase, me),
+    getMyGrowth(supabase),
   ]);
   const saved = Object.values(tiers).reduce((a, b) => a + b, 0);
   const rated = (tiers.three ?? 0) + (tiers.two ?? 0) + (tiers.one ?? 0) + (tiers.not_recommended ?? 0);
@@ -65,6 +68,7 @@ async function MyContent() {
           </div>
         </div>
         {bio && <p className="text-body leading-normal text-ink-2">{bio}</p>}
+        <GrowthCard counts={growth} />
         <div className="grid grid-cols-2 gap-2">
           <Link href="/my/edit" className="flex h-10 items-center justify-center rounded-btn-m bg-surface text-[14px] font-medium text-ink">
             프로필 수정
