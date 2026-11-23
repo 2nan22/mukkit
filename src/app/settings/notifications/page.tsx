@@ -1,3 +1,4 @@
+import { getMyProfileFlags } from "@/features/profile/flags";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AppHeader } from "@/components/AppHeader";
@@ -24,6 +25,6 @@ async function Settings() {
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
-  const { data: row } = await supabase.from("profiles").select("push_off").eq("id", me).maybeSingle();
-  return <NotificationSettings initialOff={(row?.push_off as string[] | null) ?? []} />;
+  const flags = await getMyProfileFlags(supabase);
+  return <NotificationSettings initialOff={flags?.push_off ?? []} />;
 }

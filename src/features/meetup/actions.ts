@@ -1,11 +1,13 @@
 "use server";
 
+import { getMyProfileFlags } from "@/features/profile/flags";
+import { needsAgreement } from "@/features/legal/legal";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { redirect, RedirectType } from "next/navigation";
 import { z } from "zod";
 import { PURPOSES } from "@/domain/meetup";
-import { SIGNED_OUT_HOME } from "@/features/auth/paths";
+import { NICKNAME_SETUP, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { searchKakaoKeyword } from "@/features/search/kakaoLocal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getBlockedIds } from "@/features/safety/safety";
@@ -35,6 +37,11 @@ export async function createMeetup(input: z.input<typeof CreateInput>): Promise<
 export async function joinMeetup(token: string): Promise<Result> {
   if (!/^[0-9a-f]{24}$/.test(token)) return { error: "열 수 없는 약속이에요" };
   const { supabase, me } = await requireUser();
+  // 닉네임 · 약관 전이면 그 단계를 마치고 이 초대로 돌아오게 — 이름 없는 참여자가 생기지 않게
+  const flags = await getMyProfileFlags(supabase);
+  const back = `?next=${encodeURIComponent(`/m/${token}`)}`;
+  if (!flags?.nickname_set_at) redirect(NICKNAME_SETUP + back);
+  if (needsAgreement(flags)) redirect("/onboarding/terms" + back);
   const { data, error } = await supabase.rpc("join_meetup", { p_token: token });
   if (error) return { error: error.code === "P0001" ? "정원이 다 찬 약속이에요" : "참여할 수 없는 약속이에요. 링크를 다시 받아 주세요." };
   after(() => notifyMeetup(data as string, me, { kind: "joined" }));

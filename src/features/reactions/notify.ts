@@ -26,5 +26,19 @@ export async function notifyComment(authorId: string, ownerId: string, placeId: 
     .select("blocker_id, blocked_id")
     .or(`blocker_id.eq.${ownerId},blocked_id.eq.${ownerId}`);
   const cut = new Set((blocked ?? []).flatMap((b) => [b.blocker_id as string, b.blocked_id as string]));
-  await sendPush(ids.filter((id) => !cut.has(id)), { title: "새 댓글", body: `${who}이 댓글을 남겼어요`, url, tag }, "comment");
+  const viewers = await stillViewing(admin, ownerId, placeId, ids.filter((id) => !cut.has(id)));
+  await sendPush(viewers, { title: "새 댓글", body: `${who}이 댓글을 남겼어요`, url, tag }, "comment");
+}
+
+// 평가를 지금도 볼 수 있는 사람만 — 비공개로 바꿨거나 팔로우를 끊었거나 신고로 숨겨졌으면 뺀다 (can_view_rating 과 같은 기준)
+async function stillViewing(admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, ownerId: string, placeId: string, ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const [{ data: rating }, { data: hidden }] = await Promise.all([
+    admin.from("user_places").select("visibility").eq("user_id", ownerId).eq("place_id", placeId).maybeSingle(),
+    admin.rpc("is_rating_hidden", { p_owner: ownerId, p_place: placeId }),
+  ]);
+  if (!rating || hidden === true || rating.visibility === "private") return [];
+  if (rating.visibility === "public") return ids;
+  const { data: followers } = await admin.from("follows").select("follower_id").eq("followee_id", ownerId).in("follower_id", ids);
+  return (followers ?? []).map((f) => f.follower_id as string);
 }

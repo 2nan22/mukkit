@@ -7,6 +7,7 @@ import { candidateQuery, type PlaceCandidate } from "@/domain/textPlaces";
 import { tierFromDb, type Tier } from "@/domain/tier";
 import type { Cuisine } from "@/domain/cuisine";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
+import { TEXT_IMPORT_ENABLED } from "@/features/textImport/enabled";
 import { searchKakaoKeywordOrFail } from "@/features/search/kakaoLocal";
 import { knownKakaoPlaces } from "@/features/search/search";
 import { openKakaoPlace } from "@/features/search/actions";
@@ -31,6 +32,7 @@ const Candidates = z
 
 // 글에서 뽑은 후보마다 카카오에서 가게 3곳까지 — 이미 내 장소면 내 등급도
 export async function findCandidatePlaces(candidates: PlaceCandidate[]): Promise<{ results: CandidateResult[]; error?: string }> {
+  if (!TEXT_IMPORT_ENABLED) return { results: [], error: "지금은 쓸 수 없는 기능이에요." };
   const parsed = Candidates.safeParse(candidates);
   if (!parsed.success) return { results: [], error: "찾을 가게가 없어요." };
   const { supabase, me } = await requireUser();
@@ -71,6 +73,7 @@ const SaveInput = z.object({
 // 고른 가게를 가고 싶은 곳으로 — 장소는 카카오에 다시 확인해 만들고(브라우저 값 불신), 이미 저장한 곳은 그대로
 // 원문 링크가 있으면 나만 보는 메모로
 export async function saveFoundPlace(input: z.input<typeof SaveInput>): Promise<{ placeId?: string; tier?: Tier; error?: string }> {
+  if (!TEXT_IMPORT_ENABLED) return { error: "지금은 쓸 수 없는 기능이에요." };
   const parsed = SaveInput.safeParse(input);
   if (!parsed.success) return { error: "저장하지 못했어요." };
   const { supabase, me } = await requireUser();

@@ -1,3 +1,4 @@
+import { getMyProfileFlags } from "@/features/profile/flags";
 import { getPlaceCovers } from "@/features/place/covers";
 import { Wordmark } from "@/components/brand/Wordmark";
 import Link from "next/link";
@@ -88,7 +89,7 @@ async function HomeContent() {
   if (!me) redirect(SIGNED_OUT_HOME);
   // 프로필 확인과 화면 데이터를 한 번에 — 차례로 기다리지 않게 (리다이렉트면 결과는 버린다)
   const [
-    { data: profile },
+    profile,
     wantToGo,
     feed,
     matches,
@@ -100,11 +101,7 @@ async function HomeContent() {
     ranking,
     tiers,
   ] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("nickname_set_at, terms_version")
-      .eq("id", me)
-      .single(),
+    getMyProfileFlags(supabase),
     getMyWantToGoPoints(supabase, me),
     getFeed(supabase),
     getTasteMatches(supabase, 8),
