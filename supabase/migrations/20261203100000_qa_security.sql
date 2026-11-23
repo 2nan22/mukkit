@@ -54,9 +54,7 @@ begin
 end;
 $$;
 
--- 프로필은 보여 줄 칸만 공개 — 가입 단계 · 알림 설정은 my_profile_flags 로 본인만
-revoke select on public.profiles from anon, authenticated;
-grant select (id, nickname, bio, avatar_url, created_at) on public.profiles to anon, authenticated;
+-- 가입 단계 · 알림 설정은 본인 함수로 — 공개 칸 제한은 새 코드 배포 뒤 20261203120000 에서
 
 create function public.my_profile_flags()
 returns table(nickname_set_at timestamptz, terms_version text, push_off text[])
