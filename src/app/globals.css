@@ -198,23 +198,6 @@ html[data-splash] .launch-splash {
 @keyframes launch-out {
   to { opacity: 0; visibility: hidden; }
 }
-/* 홈 화면 앱 — 휴대폰 실행 화면의 심볼(같은 크기 · 자리)에서 바로 이어 비켜서기부터. 전체 약 2초 */
-html[data-splash="app"] .launch-spoon,
-html[data-splash="app"] .launch-chopstick {
-  animation: none;
-}
-html[data-splash="app"] .launch-symbol {
-  animation-delay: 200ms;
-}
-html[data-splash="app"] .launch-word {
-  animation-delay: 440ms;
-}
-html[data-splash="app"] .launch-tagline {
-  animation-delay: 980ms;
-}
-html[data-splash="app"] .launch-splash {
-  animation-delay: 1660ms;
-}
 @media (prefers-reduced-motion: reduce) {
   html[data-splash] .launch-splash {
     display: none;

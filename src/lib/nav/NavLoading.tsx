@@ -2,7 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { EatingLoader } from "@/components/ui/EatingLoader";
+import { LoaderBubble } from "@/components/ui/EatingLoader";
 
 // 페이지를 옮기는 동안 — 링크를 누른 뒤 다음 화면이 올 때까지 가운데에 젓가락 로딩 (0.25초 안에 오면 안 보임)
 // 누른 주소를 기억해 두고, 지금 주소가 그와 같아지면 끝난 것 — 뒤로가기 · 코드로 옮기기는 표시하지 않는다
@@ -35,9 +35,7 @@ export function NavLoading() {
   if (!pending) return null;
   return (
     <div className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center">
-      <span className="rounded-full bg-white/90 p-3 shadow-float">
-        <EatingLoader size={40} label="화면을 불러오는 중" />
-      </span>
+      <LoaderBubble label="화면을 불러오는 중" />
     </div>
   );
 }
