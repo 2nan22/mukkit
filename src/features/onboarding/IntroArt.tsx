@@ -155,7 +155,7 @@ export function RateArt() {
         <span className="flex size-[26px] items-center justify-center rounded-full border-2 border-white bg-tier-3 text-[12px] font-bold text-white shadow-[0_2px_5px_rgb(0_0_0/0.22)]">3</span>
         <span className="flex flex-col">
           <span className="text-[12px] leading-tight font-bold text-ink">내 지도에 표시</span>
-          <span className="text-[10.5px] leading-snug text-muted">수저 셋 4곳째</span>
+          <span className="text-[10.5px] leading-snug text-muted">3숟가락 4곳째</span>
         </span>
       </div>
     </>

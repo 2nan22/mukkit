@@ -14,8 +14,8 @@ const SLIDES = [
     tint: "bg-[#eaeee6]",
   },
   {
-    title: "별점 대신\n수저 셋 · 둘 · 하나",
-    body: "나만 알고 싶은 곳에 수저 셋을 줘요.",
+    title: "별점 대신\n숟가락 3 · 2 · 1",
+    body: "나만 알고 싶은 곳에 3숟가락을 줘요.",
     art: <RateArt />,
     tint: "bg-[#f8ece3]",
   },

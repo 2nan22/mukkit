@@ -7,7 +7,7 @@ import { MapView } from "@/features/map/MapView";
 import { getFollowingMapPlaces, getMyMapPlaces } from "@/features/map/myPlaces";
 import { MapViewSwitch } from "@/features/map/MapViewSwitch";
 import { getFollowCounts } from "@/features/social/social";
-import { getMyList } from "@/features/lists/lists";
+import { getMyList, getMyMapLists } from "@/features/lists/lists";
 import { TIERS } from "@/domain/tier";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -46,14 +46,15 @@ async function MapLoader({ searchParams }: { searchParams: Promise<{ tier?: stri
     return <MapView key="following" view="following" places={places} following={counts.following} />;
   }
   // ?list= 이면 그 리스트에 담긴 곳만, ?tier= 이면 그 등급을 미리 고른 채로 — 두 조회는 한 번에
-  const [all, only] = await Promise.all([
+  const [all, only, lists] = await Promise.all([
     getMyMapPlaces(supabase, userId),
     typeof list === "string" ? getMyList(supabase, userId, list).catch(() => null) : Promise.resolve(null),
+    getMyMapLists(supabase, userId),
   ]);
   const places = only ? all.filter((p) => only.placeIds.includes(p.placeId)) : all;
   const initialTiers = TIERS.filter((t) => t === tier);
   // ?at=위도,경도 — 홈 '근처 가고 싶은 곳'에서 그 위치로
   const [lat, lng] = typeof at === "string" ? at.split(",").map(Number) : [];
   const atPoint = Number.isFinite(lat) && Number.isFinite(lng) && lat > 33 && lat < 39 && lng > 124 && lng < 132 ? { lat, lng } : null;
-  return <MapView key="mine" places={places} initialTiers={initialTiers} at={only ? null : atPoint} />;
+  return <MapView key="mine" places={places} initialTiers={initialTiers} at={only ? null : atPoint} lists={only ? [] : lists} />;
 }

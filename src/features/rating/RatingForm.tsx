@@ -33,7 +33,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
   const [tier, setTier] = useState<Tier>(place.tier);
   const visited = RATED.includes(tier);
   const leave = useLeave(next);
-  // 수저 셋으로 저장했고 아직 수저 셋 순위에 없으면 — 같은 수저 셋과 비교해 자리를 정한다 (첫 수저 셋면 바로 1위)
+  // 3숟가락으로 저장했고 아직 3숟가락 순위에 없으면 — 같은 3숟가락과 비교해 자리를 정한다 (첫 3숟가락이면 바로 1위)
   const [compare, setCompare] = useState<{ target: RankPlace; ranked: RankPlace[] } | null>(null);
   useEffect(() => {
     if (!state.saved) return;

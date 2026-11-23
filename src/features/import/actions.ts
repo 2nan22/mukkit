@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { ImportError, type ImportErrorCode } from "@/domain/importedPlace";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
-import { placeSourceFor, sourceNameForLink } from "./sources";
+import { extractLink, placeSourceFor, sourceNameForLink } from "./sources";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { ImportModeSchema, type ImportMode } from "./importMode";
 import { recordImportSource } from "./refreshImport";
@@ -24,8 +24,9 @@ const ERROR_MESSAGE: Record<ImportErrorCode, string> = {
 const SAVE_FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
 
 // 링크만 받아 리스트 이름 · 개수를 먼저 보여 준다 — 저장은 방식을 고른 뒤
-export async function previewList(link: string): Promise<ActionResult<ListPreview>> {
+export async function previewList(input: string): Promise<ActionResult<ListPreview>> {
   await requireUserId();
+  const link = extractLink(input);
   const source = sourceNameForLink(link);
   if (!source) return { ok: false, error: ERROR_MESSAGE.INVALID_LINK, code: "INVALID_LINK" };
   try {
@@ -39,7 +40,8 @@ export async function previewList(link: string): Promise<ActionResult<ListPrevie
   }
 }
 
-export async function importList(link: string, mode: ImportMode): Promise<ActionResult<ImportResult>> {
+export async function importList(input: string, mode: ImportMode): Promise<ActionResult<ImportResult>> {
+  const link = extractLink(input);
   const parsedMode = ImportModeSchema.safeParse(mode);
   if (!parsedMode.success) return { ok: false, error: SAVE_FAILED, code: "SAVE_FAILED" };
   const { supabase, userId } = await requireUserId();

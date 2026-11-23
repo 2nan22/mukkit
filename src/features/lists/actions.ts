@@ -1,5 +1,6 @@
 "use server";
 
+import { isListColor } from "@/domain/listColor";
 import { redirect, RedirectType } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -54,6 +55,11 @@ export async function setListVisibility(listId: string, visibility: string): Pro
   const v = z.enum(VISIBILITIES).safeParse(visibility);
   if (!v.success) return { error: FAILED };
   return run(listId, (s, u) => updateList(s, u, listId, { visibility: v.data }));
+}
+
+export async function setListColor(listId: string, color: string): Promise<Result> {
+  if (!isListColor(color)) return { error: FAILED };
+  return run(listId, (s, u) => updateList(s, u, listId, { color }));
 }
 
 export async function addPlacesToList(listId: string, placeIds: string[]): Promise<Result> {

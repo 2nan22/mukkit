@@ -12,7 +12,7 @@ import type { RankPlace } from "./rank";
 
 const meta = (p: RankPlace) => [CUISINE_LABEL[p.cuisine], regionOf(p.address)].filter(Boolean).join(" · ");
 
-// 내 수저 셋 순위 — 정한 곳은 순서대로, 안 정한 곳은 비교해서 넣기 · 정한 곳도 다시 비교 가능
+// 내 3숟가락 순위 — 정한 곳은 순서대로, 안 정한 곳은 비교해서 넣기 · 정한 곳도 다시 비교 가능
 export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: { ranked: RankPlace[]; unranked: RankPlace[] }) {
   // 비교 결과를 바로 반영 — 이어서 정할 때 새로 고침을 기다리지 않는다
   const [ranked, setRanked] = useState(initialRanked);
@@ -58,7 +58,7 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
       )}
       {ranked.length === 0 ? (
         <div className="flex flex-col gap-1 py-8 text-meta text-muted">
-          <p>아직 순위를 정한 수저 셋이 없어요.</p>
+          <p>아직 순위를 정한 3숟가락이 없어요.</p>
           <p>아래에서 하나씩 정해 보세요.</p>
         </div>
       ) : (
@@ -106,7 +106,7 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
         <section aria-labelledby="unranked-title" className="flex flex-col pt-8">
           <div className="flex items-center justify-between gap-3">
             <h2 id="unranked-title" className="text-section font-bold">
-              아직 순위 없는 수저 셋 {unranked.length}곳
+              아직 순위 없는 3숟가락 {unranked.length}곳
             </h2>
             <button
               type="button"

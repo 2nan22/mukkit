@@ -12,6 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#ffffff",
     theme_color: "#ffffff",
     lang: "ko",
+    // 네이버 · 카카오 앱 공유 시트에서 먹킷으로 바로 보내기 (안드로이드 · 홈 화면에 추가한 앱)
+    share_target: { action: "/import/share", method: "GET", params: { title: "title", text: "text", url: "url" } },
     icons: [
       // 실행 화면(안드로이드)은 이 아이콘을 바탕색 위에 그린다 — 사각 아이콘이 붙어 보이지 않게 투명 바탕 심볼
       { src: "/splash-192.png", sizes: "192x192", type: "image/png" },

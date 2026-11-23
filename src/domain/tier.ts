@@ -3,9 +3,9 @@ export const TIERS = ["three", "two", "one", "notRecommended", "wantToGo", "unra
 export type Tier = (typeof TIERS)[number];
 
 export const TIER_LABEL: Record<Tier, string> = {
-  three: "수저 셋",
-  two: "수저 둘",
-  one: "수저 하나",
+  three: "3숟가락",
+  two: "2숟가락",
+  one: "1숟가락",
   notRecommended: "추천 안 함",
   wantToGo: "가고 싶은 곳",
   unrated: "평가 전",
@@ -21,7 +21,7 @@ export const TIER_MEANING: Record<Tier, string> = {
   unrated: "저장만 하고 평가하지 않은 곳",
 };
 
-// 신뢰 통계(수저 셋 비율 등)에 들어가는 등급 — 평가 전 · 가고 싶은 곳은 평가가 아니다
+// 신뢰 통계(3숟가락 비율 등)에 들어가는 등급 — 평가 전 · 가고 싶은 곳은 평가가 아니다
 export function isRated(tier: Tier): boolean {
   return tier === "three" || tier === "two" || tier === "one" || tier === "notRecommended";
 }

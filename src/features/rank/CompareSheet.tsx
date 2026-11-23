@@ -10,9 +10,9 @@ function dot(d: string | null): string | null {
   return d ? `${d.replaceAll("-", ".")} 방문` : null;
 }
 
-// 같은 수저 셋 중 어디가 더 좋았나 — 이분 탐색으로 자리를 찾는다
+// 같은 3숟가락 중 어디가 더 좋았나 — 이분 탐색으로 자리를 찾는다
 // 카드를 누르면 그쪽이 더 좋음 · 비슷해요는 비교한 곳 바로 아래 · cancelLabel(나중에 할게요 등)은 순위 없이 닫기
-// 정하고 나면 결과('수저 셋 중 N위예요')를 보여 주고, remaining 이 있으면(이어 정하기) 다음 곳으로 갈지 묻는다
+// 정하고 나면 결과('3숟가락 중 N위예요')를 보여 주고, remaining 이 있으면(이어 정하기) 다음 곳으로 갈지 묻는다
 export function CompareSheet({
   target,
   ranked,
@@ -116,7 +116,7 @@ export function CompareSheet({
             <h2 id="cmp-title" className="text-title leading-snug font-bold tracking-tight">
               {target.name}
               <br />
-              수저 셋 중 {result}위예요
+              3숟가락 중 {result}위예요
             </h2>
             <p className="text-meta text-muted">순위는 나만 봐요.</p>
             <div className={`grid gap-2 pt-6 ${remaining > 0 ? "grid-cols-2" : ""}`}>
@@ -134,7 +134,7 @@ export function CompareSheet({
           <>
             <div className="flex flex-col gap-1.5 px-5">
               <h2 id="cmp-title" className="text-title leading-snug font-bold tracking-tight">
-                같은 수저 셋 중
+                같은 3숟가락 중
                 <br />
                 어디가 더 좋았나요?
               </h2>
@@ -142,7 +142,7 @@ export function CompareSheet({
             </div>
             <div className="grid grid-cols-2 gap-2.5 px-5 pt-6">
               {card(target, label, picked === "target", () => pick("target"))}
-              {card(other, `수저 셋 · ${mid + 1}위`, picked === "other", () => pick("other"))}
+              {card(other, `3숟가락 · ${mid + 1}위`, picked === "other", () => pick("other"))}
             </div>
             {error && (
               <p role="alert" className="px-5 pt-3 text-meta text-danger">
