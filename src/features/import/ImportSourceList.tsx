@@ -36,7 +36,11 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
                   {body}
                 </Link>
               ) : (
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-3">{body}</span>
+                // 등급 리스트로 가져와 먹킷 리스트가 없는 원본 — 원하면 리스트로
+                <Link href={`/lists/new?from=${r.source}:${encodeURIComponent(r.sourceListId)}`} className="flex min-w-0 flex-1 items-center gap-2 py-3">
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">{body}</span>
+                  <span className="flex h-8 shrink-0 items-center rounded-full bg-surface px-3 text-meta font-semibold text-ink">리스트로 만들기</span>
+                </Link>
               )}
               <button type="button" aria-label={`${r.name} 더 보기`} onClick={() => setOpen(r)} className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
