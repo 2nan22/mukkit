@@ -1,8 +1,8 @@
-import { CHOPSTICKS, MARK, SPOON_HEAD, SPOON_STICK, SYMBOL_VIEWBOX } from "./Wordmark";
+import { CHOPSTICKS, MARK, SPOON_HEAD, SPOON_STICK, SYMBOL_VIEWBOX, TAGLINE } from "./Wordmark";
 
-// 처음 들어올 때 한 번 — 가운데에 수저가 놓이고, 심볼이 왼쪽으로 비켜서며 '먹킷 / MUKKIT' 이 펼쳐져 가로형 글자 로고가 된다
+// 처음 들어올 때 한 번 — 가운데에 수저가 놓이고, 심볼이 비켜서며 '먹킷 / MUKKIT' 이 펼쳐지고, 아래에 태그라인이 떠오른다 (약 2.7초 · 누르면 바로 넘어감)
 // 보일지는 그리기 전에 아래 스크립트가 정한다: 홈 화면 앱으로 열었거나 시작 · 홈 화면으로 들어온 세션의 첫 화면만
-export const SPLASH_SCRIPT = `try{var d=document.documentElement,s=sessionStorage;if(!s.getItem("mk_splash")&&!matchMedia("(prefers-reduced-motion: reduce)").matches&&(matchMedia("(display-mode: standalone)").matches||location.pathname==="/"||location.pathname==="/home")){s.setItem("mk_splash","1");d.dataset.splash="1"}}catch(e){}`;
+export const SPLASH_SCRIPT = `try{var d=document.documentElement,s=sessionStorage;if(!s.getItem("mk_splash")&&!matchMedia("(prefers-reduced-motion: reduce)").matches&&(matchMedia("(display-mode: standalone)").matches||location.pathname==="/"||location.pathname==="/home")){s.setItem("mk_splash","1");d.dataset.splash="1";addEventListener("pointerdown",function(){delete d.dataset.splash},{once:true})}}catch(e){}`;
 
 const m = MARK.lg;
 const symbolWidth = Math.round(m.h * 0.7);
@@ -18,7 +18,7 @@ export function LaunchSplash() {
             <ellipse {...SPOON_HEAD} />
           </g>
           {CHOPSTICKS.map((d, i) => (
-            <path key={d} d={d} className="launch-chopstick" style={{ animationDelay: `${140 + i * 70}ms` }} />
+            <path key={d} d={d} className="launch-chopstick" style={{ animationDelay: `${280 + i * 140}ms` }} />
           ))}
         </svg>
         <span className="launch-word" style={{ height: m.h }}>
@@ -30,6 +30,10 @@ export function LaunchSplash() {
           </span>
         </span>
       </div>
+      <span className="launch-tagline">
+        <span className="launch-tagline-ko">{TAGLINE.ko}</span>
+        <span className="launch-tagline-en">{TAGLINE.en}</span>
+      </span>
     </div>
   );
 }

@@ -90,7 +90,7 @@ body {
 }
 
 /* 실행 애니메이션 — html[data-splash] 일 때만 (layout 의 스크립트가 그리기 전에 붙인다)
-   0 ~ 0.42초 가운데에 수저가 놓임 → 0.42 ~ 0.72초 심볼이 비켜서며 글자가 펼쳐짐 → 0.95초까지 사라짐 */
+   0 ~ 0.84초 가운데에 수저가 놓임 → 0.84 ~ 1.6초 심볼이 비켜서고 글자가 펼쳐짐 → 1.62초 태그라인 → 2.3 ~ 2.7초 사라짐 */
 .launch-splash {
   display: none;
 }
@@ -102,7 +102,7 @@ html[data-splash] .launch-splash {
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  animation: launch-out 220ms ease-in 760ms forwards;
+  animation: launch-out 400ms ease-in 2300ms forwards;
 }
 .launch-lockup {
   display: flex;
@@ -114,23 +114,23 @@ html[data-splash] .launch-splash {
   flex: none;
   fill: var(--color-brand);
   overflow: visible;
-  animation: launch-slide 300ms cubic-bezier(0.3, 0, 0.2, 1) 420ms both;
+  animation: launch-slide 600ms cubic-bezier(0.3, 0, 0.2, 1) 840ms both;
 }
 .launch-spoon {
   transform-box: fill-box;
   transform-origin: 50% 100%;
-  animation: launch-spoon 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: launch-spoon 840ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .launch-chopstick {
   transform-box: fill-box;
   transform-origin: 50% 0%;
-  animation: launch-chop 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: launch-chop 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .launch-word {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  animation: launch-word 300ms cubic-bezier(0.3, 0, 0.2, 1) 440ms both;
+  animation: launch-word 520ms cubic-bezier(0.3, 0, 0.2, 1) 1080ms both;
 }
 .launch-ko {
   display: block;
@@ -146,6 +146,36 @@ html[data-splash] .launch-splash {
   letter-spacing: 0.1em;
   margin-right: -0.1em;
   color: var(--color-muted);
+}
+.launch-tagline {
+  /* 글자 로고는 화면 정가운데 — 태그라인은 그 아래에 따로 */
+  position: absolute;
+  top: calc(50% + 50px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: launch-tagline 500ms ease-out 1620ms both;
+}
+.launch-tagline-ko {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink-2);
+  line-height: 1.2;
+}
+.launch-tagline-en {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin-right: -0.16em;
+  color: var(--color-muted);
+  line-height: 1.2;
+}
+@keyframes launch-tagline {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes launch-spoon {
   0% { opacity: 0; transform: translateY(-34%) scale(0.96); }

@@ -1,6 +1,8 @@
 // 먹킷 글자 로고 — 수저 심볼 + 영문 대문자. 이름은 임시(2026-11-23 결정) · 바꾸면 이 파일과 앱 아이콘만 고친다
 // 심볼 도형은 public/app-icon.svg 의 숟가락 · 젓가락을 평면으로 옮긴 것
 export const BRAND_NAME = "먹킷";
+// 태그라인 (결정 기록 34) — 실행 화면 · 시작 화면
+export const TAGLINE = { ko: "아는 사람의 맛집 지도", en: "NO SCORES. JUST PEOPLE." } as const;
 
 // 심볼 도형 — 실행 애니메이션도 이 도형을 숟가락 · 젓가락으로 나눠 움직인다 (components/brand/LaunchSplash)
 export const SYMBOL_VIEWBOX = "220 120 548 780";

@@ -17,7 +17,7 @@ button { font: inherit; border: 1px solid var(--line); background: #fff; color: 
 button:focus-visible { outline: 2px solid #c8410b; outline-offset: 2px; }
 .launch-ko, .launch-en { font-family: "Noto Sans KR", system-ui, sans-serif; }
 /* 실행 애니메이션 — html[data-splash] 일 때만 (layout 의 스크립트가 그리기 전에 붙인다)
-   0 ~ 0.42초 가운데에 수저가 놓임 → 0.42 ~ 0.72초 심볼이 비켜서며 글자가 펼쳐짐 → 0.95초까지 사라짐 */
+   0 ~ 0.84초 가운데에 수저가 놓임 → 0.84 ~ 1.6초 심볼이 비켜서고 글자가 펼쳐짐 → 1.62초 태그라인 → 2.3 ~ 2.7초 사라짐 */
 .launch-splash {
   display: none;
 }
@@ -29,7 +29,7 @@ button:focus-visible { outline: 2px solid #c8410b; outline-offset: 2px; }
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  animation: launch-out 220ms ease-in 760ms forwards;
+  animation: launch-out 400ms ease-in 2300ms forwards;
 }
 .launch-lockup {
   display: flex;
@@ -41,23 +41,23 @@ button:focus-visible { outline: 2px solid #c8410b; outline-offset: 2px; }
   flex: none;
   fill: #c8410b;
   overflow: visible;
-  animation: launch-slide 300ms cubic-bezier(0.3, 0, 0.2, 1) 420ms both;
+  animation: launch-slide 600ms cubic-bezier(0.3, 0, 0.2, 1) 840ms both;
 }
 .launch-spoon {
   transform-box: fill-box;
   transform-origin: 50% 100%;
-  animation: launch-spoon 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: launch-spoon 840ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .launch-chopstick {
   transform-box: fill-box;
   transform-origin: 50% 0%;
-  animation: launch-chop 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: launch-chop 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .launch-word {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  animation: launch-word 300ms cubic-bezier(0.3, 0, 0.2, 1) 440ms both;
+  animation: launch-word 520ms cubic-bezier(0.3, 0, 0.2, 1) 1080ms both;
 }
 .launch-ko {
   display: block;
@@ -73,6 +73,36 @@ button:focus-visible { outline: 2px solid #c8410b; outline-offset: 2px; }
   letter-spacing: 0.1em;
   margin-right: -0.1em;
   color: #5b5f69;
+}
+.launch-tagline {
+  /* 글자 로고는 화면 정가운데 — 태그라인은 그 아래에 따로 */
+  position: absolute;
+  top: calc(50% + 50px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: launch-tagline 500ms ease-out 1620ms both;
+}
+.launch-tagline-ko {
+  font-size: 15px;
+  font-weight: 600;
+  color: #33363d;
+  line-height: 1.2;
+}
+.launch-tagline-en {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin-right: -0.16em;
+  color: #5b5f69;
+  line-height: 1.2;
+}
+@keyframes launch-tagline {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes launch-spoon {
   0% { opacity: 0; transform: translateY(-34%) scale(0.96); }
@@ -94,13 +124,12 @@ button:focus-visible { outline: 2px solid #c8410b; outline-offset: 2px; }
 @keyframes launch-out {
   to { opacity: 0; visibility: hidden; }
 }
-
 </style>
 <div class="wrap">
 <h1>먹킷 실행 애니메이션</h1>
-<p>지금 쓰는 수저 심볼과 글자 로고 그대로예요. 가운데에 수저가 놓이고, 심볼이 비켜서며 '먹킷 / MUKKIT' 이 펼쳐져 화면 위 글자 로고가 돼요. 전체 약 1초. 앱에서는 Pretendard 글꼴로 보여요.</p>
-<div id="stage" class="play"><div class="behind">시작 화면</div><div class="launch-splash"><div class="launch-lockup" style="gap:16px"><svg class="launch-symbol" height="56" width="39" viewBox="220 120 548 780"><g class="launch-spoon"><path d="M336 470C356 496 372 522 374 554L358 850a42 42 0 0 0 84 0L426 554C428 522 444 496 464 470Z"/><ellipse cx="400" cy="312" rx="172" ry="184"/></g><path class="launch-chopstick" style="animation-delay:140ms" d="M596 170a30 30 0 0 1 60 0L647 870a21 21 0 0 1 -42 0Z"/><path class="launch-chopstick" style="animation-delay:210ms" d="M700 170a30 30 0 0 1 60 0L751 870a21 21 0 0 1 -42 0Z"/></svg><span class="launch-word" style="height:56px"><span class="launch-ko" style="font-size:37px;margin-top:1.75px">먹킷</span><span class="launch-en" style="font-size:15px">MUKKIT</span></span></div></div></div>
-<div class="btns"><button type="button" id="again">다시 보기</button><button type="button" id="slow">4배 느리게</button></div>
+<p>지금 쓰는 수저 심볼과 글자 로고 그대로예요. 가운데에 수저가 놓이고, 심볼이 비켜서며 '먹킷 / MUKKIT' 이 펼쳐져 화면 위 글자 로고가 되고, 아래에 태그라인이 떠올라요. 전체 약 2.7초 · 앱에서는 누르면 바로 넘어가요. 앱에서는 Pretendard 글꼴로 보여요.</p>
+<div id="stage" class="play"><div class="behind">시작 화면</div><div class="launch-splash"><div class="launch-lockup" style="gap:16px"><svg class="launch-symbol" height="56" width="39" viewBox="220 120 548 780"><g class="launch-spoon"><path d="M336 470C356 496 372 522 374 554L358 850a42 42 0 0 0 84 0L426 554C428 522 444 496 464 470Z"/><ellipse cx="400" cy="312" rx="172" ry="184"/></g><path class="launch-chopstick" style="animation-delay:280ms" d="M596 170a30 30 0 0 1 60 0L647 870a21 21 0 0 1 -42 0Z"/><path class="launch-chopstick" style="animation-delay:420ms" d="M700 170a30 30 0 0 1 60 0L751 870a21 21 0 0 1 -42 0Z"/></svg><span class="launch-word" style="height:56px"><span class="launch-ko" style="font-size:37px;margin-top:1.75px">먹킷</span><span class="launch-en" style="font-size:15px">MUKKIT</span></span></div><span class="launch-tagline"><span class="launch-tagline-ko">아는 사람의 맛집 지도</span><span class="launch-tagline-en">NO SCORES. JUST PEOPLE.</span></span></div></div>
+<div class="btns"><button type="button" id="again">다시 보기</button><button type="button" id="slow">2배 느리게</button></div>
 </div>
 <script>
 const stage = document.getElementById("stage");
@@ -109,7 +138,7 @@ const replay = (slow) => {
   void stage.offsetWidth;
   stage.getAnimations({ subtree: true }).forEach((a) => a.cancel());
   stage.classList.add("play");
-  stage.getAnimations({ subtree: true }).forEach((a) => { a.playbackRate = slow ? 0.25 : 1; });
+  stage.getAnimations({ subtree: true }).forEach((a) => { a.playbackRate = slow ? 0.5 : 1; });
 };
 document.getElementById("again").addEventListener("click", () => replay(false));
 document.getElementById("slow").addEventListener("click", () => replay(true));
