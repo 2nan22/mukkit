@@ -6,7 +6,7 @@ import { z } from "zod";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { modeFromValue } from "./importMode";
+import { IMPORT_TIERS, modeFromValue, type ImportMode } from "./importMode";
 import { refreshImport } from "./refreshImport";
 
 // 직접 새로 고치기는 이만큼 지나야 다시 — 원본에 몰아서 부르지 않게
@@ -26,14 +26,18 @@ export async function refreshImportedList(listId: string): Promise<{ error?: str
 }
 
 // 가져온 원본 관리 › ⋯ › 지금 새로 고치기 — 리스트가 없는 등급 리스트 원본도
-export async function refreshImportSource(source: string, sourceListId: string): Promise<{ error?: string; done?: string }> {
-  const t = z.object({ source: z.enum(["naver", "kakao"]), sourceListId: z.string().min(1).max(200) }).safeParse({ source, sourceListId });
+// tier: 기록 없는 원본(예전에 등급을 매겨 가져온 것)을 처음 새로 고칠 때 새 곳에 줄 등급 — 이번부터 기록이 남는다
+export async function refreshImportSource(source: string, sourceListId: string, tier?: string): Promise<{ error?: string; done?: string }> {
+  const t = z
+    .object({ source: z.enum(["naver", "kakao"]), sourceListId: z.string().min(1).max(200), tier: z.enum(IMPORT_TIERS).optional() })
+    .safeParse({ source, sourceListId, tier });
   if (!t.success) return { error: "새로 고치지 못했어요." };
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) redirect(SIGNED_OUT_HOME);
-  return refreshSource(supabase, userId, t.data.source, t.data.sourceListId, ["/import/sources"]);
+  const fallback = t.data.tier ? ({ kind: "tier", tier: t.data.tier } as const) : undefined;
+  return refreshSource(supabase, userId, t.data.source, t.data.sourceListId, ["/import/sources"], fallback);
 }
 
 // 원본 다시 읽기 — 1시간 간격 · 직접 누르면 실패 횟수를 지워 새벽 작업도 다시 시작
@@ -43,6 +47,7 @@ async function refreshSource(
   source: PlaceSourceName,
   sourceListId: string,
   paths: string[],
+  fallback?: ImportMode,
 ): Promise<{ error?: string; done?: string }> {
   const src = await supabase
     .from("import_sources")
@@ -55,7 +60,11 @@ async function refreshSource(
   if (Date.now() - last < COOLDOWN_MS) return { done: "조금 전에 확인했어요. 잠시 뒤에 다시 눌러 주세요." };
   if (src.data) await supabase.from("import_sources").update({ fail_count: 0 }).eq("user_id", userId).eq("source", source).eq("source_list_id", sourceListId);
 
-  const mode = src.data?.mode === "tier" && src.data.tier ? modeFromValue(src.data.tier as string) : { kind: "plain" as const };
+  const mode: ImportMode = src.data
+    ? src.data.mode === "tier" && src.data.tier
+      ? modeFromValue(src.data.tier as string)
+      : { kind: "plain" }
+    : (fallback ?? { kind: "plain" });
   const res = await refreshImport(supabase, userId, { source, sourceListId, mode }).catch(() => ({ status: "error" as const }));
   for (const p of [...paths, "/lists", "/import/sources"]) revalidatePath(p);
   switch (res.status) {

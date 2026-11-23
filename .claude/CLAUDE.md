@@ -83,7 +83,7 @@
     - 바꿀 때 고칠 곳: components/brand/Wordmark.tsx(BRAND_NAME · 글자 로고) · manifest · 화면 문구의 '먹킷'(받침 있는 이름이라 조사 그대로) · 약관 · 처리방침
     - 외부 이름 (2026-11-23): GitHub 2nan22/mukkit · Vercel 프로젝트 mukkit · 운영 주소 https://mukkit-app.vercel.app (mukkit.vercel.app 은 남이 씀 'Eater 먹킷리스트') · 옛 주소 mychelin-bice.vercel.app 은 Vercel · Supabase Redirect URLs 에서 삭제(2026-11-23, 상표 연상 정리) · 카카오 사이트 도메인의 옛 주소는 사용자가 삭제 · Supabase 프로젝트 '먹킷 MUKKIT'(3자 이상 규칙) · Supabase Site URL · Redirect URLs 새 주소만
     - 상표(KIPRIS) · 구글플레이는 확인 못 함 — 출시 전 변리사 확인. 비슷한 기능의 경쟁 앱 '냠(NYAM)' 있음 · 앱스토어에 '맛슐랭(MatChelin)' 있음
-- 브랜드 표기 — 홈 헤더 · 공유 화면은 주황 수저 심볼 + 영문 대문자 MUKKIT(시안 4번 방향). 입체 앱 아이콘은 홈 화면 아이콘에만, 실행 화면은 흰 바탕 + 투명 바탕 심볼(manifest any 아이콘)
+- 브랜드 표기 — 주황 수저 심볼 + 한글 '먹킷' 크게 · 영문 MUKKIT 작게 두 줄 (44, 사용자 결정 2026-11-23 B안 — 영문만이면 '무킷'으로 읽힘). 두 줄 묶음의 위 · 아래를 심볼 높이에 맞추고 두 줄 너비를 같게 · 앱 아이콘은 입체 그대로(1안). 입체 앱 아이콘은 홈 화면 아이콘에만, 실행 화면은 흰 바탕 + 투명 바탕 심볼(manifest any 아이콘)
 - 네이버 가져오기 — 공개 범위 '일부 공개' · '전체 공개' 리스트의 공유 링크로 로그인 없이 수집 (비공식 내부 API)
 - 음식 종류 — 네이버 `cidPath` 코드 또는 카카오 로컬 API 카테고리
 - 지도 SDK — 카카오맵 JavaScript SDK (ADR 0001 변경 이력) · 무료 쿼터는 마이슐랭 카카오 앱 · 키 NEXT_PUBLIC_KAKAO_MAP_KEY
@@ -156,6 +156,8 @@
 - 화면 · 문구에 AI 같은 이모지를 쓰지 않는다 · 카카오 · Google · 네이버는 공식 로고 · 버튼 가이드대로
 - 남의 저장 · 메모는 직접 읽기 불가 — 공개 읽기는 public_list 처럼 칸을 고른 security definer 함수로만
 - 평가의 한 줄 평가(review)는 공개 범위대로, 메모(note)는 언제나 나만 · 사진은 경로 <사용자>/<장소>/ 로 Storage 정책이 평가 공개 범위를 따른다
+- 메뉴 (47, 사용자 결정 2026-11-23) — 카카오맵이 먼저, 카카오에 메뉴가 없을 때만 네이버 지도(모바일 장소 페이지 안 데이터, 차선책). 화면에 '출처 카카오맵 · 네이버 지도'와 원문 링크 · 사진은 어느 쪽도 쓰지 않음 · 교체 지점 features/place/menu.ts · naver/config.ts NAVER_PLACE
+- 가게 정보 갱신 (46) — 새벽 폐업 확인 때 영업 중인 곳의 이름 · 주소 · 좌표 · 업종이 바뀌었으면 공용 장소에 반영. 장소의 대표 출처(places.source)가 준 정보만 · 3km 넘게 옮겼다는 곳은 건너뜀 · 한 번에 30% 넘게 바뀌면 반영 안 함 · 빈 값은 덮어쓰지 않음
 - 배포 시 매일 새벽 외부 크론(Vercel Cron 또는 GitHub Actions)이 폐업 여부 확인 작업을 돌리고 실행 기록을 DB 에 남긴다 — Supabase 무료 플랜 비활성 정지 방지 겸용
 - 로컬 Supabase 는 Storage 포함해 기동 (`pnpm db:start`)
 - 로컬 Supabase 는 553xx 포트 — 다른 로컬 Supabase(티키타카)와 충돌 회피

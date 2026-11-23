@@ -39,7 +39,7 @@ async function RatePlace({
   if (!place) notFound();
   const [visits, detail] = await Promise.all([getMyVisits(supabase, placeId), getPlace(supabase, placeId)]);
   const kakao = detail?.sources.find((s) => s.source === "kakao" && !s.sourcePlaceId.startsWith("N"));
-  const menu = detail ? await getMenu({ name: detail.name, lat: detail.lat, lng: detail.lng, kakaoPlaceId: kakao?.sourcePlaceId ?? null }).catch(() => null) : null;
+  const menu = detail ? await getMenu({ name: detail.name, lat: detail.lat, lng: detail.lng, kakaoPlaceId: kakao?.sourcePlaceId ?? null, naverPlaceId: detail.sources.find((s) => s.source === "naver")?.sourcePlaceId ?? null }).catch(() => null) : null;
   // 대표 메뉴 먼저
   const menuOptions = (menu?.items ?? []).sort((a, b) => Number(b.recommended) - Number(a.recommended)).map((m) => m.name.trim().slice(0, 30)).filter(Boolean);
   const back = safeNextPath(typeof next === "string" ? next : null);

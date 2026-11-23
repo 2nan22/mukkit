@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { SourceMark } from "@/components/brand/BrandLogo";
 import { Toast } from "@/components/ui/Toast";
+import { IMPORT_TIER_LABEL, IMPORT_TIERS, type ImportTier } from "./importMode";
 import { syncLine, type ImportSourceRow } from "./importSources";
 import { refreshImportSource } from "./refreshActions";
 import { countDeletable, disconnectSource } from "./sourceActions";
@@ -13,15 +14,31 @@ function nameOf(r: ImportSourceRow): string {
   return r.name || "이름 없는 리스트";
 }
 
-// 원본 목록 — 줄을 누르면 먹킷 리스트로, ⋯ 은 새로 고치기 · 끊기 시트
+// 원본 목록 — 줄을 누르면 먹킷 리스트로, ↻ 바로 새로 고치기, ⋯ 은 리스트 만들기 · 끊기 시트
 export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
-  const [open, setOpen] = useState<ImportSourceRow | null>(null);
+  const router = useRouter();
+  const [open, setOpen] = useState<{ row: ImportSourceRow; step: Step } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [, start] = useTransition();
   const opener = useRef<HTMLButtonElement | null>(null);
   const now = useNow();
   const close = () => {
     setOpen(null);
     opener.current?.focus();
+  };
+  // 기록이 있으면 바로, 없으면(예전에 등급을 매겨 가져온 것) 새 곳에 줄 등급부터 묻기
+  const refresh = (r: ImportSourceRow, el: HTMLButtonElement) => {
+    opener.current = el;
+    if (!r.sync) return setOpen({ row: r, step: "setup" });
+    const key = `${r.source}:${r.sourceListId}`;
+    setBusy(key);
+    start(async () => {
+      const res = await refreshImportSource(r.source, r.sourceListId);
+      setBusy(null);
+      setToast(res.error ?? res.done ?? "");
+      router.refresh();
+    });
   };
   return (
     <>
@@ -46,20 +63,26 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
                   {body}
                 </Link>
               ) : (
-                <>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-3">{body}</span>
-                  {/* 등급 리스트로 가져와 먹킷 리스트가 없는 원본 — 원하면 리스트로 */}
-                  <Link href={`/lists/new?from=${r.source}:${encodeURIComponent(r.sourceListId)}`} className="flex h-11 shrink-0 items-center">
-                    <span className="flex h-8 items-center rounded-full bg-surface px-3 text-meta font-semibold text-ink">리스트 만들기</span>
-                  </Link>
-                </>
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-3">{body}</span>
               )}
+              <button
+                type="button"
+                disabled={busy !== null}
+                aria-label={`${nameOf(r)} 지금 새로 고치기`}
+                onClick={(e) => refresh(r, e.currentTarget)}
+                className="flex h-11 shrink-0 items-center gap-1 rounded-full px-2 text-meta font-semibold text-ink disabled:opacity-50"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={busy === `${r.source}:${r.sourceListId}` ? "animate-spin" : ""}>
+                  <path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4" />
+                </svg>
+                {busy === `${r.source}:${r.sourceListId}` ? "확인 중" : "새로 고침"}
+              </button>
               <button
                 type="button"
                 aria-label={`${nameOf(r)} 관리`}
                 onClick={(e) => {
                   opener.current = e.currentTarget;
-                  setOpen(r);
+                  setOpen({ row: r, step: "menu" });
                 }}
                 className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted"
               >
@@ -73,10 +96,11 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
           );
         })}
       </ul>
-      <p className="px-5 pt-3 text-meta text-muted">원본이 바뀌면 새벽에 먹킷에도 반영해요</p>
+      <p className="px-5 pt-3 text-meta text-muted">새로 고침을 누르면 바로 원본을 확인해요. 새벽에도 자동으로 반영해요</p>
       {open && (
-        <DisconnectSheet
-          row={open}
+        <SourceSheet
+          row={open.row}
+          initialStep={open.step}
           onClose={close}
           onDone={(m) => {
             setOpen(null);
@@ -95,13 +119,14 @@ function useNow(): number {
   return now;
 }
 
-type Step = "menu" | "choose" | "confirm";
+type Step = "menu" | "setup" | "choose" | "confirm";
 // 장소까지 지우면 지워질 곳 수 — 세는 중(null) · 실패(error)
 type Count = number | null | "error";
 
-function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClose: () => void; onDone: (message: string) => void }) {
+function SourceSheet({ row, initialStep, onClose, onDone }: { row: ImportSourceRow; initialStep: Step; onClose: () => void; onDone: (message: string) => void }) {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("menu");
+  const [step, setStep] = useState<Step>(initialStep);
+  const [tier, setTier] = useState<ImportTier>(row.suggestedTier ?? "want_to_go");
   const [wipe, setWipe] = useState(false);
   const [count, setCount] = useState<Count>(null);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +160,7 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
   const refresh = () =>
     start(async () => {
       setError(null);
-      const res = await refreshImportSource(row.source, row.sourceListId);
+      const res = await refreshImportSource(row.source, row.sourceListId, row.sync ? undefined : tier);
       if (res.error) return setError(res.error);
       router.refresh();
       onDone(res.done ?? "");
@@ -155,7 +180,7 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label={step === "confirm" ? "장소 지우기 확인" : step === "choose" ? "연결 끊기" : `${name} 관리`}
+        aria-label={step === "confirm" ? "장소 지우기 확인" : step === "choose" ? "연결 끊기" : step === "setup" ? "처음 새로 고치기" : `${name} 관리`}
         onClick={(e) => e.stopPropagation()}
         className="flex w-full max-w-[480px] flex-col gap-3 rounded-t-[20px] bg-white px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] outline-none"
       >
@@ -169,11 +194,14 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
               </p>
             </div>
             <div className="flex flex-col">
-              {/* 자동 새로 고침 기록이 없는 원본(예전에 등급 리스트로 가져온 것)은 방식을 몰라 다시 가져오기로 */}
-              {row.sync && (
-                <button type="button" disabled={pending} onClick={refresh} className="flex h-12 items-center text-body text-ink disabled:opacity-50">
-                  {pending ? "원본을 확인하는 중…" : "지금 새로 고치기"}
-                </button>
+              <button type="button" disabled={pending} onClick={() => (row.sync ? refresh() : setStep("setup"))} className="flex h-12 items-center text-body text-ink disabled:opacity-50">
+                {pending ? "원본을 확인하는 중…" : "지금 새로 고치기"}
+              </button>
+              {/* 등급을 매겨 가져와 먹킷 리스트가 없는 원본 — 원하면 리스트로 */}
+              {!row.listId && (
+                <Link href={`/lists/new?from=${row.source}:${encodeURIComponent(row.sourceListId)}`} className="flex h-12 items-center text-body text-ink">
+                  리스트로 만들기
+                </Link>
               )}
               <button type="button" disabled={pending} onClick={() => setStep("choose")} className="flex h-12 items-center text-body text-ink disabled:opacity-50">
                 연결 끊기
@@ -186,6 +214,30 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
             )}
             <button type="button" disabled={pending} onClick={onClose} className="mt-1 h-12 rounded-btn-m bg-surface text-body font-medium text-ink">
               닫기
+            </button>
+          </>
+        ) : step === "setup" ? (
+          <>
+            <div className="flex flex-col gap-1 pt-1">
+              <h2 className="text-[18px] leading-snug font-bold">새로 담긴 곳은 어떤 등급으로 저장할까요?</h2>
+              <p className="text-meta text-muted">한 번만 정하면 다음부터 새벽에도 자동으로 새로 고쳐요</p>
+            </div>
+            <fieldset className="flex flex-col gap-2">
+              <legend className="sr-only">새 곳에 줄 등급</legend>
+              {IMPORT_TIERS.map((t) => (
+                <Option key={t} checked={tier === t} onPick={() => setTier(t)} title={IMPORT_TIER_LABEL[t]} desc={t === row.suggestedTier ? "이 원본에 가장 많이 준 등급" : ""} />
+              ))}
+            </fieldset>
+            {error && (
+              <p role="alert" className="text-meta text-danger">
+                {error}
+              </p>
+            )}
+            <button type="button" disabled={pending} onClick={refresh} className="mt-1 h-btn-l rounded-btn-m bg-ink text-body font-bold text-white disabled:opacity-40">
+              {pending ? "원본을 확인하는 중…" : "새로 고치기"}
+            </button>
+            <button type="button" disabled={pending} onClick={onClose} className="h-11 text-body text-muted">
+              취소
             </button>
           </>
         ) : step === "choose" ? (
@@ -269,7 +321,7 @@ function Option({ checked, disabled = false, onPick, title, desc }: { checked: b
       <span aria-hidden="true" className={`mt-0.5 size-5 shrink-0 rounded-full ${checked ? "border-[6px] border-ink" : "border-2 border-line-strong"}`} />
       <span className="flex flex-col gap-0.5">
         <span className="text-body font-bold">{title}</span>
-        <span className="text-meta leading-relaxed text-muted">{desc}</span>
+        {desc && <span className="text-meta leading-relaxed text-muted">{desc}</span>}
       </span>
     </label>
   );

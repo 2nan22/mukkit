@@ -47,7 +47,8 @@ function readDismissed(): boolean {
 }
 
 // 알림 켜기 — strip: 약속 화면 · 목록의 한 줄 안내(켜져 있거나 닫으면 숨김) · row: 설정 › 알림(끄기 포함)
-export function PushToggle({ variant, text }: { variant: "strip" | "row"; text?: string }) {
+// onState: 설정 › 알림에서 이 기기 알림이 켜졌는지 알려 종류 스위치를 흐리게
+export function PushToggle({ variant, text, onState }: { variant: "strip" | "row"; text?: string; onState?: (on: boolean) => void }) {
   const [state, setState] = useState<State>("loading");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +66,10 @@ export function PushToggle({ variant, text }: { variant: "strip" | "row"; text?:
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (state !== "loading") onState?.(state === "on");
+  }, [state, onState]);
 
   useEffect(() => {
     if (!notice) return;
