@@ -1,0 +1,187 @@
+<title>먹킷 레벨 설계안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 한 단: 원칙 → 캐릭터 3안 → 점수표 → 레벨 곡선 → 막는 장치 → 정할 것 → 만드는 순서 */
+:root {
+  --bg: #fbfaf8; --fg: #1c1a17; --muted: #6b655d; --line: #e6e1da; --card: #ffffff; --tint: #f6efe8;
+  --brand: #c8410b; --three: #b42330; --ok: #2d7a4f;
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #161412; --fg: #ece7e0; --muted: #a39b90; --line: #2f2b27; --card: #1f1c19; --tint: #2a241f;
+  --brand: #f0763d; --three: #f06d76; --ok: #6cc796; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #161412; --fg: #ece7e0; --muted: #a39b90; --line: #2f2b27; --card: #1f1c19; --tint: #2a241f;
+  --brand: #f0763d; --three: #f06d76; --ok: #6cc796; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.65 var(--sans); }
+.wrap { max-width: 920px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 72px; }
+h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.02em; text-wrap: balance; }
+h1 small { display: block; font-size: 13px; color: var(--brand); letter-spacing: 0.04em; }
+h2 { font-size: 20px; margin: 44px 0 12px; text-wrap: balance; }
+p { max-width: 68ch; }
+.sub { color: var(--muted); }
+.rules { display: grid; gap: 10px; padding: 0; list-style: none; }
+.rules li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+.rules b { display: block; }
+.chars { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.char { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-width: 0; }
+.char h3 { margin: 0 0 4px; font-size: 16px; }
+.stages { display: flex; gap: 6px; align-items: flex-end; margin: 12px 0 8px; overflow-x: auto; }
+.stages figure { margin: 0; text-align: center; font-size: 11px; color: var(--muted); flex: 1 0 52px; }
+.stages svg { display: block; margin: 0 auto 4px; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: 0.03em; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.no { color: var(--muted); }
+.pill { display: inline-block; font-size: 11px; border-radius: 99px; padding: 1px 8px; border: 1px solid var(--line); color: var(--muted); }
+.pill.cap { color: var(--brand); border-color: var(--brand); }
+.curve { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.curve svg { width: 100%; height: auto; display: block; }
+.ask { display: grid; gap: 12px; }
+.ask div { background: var(--tint); border-radius: 12px; padding: 14px 16px; }
+.ask b { display: block; margin-bottom: 2px; }
+.mock { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; max-width: 360px; display: flex; gap: 14px; align-items: center; }
+.bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin: 6px 0 4px; }
+.bar i { display: block; height: 100%; width: 62%; background: var(--fg); }
+.src { font-size: 13px; color: var(--muted); }
+.src a { color: inherit; }
+ol.steps { padding-left: 20px; } ol.steps li { margin: 6px 0; }
+</style>
+<div class="wrap">
+<h1><small>세션 63 · 설계안 · 아직 만들지 않음</small>먹킷 레벨 · 키우는 캐릭터</h1>
+<p class="sub">평가와 사람 관계에 따라 캐릭터가 자라는 장치예요. 먹킷은 리뷰 이벤트로 오염된 평가를 고치려고 시작했어요. 그래서 '많이 쓸수록 오르는' 레벨이 같은 오염을 다시 만들지 않게 설계했어요.</p>
+
+<h2>지킬 원칙</h2>
+<ul class="rules">
+  <li><b>양보다 기록의 질 · 넓이</b>평가 개수는 많아질수록 점수가 줄어요. 사진 · 한 줄 평가 · 처음 가 본 동네 · 업종에 더 줘요.</li>
+  <li><b>남의 반응은 사람 수로, 한 번씩만</b>같은 사람이 같은 평가에 준 좋아요는 한 번만 세요. 팔로워 수 자체는 점수에 넣지 않아요(사고팔 수 있는 숫자라서).</li>
+  <li><b>점수는 늘 지금 기록에서 다시 계산</b>쌓아 두지 않아요. 평가를 지우거나 신고 3건으로 숨겨지면 점수도 저절로 빠져요. 협찬 표시 평가는 처음부터 0점이에요.</li>
+  <li><b>레벨은 신뢰 점수가 아니에요</b>평가 옆에 레벨을 붙이지 않아요. 레벨이 높다고 평가가 위로 올라가지도 않아요. 비협상 목표(가게 평균 점수 없음)와 같은 이유예요.</li>
+  <li><b>벌주지 않아요</b>연속 기록(스트릭)도, 쉬면 깎이는 것도 없어요. 오래 안 오면 캐릭터가 낮잠을 자고, 다시 오면 깨요.</li>
+</ul>
+
+<h2>캐릭터 3안</h2>
+<p class="sub">세 안 모두 먹킷이 직접 그린 원본 캐릭터예요. 포켓몬 같은 남의 캐릭터를 쓰지 않아요(저작권). 5단계로 자라고, 4단계부터는 내가 많이 평가한 업종에 따라 모습이 갈라져요.</p>
+<div class="chars">
+  <div class="char">
+    <h3>A · 숟가락 친구 '숟이'</h3>
+    <span class="pill">앱 아이콘과 이어짐</span>
+    <div class="stages" aria-label="숟이 다섯 단계">
+      <figure><svg width="40" height="56" viewBox="0 0 40 56"><ellipse cx="20" cy="16" rx="11" ry="13" fill="#e9ded2"/><rect x="18" y="27" width="4" height="22" rx="2" fill="#e9ded2"/></svg>빈 숟가락</figure>
+      <figure><svg width="40" height="56" viewBox="0 0 40 56"><ellipse cx="20" cy="16" rx="11" ry="13" fill="#c8410b"/><circle cx="16" cy="15" r="1.8" fill="#fff"/><circle cx="24" cy="15" r="1.8" fill="#fff"/><rect x="18" y="27" width="4" height="22" rx="2" fill="#c8410b"/></svg>눈 뜸</figure>
+      <figure><svg width="44" height="58" viewBox="0 0 44 58"><ellipse cx="22" cy="18" rx="12" ry="14" fill="#c8410b"/><circle cx="17" cy="17" r="2" fill="#fff"/><circle cx="27" cy="17" r="2" fill="#fff"/><path d="M17 23q5 4 10 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="20" y="30" width="4" height="22" rx="2" fill="#c8410b"/><path d="M10 40l10-4M34 40l-10-4" stroke="#c8410b" stroke-width="3" stroke-linecap="round"/></svg>팔이 생김</figure>
+      <figure><svg width="46" height="60" viewBox="0 0 46 60"><path d="M9 10h28" stroke="#17181c" stroke-width="3" stroke-linecap="round"/><ellipse cx="23" cy="21" rx="12" ry="14" fill="#c8410b"/><circle cx="18" cy="20" r="2" fill="#fff"/><circle cx="28" cy="20" r="2" fill="#fff"/><path d="M18 26q5 4 10 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="21" y="33" width="4" height="22" rx="2" fill="#c8410b"/></svg>모자 (업종별)</figure>
+      <figure><svg width="50" height="62" viewBox="0 0 50 62"><circle cx="25" cy="54" r="7" fill="#f3e6d8"/><path d="M11 12h28" stroke="#17181c" stroke-width="3" stroke-linecap="round"/><ellipse cx="25" cy="23" rx="12" ry="14" fill="#b42330"/><circle cx="20" cy="22" r="2" fill="#fff"/><circle cx="30" cy="22" r="2" fill="#fff"/><path d="M20 28q5 4 10 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="23" y="35" width="4" height="16" rx="2" fill="#b42330"/></svg>접시 위 3숟가락</figure>
+    </div>
+    <p class="src">장점: 브랜드 심볼(접시 위 수저)과 바로 이어져요. 단점: 모습이 단순해 갈래를 만들 여지가 적어요.</p>
+  </div>
+  <div class="char">
+    <h3>B · 밥알 '쌀톨'</h3>
+    <span class="pill">귀여움 · 갈래 많음</span>
+    <div class="stages" aria-label="쌀톨 다섯 단계">
+      <figure><svg width="40" height="56" viewBox="0 0 40 56"><ellipse cx="20" cy="38" rx="7" ry="10" fill="#f3ece2" stroke="#d8ccbd"/></svg>쌀 한 톨</figure>
+      <figure><svg width="40" height="56" viewBox="0 0 40 56"><ellipse cx="20" cy="36" rx="9" ry="12" fill="#fffaf2" stroke="#d8ccbd"/><circle cx="17" cy="34" r="1.6" fill="#17181c"/><circle cx="23" cy="34" r="1.6" fill="#17181c"/></svg>눈 뜸</figure>
+      <figure><svg width="44" height="58" viewBox="0 0 44 58"><path d="M8 50q14-30 28 0z" fill="#fffaf2" stroke="#d8ccbd"/><circle cx="18" cy="40" r="1.8" fill="#17181c"/><circle cx="26" cy="40" r="1.8" fill="#17181c"/><path d="M19 45q3 2 6 0" stroke="#c8410b" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>주먹밥</figure>
+      <figure><svg width="46" height="60" viewBox="0 0 46 60"><path d="M6 48h34l-4 9H10z" fill="#c8410b"/><path d="M9 48q14-34 28 0z" fill="#fffaf2" stroke="#d8ccbd"/><circle cx="19" cy="38" r="1.8" fill="#17181c"/><circle cx="27" cy="38" r="1.8" fill="#17181c"/></svg>그릇에 담김</figure>
+      <figure><svg width="50" height="62" viewBox="0 0 50 62"><path d="M5 46h40l-5 11H10z" fill="#b42330"/><path d="M9 46q16-38 32 0z" fill="#fffaf2" stroke="#d8ccbd"/><circle cx="20" cy="35" r="1.8" fill="#17181c"/><circle cx="30" cy="35" r="1.8" fill="#17181c"/><path d="M14 20l6 6M36 20l-6 6" stroke="#17181c" stroke-width="2" stroke-linecap="round"/></svg>한 상 (업종별)</figure>
+    </div>
+    <p class="src">장점: 업종마다 갈래(국밥 그릇 · 면 · 빵 · 커피잔)를 그리기 쉬워요. 단점: 수저 심볼과는 따로 놀아요.</p>
+  </div>
+  <div class="char">
+    <h3>C · 지도를 채우는 '깃발 탐험대'</h3>
+    <span class="pill">캐릭터보다 지도</span>
+    <div class="stages" aria-label="깃발 탐험대 다섯 단계">
+      <figure><svg width="40" height="56" viewBox="0 0 40 56"><path d="M14 50V18" stroke="#17181c" stroke-width="2.4"/><path d="M14 18h14l-4 5 4 5H14" fill="#e9ded2"/></svg>빈 깃발</figure>
+      <figure><svg width="40" height="56" viewBox="0 0 40 56"><path d="M14 50V18" stroke="#17181c" stroke-width="2.4"/><path d="M14 18h14l-4 5 4 5H14" fill="#c8410b"/></svg>첫 동네</figure>
+      <figure><svg width="44" height="58" viewBox="0 0 44 58"><path d="M10 50V22M26 50V16" stroke="#17181c" stroke-width="2.4"/><path d="M10 22h10l-3 4 3 4H10M26 16h12l-3 4 3 4H26" fill="#c8410b"/></svg>세 동네</figure>
+      <figure><svg width="46" height="60" viewBox="0 0 46 60"><path d="M6 52h34" stroke="#d8ccbd" stroke-width="6" stroke-linecap="round"/><path d="M10 50V24M23 50V16M36 50V26" stroke="#17181c" stroke-width="2.2"/><path d="M10 24h8l-2 3 2 3h-8M23 16h10l-3 4 3 4H23M36 26h7l-2 3 2 3h-7" fill="#c8410b"/></svg>골목 지도</figure>
+      <figure><svg width="50" height="62" viewBox="0 0 50 62"><circle cx="25" cy="34" r="20" fill="#f3e6d8"/><path d="M17 40V24M30 44V20" stroke="#17181c" stroke-width="2.2"/><path d="M17 24h8l-2 3 2 3h-8M30 20h10l-3 4 3 4H30" fill="#b42330"/></svg>동네 지도 완성</figure>
+    </div>
+    <p class="src">장점: 이미 있는 '내 지도'를 키우는 느낌이라 새 그림이 적어요. 단점: '기르는' 감정은 약해요.</p>
+  </div>
+</div>
+
+<h2>점수표 (안)</h2>
+<p class="sub">모두 지금 남아 있는 기록에서 하루에 한 번이 아니라 볼 때마다 다시 계산해요. 그래서 지우거나 숨겨지면 바로 빠져요.</p>
+<div class="tbl"><table>
+<thead><tr><th>무엇</th><th>점수</th><th>상한 · 줄어듦</th><th>왜</th></tr></thead>
+<tbody>
+<tr><td>평가 (3 · 2 · 1숟가락 · 추천 안 함)</td><td class="num">10점</td><td><span class="pill cap">50개까지 10점 · 그 뒤 3점</span></td><td>많이 쓰는 사람을 막진 않되 개수 경쟁을 줄여요</td></tr>
+<tr><td>한 줄 평가 20자 이상</td><td class="num">+5</td><td>평가당 한 번</td><td>이유가 있는 평가가 남에게 도움이 돼요</td></tr>
+<tr><td>직접 찍은 사진 · 영상</td><td class="num">+5</td><td>평가당 한 번</td><td>다녀온 증거에 가까워요</td></tr>
+<tr><td>처음 평가한 동네(구)</td><td class="num">+20</td><td>동네당 한 번</td><td>넓게 다니는 기록 — 진화 갈래 재료</td></tr>
+<tr><td>처음 평가한 세부 업종(37가지)</td><td class="num">+15</td><td>업종당 한 번</td><td>한 곳만 도는 것보다 다양함을 보상</td></tr>
+<tr><td>나만의 맛집 순위 정하기</td><td class="num">+10</td><td>3숟가락 순위를 처음 정할 때 한 번 · 10위까지</td><td>3숟가락을 아껴 쓰게</td></tr>
+<tr><td>받은 좋아요</td><td class="num">+2</td><td>사람 · 평가마다 한 번 · 평가당 20점까지</td><td>남이 읽고 도움 받은 신호</td></tr>
+<tr><td>내 공개 리스트를 남이 저장</td><td class="num">+10</td><td>사람 · 리스트마다 한 번</td><td>남이 실제로 쓰는 기록</td></tr>
+<tr><td>함께 방문 태그를 상대가 수락</td><td class="num">+10</td><td>방문마다 한 번</td><td>같이 간 사람이 인정한 기록</td></tr>
+<tr class="no"><td>협찬 · 이벤트 표시 평가</td><td class="num">0</td><td>—</td><td>통계에서 빼는 결정과 같게</td></tr>
+<tr class="no"><td>신고 3건으로 숨겨진 평가 · 댓글</td><td class="num">0</td><td>숨김이 풀리면 돌아옴</td><td>점수를 위한 평가를 막아요</td></tr>
+<tr class="no"><td>가져오기 · 평가 전 · 가고 싶은 곳</td><td class="num">0</td><td>첫 가져오기만 +30 한 번</td><td>저장만 늘리는 것은 성장이 아니에요</td></tr>
+<tr class="no"><td>팔로워 · 팔로잉 수</td><td class="num">0</td><td>프로필에 숫자만</td><td>맞팔 품앗이로 부풀리기 쉬워요</td></tr>
+</tbody></table></div>
+
+<h2>레벨 곡선 (안)</h2>
+<div class="curve">
+<p class="sub" style="margin-top:0">레벨 L 까지 필요한 누적 점수 = 25 × L × (L − 1). 레벨 1 ~ 30, 6레벨마다 캐릭터 단계가 바뀌어요.</p>
+<svg viewBox="0 0 640 230" role="img" aria-label="레벨별 누적 점수 곡선">
+  <g font-size="11" fill="currentColor" style="color:var(--muted)">
+    <line x1="48" y1="190" x2="620" y2="190" stroke="var(--line)"/>
+    <line x1="48" y1="20" x2="48" y2="190" stroke="var(--line)"/>
+    <text x="40" y="194" text-anchor="end">0</text>
+    <text x="40" y="137" text-anchor="end">7,500</text>
+    <text x="40" y="81" text-anchor="end">15,000</text>
+    <text x="40" y="25" text-anchor="end">21,750</text>
+    <line x1="48" y1="134" x2="620" y2="134" stroke="var(--line)" stroke-dasharray="3 4"/>
+    <line x1="48" y1="78" x2="620" y2="78" stroke="var(--line)" stroke-dasharray="3 4"/>
+    <text x="48" y="208">1</text><text x="225" y="208" text-anchor="middle">10</text><text x="422" y="208" text-anchor="middle">20</text><text x="620" y="208" text-anchor="end">30</text>
+    <text x="334" y="224" text-anchor="middle">레벨</text>
+  </g>
+  <polyline fill="none" stroke="var(--brand)" stroke-width="2.5" points="48,190 68,190 87,189 107,188 127,186 146,184 166,182 186,180 205,177 225,173 245,170 264,166 284,161 304,156 323,151 343,146 363,140 382,134 402,127 422,120 441,113 461,105 481,97 500,89 520,80 540,71 559,61 579,51 599,41 620,30"/>
+  <circle cx="225" cy="173" r="4" fill="var(--brand)"/><text x="232" y="168" font-size="11" fill="var(--fg)">Lv10 2,250점</text>
+  <circle cx="422" cy="120" r="4" fill="var(--brand)"/><text x="429" y="115" font-size="11" fill="var(--fg)">Lv20 9,500점</text>
+</svg>
+<p class="src">예: 평가 100곳(절반은 사진 · 한 줄 평가) · 동네 12곳 · 업종 15가지면 약 2,300점 → 레벨 10, 캐릭터 2단계 끝. 1년쯤 꾸준히 쓰면 레벨 20 근처. 수치는 실데이터로 맞춰요.</p>
+</div>
+
+<h2>보이는 곳 (안)</h2>
+<div class="mock">
+  <svg width="56" height="64" viewBox="0 0 44 58" aria-hidden="true"><ellipse cx="22" cy="18" rx="12" ry="14" fill="#c8410b"/><circle cx="17" cy="17" r="2" fill="#fff"/><circle cx="27" cy="17" r="2" fill="#fff"/><path d="M17 23q5 4 10 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="20" y="30" width="4" height="22" rx="2" fill="#c8410b"/><path d="M10 40l10-4M34 40l-10-4" stroke="#c8410b" stroke-width="3" stroke-linecap="round"/></svg>
+  <div style="flex:1;min-width:0">
+    <b>숟이 · 레벨 9</b>
+    <div class="bar"><i></i></div>
+    <span class="src">다음 레벨까지 사진 있는 평가 3곳쯤 · 국물파로 자라는 중</span>
+  </div>
+</div>
+<p class="sub">MY 맨 위 한 장. 평가를 저장하면 '+15' 같은 작은 알림, 레벨이 오르면 한 번 축하 시트. 남에게는 기본으로 안 보여요.</p>
+
+<h2>정해 주실 것</h2>
+<div class="ask">
+  <div><b>1. 캐릭터</b>A 숟이 · B 쌀톨 · C 깃발 탐험대 중 하나 (또는 이름만 바꿔서)</div>
+  <div><b>2. 남에게 보이기</b>나만 보기(추천) / 프로필에 캐릭터 단계만 / 레벨 숫자까지</div>
+  <div><b>3. 팔로워 반영</b>0점(추천) / 첫 10명까지만 작게</div>
+  <div><b>4. 진화 갈래</b>4단계부터 가장 많이 평가한 업종으로 갈라짐(추천) / 갈래 없이 한 줄</div>
+</div>
+
+<h2>만드는 순서 (정하시면)</h2>
+<ol class="steps">
+  <li>DB 함수 하나로 지금 기록에서 점수 · 레벨 · 다음 할 일을 계산 + 점수표 시험</li>
+  <li>MY 맨 위 캐릭터 카드 · 레벨 막대 · 다음 할 일 한 줄</li>
+  <li>캐릭터 그림 5단계 × 갈래 (평면 그림, 업종 그림처럼 직접 그림)</li>
+  <li>평가 저장 뒤 점수 알림 · 레벨 오름 시트 · 실데이터로 곡선 맞추기</li>
+</ol>
+
+<h2>참고한 서비스</h2>
+<ul class="src">
+  <li>Google 지역 가이드 — 리뷰 10 · 사진 5 · 별점 1점, 레벨 10까지 0 ~ 100,000점, 위반 기여는 점수 차감 · <a href="https://support.google.com/maps/answer/6225851?hl=en">도움말</a> · 점수를 위한 리뷰 비판 <a href="https://searchengineland.com/good-guides-gone-bad-how-googles-local-guides-program-fails-businesses-and-consumers-326724">Search Engine Land</a></li>
+  <li>Yelp Elite — 정량 기준 없는 해마다 심사, 업주 관계자 제외 · <a href="https://www.yelp-support.com/article/How-do-I-join-the-Yelp-Elite-Squad?l=en_US">Yelp</a> · 탈락 뒤에도 남는 신뢰 <a href="https://management.buffalo.edu/about/news.host.html/content/shared/mgt/news/why-demoted-yelp-reviewers-still-matter.detail.html">버펄로대</a></li>
+  <li>카카오맵 — 레벨 1 ~ 100, 활동 성향 캐릭터 8종 · <a href="https://www.kakaocorp.com/page/detail/9948">카카오</a></li>
+  <li>Duolingo — 주간 리그 · 스트릭 동결 · <a href="https://blog.duolingo.com/duolingo-leagues-leaderboards/">블로그</a></li>
+  <li>Pokémon GO — 레벨 80, 높은 레벨은 과제 필요 · <a href="https://pokemongo.com/en/news/pgo-leveling-update-details-2025">공지</a></li>
+  <li>PokeTokenBar — 맥 메뉴 막대, LLM 토큰으로 알 부화 · 진화 · 도감 · <a href="https://github.com/chattymin/PokeTokenBar/wiki">위키</a></li>
+  <li>Finch — 놓쳐도 벌하지 않는 자기관리 펫 · <a href="https://www.engadget.com/apps/this-self-care-virtual-pet-is-helping-me-get-my-act-together-160027169.html">Engadget</a></li>
+</ul>
+</div>
