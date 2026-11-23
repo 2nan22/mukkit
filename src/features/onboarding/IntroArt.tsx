@@ -1,4 +1,5 @@
 import { SourceMark } from "@/components/brand/BrandLogo";
+import { BrandSymbol } from "@/components/brand/Wordmark";
 import { Avatar } from "@/components/ui/Avatar";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
@@ -118,11 +119,7 @@ function PlaceHead() {
   );
 }
 
-const Star = () => (
-  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2l2.9 6.9 7.1.6-5.4 4.7 1.7 7.3L12 17.8 5.7 21.5l1.7-7.3L2 9.5l7.1-.6z" />
-  </svg>
-);
+const Star = () => <BrandSymbol height={11} className="fill-current" />;
 
 const RATE_ROWS: Tier[] = ["three", "two", "one", "notRecommended"];
 
@@ -158,7 +155,7 @@ export function RateArt() {
         <span className="flex size-[26px] items-center justify-center rounded-full border-2 border-white bg-tier-3 text-[12px] font-bold text-white shadow-[0_2px_5px_rgb(0_0_0/0.22)]">3</span>
         <span className="flex flex-col">
           <span className="text-[12px] leading-tight font-bold text-ink">내 지도에 표시</span>
-          <span className="text-[10.5px] leading-snug text-muted">3스타 4곳째</span>
+          <span className="text-[10.5px] leading-snug text-muted">수저 셋 4곳째</span>
         </span>
       </div>
     </>

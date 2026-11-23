@@ -13,7 +13,7 @@ const pretendard = localFont({
 
 export const metadata: Metadata = {
   title: "먹킷",
-  description: "믿을 만한 사람의 평가로 맛집을 고르세요",
+  description: "광고도 별점 평균도 없는, 아는 사람들의 맛집 지도",
 };
 
 export const viewport: Viewport = {

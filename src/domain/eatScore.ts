@@ -19,8 +19,8 @@ export type Scored = Candidate & { score: number; distance: number; reasons: str
 export type CuisineGroup = { cuisine: Cuisine; places: Scored[] };
 
 const MINE: Partial<Record<Tier, { weight: number; reason: string }>> = {
-  three: { weight: 2.5, reason: "내 3스타" },
-  two: { weight: 1.5, reason: "내 2스타" },
+  three: { weight: 2.5, reason: "내 수저 셋" },
+  two: { weight: 1.5, reason: "내 수저 둘" },
   wantToGo: { weight: 2.0, reason: "내가 가고 싶은 곳" },
 };
 const RATER_TIER = { three: 1.0, two: 0.6 } as const;
@@ -48,7 +48,7 @@ export function scoreCandidate(c: Candidate, origin: { lat: number; lng: number 
   if (mine) reasons.push(mine.reason);
   for (const r of ranked.slice(0, 2)) {
     const why = r.followed ? "팔로잉" : r.overlap >= MIN_OVERLAP && (r.similarity ?? 0) >= SIMILAR_ENOUGH ? "취향 비슷" : "";
-    reasons.push(`${r.nickname} ${r.tier === "three" ? "3스타" : "2스타"}${why ? ` · ${why}` : ""}`);
+    reasons.push(`${r.nickname} ${r.tier === "three" ? "수저 셋" : "수저 둘"}${why ? ` · ${why}` : ""}`);
   }
   if (ranked.length > 2) reasons.push(`외 ${ranked.length - 2}명`);
   return { ...c, score, distance, reasons };
@@ -69,7 +69,7 @@ export function groupRecommendations(
     .sort((a, b) => (pref[b.cuisine] ?? 0) - (pref[a.cuisine] ?? 0) || b.places[0].score - a.places[0].score);
 }
 
-// 내 3 · 2스타가 업종마다 얼마나 몰려 있는지 (0~1)
+// 내 3 · 수저 둘이 업종마다 얼마나 몰려 있는지 (0~1)
 export function cuisinePreference(rows: { cuisine: Cuisine; tier: Tier }[]): Partial<Record<Cuisine, number>> {
   const liked = rows.filter((r) => r.tier === "three" || r.tier === "two");
   if (liked.length === 0) return {};

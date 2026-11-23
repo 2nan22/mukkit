@@ -3,9 +3,9 @@
 export const BRAND_NAME = "먹킷";
 
 // 도형에 딱 맞게 잘라 높이 기준으로 그린다 (가로는 약 0.7배)
-export function BrandSymbol({ height = 22 }: { height?: number }) {
+export function BrandSymbol({ height = 22, className = "fill-brand" }: { height?: number; className?: string }) {
   return (
-    <svg height={height} width={Math.round(height * 0.7)} viewBox="220 120 548 780" aria-hidden="true" className="shrink-0 fill-brand">
+    <svg height={height} width={Math.round(height * 0.7)} viewBox="220 120 548 780" aria-hidden="true" className={`shrink-0 ${className}`}>
       <g>
         <path d="M336 470C356 496 372 522 374 554L358 850a42 42 0 0 0 84 0L426 554C428 522 444 496 464 470Z" />
         <ellipse cx="400" cy="312" rx="172" ry="184" />

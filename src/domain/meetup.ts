@@ -49,7 +49,7 @@ export function planAreaShops(
       const byCompanions = c.raters.filter((r) => names.has(r.userId));
       const reasons = byCompanions.length
         ? [
-            `같이 가는 ${byCompanions.map((r) => `${r.nickname}님 ${r.tier === "three" ? "3스타" : "2스타"}`).join(" · ")}`,
+            `같이 가는 ${byCompanions.map((r) => `${r.nickname}님 ${r.tier === "three" ? "수저 셋" : "수저 둘"}`).join(" · ")}`,
             ...s.reasons.filter((r) => !byCompanions.some((x) => r.startsWith(`${x.nickname} `))),
           ]
         : s.reasons;
