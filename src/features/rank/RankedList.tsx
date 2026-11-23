@@ -8,7 +8,7 @@ type Drag = { from: number; to: number; dy: number; h: number };
 const EDGE = 96; // 화면 위 · 아래 이만큼 안에서 끌면 목록이 따라 스크롤
 const SPEED = 10;
 
-// 정한 3스타 목록 — 편집 모드에서는 ≡ 손잡이로 끌어서 순서를 바꾼다
+// 정한 수저 셋 목록 — 편집 모드에서는 ≡ 손잡이로 끌어서 순서를 바꾼다
 // 키보드는 손잡이에서 위 · 아래 화살표. 바뀔 때마다 onMove 로 새 순서를 넘긴다
 export function RankedList({
   ranked,
@@ -159,7 +159,7 @@ export function RankedList({
       <p role="status" className="sr-only">
         {announce}
       </p>
-      <ol aria-label="3스타 순위" className={`flex flex-col ${editing ? "bg-surface" : ""}`}>
+      <ol aria-label="수저 셋 순위" className={`flex flex-col ${editing ? "bg-surface" : ""}`}>
         {ranked.map((p, i) => {
           const dragging = drag?.from === i;
           const r = shownRank(i);

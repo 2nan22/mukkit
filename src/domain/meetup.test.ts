@@ -24,7 +24,7 @@ describe("planAreaShops", () => {
     });
     const shops = planAreaShops([cand("a", "korean"), rated], area, "meal", {}, companions);
     expect(shops[0].placeId).toBe("b");
-    expect(shops[0].reasons[0]).toBe("같이 가는 단골친구님 3스타 · 미식가님 2스타");
+    expect(shops[0].reasons[0]).toBe("같이 가는 단골친구님 수저 셋 · 미식가님 수저 둘");
     expect(shops[0].reasons.filter((r) => r.startsWith("단골친구 ") || r.startsWith("미식가 "))).toHaveLength(0);
   });
 
