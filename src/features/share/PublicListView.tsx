@@ -69,7 +69,7 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
           </button>
         </div>
       )}
-      {list.places.length > 1 && <div className="px-5 pt-3">{bar}</div>}
+      {list.places.length > 1 && <div className="px-5 pt-3">{bar()}</div>}
       <ul className="flex flex-col px-5 pt-2">
         {shown.map((p) => (
           <li key={p.placeId}>
