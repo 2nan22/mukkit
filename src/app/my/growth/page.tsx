@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { ListSkeleton } from "@/components/ui/Skeleton";
-import { Character, CHARACTER_NAME } from "@/components/growth/Character";
+import { Character, CHARACTER_INFO, isCharacterId } from "@/components/growth/Character";
+import { CharacterPicker } from "@/features/growth/CharacterPicker";
 import { BRANCH_LABEL, branchOf, growthItems, growthTotal, ITEM_LABEL, levelOf, nextHint, POINTS } from "@/domain/growth";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getMyGrowth } from "@/features/growth/growth";
@@ -44,12 +45,13 @@ async function Growth() {
   const total = growthTotal(counts);
   const lv = levelOf(total);
   const branch = branchOf(counts.topKind, lv.stage);
+  const id = isCharacterId(counts.character) ? counts.character : null;
   return (
     <>
       <section className="flex flex-col items-center gap-2 pt-4 text-center">
-        <Character stage={lv.stage} branch={branch} size={120} />
+        {id && <Character id={id} stage={lv.stage} branch={branch} size={128} />}
         <span className="text-title font-bold">
-          {CHARACTER_NAME} <span className="text-ink-2">Lv.{lv.level}</span>
+          {id ? CHARACTER_INFO[id].name : "내 레벨"} <span className="text-ink-2">Lv.{lv.level}</span>
         </span>
         {branch && <span className="text-meta font-semibold text-ink-2">{BRANCH_LABEL[branch]}</span>}
         <span className="text-meta text-muted">{lv.max ? "최고 레벨이에요" : `다음 레벨까지 ${lv.need - lv.into}점`}</span>
@@ -68,6 +70,12 @@ async function Growth() {
               </li>
             ))}
         </ul>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-body font-bold">{id ? "캐릭터 바꾸기" : "키울 캐릭터 고르기"}</h2>
+        <CharacterPicker current={id} stage={lv.stage} />
+        {id && <p className="text-caption text-muted">바꿔도 레벨과 점수는 그대로예요.</p>}
       </section>
 
       <section className="flex flex-col gap-1 rounded-[16px] bg-surface p-4">

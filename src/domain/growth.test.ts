@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { branchOf, growthTotal, levelOf, nextHint, pointsForLevel, type GrowthCounts } from "./growth";
 
-const none: GrowthCounts = { ratings: 0, reviews: 0, media: 0, areas: 0, kinds: 0, ranked: 0, likesPoints: 0, listSaves: 0, visits: 0, imported: false, topKind: null };
+const none: GrowthCounts = { ratings: 0, reviews: 0, media: 0, areas: 0, kinds: 0, ranked: 0, likesPoints: 0, listSaves: 0, visits: 0, imported: false, topKind: null, character: null };
 
 describe("growthTotal", () => {
   it("평가는 50곳까지 10점, 그 뒤 3점", () => {

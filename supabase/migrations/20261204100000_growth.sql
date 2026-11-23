@@ -1,10 +1,14 @@
 -- 키우는 캐릭터 · 레벨 (63) — 점수는 쌓아 두지 않고 지금 남은 기록에서 다시 계산한다
 -- 평가를 지우거나 신고로 숨겨지면 저절로 빠지고, 협찬 표시 평가는 처음부터 세지 않는다
 -- 점수 수치는 src/domain/growth.ts 와 같다 (바꾸면 둘 다)
+
+-- 사용자가 고른 캐릭터 — 공개 칸이 아니라(20261203120000 의 열 권한) 본인만 my_growth 로 읽는다
+alter table public.profiles add column growth_character text check (growth_character in ('sangu', 'sobok', 'dudu'));
+
 create function public.my_growth()
 returns table(
   ratings int, reviews int, media int, areas int, kinds int, ranked int,
-  likes_points int, list_saves int, visits int, imported boolean, top_kind text
+  likes_points int, list_saves int, visits int, imported boolean, top_kind text, growth_character text
 )
 language sql stable security definer set search_path = '' as $$
   with me as (select (select auth.uid()) as id),
@@ -39,7 +43,8 @@ language sql stable security definer set search_path = '' as $$
     (select count(distinct v.id)::int from public.visits v join public.visit_members vm on vm.visit_id = v.id
        where v.created_by = (select id from me) and vm.user_id is not null and vm.user_id <> (select id from me) and vm.status = 'accepted'),
     exists (select 1 from public.imported_items i where i.user_id = (select id from me)),
-    (select food_kind from rated where food_kind is not null group by food_kind order by count(*) desc, food_kind limit 1)
+    (select food_kind from rated where food_kind is not null group by food_kind order by count(*) desc, food_kind limit 1),
+    (select p.growth_character from public.profiles p where p.id = (select id from me))
 $$;
 revoke all on function public.my_growth() from public, anon;
 grant execute on function public.my_growth() to authenticated;

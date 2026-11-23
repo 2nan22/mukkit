@@ -13,6 +13,7 @@ export type GrowthCounts = {
   visits: number;
   imported: boolean;
   topKind: string | null;
+  character: string | null;
 };
 
 export const POINTS = {
