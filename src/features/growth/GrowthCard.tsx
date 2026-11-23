@@ -3,7 +3,7 @@ import { Character, CHARACTER_INFO, isCharacterId } from "@/components/growth/Ch
 import { branchOf, growthTotal, levelOf, nextHint, type GrowthCounts } from "@/domain/growth";
 import { CharacterPicker } from "./CharacterPicker";
 
-// MY 맨 위 — 고른 캐릭터 · 레벨 · 다음 레벨까지 한 줄. 아직 안 골랐으면 고르기부터. 나만 본다
+// 내 정보 맨 위 — 고른 캐릭터 · 레벨 · 다음 레벨까지 한 줄. 아직 안 골랐으면 고르기부터. 나만 본다
 export function GrowthCard({ counts }: { counts: GrowthCounts }) {
   const lv = levelOf(growthTotal(counts));
   if (!isCharacterId(counts.character)) {
