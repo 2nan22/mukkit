@@ -7,15 +7,15 @@ import { getThreeRanking } from "@/features/rank/rank";
 import { RankBoard } from "@/features/rank/RankBoard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "3숟가락 순위" };
+export const metadata = { title: "나만의 맛집 순위" };
 
 // 내 3숟가락 안 순위 — 나만 본다
 export default function RankPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <AppHeader kind="back" title="내 3숟가락 순위" fallback="/" />
+      <AppHeader kind="back" title="나만의 맛집 순위" fallback="/" />
       <main className="flex flex-1 flex-col">
-        <p className="px-5 pt-1 text-meta text-muted">나만 보는 순위예요.</p>
+        <p className="px-5 pt-1 text-meta text-muted">3숟가락을 준 곳끼리 매긴 순위예요. 나만 봐요.</p>
         <Suspense fallback={<ListSkeleton />}>
           <Board />
         </Suspense>
