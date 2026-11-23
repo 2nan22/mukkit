@@ -90,7 +90,7 @@ export class KakaoFolderSource implements PlaceSource {
       if (!location) throw new ImportError("INVALID_LINK", "단축 링크가 폴더로 연결되지 않습니다");
       url = new URL(location, url);
     }
-    const folderId = url.hostname === KAKAO_FOLDER.mapHost ? url.searchParams.get("folderid") : null;
+    const folderId = url.hostname === KAKAO_FOLDER.mapHost ? folderIdOf(url) : null;
     if (!folderId || !FOLDER_ID.test(folderId)) {
       throw new ImportError("INVALID_LINK", "카카오맵 즐겨찾기 폴더의 공유 링크가 아닙니다");
     }
@@ -178,4 +178,13 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
   });
   await Promise.all(workers);
   return out;
+}
+
+// 예전 공유: ?folderid=… · 2026-11 부터 앱 공유: ?kakaomapScheme=open?page=bookmark&folderid=… (앱 열기 주소 안에 한 번 더)
+function folderIdOf(url: URL): string | null {
+  const direct = url.searchParams.get("folderid");
+  if (direct) return direct;
+  const scheme = url.searchParams.get("kakaomapScheme");
+  const query = scheme?.split("?")[1];
+  return query ? new URLSearchParams(query).get("folderid") : null;
 }

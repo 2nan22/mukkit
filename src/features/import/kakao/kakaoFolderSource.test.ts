@@ -29,6 +29,8 @@ describe("KakaoFolderSource.resolveFolderId", () => {
     );
     await expect(source.resolveFolderId("https://map.kakao.com/?folderid=1000001&page=bookmark")).resolves.toBe("1000001");
     await expect(source.resolveFolderId("1000001")).resolves.toBe("1000001");
+    // 2026-11 앱 공유 — 앱 열기 주소 안에 folderid
+    await expect(source.resolveFolderId("https://map.kakao.com/?kakaomapScheme=open%3Fpage%3Dbookmark%26folderid%3D19348571")).resolves.toBe("19348571");
     await expect(source.resolveFolderId("https://kko.to/AbCd")).resolves.toBe("1000001");
   });
 
