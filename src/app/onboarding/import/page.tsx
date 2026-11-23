@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { getMyProfileFlags } from "@/features/profile/flags";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -26,7 +27,7 @@ export default function OnboardingImportPage({ searchParams }: PageProps<"/onboa
         </h1>
         <p className="text-body leading-normal text-ink-2">네이버 지도 · 카카오맵 리스트를 링크로 가져오면 첫 화면부터 내 지도가 채워져요.</p>
       </div>
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <Gate searchParams={searchParams} />
       </Suspense>
     </main>

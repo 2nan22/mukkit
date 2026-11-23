@@ -88,3 +88,166 @@ body {
   word-break: keep-all;
   overflow-wrap: break-word;
 }
+
+/* 실행 애니메이션 — html[data-splash] 일 때만 (layout 의 스크립트가 그리기 전에 붙인다)
+   0 ~ 0.84초 가운데에 수저가 놓임 → 0.84 ~ 1.6초 심볼이 비켜서고 글자가 펼쳐짐 → 1.62초 태그라인 → 2.3 ~ 2.7초 사라짐 */
+.launch-splash {
+  display: none;
+}
+html[data-splash] .launch-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  animation: launch-out 400ms ease-in 2300ms forwards;
+}
+.launch-lockup {
+  display: flex;
+  align-items: center;
+  /* 글자 묶음 너비(약 74px) + 간격의 절반만큼 심볼을 처음엔 가운데로 */
+  --launch-shift: 45px;
+}
+.launch-symbol {
+  flex: none;
+  fill: var(--color-brand);
+  overflow: visible;
+  animation: launch-slide 600ms cubic-bezier(0.3, 0, 0.2, 1) 840ms both;
+}
+.launch-spoon {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: launch-spoon 840ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.launch-chopstick {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: launch-chop 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.launch-word {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  animation: launch-word 520ms cubic-bezier(0.3, 0, 0.2, 1) 1080ms both;
+}
+.launch-ko {
+  display: block;
+  line-height: 0.8;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+.launch-en {
+  display: block;
+  line-height: 0.75;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-right: -0.1em;
+  color: var(--color-muted);
+}
+.launch-tagline {
+  /* 글자 로고는 화면 정가운데 — 태그라인은 그 아래에 따로 */
+  position: absolute;
+  top: calc(50% + 50px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: launch-tagline 500ms ease-out 1620ms both;
+}
+.launch-tagline-ko {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink-2);
+  line-height: 1.2;
+}
+.launch-tagline-en {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin-right: -0.16em;
+  color: var(--color-muted);
+  line-height: 1.2;
+}
+@keyframes launch-tagline {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes launch-spoon {
+  0% { opacity: 0; transform: translateY(-34%) scale(0.96); }
+  60% { opacity: 1; transform: translateY(3%) scale(1); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes launch-chop {
+  from { opacity: 0; transform: translateY(26%); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes launch-slide {
+  from { transform: translateX(var(--launch-shift)); }
+  to { transform: none; }
+}
+/* 자르는 칸은 글자 상자보다 넉넉히 — 줄 높이를 좁게 잡은 '먹킷' 위아래 · MUKKIT 끝 글자가 상자를 넘는다 */
+@keyframes launch-word {
+  from { opacity: 0; clip-path: inset(-40% 100% -40% -8px); transform: translateX(-10px); }
+  to { opacity: 1; clip-path: inset(-40% -8px -40% -8px); transform: none; }
+}
+@keyframes launch-out {
+  to { opacity: 0; visibility: hidden; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-splash] .launch-splash {
+    display: none;
+  }
+}
+
+/* 불러오는 중 — 젓가락이 오므려 밥알을 집고, 들어 올렸다 내려놓는다 (1.2초 반복) · SYMBOL_VIEWBOX 의 젓가락 도형 */
+.eating-loader {
+  opacity: 0;
+  animation: eating-show 200ms ease-out 250ms forwards;
+}
+.eating-stick {
+  fill: var(--color-brand);
+  transform-box: view-box;
+  animation: eating-pick 1200ms cubic-bezier(0.45, 0, 0.3, 1) infinite;
+}
+/* 젓가락 윗끝을 축으로 — 쉴 땐 조금 벌리고(open), 집을 땐 밥알 너비만큼(hold) 오므린다 */
+.eating-stick-l {
+  transform-origin: 626px 170px;
+  --open: 2.4deg;
+  --hold: -0.3deg;
+}
+.eating-stick-r {
+  transform-origin: 730px 170px;
+  --open: -2.4deg;
+  --hold: 0.3deg;
+}
+.eating-grain {
+  fill: #f6efe2;
+  stroke: #c9ad86;
+  stroke-width: 9;
+  animation: eating-lift 1200ms cubic-bezier(0.45, 0, 0.3, 1) infinite;
+}
+@keyframes eating-pick {
+  0%, 8% { transform: rotate(var(--open)); }
+  28% { transform: rotate(var(--hold)); }
+  50%, 64% { transform: translateY(-130px) rotate(var(--hold)); }
+  84% { transform: rotate(var(--hold)); }
+  100% { transform: rotate(var(--open)); }
+}
+@keyframes eating-lift {
+  0%, 28% { transform: none; }
+  50%, 64% { transform: translateY(-130px); }
+  84%, 100% { transform: none; }
+}
+@keyframes eating-show {
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eating-stick, .eating-grain {
+    animation: none;
+  }
+}

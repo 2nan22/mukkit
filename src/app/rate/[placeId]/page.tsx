@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { BackButton } from "@/components/BackButton";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -14,7 +15,7 @@ export const metadata = { title: "평가 작성" };
 export default function RatePlacePage({ params, searchParams }: PageProps<"/rate/[placeId]">) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <RatePlace params={params} searchParams={searchParams} />
       </Suspense>
     </main>

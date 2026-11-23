@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import { getMyProfileFlags } from "@/features/profile/flags";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
@@ -20,7 +21,7 @@ export default function NicknamePage({ searchParams }: PageProps<"/onboarding/ni
           이미 가입했다면 그때 쓴 방법으로 로그인해 주세요.
         </p>
       </div>
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <NicknameFormLoader searchParams={searchParams} />
       </Suspense>
     </main>

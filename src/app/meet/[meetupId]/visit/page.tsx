@@ -1,3 +1,4 @@
+import { PageLoader } from "@/components/ui/EatingLoader";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -20,7 +21,7 @@ export default function MeetVisitPage({ params, searchParams }: PageProps<"/meet
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       <AppHeader kind="back" fallback="/meet" title="방문 기록" />
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <MeetVisit params={params} searchParams={searchParams} />
       </Suspense>
     </main>
