@@ -24,8 +24,11 @@ export function PeekCards({
   onPick,
   onMore,
   onFocus,
+  onSwipe,
   listOf,
 }: {
+  // 손으로 넘겨 맨 앞 카드가 바뀌었을 때만 — 지도를 그 가게로 옮기는 데 쓴다
+  onSwipe?: (placeId: string) => void;
   places: NearPlace[];
   covers: Record<string, string>;
   onPick: (placeId: string) => void;
@@ -37,8 +40,11 @@ export function PeekCards({
   const list = useRef<HTMLUListElement>(null);
   const first = places[0]?.placeId;
   const ids = places.slice(0, SHOWN).map((p) => p.placeId).join(",");
+  // 코드가 처음으로 되돌린 스크롤 — 손으로 넘긴 것으로 치지 않는다(지도가 따라 움직이지 않게)
+  const resetting = useRef(false);
   // 지도를 옮겨 맨 앞 가게가 바뀌면 처음으로 — 살짝 움직였을 땐 그대로
   useEffect(() => {
+    if (list.current && list.current.scrollLeft !== 0) resetting.current = true;
     list.current?.scrollTo({ left: 0 });
     onFocus?.(first ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 맨 앞 가게가 바뀔 때만
@@ -49,23 +55,31 @@ export function PeekCards({
     if (!el || !onFocus) return;
     const order = ids ? ids.split(",") : [];
     let t = 0;
-    const pick = () => {
+    let last: string | null = null;
+    const pick = (byUser: boolean) => {
       const card = el.querySelector("li");
       const step = card ? card.getBoundingClientRect().width + 8 : 1;
-      onFocus(order[Math.min(order.length - 1, Math.round(el.scrollLeft / step))] ?? null);
+      const id = order[Math.min(order.length - 1, Math.round(el.scrollLeft / step))] ?? null;
+      onFocus(id);
+      if (byUser && id && id !== last) onSwipe?.(id);
+      last = id;
     };
     // 순서만 바뀌고 스크롤은 그대로일 때도 맞춘다
-    pick();
+    pick(false);
     const onScroll = () => {
       window.clearTimeout(t);
-      t = window.setTimeout(pick, 80);
+      const byUser = !resetting.current;
+      t = window.setTimeout(() => {
+        resetting.current = false;
+        pick(byUser);
+      }, 80);
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       el.removeEventListener("scroll", onScroll);
       window.clearTimeout(t);
     };
-  }, [ids, onFocus]);
+  }, [ids, onFocus, onSwipe]);
   // 목록이 사라지면 강조도 지운다
   useEffect(() => () => onFocus?.(null), [onFocus]);
 

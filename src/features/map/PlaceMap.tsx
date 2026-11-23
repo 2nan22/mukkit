@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { tierIconSvg } from "@/components/ui/TierIcon";
 import type { Tier } from "@/domain/tier";
 
@@ -12,6 +12,7 @@ type KakaoMaps = {
   Map: new (el: HTMLElement, opts: { center: LatLng; level: number }) => KakaoMapInstance;
   LatLng: new (lat: number, lng: number) => LatLng;
   LatLngBounds: new () => KakaoBounds;
+  Point: new (x: number, y: number) => KakaoPoint;
   CustomOverlay: new (opts: {
     position: LatLng;
     content: HTMLElement;
@@ -42,6 +43,8 @@ type KakaoMaps = {
 };
 type KakaoClusterer = { addMarkers(m: KakaoOverlay[]): void; clear(): void };
 type KakaoLatLng = { getLat(): number; getLng(): number };
+type KakaoPoint = { x: number; y: number };
+type KakaoProjection = { pointFromCoords(p: LatLng): KakaoPoint; coordsFromPoint(p: KakaoPoint): LatLng };
 type KakaoBounds = { extend(p: LatLng): void; contain(p: LatLng): boolean; getSouthWest(): KakaoLatLng; getNorthEast(): KakaoLatLng };
 type KakaoCircle = { setMap(m: KakaoMapInstance | null): void; setPosition(p: LatLng): void; setRadius(r: number): void; setOptions(o: { strokeOpacity: number; fillOpacity: number }): void };
 type KakaoMapInstance = {
@@ -51,6 +54,7 @@ type KakaoMapInstance = {
   panTo(p: LatLng | KakaoBounds, padding?: number): void;
   getBounds(): KakaoBounds;
   getCenter(): KakaoLatLng;
+  getProjection(): KakaoProjection;
   setCenter(p: LatLng): void;
   relayout(): void;
 };
@@ -179,7 +183,10 @@ export function PlaceMap({
   zoomRef,
   onViewChange,
   highlightId = null,
+  centerOn = null,
 }: {
+  // 이 핀을 보이는 칸 가운데로 옮긴다(확대는 그대로) — 접힌 카드를 넘길 때. n 이 바뀌면 같은 핀도 다시
+  centerOn?: { id: string; n: number } | null;
   pins: Pin[];
   // 고르지는 않고 눈에 띄게만 — 접힌 목록에서 맨 앞 카드의 핀
   highlightId?: string | null;
@@ -300,14 +307,33 @@ export function PlaceMap({
     }
   }, [ready, highlightId]);
 
-  // 고른 장소로 다가간다 — 동네가 보일 만큼만 확대
+  // 핀을 지도 칸 가운데가 아니라 위 검색 · 아래 시트를 뺀 보이는 칸 가운데로
+  const panToVisible = useCallback((lat: number, lng: number) => {
+    const maps = window.kakao?.maps;
+    const m = map.current;
+    if (!maps || !m) return;
+    const [t, r, b, l] = fitPadding(padding, el.current?.clientWidth ?? 0, el.current?.clientHeight ?? 0);
+    const proj = m.getProjection();
+    const at = proj.pointFromCoords(new maps.LatLng(lat, lng));
+    m.panTo(proj.coordsFromPoint(new maps.Point(at.x + (r - l) / 2, at.y + (b - t) / 2)));
+  }, [padding]);
+
+  // 고른 장소로 다가간다 — 동네가 보일 만큼만 확대 · 그 가게가 보이는 칸 가운데로
   useEffect(() => {
     const maps = window.kakao?.maps;
     const pin = pins.find((p) => p.id === selectedId);
     if (!ready || !maps || !map.current || !pin) return;
     if (map.current.getLevel() > NEIGHBORHOOD_LEVEL) map.current.setLevel(NEIGHBORHOOD_LEVEL);
-    map.current.panTo(new maps.LatLng(pin.lat, pin.lng));
-  }, [ready, pins, selectedId]);
+    panToVisible(pin.lat, pin.lng);
+  }, [ready, pins, selectedId, panToVisible]);
+
+  // 넘긴 카드의 가게를 가운데로 — 확대 수준은 그대로
+  useEffect(() => {
+    const pin = centerOn ? pins.find((p) => p.id === centerOn.id) : undefined;
+    if (!ready || !pin) return;
+    panToVisible(pin.lat, pin.lng);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 넘길 때만 (핀 목록이 바뀔 때는 옮기지 않음)
+  }, [ready, centerOn]);
 
   // 거르기가 바뀌면 보이는 핀이 다 들어오게 — hidden 이면 처음 한 번만, 이후엔 화면에 하나도 없을 때만 부드럽게
   const [top, right, bottom, left] = padding;
