@@ -6,6 +6,7 @@ import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
 import { FollowButton } from "@/features/social/FollowButton";
+import { InviteButton } from "./InviteButton";
 import type { RecentList, SharedRating, TasteMatch } from "@/features/social/social";
 
 function timeAgo(iso: string): string {
@@ -17,7 +18,7 @@ function timeAgo(iso: string): string {
   return days === 1 ? "어제" : `${days}일 전`;
 }
 
-function SectionHead({ title, sub, more }: { title: string; sub?: string; more?: string }) {
+export function SectionHead({ title, sub, more }: { title: string; sub?: string; more?: string }) {
   return (
     <div className="flex items-center justify-between px-5">
       <div className="flex flex-col gap-0.5">
@@ -34,21 +35,29 @@ function SectionHead({ title, sub, more }: { title: string; sub?: string; more?:
 }
 
 // 팔로잉 새 평가 — 가로로 넘기는 카드
-export function FollowingNew({ ratings, followingCount }: { ratings: SharedRating[]; followingCount: number }) {
+export function FollowingNew({ ratings, followingCount, me }: { ratings: SharedRating[]; followingCount: number; me: string }) {
   const anyPhoto = ratings.some((r) => r.media.some((m) => m.kind === "image"));
   return (
     <section className="flex flex-col gap-2">
       <SectionHead title="팔로잉 새 평가" more={ratings.length ? "/feed" : undefined} />
       {ratings.length === 0 ? (
-        <div className="mx-5 flex items-center justify-between gap-3 rounded-[16px] bg-surface p-4">
-          <span className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-body font-semibold">{followingCount > 0 ? "팔로잉의 새 평가가 아직 없어요" : "아직 팔로우한 사람이 없어요"}</span>
-            <span className="text-meta text-muted">{followingCount > 0 ? "새로 평가하면 여기에 보여요" : "취향이 비슷한 사람부터 찾아보세요"}</span>
-          </span>
-          <Link href="/people" className="flex h-9 shrink-0 items-center rounded-full bg-white px-3.5 text-meta font-semibold text-ink">
-            사람 찾기
-          </Link>
-        </div>
+        followingCount > 0 ? (
+          <div className="mx-5 flex flex-col gap-0.5 rounded-[16px] bg-surface p-4">
+            <span className="text-body font-semibold">팔로잉의 새 평가가 아직 없어요</span>
+            <span className="text-meta text-muted">팔로우한 사람이 평가하면 여기에 보여요</span>
+          </div>
+        ) : (
+          // 아직 아무도 팔로우하지 않음 — 빈 칸 대신 할 일 두 가지
+          <div className="mx-5 flex flex-col gap-3 rounded-[16px] bg-surface p-4">
+            <span className="text-body font-semibold">팔로우한 사람의 새 평가가 여기에 보여요</span>
+            <span className="flex gap-2">
+              <Link href="/people" className="flex h-11 shrink-0 items-center rounded-full bg-ink px-4 text-meta font-semibold text-white">
+                사람 찾기
+              </Link>
+              <InviteButton me={me} />
+            </span>
+          </div>
+        )
       ) : (
         <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
           {ratings.map((r) => (

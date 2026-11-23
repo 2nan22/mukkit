@@ -19,6 +19,10 @@ import {
 } from "@/features/home/HomeSections";
 import { needsAgreement } from "@/features/legal/legal";
 import { NearbyWantToGo } from "@/features/home/NearbyWantToGo";
+import { getMyHome } from "@/features/home/myHome";
+import { MyMap, QuickRate, RankTop, RecentSaved } from "@/features/home/MyHomeSections";
+import { getThreeRanking } from "@/features/rank/rank";
+import { countMyTiers } from "@/features/lists/lists";
 import {
   getFeed,
   getFollowCounts,
@@ -28,7 +32,7 @@ import {
 } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-// 홈 — 시안 1: 근처 가고 싶은 곳 · 팔로잉 새 평가 · 취향이 비슷한 사람 · 요즘 많이 저장된 리스트
+// 홈 — 근처 가고 싶은 곳 · 빠르게 평가 · 내 지도 · 최근 저장 · 나만의 맛집 순위 · 팔로잉 새 평가 · 취향이 비슷한 사람 · 요즘 많이 저장된 리스트 (49)
 export default function HomePage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
@@ -92,6 +96,9 @@ async function HomeContent() {
     counts,
     { count: visitTags },
     { count: invites },
+    home,
+    ranking,
+    tiers,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -116,14 +123,18 @@ async function HomeContent() {
       })
       .eq("user_id", me)
       .eq("meetups.status", "open"),
+    getMyHome(supabase, me),
+    getThreeRanking(supabase, me),
+    countMyTiers(supabase, me),
   ]);
   // 리스트 카드 썸네일 — 담긴 곳의 대표 사진 (내 사진 · 팔로잉)
+  // 최근 저장한 곳 사진도 한 번에
   const recentCovers = Object.fromEntries(
     [
-      ...(await getPlaceCovers(
-        supabase,
-        lists.flatMap((l) => l.points.map((p) => p.placeId)),
-      )),
+      ...(await getPlaceCovers(supabase, [
+        ...lists.flatMap((l) => l.points.map((p) => p.placeId)),
+        ...home.recent.map((p) => p.placeId),
+      ])),
     ].map(([id, c]) => [id, c.url]),
   );
   // 프로필이 없으면 지워진 계정의 로그인이 남은 것 — 반복 대신 로그아웃
@@ -203,7 +214,7 @@ async function HomeContent() {
       {visitTags ? (
         <Link
           href="/visits"
-          className="mx-5 mt-3 flex min-h-12 items-center justify-between gap-3 rounded-[16px] bg-surface px-4"
+          className="mx-5 flex min-h-12 items-center justify-between gap-3 rounded-[16px] bg-surface px-4"
         >
           <span className="text-meta text-ink-2">
             함께 방문 요청 <b className="font-bold text-ink">{visitTags}건</b>
@@ -224,10 +235,16 @@ async function HomeContent() {
           </svg>
         </Link>
       ) : null}
+      {/* 순서 — 할 일(평가 전) › 아는 사람의 새 평가 › 내 기록 (49 검토) */}
+      <QuickRate count={tiers.unrated ?? 0} />
       <FollowingNew
         ratings={feed.slice(0, 10)}
         followingCount={counts.following}
+        me={me}
       />
+      <MyMap home={home} tiers={tiers} />
+      <RecentSaved home={home} covers={recentCovers} />
+      <RankTop ranked={ranking.ranked} unranked={ranking.unranked.length} />
       <SimilarPeople matches={matches} />
       <RecentLists lists={lists} covers={recentCovers} />
     </>

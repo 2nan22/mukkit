@@ -40,8 +40,41 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
       router.refresh();
     });
   };
+  // 모두 새로 고치기 — 하나씩 차례로 (원본에 몰아서 부르지 않게). 등급을 정해야 하는 옛 원본은 빼고
+  const [progress, setProgress] = useState<string | null>(null);
+  const ready = rows.filter((r) => r.sync);
+  const refreshAll = () =>
+    start(async () => {
+      let changed = 0;
+      let failed = 0;
+      let recent = 0;
+      for (const [i, r] of ready.entries()) {
+        setProgress(`${i + 1}/${ready.length}`);
+        setBusy(`${r.source}:${r.sourceListId}`);
+        const res = await refreshImportSource(r.source, r.sourceListId);
+        if (res.error) failed += 1;
+        else if (res.done?.startsWith("조금 전에")) recent += 1;
+        else if (res.done && !res.done.startsWith("원본과 같아요")) changed += 1;
+      }
+      setBusy(null);
+      setProgress(null);
+      const parts = [`${ready.length - recent}개 확인`, changed ? `${changed}개 바뀜` : "바뀐 곳 없음", failed ? `${failed}개 실패` : "", recent ? `${recent}개는 조금 전에 확인함` : ""].filter(Boolean);
+      setToast(parts.join(" · "));
+      router.refresh();
+    });
   return (
     <>
+      {ready.length > 1 && (
+        <div className="flex items-center justify-between px-5 pb-1">
+          <span className="text-meta text-muted">원본 {rows.length}개</span>
+          <button type="button" disabled={busy !== null} onClick={refreshAll} className="flex h-11 items-center gap-1.5 text-meta font-semibold text-ink disabled:opacity-60">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={progress ? "animate-spin" : ""}>
+              <path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4" />
+            </svg>
+            {progress ? `확인 중 ${progress}` : "모두 새로 고치기"}
+          </button>
+        </div>
+      )}
       <ul className="flex flex-col px-5">
         {rows.map((r) => {
           const line = syncLine(r.sync, now);
