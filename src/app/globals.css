@@ -88,3 +88,74 @@ body {
   word-break: keep-all;
   overflow-wrap: break-word;
 }
+
+/* 실행 애니메이션 — html[data-splash] 일 때만 (layout 의 스크립트가 그리기 전에 붙인다). 0.8초 뒤 사라지고 누를 수 없게 */
+.launch-splash {
+  display: none;
+}
+html[data-splash] .launch-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: #ffffff;
+  animation: launch-out 200ms ease-in 600ms forwards;
+}
+.launch-symbol {
+  fill: var(--color-brand);
+  overflow: visible;
+}
+.launch-spoon {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: launch-spoon 380ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.launch-chopsticks {
+  animation: launch-chop 320ms cubic-bezier(0.2, 0.8, 0.3, 1) 120ms both;
+}
+.launch-word {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: launch-word 260ms ease-out 260ms both;
+}
+.launch-ko {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  line-height: 1;
+}
+.launch-en {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin-right: -0.18em;
+  color: var(--color-muted);
+  line-height: 1;
+}
+@keyframes launch-spoon {
+  from { opacity: 0; transform: translateY(-28px) rotate(-8deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes launch-chop {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes launch-word {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes launch-out {
+  to { opacity: 0; visibility: hidden; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-splash] .launch-splash {
+    display: none;
+  }
+}
