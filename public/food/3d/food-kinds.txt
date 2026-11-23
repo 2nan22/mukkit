@@ -1,0 +1,48 @@
+gukbap|Pot of food
+gopchang|Bacon
+jokbal|Meat on bone
+naengmyeon|Bowl with spoon
+noodle|Steaming bowl
+dak|Poultry leg
+jjigae|Shallow pan of food
+seafood|Shrimp
+gogi|Cut of meat
+baekban|Cooked rice
+korean|Bento box
+ramen|Steaming bowl
+donkatsu|Fried shrimp
+udon|Steaming bowl
+donburi|Curry rice
+sushi|Sushi
+japanese|Sushi
+mala|Hot pepper
+yangkkochi|Oden
+dimsum|Dumpling
+jjajang|Takeout box
+chinese|Takeout box
+pizza|Pizza
+burger|Hamburger
+steak|Cut of meat
+pasta|Spaghetti
+brunch|Pancakes
+western|Spaghetti
+pho|Steaming bowl
+thai|Shallow pan of food
+curry|Curry rice
+asian|Curry rice
+gimbap|Rice ball
+tteokbokki|Oden
+snack|Oden
+chicken|Poultry leg
+wine|Wine glass
+cocktail|Cocktail glass
+pocha|Sake
+beer|Beer mug
+bar|Clinking beer mugs
+icecream|Ice cream
+bakery|Croissant
+dessert|Shortcake
+coffee|Hot beverage
+cafe|Hot beverage
+other|Fork and knife with plate
+nonFood|Round pushpin
