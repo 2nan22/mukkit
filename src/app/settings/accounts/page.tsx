@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
-import { unlinkProvider } from "@/features/auth/linkActions";
+import { UnlinkButton } from "@/features/auth/UnlinkButton";
 import { identityLabel } from "@/features/auth/identityLabel";
 import { linkErrorMessage } from "@/features/auth/linkErrors";
 import { fromSupabaseProvider, LOGIN_PROVIDER_LABEL, LOGIN_PROVIDER_ORDER } from "@/features/auth/providers";
@@ -55,22 +55,16 @@ async function AccountLinks({ searchParams }: { searchParams: Promise<{ error?: 
               </span>
             </span>
             {linked.has(provider) ? (
-              canUnlink && (
-                <form action={unlinkProvider}>
-                  <input type="hidden" name="provider" value={provider} />
-                  <button type="submit" className="h-btn-m rounded-btn-m border border-line-strong px-4 text-meta text-ink-2">
-                    연결 해제
-                  </button>
-                </form>
-              )
+              canUnlink && <UnlinkButton provider={provider} label={LOGIN_PROVIDER_LABEL[provider]} />
             ) : (
-              <a href={`/auth/link/${provider}`} className="flex h-9 items-center rounded-btn-s border border-line-strong bg-white px-3.5 text-meta font-semibold text-ink">
+              <a href={`/auth/link/${provider}`} className="flex h-11 items-center rounded-btn-s border border-line-strong bg-white px-3.5 text-meta font-semibold text-ink">
                 연결하기
               </a>
             )}
           </li>
         ))}
       </ul>
+      <p className="pt-3 text-meta text-muted">{canUnlink ? "해제하면 그 방법으로는 로그인할 수 없어요." : "마지막 로그인 방법은 해제할 수 없어요."}</p>
     </section>
   );
 }

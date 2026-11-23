@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { setPushOff } from "./actions";
+import { PushToggle } from "./PushToggle";
 
 const KINDS = [
   { kind: "meetup", label: "약속", desc: "초대 · 새 참여자 · 추천 지역 변경" },
@@ -9,8 +10,27 @@ const KINDS = [
   { kind: "visit", label: "함께 방문", desc: "누가 나와 함께 갔다고 남겼을 때" },
 ] as const;
 
-// 설정 › 알림 — 종류별로 끄기. 누르면 바로 저장
-export function PushKinds({ initialOff }: { initialOff: string[] }) {
+// 설정 › 알림 — 이 기기 알림 켜기 + 종류별로 끄기. 기기 알림이 꺼져 있으면 종류 목록은 흐리게
+export function NotificationSettings({ initialOff }: { initialOff: string[] }) {
+  const [deviceOn, setDeviceOn] = useState<boolean | null>(null);
+  return (
+    <>
+      <section className="px-5">
+        <PushToggle variant="row" onState={setDeviceOn} />
+      </section>
+      <section className="flex flex-col px-5 pt-6">
+        <h2 className="text-meta text-muted">받을 알림</h2>
+        {deviceOn === false && <p className="pb-1 text-caption text-subtle">이 기기 알림을 켜면 받을 수 있어요</p>}
+        <div className={deviceOn === false ? "opacity-50" : ""}>
+          <PushKinds initialOff={initialOff} />
+        </div>
+      </section>
+    </>
+  );
+}
+
+// 종류별로 끄기. 누르면 바로 저장
+function PushKinds({ initialOff }: { initialOff: string[] }) {
   const [off, setOff] = useState<string[]>(initialOff);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();

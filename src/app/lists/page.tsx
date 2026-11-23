@@ -69,6 +69,14 @@ async function ListsContent({ searchParams }: { searchParams: PageProps<"/lists"
 
       {byTier ? (
         <section className="flex flex-col">
+          {Object.values(tiers).every((n) => !n) && (
+            <div className="mb-3 flex flex-col items-center gap-3 rounded-[16px] bg-surface px-4 py-6 text-center">
+              <span className="text-body font-semibold">아직 저장한 곳이 없어요</span>
+              <Link href="/import" className="flex h-11 items-center rounded-btn-m bg-white px-4 text-body font-bold text-ink">
+                저장한 장소 가져오기
+              </Link>
+            </div>
+          )}
           {unrated > 0 && (
             <Link href="/rate" className="mb-3 flex items-center justify-between gap-3 rounded-[16px] bg-ink px-4 py-3.5 text-white">
               <span className="flex flex-col gap-0.5">
