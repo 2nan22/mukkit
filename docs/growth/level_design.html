@@ -51,7 +51,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 ol.steps { padding-left: 20px; } ol.steps li { margin: 6px 0; }
 </style>
 <div class="wrap">
-<h1><small>세션 63 · 설계안 · 아직 만들지 않음</small>먹킷 레벨 · 키우는 캐릭터</h1>
+<h1><small>세션 63 · 설계안 · 점수 계산은 만듦, 캐릭터 고르는 중</small>먹킷 레벨 · 키우는 캐릭터</h1>
 <p class="sub">평가와 사람 관계에 따라 캐릭터가 자라는 장치예요. 먹킷은 리뷰 이벤트로 오염된 평가를 고치려고 시작했어요. 그래서 '많이 쓸수록 오르는' 레벨이 같은 오염을 다시 만들지 않게 설계했어요.</p>
 
 <h2>지킬 원칙</h2>
@@ -63,44 +63,29 @@ ol.steps { padding-left: 20px; } ol.steps li { margin: 6px 0; }
   <li><b>벌주지 않아요</b>연속 기록(스트릭)도, 쉬면 깎이는 것도 없어요. 오래 안 오면 캐릭터가 낮잠을 자고, 다시 오면 깨요.</li>
 </ul>
 
-<h2>캐릭터 3안</h2>
-<p class="sub">세 안 모두 먹킷이 직접 그린 원본 캐릭터예요. 포켓몬 같은 남의 캐릭터를 쓰지 않아요(저작권). 5단계로 자라고, 4단계부터는 내가 많이 평가한 업종에 따라 모습이 갈라져요.</p>
-<div class="chars">
+<h2>캐릭터 시안 (디자인팀 3안)</h2>
+<p class="sub">얼굴은 그대로 두고 위에 올라가는 것이 자라요. 4단계부터 국물 · 빵 쪽을 많이 평가했으면 모습이 갈라져요. 아래 말은 MY 화면에서 캐릭터가 하는 말 예시예요.</p>
+<div class="chars" style="grid-template-columns:1fr">
   <div class="char">
-    <h3>A · 숟가락 친구 '숟이'</h3>
-    <span class="pill">앱 아이콘과 이어짐</span>
-    <div class="stages" aria-label="숟이 다섯 단계">
-      <figure><svg width="40" height="56" viewBox="0 0 40 56"><ellipse cx="20" cy="16" rx="11" ry="13" fill="#e9ded2"/><rect x="18" y="27" width="4" height="22" rx="2" fill="#e9ded2"/></svg>빈 숟가락</figure>
-      <figure><svg width="40" height="56" viewBox="0 0 40 56"><ellipse cx="20" cy="16" rx="11" ry="13" fill="#c8410b"/><circle cx="16" cy="15" r="1.8" fill="#fff"/><circle cx="24" cy="15" r="1.8" fill="#fff"/><rect x="18" y="27" width="4" height="22" rx="2" fill="#c8410b"/></svg>눈 뜸</figure>
-      <figure><svg width="44" height="58" viewBox="0 0 44 58"><ellipse cx="22" cy="18" rx="12" ry="14" fill="#c8410b"/><circle cx="17" cy="17" r="2" fill="#fff"/><circle cx="27" cy="17" r="2" fill="#fff"/><path d="M17 23q5 4 10 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="20" y="30" width="4" height="22" rx="2" fill="#c8410b"/><path d="M10 40l10-4M34 40l-10-4" stroke="#c8410b" stroke-width="3" stroke-linecap="round"/></svg>팔이 생김</figure>
-      <figure><svg width="46" height="60" viewBox="0 0 46 60"><path d="M9 10h28" stroke="#17181c" stroke-width="3" stroke-linecap="round"/><ellipse cx="23" cy="21" rx="12" ry="14" fill="#c8410b"/><circle cx="18" cy="20" r="2" fill="#fff"/><circle cx="28" cy="20" r="2" fill="#fff"/><path d="M18 26q5 4 10 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="21" y="33" width="4" height="22" rx="2" fill="#c8410b"/></svg>모자 (업종별)</figure>
-      <figure><svg width="50" height="62" viewBox="0 0 50 62"><circle cx="25" cy="54" r="7" fill="#f3e6d8"/><path d="M11 12h28" stroke="#17181c" stroke-width="3" stroke-linecap="round"/><ellipse cx="25" cy="23" rx="12" ry="14" fill="#b42330"/><circle cx="20" cy="22" r="2" fill="#fff"/><circle cx="30" cy="22" r="2" fill="#fff"/><path d="M20 28q5 4 10 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="23" y="35" width="4" height="16" rx="2" fill="#b42330"/></svg>접시 위 3숟가락</figure>
-    </div>
-    <p class="src">장점: 브랜드 심볼(접시 위 수저)과 바로 이어져요. 단점: 모습이 단순해 갈래를 만들 여지가 적어요.</p>
+    <h3>C2 · 소반 '상구' (디자인팀 추천)</h3>
+    <span class="pill">한 상 · 아는 사람 · 점수 없음</span>
+    <div class="stages"><figure><img src="characters/c2_stage1.svg" width="56" height="56" alt="c2 1단계">빈 상</figure><figure><img src="characters/c2_stage2.svg" width="56" height="56" alt="c2 2단계">밥상</figure><figure><img src="characters/c2_stage3.svg" width="56" height="56" alt="c2 3단계">한 끼 상</figure><figure><img src="characters/c2_stage4.svg" width="56" height="56" alt="c2 4단계">반찬 상</figure><figure><img src="characters/c2_stage5.svg" width="56" height="56" alt="c2 5단계">상다리 휨</figure><figure><img src="characters/c2_branch_a.svg" width="56" height="56" alt="국물파">국물파</figure><figure><img src="characters/c2_branch_b.svg" width="56" height="56" alt="빵파">빵파</figure></div>
+    <p class="src">평가가 쌓일수록 상에 그릇이 하나씩 차려지고, 마지막엔 상다리가 휘어요. 남의 캐릭터와 겹칠 일이 가장 적어요. 64px 아래에서는 그릇이 작아 보여 단순판을 따로 둬요.</p>
+    <ul class="src" style="padding-left:18px;margin:6px 0 0"><li>상에 그릇이 하나 늘었어요.</li><li>지난주에 평가한 곳을 친구가 저장했어요.</li><li>상다리가 휘겠어요. 이번 달 평가가 20곳이에요.</li></ul>
   </div>
   <div class="char">
-    <h3>B · 밥알 '쌀톨'</h3>
-    <span class="pill">귀여움 · 갈래 많음</span>
-    <div class="stages" aria-label="쌀톨 다섯 단계">
-      <figure><svg width="40" height="56" viewBox="0 0 40 56"><ellipse cx="20" cy="38" rx="7" ry="10" fill="#f3ece2" stroke="#d8ccbd"/></svg>쌀 한 톨</figure>
-      <figure><svg width="40" height="56" viewBox="0 0 40 56"><ellipse cx="20" cy="36" rx="9" ry="12" fill="#fffaf2" stroke="#d8ccbd"/><circle cx="17" cy="34" r="1.6" fill="#17181c"/><circle cx="23" cy="34" r="1.6" fill="#17181c"/></svg>눈 뜸</figure>
-      <figure><svg width="44" height="58" viewBox="0 0 44 58"><path d="M8 50q14-30 28 0z" fill="#fffaf2" stroke="#d8ccbd"/><circle cx="18" cy="40" r="1.8" fill="#17181c"/><circle cx="26" cy="40" r="1.8" fill="#17181c"/><path d="M19 45q3 2 6 0" stroke="#c8410b" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>주먹밥</figure>
-      <figure><svg width="46" height="60" viewBox="0 0 46 60"><path d="M6 48h34l-4 9H10z" fill="#c8410b"/><path d="M9 48q14-34 28 0z" fill="#fffaf2" stroke="#d8ccbd"/><circle cx="19" cy="38" r="1.8" fill="#17181c"/><circle cx="27" cy="38" r="1.8" fill="#17181c"/></svg>그릇에 담김</figure>
-      <figure><svg width="50" height="62" viewBox="0 0 50 62"><path d="M5 46h40l-5 11H10z" fill="#b42330"/><path d="M9 46q16-38 32 0z" fill="#fffaf2" stroke="#d8ccbd"/><circle cx="20" cy="35" r="1.8" fill="#17181c"/><circle cx="30" cy="35" r="1.8" fill="#17181c"/><path d="M14 20l6 6M36 20l-6 6" stroke="#17181c" stroke-width="2" stroke-linecap="round"/></svg>한 상 (업종별)</figure>
-    </div>
-    <p class="src">장점: 업종마다 갈래(국밥 그릇 · 면 · 빵 · 커피잔)를 그리기 쉬워요. 단점: 수저 심볼과는 따로 놀아요.</p>
+    <h3>C1 · 밥공기 '소복이'</h3>
+    <span class="pill">작은 크기에서 가장 잘 보임</span>
+    <div class="stages"><figure><img src="characters/c1_stage1.svg" width="56" height="56" alt="c1 1단계">한 술</figure><figure><img src="characters/c1_stage2.svg" width="56" height="56" alt="c1 2단계">반 공기</figure><figure><img src="characters/c1_stage3.svg" width="56" height="56" alt="c1 3단계">한 공기</figure><figure><img src="characters/c1_stage4.svg" width="56" height="56" alt="c1 4단계">고봉</figure><figure><img src="characters/c1_stage5.svg" width="56" height="56" alt="c1 5단계">뚜껑 쓴 고봉</figure><figure><img src="characters/c1_branch_a.svg" width="56" height="56" alt="국물파">국물파</figure><figure><img src="characters/c1_branch_b.svg" width="56" height="56" alt="빵파">빵파</figure></div>
+    <p class="src">평가가 쌓일수록 밥이 소복이 올라가요. 단계가 밥 높이로 한눈에 보여요. 밥그릇 캐릭터는 흔한 편이에요.</p>
+    <ul class="src" style="padding-left:18px;margin:6px 0 0"><li>밥이 조금 더 소복해졌어요.</li><li>이번 주에 처음 가 본 동네가 생겼어요.</li><li>국밥집을 자주 다녔네요. 국물파가 됐어요.</li></ul>
   </div>
   <div class="char">
-    <h3>C · 지도를 채우는 '깃발 탐험대'</h3>
-    <span class="pill">캐릭터보다 지도</span>
-    <div class="stages" aria-label="깃발 탐험대 다섯 단계">
-      <figure><svg width="40" height="56" viewBox="0 0 40 56"><path d="M14 50V18" stroke="#17181c" stroke-width="2.4"/><path d="M14 18h14l-4 5 4 5H14" fill="#e9ded2"/></svg>빈 깃발</figure>
-      <figure><svg width="40" height="56" viewBox="0 0 40 56"><path d="M14 50V18" stroke="#17181c" stroke-width="2.4"/><path d="M14 18h14l-4 5 4 5H14" fill="#c8410b"/></svg>첫 동네</figure>
-      <figure><svg width="44" height="58" viewBox="0 0 44 58"><path d="M10 50V22M26 50V16" stroke="#17181c" stroke-width="2.4"/><path d="M10 22h10l-3 4 3 4H10M26 16h12l-3 4 3 4H26" fill="#c8410b"/></svg>세 동네</figure>
-      <figure><svg width="46" height="60" viewBox="0 0 46 60"><path d="M6 52h34" stroke="#d8ccbd" stroke-width="6" stroke-linecap="round"/><path d="M10 50V24M23 50V16M36 50V26" stroke="#17181c" stroke-width="2.2"/><path d="M10 24h8l-2 3 2 3h-8M23 16h10l-3 4 3 4H23M36 26h7l-2 3 2 3h-7" fill="#c8410b"/></svg>골목 지도</figure>
-      <figure><svg width="50" height="62" viewBox="0 0 50 62"><circle cx="25" cy="34" r="20" fill="#f3e6d8"/><path d="M17 40V24M30 44V20" stroke="#17181c" stroke-width="2.2"/><path d="M17 24h8l-2 3 2 3h-8M30 20h10l-3 4 3 4H30" fill="#b42330"/></svg>동네 지도 완성</figure>
-    </div>
-    <p class="src">장점: 이미 있는 '내 지도'를 키우는 느낌이라 새 그림이 적어요. 단점: '기르는' 감정은 약해요.</p>
+    <h3>C3 · 만두 '두두'</h3>
+    <span class="pill">가장 귀여움</span>
+    <div class="stages"><figure><img src="characters/c3_stage1.svg" width="56" height="56" alt="c3 1단계">물만두</figure><figure><img src="characters/c3_stage2.svg" width="56" height="56" alt="c3 2단계">두 주름</figure><figure><img src="characters/c3_stage3.svg" width="56" height="56" alt="c3 3단계">세 주름</figure><figure><img src="characters/c3_stage4.svg" width="56" height="56" alt="c3 4단계">왕만두</figure><figure><img src="characters/c3_stage5.svg" width="56" height="56" alt="c3 5단계">찜기 만두</figure><figure><img src="characters/c3_branch_a.svg" width="56" height="56" alt="국물파">국물파</figure><figure><img src="characters/c3_branch_b.svg" width="56" height="56" alt="빵파">빵파</figure></div>
+    <p class="src">평가가 늘면 주름이 하나씩 늘어요. 표정이 잘 살아요. 만두 마스코트는 시장에 꽤 있어요.</p>
+    <ul class="src" style="padding-left:18px;margin:6px 0 0"><li>주름이 하나 늘었어요.</li><li>오늘 평가한 곳, 팔로잉 2명도 가 봤어요.</li><li>오랜만이에요. 찜기에 김이 다시 올라요.</li></ul>
   </div>
 </div>
 
@@ -160,10 +145,8 @@ ol.steps { padding-left: 20px; } ol.steps li { margin: 6px 0; }
 
 <h2>정해 주실 것</h2>
 <div class="ask">
-  <div><b>1. 캐릭터</b>A 숟이 · B 쌀톨 · C 깃발 탐험대 중 하나 (또는 이름만 바꿔서)</div>
-  <div><b>2. 남에게 보이기</b>나만 보기(추천) / 프로필에 캐릭터 단계만 / 레벨 숫자까지</div>
-  <div><b>3. 팔로워 반영</b>0점(추천) / 첫 10명까지만 작게</div>
-  <div><b>4. 진화 갈래</b>4단계부터 가장 많이 평가한 업종으로 갈라짐(추천) / 갈래 없이 한 줄</div>
+  <div><b>1. 캐릭터</b>C2 상구 · C1 소복이 · C3 두두 중 하나 (이름은 바꿀 수 있어요)</div>
+  <div><b>2. 정해 둔 것 (바꿀 수 있어요)</b>나만 보기 · 팔로워 수는 0점 · 4단계부터 국물파 · 빵파 갈래</div>
 </div>
 
 <h2>만드는 순서 (정하시면)</h2>

@@ -29,10 +29,11 @@ describe("levelOf", () => {
 });
 
 describe("branchOf", () => {
-  it("4단계부터 많이 평가한 메뉴 종류로 갈림 · 모르는 종류는 세계 음식", () => {
+  it("4단계부터 국물 · 빵 쪽이면 갈림 · 그 밖은 기본 모습", () => {
     expect(branchOf("gukbap", 3)).toBeNull();
     expect(branchOf("gukbap", 4)).toBe("soup");
-    expect(branchOf("thai", 5)).toBe("world");
+    expect(branchOf("coffee", 5)).toBe("bread");
+    expect(branchOf("gogi", 5)).toBeNull();
     expect(branchOf(null, 5)).toBeNull();
   });
 });

@@ -90,30 +90,20 @@ export function levelOf(total: number): Level {
   };
 }
 
-// 4단계부터 많이 평가한 메뉴 종류로 모습이 갈린다
-export const BRANCHES = ["soup", "meat", "noodle", "bread", "drink", "world"] as const;
+// 4단계부터 국물 · 빵 쪽을 가장 많이 평가했으면 모습이 갈린다 (그 밖은 기본 모습)
+export const BRANCHES = ["soup", "bread"] as const;
 export type Branch = (typeof BRANCHES)[number];
 
-export const BRANCH_LABEL: Record<Branch, string> = {
-  soup: "국물파",
-  meat: "고기파",
-  noodle: "면파",
-  bread: "빵 · 커피파",
-  drink: "한잔파",
-  world: "세계 음식파",
-};
+export const BRANCH_LABEL: Record<Branch, string> = { soup: "국물파", bread: "빵파" };
 
 const KIND_BRANCH: Record<string, Branch> = {
-  gukbap: "soup", jjigae: "soup", seafood: "soup", baekban: "soup", dak: "soup",
-  gogi: "meat", gopchang: "meat", jokbal: "meat", chicken: "meat", steak: "meat", yangkkochi: "meat",
-  noodle: "noodle", naengmyeon: "noodle", ramen: "noodle", udon: "noodle", jjajang: "noodle", pho: "noodle", pasta: "noodle",
-  bakery: "bread", dessert: "bread", coffee: "bread", icecream: "bread", brunch: "bread",
-  wine: "drink", cocktail: "drink", pocha: "drink", beer: "drink",
+  gukbap: "soup", jjigae: "soup", noodle: "soup", naengmyeon: "soup", ramen: "soup", pho: "soup", udon: "soup", mala: "soup",
+  bakery: "bread", coffee: "bread", dessert: "bread", brunch: "bread",
 };
 
 export function branchOf(topKind: string | null, stage: number): Branch | null {
   if (stage < 4 || !topKind) return null;
-  return KIND_BRANCH[topKind] ?? "world";
+  return KIND_BRANCH[topKind] ?? null;
 }
 
 // 다음 레벨까지 무엇을 하면 되는지 한 줄 — 점수가 큰 것보다 지금 할 수 있는 것부터
