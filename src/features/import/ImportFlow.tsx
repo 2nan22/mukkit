@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { importList, previewList, type ListPreview } from "./actions";
-import { extractLinks, SOURCE_LABEL } from "./sources";
+import { extractLinks } from "./sources";
 import { peekImportDraft, useImportDraft } from "./importDraft";
 import { SourceMark } from "@/components/brand/BrandLogo";
 import type { PlaceSourceName } from "@/domain/importedPlace";
@@ -14,7 +14,6 @@ import {
   modeFromValue,
   modeLabel,
   modeToValue,
-  PLAIN_LABEL,
   type ImportMode,
 } from "./importMode";
 import type { ImportResult } from "./saveImportedList";
@@ -94,16 +93,16 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
       <section className="flex flex-1 flex-col px-5 pt-4">
         {rows.length === 0 ? (
           <p className="text-meta leading-normal text-muted">
-            네이버 지도 리스트나 카카오맵 즐겨찾기 그룹의 공유 링크를 넣어 주세요. 링크 여러 개를 한 번에 붙여 넣어도 돼요.
+            링크 여러 개도 한 번에 돼요
           </p>
         ) : (
           <>
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-section font-bold">리스트 {rows.length}개</h2>
-              <span className="text-meta text-muted">{total}곳</span>
+            <div className="flex items-baseline justify-between pb-1">
+              <h2 className="text-section font-bold">
+                리스트 {rows.length}개 <span className="font-normal text-muted">· {total}곳</span>
+              </h2>
+              <span className="pr-12 text-caption text-muted">등급</span>
             </div>
-            <p className="mt-1 text-meta leading-normal text-muted">담은 리스트는 이 기기에 남아 있어요</p>
-            <p className="mb-1 text-meta leading-normal text-muted">등급별 리스트라면 등급을 골라 주세요</p>
             <ul>
               {rows.map((row) => (
                 <ListRow
@@ -123,7 +122,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
               <path d="M12 3v12M8 7l4-4 4 4M5 13v6h14v-6" />
             </svg>
             <span>
-              네이버 지도 · 카카오맵 <b>공유</b>에서 <b>먹킷</b>을 고르면 바로 담겨요 (홈 화면에 추가한 앱)
+              지도 앱에서 <b>공유 › 먹킷</b>을 눌러도 담겨요
             </span>
           </p>
         )}
@@ -197,8 +196,8 @@ function LinkForm({
     }
     // 무엇이 담겼는지 늘 알린다 — 공유로 들어와 링크 하나만 담긴 경우도
     const parts = [
-      added.length === 1 ? `'${added[0].name}' 리스트를 담았어요` : added.length > 1 ? `리스트 ${added.length}개를 담았어요` : "",
-      dupes > 0 ? (added.length === 0 && dupes === 1 ? "이미 담긴 리스트예요" : `이미 담긴 ${dupes}개는 그대로 둬요`) : "",
+      added.length === 1 ? `${withObject(added[0].name)} 담았어요` : added.length > 1 ? `리스트 ${added.length}개를 담았어요` : "",
+      dupes > 0 ? (added.length === 0 && dupes === 1 ? "이미 담긴 리스트예요" : `${dupes}개는 이미 담겨 있어요`) : "",
     ].filter(Boolean);
     setNotice(parts.join(" · "));
   }
@@ -272,8 +271,8 @@ const HELP: Record<PlaceSourceName, { app: string; url: string; find: ReactNode[
     app: "네이버 지도",
     url: "https://map.naver.com/",
     find: [
-      <>네이버 지도 앱 <b>저장</b>에서 가져올 리스트의 <b>⋮</b>를 눌러요</>,
-      <><b>공유</b>를 누르고 <b>복사</b>를 골라요. 리스트 이름이 같이 복사돼도 괜찮아요</>,
+      <><b>저장</b>에서 리스트의 <b>⋮</b>를 눌러요</>,
+      <><b>공유 › 복사</b>를 눌러요</>,
       <>위 칸에 붙여 넣어요</>,
     ],
     pc: <>PC에서는 리스트의 <b>⋮ › 공유</b>에서 링크 <b>복사</b></>,
@@ -287,8 +286,8 @@ const HELP: Record<PlaceSourceName, { app: string; url: string; find: ReactNode[
     app: "카카오맵",
     url: "https://map.kakao.com/",
     find: [
-      <>카카오맵 앱 <b>즐겨찾기</b>에서 가져올 그룹을 열어요</>,
-      <>위쪽 <b>공유</b> 버튼을 누르고 <b>URL 복사</b>를 골라요</>,
+      <><b>즐겨찾기</b>에서 그룹을 열어요</>,
+      <><b>공유 › URL 복사</b>를 눌러요</>,
       <>위 칸에 붙여 넣어요</>,
     ],
     pc: <>PC에서는 그룹의 <b>⋮ › 그룹 공유</b>에서 <b>복사</b></>,
@@ -351,22 +350,18 @@ function LinkHelp({ source, privateList }: { source: PlaceSourceName | null; pri
 function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean; onChange: (mode: ImportMode) => void; onRemove: () => void }) {
   const selectId = `mode-${row.listId}`;
   return (
-    <li className={`-mx-2 flex min-h-[60px] items-center gap-2 rounded-[10px] border-b border-line px-2 transition-colors duration-700 ${fresh ? "bg-surface" : ""}`}>
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-body">{row.name}</span>
-        <span className="text-meta text-muted">
-          <span className="inline-flex items-center gap-1.5">
-            <SourceMark source={row.source} size={14} />
-            {SOURCE_LABEL[row.source]} · {row.count}곳{row.unavailable > 0 && ` · 정보 없는 곳 ${row.unavailable}`}
-          </span>
-        </span>
+    <li className={`-mx-2 flex min-h-16 items-center gap-3 rounded-[10px] border-b border-line px-2 transition-colors duration-700 ${fresh ? "bg-surface" : ""}`}>
+      <SourceMark source={row.source} size={20} />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-body font-semibold">{row.name}</span>
+        <span className="text-meta text-muted">{row.count}곳</span>
       </span>
       <label htmlFor={selectId} className="sr-only">
         {row.name} 가져올 방식
       </label>
-      <span className="relative flex h-btn-m shrink-0 items-center gap-1.5 rounded-btn-m border border-line-strong pr-2.5 pl-3">
-        <ModeChip mode={row.mode} />
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
+      <span className="relative flex h-9 shrink-0 items-center gap-1 rounded-full bg-surface pr-2.5 pl-3 text-meta font-semibold text-ink">
+        {row.mode.kind === "plain" ? "평가 전" : IMPORT_TIER_LABEL[row.mode.tier]}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
           <path d="M6 9l6 6 6-6" />
         </svg>
         <select
@@ -375,10 +370,8 @@ function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean;
           onChange={(e) => onChange(modeFromValue(e.target.value))}
           className="absolute inset-0 cursor-pointer opacity-0"
         >
-          <optgroup label="리스트 그대로">
-            <option value="plain">{PLAIN_LABEL}</option>
-          </optgroup>
-          <optgroup label="등급으로 가져오기">
+          <option value="plain">평가 전 · 리스트로 만들기</option>
+          <optgroup label="한 번에 등급 매기기">
             {IMPORT_TIERS.map((tier) => (
               <option key={tier} value={tier}>
                 {IMPORT_TIER_LABEL[tier]}
@@ -387,13 +380,20 @@ function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean;
           </optgroup>
         </select>
       </span>
-      <button type="button" onClick={onRemove} aria-label={`${row.name} 빼기`} className="flex size-11 shrink-0 items-center justify-center text-muted">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+      <button type="button" onClick={onRemove} aria-label={`${row.name} 빼기`} className="-mr-2 flex size-10 shrink-0 items-center justify-center text-subtle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
       </button>
     </li>
   );
+}
+
+// 이름 뒤 목적격 조사 — 받침이 있으면 '을', 없으면 '를' (한글이 아니면 '를')
+function withObject(name: string): string {
+  const code = name.charCodeAt(name.length - 1) - 0xac00;
+  const batchim = code >= 0 && code <= 11171 && code % 28 !== 0;
+  return `${name}${batchim ? "을" : "를"}`;
 }
 
 function ModeChip({ mode }: { mode: ImportMode }) {
@@ -441,7 +441,7 @@ function ImportRunning({ rows, status, total }: { rows: Row[]; status: Record<st
           );
         })}
       </ul>
-      <p className="px-5 pt-3 pb-5 text-center text-meta leading-normal text-muted">화면을 닫지 말고 잠시만 기다려 주세요</p>
+      <p className="px-5 pt-3 pb-5 text-center text-meta leading-normal text-muted">화면을 닫지 말아 주세요</p>
     </div>
   );
 }
@@ -535,7 +535,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
 
       {unavailable > 0 && (
         <p className="mx-5 mt-4 rounded-btn-l bg-surface px-4 py-3.5 text-meta leading-normal text-ink-2">
-          지도에 정보가 없는 곳이 {unavailable}곳 있어요. 폐업했을 수 있어요.
+          {unavailable}곳은 폐업했을 수 있어요
         </p>
       )}
 
@@ -543,7 +543,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
         <div className="mx-5 mt-4 flex flex-col gap-1 rounded-btn-l bg-surface px-4 py-3.5">
           <span className="text-body font-bold">평가 전 {unratedAdded}곳이 있어요</span>
           <span className="text-meta leading-normal text-muted">
-            등급만 고르면 끝나요. 중간에 그만둬도 이어서 할 수 있어요.
+            등급만 고르면 돼요. 나중에 이어서 해도 돼요
           </span>
         </div>
       )}
