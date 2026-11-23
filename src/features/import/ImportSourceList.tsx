@@ -6,13 +6,14 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { SourceMark } from "@/components/brand/BrandLogo";
 import { Toast } from "@/components/ui/Toast";
 import { syncLine, type ImportSourceRow } from "./importSources";
+import { refreshImportSource } from "./refreshActions";
 import { countDeletable, disconnectSource } from "./sourceActions";
 
 function nameOf(r: ImportSourceRow): string {
   return r.name || "이름 없는 리스트";
 }
 
-// 원본 목록 — 줄을 누르면 먹킷 리스트로, ⋯ 은 끊기 시트
+// 원본 목록 — 줄을 누르면 먹킷 리스트로, ⋯ 은 새로 고치기 · 끊기 시트
 export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
   const [open, setOpen] = useState<ImportSourceRow | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -94,13 +95,13 @@ function useNow(): number {
   return now;
 }
 
-type Step = "choose" | "confirm";
+type Step = "menu" | "choose" | "confirm";
 // 장소까지 지우면 지워질 곳 수 — 세는 중(null) · 실패(error)
 type Count = number | null | "error";
 
 function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClose: () => void; onDone: (message: string) => void }) {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("choose");
+  const [step, setStep] = useState<Step>("menu");
   const [wipe, setWipe] = useState(false);
   const [count, setCount] = useState<Count>(null);
   const [error, setError] = useState<string | null>(null);
@@ -131,6 +132,14 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
 
   const deletable = typeof count === "number" ? count : 0;
   const canWipe = typeof count === "number" && count > 0;
+  const refresh = () =>
+    start(async () => {
+      setError(null);
+      const res = await refreshImportSource(row.source, row.sourceListId);
+      if (res.error) return setError(res.error);
+      router.refresh();
+      onDone(res.done ?? "");
+    });
   const run = (deletePlaces: boolean) =>
     start(async () => {
       const res = await disconnectSource(row.source, row.sourceListId, deletePlaces);
@@ -146,12 +155,40 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label={step === "confirm" ? "장소 지우기 확인" : "연결 끊기"}
+        aria-label={step === "confirm" ? "장소 지우기 확인" : step === "choose" ? "연결 끊기" : `${name} 관리`}
         onClick={(e) => e.stopPropagation()}
         className="flex w-full max-w-[480px] flex-col gap-3 rounded-t-[20px] bg-white px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] outline-none"
       >
         <span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-line-strong" />
-        {step === "choose" ? (
+        {step === "menu" ? (
+          <>
+            <div className="flex flex-col gap-1 pt-1">
+              <h2 className="text-[18px] leading-snug font-bold">{name}</h2>
+              <p className="text-meta text-muted">
+                {row.count}곳 · {syncLine(row.sync).text}
+              </p>
+            </div>
+            <div className="flex flex-col">
+              {/* 자동 새로 고침 기록이 없는 원본(예전에 등급 리스트로 가져온 것)은 방식을 몰라 다시 가져오기로 */}
+              {row.sync && (
+                <button type="button" disabled={pending} onClick={refresh} className="flex h-12 items-center text-body text-ink disabled:opacity-50">
+                  {pending ? "원본을 확인하는 중…" : "지금 새로 고치기"}
+                </button>
+              )}
+              <button type="button" disabled={pending} onClick={() => setStep("choose")} className="flex h-12 items-center text-body text-ink disabled:opacity-50">
+                연결 끊기
+              </button>
+            </div>
+            {error && (
+              <p role="alert" className="text-meta text-danger">
+                {error}
+              </p>
+            )}
+            <button type="button" disabled={pending} onClick={onClose} className="mt-1 h-12 rounded-btn-m bg-surface text-body font-medium text-ink">
+              닫기
+            </button>
+          </>
+        ) : step === "choose" ? (
           <>
             <div className="flex flex-col gap-1 pt-1">
               <h2 className="text-[18px] leading-snug font-bold">&lsquo;{name}&rsquo; 연결을 끊을까요?</h2>
@@ -189,7 +226,7 @@ function DisconnectSheet({ row, onClose, onDone }: { row: ImportSourceRow; onClo
             >
               {wipe ? "다음" : pending ? "끊는 중…" : "연결 끊기"}
             </button>
-            <button type="button" disabled={pending} onClick={onClose} className="h-11 text-body text-muted">
+            <button type="button" disabled={pending} onClick={() => (setError(null), setStep("menu"))} className="h-11 text-body text-muted">
               취소
             </button>
           </>
