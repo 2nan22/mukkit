@@ -30,7 +30,7 @@ export default function ListsPage({ searchParams }: PageProps<"/lists">) {
         <ListsContent searchParams={searchParams} />
       </Suspense>
       <div className="flex-1" />
-      <div className="sticky bottom-0 mt-8">
+      <div className="sticky bottom-0 z-30 mt-8">
         <BottomNav />
       </div>
     </main>

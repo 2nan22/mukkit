@@ -5,8 +5,9 @@ import { CHOPSTICKS } from "@/components/brand/Wordmark";
 export function EatingLoader({ size = 40, label = "불러오는 중" }: { size?: number; label?: string }) {
   return (
     <span role="status" className="eating-loader inline-flex" style={{ width: size, height: size }}>
-      <svg viewBox="520 120 340 860" width={size} height={size} aria-hidden="true" className="overflow-visible">
-        <ellipse className="eating-grain" cx="678" cy="862" rx="42" ry="29" />
+      {/* 정사각 칸의 가운데 (680, 480) — 쉬는 자리와 들어 올린 자리의 사이 */}
+      <svg viewBox="230 30 900 900" width={size} height={size} aria-hidden="true" className="overflow-visible">
+        <ellipse className="eating-grain" cx="678" cy="862" rx="54" ry="36" />
         <path className="eating-stick eating-stick-l" d={CHOPSTICKS[0]} />
         <path className="eating-stick eating-stick-r" d={CHOPSTICKS[1]} />
       </svg>
@@ -15,13 +16,20 @@ export function EatingLoader({ size = 40, label = "불러오는 중" }: { size?:
   );
 }
 
-// 화면 하나가 통째로 기다릴 때 — 페이지 옮길 때 로딩 · 회색 틀과 같은 모양 · 같은 자리(화면 정가운데)
+// 흰 원 안 젓가락 — 원 56px 에 젓가락 칸 40px, 정가운데. 페이지 이동 · 회색 틀 · 흰 화면 로딩이 함께 쓴다
+export function LoaderBubble({ label }: { label?: string }) {
+  return (
+    <span className="flex size-14 items-center justify-center rounded-full bg-white shadow-float">
+      <EatingLoader size={40} label={label} />
+    </span>
+  );
+}
+
+// 화면 하나가 통째로 기다릴 때 — 화면 정가운데
 export function PageLoader({ label }: { label?: string }) {
   return (
     <div className="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center">
-      <span className="rounded-full bg-white/90 p-3 shadow-float">
-        <EatingLoader size={40} label={label} />
-      </span>
+      <LoaderBubble label={label} />
     </div>
   );
 }
