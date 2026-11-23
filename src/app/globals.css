@@ -107,8 +107,8 @@ html[data-splash] .launch-splash {
 .launch-lockup {
   display: flex;
   align-items: center;
-  /* 글자 묶음 너비(약 74px) + 간격의 절반만큼 심볼을 처음엔 가운데로 */
-  --launch-shift: 45px;
+  /* (글자 묶음 너비 65 + 간격 16) 의 절반 — 처음엔 심볼이 화면 정가운데(휴대폰 실행 화면의 심볼 자리) */
+  --launch-shift: 40.5px;
 }
 .launch-symbol {
   flex: none;
@@ -197,6 +197,23 @@ html[data-splash] .launch-splash {
 }
 @keyframes launch-out {
   to { opacity: 0; visibility: hidden; }
+}
+/* 홈 화면 앱 — 휴대폰 실행 화면의 심볼(같은 크기 · 자리)에서 바로 이어 비켜서기부터. 전체 약 2초 */
+html[data-splash="app"] .launch-spoon,
+html[data-splash="app"] .launch-chopstick {
+  animation: none;
+}
+html[data-splash="app"] .launch-symbol {
+  animation-delay: 200ms;
+}
+html[data-splash="app"] .launch-word {
+  animation-delay: 440ms;
+}
+html[data-splash="app"] .launch-tagline {
+  animation-delay: 980ms;
+}
+html[data-splash="app"] .launch-splash {
+  animation-delay: 1660ms;
 }
 @media (prefers-reduced-motion: reduce) {
   html[data-splash] .launch-splash {

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Suspense } from "react";
 import { NavTracker } from "@/lib/nav/NavTracker";
+import { NavLoading } from "@/lib/nav/NavLoading";
 import { LaunchSplash, SPLASH_SCRIPT } from "@/components/brand/LaunchSplash";
 
 const pretendard = localFont({
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <LaunchSplash />
         <Suspense fallback={null}>
           <NavTracker />
+          <NavLoading />
         </Suspense>
         {children}
       </body>
