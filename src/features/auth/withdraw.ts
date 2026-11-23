@@ -35,13 +35,24 @@ export async function withdraw(_prev: WithdrawState, formData: FormData): Promis
 // <나>/<장소>/<파일> — 평가에 붙지 않은 채 올라간 파일까지 폴더째 찾는다
 async function listMyFiles(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, me: string): Promise<string[] | null> {
   const bucket = supabase.storage.from(BUCKET);
-  const { data: folders, error } = await bucket.list(me, { limit: 1000 });
-  if (error) return null;
+  const folders = await listAll(bucket, me);
+  if (!folders) return null;
   const paths: string[] = [];
-  for (const folder of folders ?? []) {
-    const { data: files, error: e } = await bucket.list(`${me}/${folder.name}`, { limit: 1000 });
-    if (e) return null;
-    paths.push(...(files ?? []).map((f) => `${me}/${folder.name}/${f.name}`));
+  for (const folder of folders) {
+    const files = await listAll(bucket, `${me}/${folder}`);
+    if (!files) return null;
+    paths.push(...files.map((f) => `${me}/${folder}/${f}`));
   }
   return paths;
+}
+
+// Storage 목록은 한 번에 1000개까지 — 장소가 1000곳을 넘어도 폴더를 모두 찾게 쪽을 넘긴다
+async function listAll(bucket: ReturnType<Awaited<ReturnType<typeof createSupabaseServerClient>>["storage"]["from"]>, prefix: string): Promise<string[] | null> {
+  const names: string[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await bucket.list(prefix, { limit: 1000, offset, sortBy: { column: "name", order: "asc" } });
+    if (error) return null;
+    names.push(...(data ?? []).map((f) => f.name));
+    if (!data || data.length < 1000) return names;
+  }
 }

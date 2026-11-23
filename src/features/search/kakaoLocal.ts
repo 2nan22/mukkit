@@ -1,3 +1,4 @@
+import { timedFetch } from "@/lib/http/timedFetch";
 import { z } from "zod";
 import type { Cuisine } from "@/domain/cuisine";
 import type { ImportedPlace } from "@/domain/importedPlace";
@@ -48,7 +49,7 @@ export async function searchKakaoKeywordOrFail(query: string, near?: Near, size 
     params.set("y", String(near.lat));
     if (near.radius) params.set("radius", String(near.radius));
   }
-  const res = await fetch(`${SEARCH_URL}?${params}`, { headers: { Authorization: `KakaoAK ${key}` } }).catch(() => null);
+  const res = await timedFetch(`${SEARCH_URL}?${params}`, { headers: { Authorization: `KakaoAK ${key}` } }).catch(() => null);
   if (!res?.ok) {
     // 키는 남기지 않는다 — 상태 코드와 카카오 오류 종류만
     const body = res ? await res.json().catch(() => null) : null;

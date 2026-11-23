@@ -5,7 +5,7 @@ import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
 import { useLeave } from "@/lib/nav/useLeave";
 import { loadNextUnrated, setTier } from "./actions";
-import type { SavedPlace } from "./rating";
+import type { SavedPlace, UnratedCursor } from "./rating";
 
 const CHOICES: { tier: Tier; className: string }[] = [
   { tier: "three", className: "bg-tier-3-soft text-tier-3" },
@@ -14,17 +14,21 @@ const CHOICES: { tier: Tier; className: string }[] = [
   { tier: "notRecommended", className: "bg-surface-2 text-ink-2" },
 ];
 
-export function QuickRate({ initial, total }: { initial: SavedPlace | null; total: number }) {
+type Current = SavedPlace & { cursor: UnratedCursor };
+
+export function QuickRate({ initial, total }: { initial: Current | null; total: number }) {
   const [place, setPlace] = useState(initial);
-  const [done, setDone] = useState<SavedPlace[]>([]);
+  const [done, setDone] = useState<Current[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
+  // 마지막으로 건너뛴 자리 — 다음 장소는 그 뒤에서 찾는다
+  const [cursor, setCursor] = useState<UnratedCursor | null>(null);
   const [remaining, setRemaining] = useState(total);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const leave = useLeave("/my");
 
-  function loadNext(skip: string[]) {
-    return loadNextUnrated(skip).then((res) => {
+  function loadNext(after: UnratedCursor | null) {
+    return loadNextUnrated(after).then((res) => {
       setPlace(res.place);
       setRemaining(res.remaining);
     });
@@ -38,15 +42,15 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
       if (res.error) return setError(res.error);
       setError(null);
       setDone((d) => [...d, current]);
-      await loadNext(skipped);
+      await loadNext(cursor);
     });
   }
 
   function skip() {
     if (!place) return;
-    const next = [...skipped, place.placeId];
-    setSkipped(next);
-    startTransition(() => loadNext(next));
+    setSkipped((s) => [...s, place.placeId]);
+    setCursor(place.cursor);
+    startTransition(() => loadNext(place.cursor));
   }
 
   function undo() {
@@ -64,7 +68,8 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
 
   function retrySkipped() {
     setSkipped([]);
-    startTransition(() => loadNext([]));
+    setCursor(null);
+    startTransition(() => loadNext(null));
   }
 
   // 이번에 평가한 수 대 아직 남은 평가 전 — 건너뛴 곳은 남은 쪽에 그대로 있다

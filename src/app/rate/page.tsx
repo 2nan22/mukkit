@@ -25,6 +25,6 @@ async function QuickRateLoader() {
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) redirect(SIGNED_OUT_HOME);
-  const [first, total] = await Promise.all([nextUnrated(supabase, userId, []), countUnrated(supabase, userId)]);
+  const [first, total] = await Promise.all([nextUnrated(supabase, userId, null), countUnrated(supabase, userId)]);
   return <QuickRate initial={first} total={total} />;
 }

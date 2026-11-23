@@ -27,7 +27,7 @@ const PICKED: Partial<Record<Tier, string>> = {
   notRecommended: "has-checked:border-ink has-checked:bg-surface",
 };
 
-export function RatingForm({ place, next, userId, visits, menuOptions }: { place: SavedPlace; next: string; userId: string; visits: MyVisit[]; menuOptions: string[] }) {
+export function RatingForm({ place, next, userId, visits, menuOptions }: { place: SavedPlace; next: string; userId: string; visits: MyVisit[]; menuOptions: Promise<string[]> }) {
   const [state, action, pending] = useActionState<RatingFormState, FormData>(saveRating, {});
   // 안 가본 곳(가고 싶은 곳 · 평가 전)이면 방문 관련 칸을 숨긴다 — 값은 그대로 보낸다
   const [tier, setTier] = useState<Tier>(place.tier);

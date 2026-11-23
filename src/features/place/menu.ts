@@ -1,3 +1,4 @@
+import { timedFetch } from "@/lib/http/timedFetch";
 import { cacheLife } from "next/cache";
 import { z } from "zod";
 import { isSamePlace } from "@/domain/samePlace";
@@ -50,7 +51,7 @@ export async function getMenu(target: Target): Promise<Menu | null> {
 async function getKakaoMenu(target: Target): Promise<Menu | null> {
   const kakaoPlaceId = target.kakaoPlaceId ?? (await findKakaoPlaceId(target));
   if (!kakaoPlaceId) return null;
-  const res = await fetch(KAKAO_FOLDER.placeUrl(kakaoPlaceId), { headers: KAKAO_FOLDER.placeHeaders }).catch(() => null);
+  const res = await timedFetch(KAKAO_FOLDER.placeUrl(kakaoPlaceId), { headers: KAKAO_FOLDER.placeHeaders }).catch(() => null);
   if (!res?.ok) return null;
   const parsed = MenuSchema.safeParse(await res.json().catch(() => null));
   const menus = parsed.success ? parsed.data.menu?.menus : undefined;
@@ -94,7 +95,7 @@ export function parseNaverMenu(html: string): MenuItem[] {
 
 async function getNaverMenu(naverPlaceId: string): Promise<Menu | null> {
   if (!/^\d+$/.test(naverPlaceId)) return null;
-  const res = await fetch(NAVER_PLACE.menuUrl(naverPlaceId), { headers: NAVER_PLACE.headers }).catch(() => null);
+  const res = await timedFetch(NAVER_PLACE.menuUrl(naverPlaceId), { headers: NAVER_PLACE.headers }).catch(() => null);
   if (!res?.ok) return null;
   const items = parseNaverMenu(await res.text().catch(() => ""));
   return items.length ? { items, updatedAt: null, source: "naver", url: NAVER_PLACE.pageUrl(naverPlaceId) } : null;
@@ -105,7 +106,7 @@ async function findKakaoPlaceId(t: Target): Promise<string | null> {
   const key = process.env.KAKAO_REST_API_KEY;
   if (!key) return null;
   const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(t.name)}&x=${t.lng}&y=${t.lat}&radius=300&size=5`;
-  const res = await fetch(url, { headers: { Authorization: `KakaoAK ${key}` } }).catch(() => null);
+  const res = await timedFetch(url, { headers: { Authorization: `KakaoAK ${key}` } }).catch(() => null);
   if (!res?.ok) return null;
   const parsed = SearchSchema.safeParse(await res.json().catch(() => null));
   if (!parsed.success) return null;

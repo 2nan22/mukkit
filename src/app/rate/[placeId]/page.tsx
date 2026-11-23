@@ -35,13 +35,17 @@ async function RatePlace({
   const userId = data?.claims?.sub;
   if (!userId) redirect(SIGNED_OUT_HOME);
 
-  const place = /^[0-9a-f-]{36}$/.test(placeId) ? await getSavedPlace(supabase, userId, placeId) : null;
+  if (!/^[0-9a-f-]{36}$/.test(placeId)) notFound();
+  // 평가 · 함께 방문 · 장소를 한 번에 — 메뉴판(외부)은 기다리지 않고 폼에 약속으로 넘긴다
+  const [place, visits, detail] = await Promise.all([getSavedPlace(supabase, userId, placeId), getMyVisits(supabase, placeId), getPlace(supabase, placeId)]);
   if (!place) notFound();
-  const [visits, detail] = await Promise.all([getMyVisits(supabase, placeId), getPlace(supabase, placeId)]);
   const kakao = detail?.sources.find((s) => s.source === "kakao" && !s.sourcePlaceId.startsWith("N"));
-  const menu = detail ? await getMenu({ name: detail.name, lat: detail.lat, lng: detail.lng, kakaoPlaceId: kakao?.sourcePlaceId ?? null, naverPlaceId: detail.sources.find((s) => s.source === "naver")?.sourcePlaceId ?? null }).catch(() => null) : null;
-  // 대표 메뉴 먼저
-  const menuOptions = (menu?.items ?? []).sort((a, b) => Number(b.recommended) - Number(a.recommended)).map((m) => m.name.trim().slice(0, 30)).filter(Boolean);
+  const menuOptions: Promise<string[]> = detail
+    ? getMenu({ name: detail.name, lat: detail.lat, lng: detail.lng, kakaoPlaceId: kakao?.sourcePlaceId ?? null, naverPlaceId: detail.sources.find((s) => s.source === "naver")?.sourcePlaceId ?? null })
+        // 대표 메뉴 먼저
+        .then((menu) => (menu?.items ?? []).sort((a, b) => Number(b.recommended) - Number(a.recommended)).map((m) => m.name.trim().slice(0, 30)).filter(Boolean))
+        .catch(() => [])
+    : Promise.resolve([]);
   const back = safeNextPath(typeof next === "string" ? next : null);
 
   return (

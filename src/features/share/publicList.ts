@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Cuisine } from "@/domain/cuisine";
 import { tierFromDb, type Tier } from "@/domain/tier";
@@ -42,7 +43,10 @@ type Row = {
 // 링크 · 공개 리스트만 — 비공개거나 없으면 null. 메모 · 원본은 이 통로에 없다
 export async function getPublicList(supabase: SupabaseClient, listId: string): Promise<PublicList | null> {
   if (!/^[0-9a-f-]{36}$/.test(listId)) return null;
-  const { data, error } = await supabase.rpc("public_list", { p_list_id: listId });
+  // 1000곳 넘는 리스트도 끝까지 — 같은 시각에 담긴 곳이 쪽 사이에서 겹치지 않게 place_id 로 순서를 고정
+  const { data, error } = await fetchAll((from, to) =>
+    supabase.rpc("public_list", { p_list_id: listId }).order("added_at", { ascending: false, nullsFirst: false }).order("place_id").range(from, to),
+  );
   if (error) throw new Error(`공개 리스트 조회 실패: ${error.code}`);
   const rows = data as Row[];
   if (rows.length === 0) return null;

@@ -158,14 +158,13 @@ export type ListThumb = { photos: string[]; cuisines: Cuisine[] };
 export async function getMyListThumbs(supabase: SupabaseClient, listIds: string[]): Promise<Map<string, ListThumb>> {
   const out = new Map<string, ListThumb>();
   if (listIds.length === 0) return out;
-  const { data, error } = await supabase
-    .from("list_items")
-    .select("list_id, place_id, places(cuisine)")
-    .in("list_id", listIds)
-    .order("added_at", { ascending: false })
-    .limit(listIds.length * 40);
-  if (error) throw new ListWriteError("thumbs", error.code);
-  const rows = (data ?? []) as unknown as { list_id: string; place_id: string; places: { cuisine: Cuisine } | null }[];
+  // 리스트마다 최근 40곳 — 한 번에 묻으면 큰 리스트 하나가 1000행 한도를 다 써서 다른 리스트 썸네일이 비었다
+  const results = await Promise.all(
+    listIds.map((id) => supabase.from("list_items").select("list_id, place_id, places(cuisine)").eq("list_id", id).order("added_at", { ascending: false }).limit(40)),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw new ListWriteError("thumbs", failed.error.code);
+  const rows = results.flatMap((r) => r.data ?? []) as unknown as { list_id: string; place_id: string; places: { cuisine: Cuisine } | null }[];
   const covers = await getPlaceCovers(supabase, rows.map((r) => r.place_id));
   const byList = new Map<string, typeof rows>();
   for (const r of rows) byList.set(r.list_id, [...(byList.get(r.list_id) ?? []), r]);
@@ -186,7 +185,9 @@ export async function getMyList(supabase: SupabaseClient, userId: string, listId
     .maybeSingle<ListRow>();
   if (error) throw new ListWriteError("get", error.code);
   if (!data) return null;
-  const items = await supabase.from("list_items").select("place_id").eq("list_id", listId).order("added_at", { ascending: false });
+  const items = await fetchAll((from, to) =>
+    supabase.from("list_items").select("place_id").eq("list_id", listId).order("added_at", { ascending: false }).order("place_id").range(from, to),
+  );
   if (items.error) throw new ListWriteError("items", items.error.code);
   return { ...toSummary(data), placeIds: items.data.map((r) => r.place_id as string) };
 }

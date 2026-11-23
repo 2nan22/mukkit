@@ -1,3 +1,5 @@
+import { fetchAll } from "@/lib/supabase/fetchAll";
+import { chunks } from "@/lib/supabase/inChunks";
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ImportError, type ImportedList, type PlaceSource, type PlaceSourceName } from "@/domain/importedPlace";
@@ -61,8 +63,15 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
     listId = own.data.id as string;
   }
 
-  const before = await client.from("imported_items").select("source_place_id, place_id, memo").match(where);
-  const oldItems = (before.data ?? []) as { source_place_id: string; place_id: string; memo: string }[];
+  // 원본 기록이 1000곳을 넘어도 끝까지 — 잘리면 남아 있는 곳을 빠진 곳으로 보고 리스트에서 뺀다
+  const before = await fetchAll((from, to) =>
+    client.from("imported_items").select("source_place_id, place_id, memo").match(where).order("source_place_id").range(from, to),
+  );
+  if (before.error) {
+    await markFailed(client, userId, key, "error");
+    return { status: "error" };
+  }
+  const oldItems = before.data as { source_place_id: string; place_id: string; memo: string }[];
   const known = new Set(oldItems.map((o) => o.source_place_id));
 
   let list: ImportedList;
@@ -118,12 +127,13 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
 
   // 빠진 곳 — 원본 기록 · 먹킷 리스트에서만
   if (gone.length > 0) {
-    await client.from("imported_items").delete().match(where).in("source_place_id", gone.map((g) => g.source_place_id));
+    for (const part of chunks(gone.map((g) => g.source_place_id))) await client.from("imported_items").delete().match(where).in("source_place_id", part);
     if (listId) {
-      const still = await client.from("imported_items").select("place_id").match(where);
-      const keep = new Set((still.data ?? []).map((r) => r.place_id as string));
+      const still = await fetchAll((from, to) => client.from("imported_items").select("place_id").match(where).order("source_place_id").range(from, to));
+      if (still.error) return { status: "error" };
+      const keep = new Set(still.data.map((r) => r.place_id as string));
       const drop = [...new Set(gone.map((g) => g.place_id))].filter((id) => !keep.has(id));
-      if (drop.length) await client.from("list_items").delete().eq("list_id", listId).in("place_id", drop);
+      for (const part of chunks(drop)) await client.from("list_items").delete().eq("list_id", listId).in("place_id", part);
     }
   }
 
