@@ -230,9 +230,9 @@ A['nonFood'] = shadow(32, 56, 8) + g('#8b8f98', '<path d="M32 56s-15-14-15-26a15
 
 DEF = {'korean': 'baekban', 'japanese': 'sushi', 'chinese': 'jjajang', 'western': 'pasta', 'asian': 'pho', 'snack': 'tteokbokki', 'bar': 'beer', 'cafe': 'coffee'}
 for k, v in DEF.items(): A[k] = A[v]
-os.makedirs('out3', exist_ok=True)
+os.makedirs('out4', exist_ok=True)
 for k, v in A.items():
-    open(f'out3/{k}.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{v}</svg>')
+    open(f'out4/{k}.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{v}</svg>')
 print(len(A))
 
 # 족발 다시 — 큰 반달 조각 다섯을 부채꼴로 겹침: 굵은 갈색 껍질 띠(면) + 분홍빛 살 + 비계 선, 뒤 가운데 뼈 마디
@@ -242,7 +242,7 @@ def jok2(x, y, rot):
 A['jokbal'] = (plate() + g('#fbf3e4', '<path d="M32 30V16"/><circle cx="29.5" cy="13" r="3.6"/><circle cx="34.5" cy="13" r="3.6"/>')
   + jok2(32, 44, -50) + jok2(32, 44, -25) + jok2(32, 44, 0) + jok2(32, 44, 25) + jok2(32, 44, 50)
   + leaf(12, 36, -30, 1.3, '#7cbf5a') + g(WHITE, '<circle cx="53" cy="44" r="4.6"/>', IN) + nf('#f5c9b8', '<circle cx="53" cy="44" r="2.4"/>'))
-open('out3/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
+open('out4/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
 
 # 족발 다시 2 — 조각을 왼쪽에서 오른쪽으로 펼쳐 겹침(각자 기울기), 뼈 마디는 뒤에 사선
 def jok3(x, y, rot):
@@ -251,12 +251,12 @@ def jok3(x, y, rot):
 A['jokbal'] = (plate() + g('#fbf3e4', '<path d="M40 34L51 20"/><circle cx="51" cy="16.5" r="3.4"/><circle cx="55" cy="19.5" r="3.4"/>')
   + jok3(15, 45, -22) + jok3(24, 42, -10) + jok3(33, 41, 0) + jok3(42, 42, 10) + jok3(50, 45, 22)
   + leaf(13, 33, -30, 1.3, '#7cbf5a'))
-open('out3/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
+open('out4/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
 
 # 족발 뼈를 굵은 뼈 모양(면)으로
 BONE = '<g transform="translate(45 27) rotate(-35)">' + g('#fbf3e4', '<rect x="-10" y="-3.2" width="20" height="6.4" rx="3"/><circle cx="-10" cy="-3" r="3.6"/><circle cx="-10" cy="3" r="3.6"/><circle cx="10" cy="-3" r="3.6"/><circle cx="10" cy="3" r="3.6"/>') + nf('#fbf3e4', '<rect x="-9" y="-2" width="18" height="4"/>') + '</g>'
 A['jokbal'] = (plate() + BONE + jok3(15, 45, -22) + jok3(24, 42, -10) + jok3(33, 41, 0) + jok3(42, 42, 10) + jok3(50, 45, 22) + leaf(13, 33, -30, 1.3, '#7cbf5a'))
-open('out3/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
+open('out4/jokbal.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["jokbal"]}</svg>')
 
 # ===== v3 — 디자인팀 재검토 반영 =====
 def steam(xs, y0=8, y1=18): return ln(''.join(f'<path d="M{x} {y1}c-2-3 2-5 0-{y1 - y0}"/>' for x in xs), O, IN)
@@ -354,13 +354,45 @@ A['jjigae'] = A['jjigae'].replace('<ellipse cx="9" cy="32" rx="4.5" ry="3.2"/><e
 A['tteokbokki'] = A['tteokbokki'].replace(nf(WHITE, '<circle cx="12" cy="45" r="1.4"/><circle cx="52" cy="44" r="1.4"/><circle cx="32" cy="51" r="1.4"/>'), '')
 A['burger'] = A['burger'].replace('rx="2" ry="1.3"', 'rx="2.4" ry="2"')
 for k, v in DEF.items(): A[k] = A[v]
-os.makedirs('out3', exist_ok=True)
+os.makedirs('out4', exist_ok=True)
 for k, v in A.items():
-    open(f'out3/{k}.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{v}</svg>')
+    open(f'out4/{k}.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{v}</svg>')
 print('v3', len(A))
 
 # 딤섬 김 — 안쪽에서 시작 (치환이 안 맞아 다시 씀)
 A['dimsum'] = (shadow(32, 54, 22) + g('#d8b47c', '<path d="M8 33h48v13a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6z"/>') + ln('<path d="M8 39h48M8 45h48"/>', '#b89159', IN)
   + g(WHITE, '<path d="M11 33c0-9 6-13 10-13s10 4 10 13z"/><path d="M33 33c0-9 6-13 10-13s10 4 10 13z"/>')
   + ln('<path d="M21 21l-4 6M21 21v7M21 21l4 6M43 21l-4 6M43 21v7M43 21l4 6"/>', O, IN) + steam([27, 37], 7, 16))
-open('out3/dimsum.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["dimsum"]}</svg>')
+open('out4/dimsum.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{A["dimsum"]}</svg>')
+
+# ===== v4 — 3차 검토 반영 =====
+# 곱창 — 팬 깊게 · 곱창 셋 크게 · 구운 자국 세로선 · 부추는 팬 안
+def tube2(x, y, rot):
+    return (f'<g transform="rotate({rot} {x} {y})">' + g('#e9c49a', f'<rect x="{x - 7.5}" y="{y - 4}" width="15" height="8" rx="4"/>')
+      + ln(f'<path d="M{x - 3} {y - 2}v4M{x + 2} {y - 2}v4"/>', '#b8742f', IN) + '</g>')
+A['gopchang'] = (shadow(32, 54, 22) + g('#3a3c42', '<ellipse cx="32" cy="38" rx="25" ry="13"/>') + g('#4a4d55', '<ellipse cx="32" cy="37" rx="21" ry="10"/>', IN)
+  + tube2(22, 34, -12) + tube2(39, 33, 10) + tube2(31, 42, 3) + g(LEAF, '<rect x="40" y="40" width="10" height="3.6" rx="1.6" transform="rotate(-12 45 42)"/>', IN))
+# 백반 — 좌우 안전 영역 안 · 숟가락 · 젓가락 간격
+def side3(x, y, c): return g(WHITE, f'<ellipse cx="{x}" cy="{y}" rx="6" ry="3.4"/>', IN) + nf(c, f'<ellipse cx="{x}" cy="{y - .3}" rx="4" ry="2"/>')
+A['baekban'] = (shadow(29, 55, 20) + side3(14, 24, LEAF) + side3(26, 22, RED) + side3(38, 24, YOLK)
+  + g(WHITE, '<path d="M8 38h19a9.5 12 0 0 1-19 0z"/>') + g(RICE, '<path d="M8.5 38c0-8 18-8 18 0z"/>') + g(WHITE, '<ellipse cx="17.5" cy="38" rx="9.5" ry="2.8"/>', IN)
+  + g('#3a3c42', '<path d="M27 38h19a9.5 12 0 0 1-19 0z"/>') + g('#c98a4a', '<ellipse cx="36.5" cy="38" rx="9.5" ry="2.8"/>') + g(LEAF, '<ellipse cx="35" cy="38" rx="2.6" ry="1.2"/>', IN)
+  + ln('<path d="M50 27v24"/>', O, 4.2) + ln('<path d="M50 27v24"/>', STEEL, 2.2) + g(STEEL, '<ellipse cx="50" cy="22.5" rx="3.2" ry="4.4"/>', IN)
+  + ln('<path d="M54.6 19v32M57 19v32"/>', O, 3.2) + ln('<path d="M54.6 19v32M57 19v32"/>', WOOD, 1.4))
+# 족발 — 잎은 좌표로 · 살은 선 없이 크게 · 하이라이트 삭제 · 오른쪽 조각 안쪽으로
+def jok5(x, y, rot):
+    return (f'<g transform="rotate({rot} {x} {y})">' + g('#8a4a2e', f'<path d="M{x - 10.4} {y}a10.4 10.4 0 0 1 20.8 0z"/>')
+      + nf('#f0cdb4', f'<path d="M{x - 7.6} {y}a7.6 7.6 0 0 1 15.2 0z"/>') + '</g>')
+A['jokbal'] = (plate() + BONE2 + jok5(17, 45, -18) + jok5(27, 42, -6) + jok5(37, 42, 6) + jok5(46, 45, 18)
+  + '<g transform="translate(15 35) rotate(-30)">' + g('#7cbf5a', '<path d="M-6.5 0c2.6-5.2 10.4-5.2 13 0-2.6 5.2-10.4 5.2-13 0z"/>', IN) + '</g>')
+# 여유 항목 — 마라 손잡이 안쪽 · 덮밥 고명 하나 · 짜장 단무지 크게 · 브런치 베이컨 짧게
+A['mala'] = A['mala'].replace('<ellipse cx="10" cy="33" rx="3.4" ry="2.6"/><ellipse cx="54" cy="33" rx="3.4" ry="2.6"/>', '<ellipse cx="11" cy="33" rx="3.4" ry="2.6"/><ellipse cx="53" cy="33" rx="3.4" ry="2.6"/>')
+A['donburi'] = A['donburi'].replace(g(LEAF, '<circle cx="27" cy="20" r="2"/><circle cx="31" cy="24" r="2"/>', IN), '').replace('<circle cx="49" cy="28" r="2.2"/>', '<circle cx="49" cy="28" r="2.6"/>')
+A['jjajang'] = A['jjajang'].replace(g(WHITE, '<ellipse cx="49" cy="49" rx="8" ry="3.2"/>', IN) + g(YOLK, '<path d="M43.5 48.5a3.2 2.8 0 0 1 6.4 0z"/><path d="M48 49a3.2 2.8 0 0 1 6.4 0z"/>', IN),
+  g(YOLK, '<path d="M42 50a4 3.4 0 0 1 8 0z"/><path d="M48 51a4 3.4 0 0 1 8 0z"/>', IN))
+A['brunch'] = A['brunch'].replace("M44 47c2-2 4 2 6 0s4 2 6 0", "M44 47c2-2 4 2 6 0s4 2 5 0")
+for k, v in DEF.items(): A[k] = A[v]
+os.makedirs('out4', exist_ok=True)
+for k, v in A.items():
+    open(f'out4/{k}.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{v}</svg>')
+print('v4', len(A))
