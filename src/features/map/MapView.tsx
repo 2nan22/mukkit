@@ -7,6 +7,7 @@ import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { honor } from "@/domain/honor";
 import { regionOf } from "@/domain/region";
+import { BrandSymbol } from "@/components/brand/Wordmark";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { SOURCE_LABEL } from "@/features/import/sources";
 import { SourceMark } from "@/components/brand/BrandLogo";
@@ -27,9 +28,11 @@ const TIER_DOT: Record<Tier, string> = {
   two: "bg-pin-2",
   one: "bg-pin-1",
   notRecommended: "bg-pin-none",
-  wantToGo: "border border-ink-2 bg-white",
+  wantToGo: "border-2 border-ink bg-white",
   unrated: "border border-pin-none bg-white",
 };
+// 수저 등급 칩은 지도 핀과 같은 색의 수저 심볼로 (선택돼 검정 바탕이어도 색 유지)
+const SPOON_FILL: Partial<Record<Tier, string>> = { three: "fill-tier-3", two: "fill-pin-2", one: "fill-pin-1" };
 const CUISINE_ORDER: Cuisine[] = ["korean", "chinese", "japanese", "western", "asian", "snack", "chicken", "bar", "cafe", "other", "nonFood"];
 
 type Focus = { lat: number; lng: number; level: number };
@@ -369,7 +372,7 @@ export function MapView({
           </Chip>
           {(isFollowing ? RATED_FILTERS : TIER_FILTERS).map((t) => (
             <Chip key={t} pressed={tiers.includes(t)} onClick={() => setTiers(toggle(tiers, t))}>
-              <span aria-hidden="true" className={`size-2 rounded-full ${TIER_DOT[t]}`} />
+              {SPOON_FILL[t] ? <BrandSymbol height={13} className={SPOON_FILL[t]} /> : <span aria-hidden="true" className={`size-2.5 rounded-full ${TIER_DOT[t]}`} />}
               {TIER_LABEL[t]}
             </Chip>
           ))}

@@ -2,16 +2,18 @@
 
 import { useEffect, useRef } from "react";
 import { CUISINE_LABEL } from "@/domain/cuisine";
+import { BrandSymbol } from "@/components/brand/Wordmark";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { PlaceThumb } from "@/components/ui/PlaceThumb";
 import { ratersLine, type MapPlace } from "./myPlaces";
 
+const SPOON_FILL: Partial<Record<Tier, string>> = { three: "fill-tier-3", two: "fill-pin-2", one: "fill-pin-1" };
 const TIER_DOT: Record<Tier, string> = {
   three: "bg-tier-3",
   two: "bg-pin-2",
   one: "bg-pin-1",
   notRecommended: "bg-pin-none",
-  wantToGo: "border border-ink-2 bg-white",
+  wantToGo: "border-2 border-ink bg-white",
   unrated: "border border-pin-none bg-white",
 };
 const SHOWN = 10;
@@ -82,7 +84,7 @@ export function PeekCards({
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-body font-semibold">{p.name}</span>
               <span className="flex items-center gap-1.5 truncate text-meta text-muted">
-                <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${TIER_DOT[p.tier]}`} />
+                {SPOON_FILL[p.tier] ? <BrandSymbol height={12} className={SPOON_FILL[p.tier]} /> : <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${TIER_DOT[p.tier]}`} />}
                 {p.raters ? ratersLine(p.raters) : TIER_LABEL[p.tier]} · {p.meters !== null ? distance(p.meters) : CUISINE_LABEL[p.cuisine]}
               </span>
             </span>
