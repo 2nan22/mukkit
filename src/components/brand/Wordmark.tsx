@@ -2,15 +2,22 @@
 // 심볼 도형은 public/app-icon.svg 의 숟가락 · 젓가락을 평면으로 옮긴 것
 export const BRAND_NAME = "먹킷";
 
+// 심볼 도형 — 실행 애니메이션도 이 도형을 숟가락 · 젓가락으로 나눠 움직인다 (components/brand/LaunchSplash)
+export const SYMBOL_VIEWBOX = "220 120 548 780";
+export const SPOON_STICK = "M336 470C356 496 372 522 374 554L358 850a42 42 0 0 0 84 0L426 554C428 522 444 496 464 470Z";
+export const SPOON_HEAD = { cx: 400, cy: 312, rx: 172, ry: 184 };
+export const CHOPSTICKS = ["M596 170a30 30 0 0 1 60 0L647 870a21 21 0 0 1 -42 0Z", "M700 170a30 30 0 0 1 60 0L751 870a21 21 0 0 1 -42 0Z"] as const;
+
 // 도형에 딱 맞게 잘라 높이 기준으로 그린다 (가로는 약 0.7배)
 export function BrandSymbol({ height = 22, className = "fill-brand" }: { height?: number; className?: string }) {
   return (
-    <svg height={height} width={Math.round(height * 0.7)} viewBox="220 120 548 780" aria-hidden="true" className={`shrink-0 ${className}`}>
+    <svg height={height} width={Math.round(height * 0.7)} viewBox={SYMBOL_VIEWBOX} aria-hidden="true" className={`shrink-0 ${className}`}>
       <g>
-        <path d="M336 470C356 496 372 522 374 554L358 850a42 42 0 0 0 84 0L426 554C428 522 444 496 464 470Z" />
-        <ellipse cx="400" cy="312" rx="172" ry="184" />
-        <path d="M596 170a30 30 0 0 1 60 0L647 870a21 21 0 0 1 -42 0Z" />
-        <path d="M700 170a30 30 0 0 1 60 0L751 870a21 21 0 0 1 -42 0Z" />
+        <path d={SPOON_STICK} />
+        <ellipse {...SPOON_HEAD} />
+        {CHOPSTICKS.map((d) => (
+          <path key={d} d={d} />
+        ))}
       </g>
     </svg>
   );
@@ -18,12 +25,14 @@ export function BrandSymbol({ height = 22, className = "fill-brand" }: { height?
 
 // 글자 로고 — 한글 '먹킷'을 크게, 영문 MUKKIT 을 아래 작게 (44, 사용자 결정 2026-11-23 B안: 영문만이면 '무킷'으로 읽힘)
 // 두 줄 글자 묶음의 위 · 아래를 수저 심볼 높이에 맞춘다
-const MARK = {
+export const MARK = {
+  // 실행 화면 — md 를 1.75배로
+  lg: { h: 56, ko: 37, en: 15, gap: 16, nudge: 1.75 },
   md: { h: 32, ko: 21, en: 8.5, gap: 9, nudge: 1 },
   sm: { h: 26, ko: 17, en: 7, gap: 7, nudge: 0.8 },
 } as const;
 
-export function Wordmark({ size = "md" }: { size?: "sm" | "md" }) {
+export function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const m = MARK[size];
   return (
     <span className="flex items-center" style={{ gap: m.gap }} role="img" aria-label={BRAND_NAME}>

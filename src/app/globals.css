@@ -89,7 +89,8 @@ body {
   overflow-wrap: break-word;
 }
 
-/* 실행 애니메이션 — html[data-splash] 일 때만 (layout 의 스크립트가 그리기 전에 붙인다). 0.8초 뒤 사라지고 누를 수 없게 */
+/* 실행 애니메이션 — html[data-splash] 일 때만 (layout 의 스크립트가 그리기 전에 붙인다)
+   0 ~ 0.42초 가운데에 수저가 놓임 → 0.42 ~ 0.72초 심볼이 비켜서며 글자가 펼쳐짐 → 0.95초까지 사라짐 */
 .launch-splash {
   display: none;
 }
@@ -98,58 +99,70 @@ html[data-splash] .launch-splash {
   inset: 0;
   z-index: 100;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
   background: #ffffff;
-  animation: launch-out 200ms ease-in 600ms forwards;
+  animation: launch-out 220ms ease-in 760ms forwards;
+}
+.launch-lockup {
+  display: flex;
+  align-items: center;
+  /* 글자 묶음 너비(약 74px) + 간격의 절반만큼 심볼을 처음엔 가운데로 */
+  --launch-shift: 45px;
 }
 .launch-symbol {
+  flex: none;
   fill: var(--color-brand);
   overflow: visible;
+  animation: launch-slide 300ms cubic-bezier(0.3, 0, 0.2, 1) 420ms both;
 }
 .launch-spoon {
   transform-box: fill-box;
   transform-origin: 50% 100%;
-  animation: launch-spoon 380ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  animation: launch-spoon 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.launch-chopsticks {
-  animation: launch-chop 320ms cubic-bezier(0.2, 0.8, 0.3, 1) 120ms both;
+.launch-chopstick {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: launch-chop 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .launch-word {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  animation: launch-word 260ms ease-out 260ms both;
+  justify-content: space-between;
+  animation: launch-word 300ms cubic-bezier(0.3, 0, 0.2, 1) 440ms both;
 }
 .launch-ko {
-  font-size: 26px;
-  font-weight: 800;
+  display: block;
+  line-height: 0.8;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--color-ink);
-  line-height: 1;
 }
 .launch-en {
-  font-size: 10px;
+  display: block;
+  line-height: 0.75;
   font-weight: 700;
-  letter-spacing: 0.18em;
-  margin-right: -0.18em;
+  letter-spacing: 0.1em;
+  margin-right: -0.1em;
   color: var(--color-muted);
-  line-height: 1;
 }
 @keyframes launch-spoon {
-  from { opacity: 0; transform: translateY(-28px) rotate(-8deg); }
-  to { opacity: 1; transform: none; }
+  0% { opacity: 0; transform: translateY(-34%) scale(0.96); }
+  60% { opacity: 1; transform: translateY(3%) scale(1); }
+  100% { opacity: 1; transform: none; }
 }
 @keyframes launch-chop {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(26%); }
   to { opacity: 1; transform: none; }
 }
+@keyframes launch-slide {
+  from { transform: translateX(var(--launch-shift)); }
+  to { transform: none; }
+}
 @keyframes launch-word {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateX(-10px); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); transform: none; }
 }
 @keyframes launch-out {
   to { opacity: 0; visibility: hidden; }
