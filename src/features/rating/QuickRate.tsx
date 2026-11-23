@@ -166,7 +166,7 @@ export function QuickRate({ initial, total }: { initial: SavedPlace | null; tota
             {skipped.length > 0 ? "다시 보거나 나중에 이어서 할 수 있어요." : "장소를 가져오면 여기서 이어서 평가할 수 있어요."}
           </p>
           <div className="flex-1" />
-          <div className="flex flex-col gap-2 pb-5">
+          <div className="sticky bottom-0 z-10 flex flex-col gap-2 bg-white pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
             {skipped.length > 0 && (
               <button
                 type="button"

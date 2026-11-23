@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { Cuisine } from "@/domain/cuisine";
 import { cuisinePreference, type Candidate, type Rater } from "@/domain/eatScore";
 import { regionOf } from "@/domain/region";
@@ -31,7 +32,9 @@ type MineRow = { tier: string; places: { cuisine: string; lat: number; lng: numb
 
 // 내 저장으로 업종 취향과 자주 가는 지역(가운데 좌표)을 함께 만든다
 export async function getMyTasteBasis(supabase: SupabaseClient, me: string): Promise<{ pref: Partial<Record<Cuisine, number>>; regions: Region[] }> {
-  const { data, error } = await supabase.from("user_places").select("tier, places(cuisine, lat, lng, address)").eq("user_id", me).limit(5000);
+  const { data, error } = await fetchAll((from, to) =>
+    supabase.from("user_places").select("tier, places(cuisine, lat, lng, address)").eq("user_id", me).order("place_id").range(from, to),
+  );
   if (error) throw new Error(`내 저장 조회 실패: ${error.code}`);
   const rows = (data as unknown as MineRow[]).flatMap((r) => (r.places ? [{ tier: tierFromDb(r.tier) as Tier, ...r.places }] : []));
   const pref = cuisinePreference(rows.map((r) => ({ cuisine: r.cuisine as Cuisine, tier: r.tier })));
