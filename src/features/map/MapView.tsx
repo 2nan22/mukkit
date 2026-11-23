@@ -7,7 +7,7 @@ import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { honor } from "@/domain/honor";
 import { regionOf } from "@/domain/region";
-import { BrandSymbol } from "@/components/brand/Wordmark";
+import { TierIcon } from "@/components/ui/TierIcon";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { LIST_COLORS } from "@/domain/listColor";
 import type { MapList } from "@/features/lists/lists";
@@ -25,15 +25,6 @@ import { Avatar } from "@/components/ui/Avatar";
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
 // 팔로잉 지도는 평가한 곳만이라 평가 등급만
 const RATED_FILTERS: Tier[] = ["three", "two", "one", "notRecommended"];
-const TIER_DOT: Record<Tier, string> = {
-  three: "bg-tier-3",
-  two: "bg-pin-2",
-  one: "bg-pin-1",
-  notRecommended: "bg-pin-none",
-  wantToGo: "border-2 border-ink bg-white",
-  unrated: "border border-pin-none bg-white",
-};
-// 수저 등급 칩은 지도 핀과 같은 색의 수저 심볼로 (선택돼 검정 바탕이어도 색 유지)
 const BY_LIST_KEY = "mukkit-map-by-list";
 const BY_LIST_EVENT = "mukkit-map-by-list";
 // 저장소가 막힌 브라우저에서도 이번 화면 동안은 바꾼 기준을 쓴다
@@ -57,7 +48,6 @@ function subscribeByList(cb: () => void) {
   window.addEventListener(BY_LIST_EVENT, cb);
   return () => window.removeEventListener(BY_LIST_EVENT, cb);
 }
-const SPOON_FILL: Partial<Record<Tier, string>> = { three: "fill-tier-3", two: "fill-pin-2", one: "fill-pin-1" };
 const CUISINE_ORDER: Cuisine[] = ["korean", "chinese", "japanese", "western", "asian", "snack", "chicken", "bar", "cafe", "other", "nonFood"];
 
 type Focus = { lat: number; lng: number; level: number };
@@ -461,7 +451,7 @@ export function MapView({
               </Chip>
               {(isFollowing ? RATED_FILTERS : TIER_FILTERS).map((t) => (
                 <Chip key={t} pressed={tiers.includes(t)} onClick={() => setTiers(toggle(tiers, t))}>
-                  {SPOON_FILL[t] ? <BrandSymbol height={13} className={SPOON_FILL[t]} /> : <span aria-hidden="true" className={`size-2.5 rounded-full ${TIER_DOT[t]}`} />}
+                  <TierIcon tier={t} color={t === "wantToGo" && tiers.includes(t) ? "#ffffff" : undefined} />
                   {TIER_LABEL[t]}
                 </Chip>
               ))}

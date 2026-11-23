@@ -2,6 +2,7 @@
 
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
+import { tierIconSvg } from "@/components/ui/TierIcon";
 import type { Tier } from "@/domain/tier";
 
 // 카카오맵 JS SDK 에서 쓰는 만큼만 — 공식 타입 패키지가 없다
@@ -90,14 +91,14 @@ const CLUSTER_STYLE = {
   font: "700 13px/36px system-ui",
 };
 
-const PIN_STYLE: Record<Tier, { size: number; bg: string; ring: string; text: string; label: string; dot?: string }> = {
+const PIN_STYLE: Record<Tier, { size: number; bg: string; ring: string; text: string; label: string; dot?: string; icon?: { color: string } }> = {
   three: { size: 22, bg: "#b42330", ring: "#ffffff", text: "#ffffff", label: "3" },
   two: { size: 22, bg: "#e8590c", ring: "#ffffff", text: "#ffffff", label: "2" },
   one: { size: 22, bg: "#f5a524", ring: "#ffffff", text: "#3d2800", label: "1" },
-  // 평가 아닌 핀도 지도 위에서 보이게 — 흰 원은 진한 테두리 · 가운데 점 (2026-11-23 사용자 의견: 가고 싶은 곳이 잘 안 보임)
-  notRecommended: { size: 14, bg: "#8a8e96", ring: "#ffffff", text: "#ffffff", label: "" },
-  wantToGo: { size: 18, bg: "#ffffff", ring: "#17181c", text: "#17181c", label: "", dot: "#17181c" },
-  unrated: { size: 14, bg: "#ffffff", ring: "#5b5f69", text: "#5b5f69", label: "", dot: "#adb1b8" },
+  // 평가 아닌 핀은 등급 아이콘을 넣어 서로 갈리게 — 추천 안 함 회색 바탕 흰 숟가락 · 가고 싶은 곳 깃발 · 평가 전 빈 숟가락 (41)
+  notRecommended: { size: 20, bg: "#8a8e96", ring: "#ffffff", text: "#ffffff", label: "", icon: { color: "#ffffff" } },
+  wantToGo: { size: 20, bg: "#ffffff", ring: "#17181c", text: "#17181c", label: "", icon: { color: "#17181c" } },
+  unrated: { size: 20, bg: "#ffffff", ring: "#5b5f69", text: "#5b5f69", label: "", icon: { color: "#5b5f69" } },
 };
 
 // 지도 검색으로 찾은 가게 — 내 등급 핀과 헷갈리지 않는 검정 핀
@@ -114,7 +115,7 @@ function foundElement(): HTMLElement {
 const NUMBER: Partial<Record<Tier, string>> = { three: "3", two: "2", one: "1" };
 
 function pinElement(tier: Tier, selected: boolean, onClick: () => void, color?: Pin["color"]): HTMLElement {
-  const s =
+  const s: { size: number; bg: string; ring: string; text: string; label: string; dot?: string; icon?: { color: string } } =
     color === null
       ? { size: 14, bg: "#ffffff", ring: "#8a8e96", text: "#5b5f69", label: "" }
       : color
@@ -127,7 +128,7 @@ function pinElement(tier: Tier, selected: boolean, onClick: () => void, color?: 
   el.type = "button";
   el.setAttribute("aria-label", "장소 선택");
   el.style.cssText = "padding:0;border:0;background:none;cursor:pointer";
-  el.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;box-sizing:border-box;border-radius:50%;background:${s.bg};border:${selected ? 3 : 2}px solid ${ring};box-shadow:0 2px 8px rgba(0,0,0,.25);color:${s.text};font:700 11px/1 system-ui">${s.dot ? `<span style="width:${Math.round(size / 3)}px;height:${Math.round(size / 3)}px;border-radius:50%;background:${s.dot}"></span>` : s.label}</span>`;
+  el.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;box-sizing:border-box;border-radius:50%;background:${s.bg};border:${selected ? 3 : 2}px solid ${ring};box-shadow:0 2px 8px rgba(0,0,0,.25);color:${s.text};font:700 11px/1 system-ui">${s.icon ? tierIconSvg(tier, Math.round(size * (tier === "wantToGo" ? 0.55 : 0.6)), s.icon.color) : s.dot ? `<span style="width:${Math.round(size / 3)}px;height:${Math.round(size / 3)}px;border-radius:50%;background:${s.dot}"></span>` : s.label}</span>`;
   el.addEventListener("click", onClick);
   return el;
 }
