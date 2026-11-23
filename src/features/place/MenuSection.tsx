@@ -9,7 +9,9 @@ function won(n: number): string {
   return `${n.toLocaleString("ko-KR")}원`;
 }
 
-export function MenuSection({ menu, kakaoUrl }: { menu: Menu; kakaoUrl: string }) {
+const SOURCE: Record<Menu["source"], string> = { kakao: "카카오맵", naver: "네이버 지도" };
+
+export function MenuSection({ menu }: { menu: Menu }) {
   const [all, setAll] = useState(false);
   const items = all ? menu.items : menu.items.slice(0, SHOWN);
   return (
@@ -38,9 +40,9 @@ export function MenuSection({ menu, kakaoUrl }: { menu: Menu; kakaoUrl: string }
         </button>
       )}
       <p className="pt-3 text-caption leading-normal text-muted">
-        카카오맵 기준{menu.updatedAt ? ` · ${menu.updatedAt.slice(0, 10).replaceAll("-", ".")} 갱신` : ""} · 가격은 바뀔 수 있어요.{" "}
-        <a href={kakaoUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2">
-          카카오맵에서 보기
+        출처 {SOURCE[menu.source]}{menu.updatedAt ? ` · ${menu.updatedAt.slice(0, 10).replaceAll("-", ".")} 갱신` : ""} · 가격은 바뀔 수 있어요.{" "}
+        <a href={menu.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+          {SOURCE[menu.source]}에서 보기
         </a>
       </p>
     </section>
