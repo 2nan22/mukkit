@@ -152,6 +152,17 @@ function meElement(): HTMLElement {
 // padding: 핀을 다 넣을 때 위 · 오른쪽 · 아래 · 왼쪽 여백 — 지도 위에 겹치는 칩 · 시트만큼
 const SHEET_PADDING = [160, 40, 220, 40] as const;
 
+// 여백이 지도보다 크면 핀을 넣을 자리가 없어 가장 멀리(전국)로 물러난다 — 지도 크기의 60% 안으로 줄인다
+export function fitPadding([top, right, bottom, left]: readonly [number, number, number, number], width: number, height: number): [number, number, number, number] {
+  const shrink = (a: number, b: number, size: number) => {
+    const room = size * 0.6;
+    return size > 0 && a + b > room ? [(a * room) / (a + b), (b * room) / (a + b)] : [a, b];
+  };
+  const [t, b] = shrink(top, bottom, height);
+  const [l, r] = shrink(left, right, width);
+  return [Math.round(t), Math.round(r), Math.round(b), Math.round(l)];
+}
+
 export function PlaceMap({
   pins,
   selectedId,
@@ -319,7 +330,8 @@ export function PlaceMap({
       }
       const bounds = new maps.LatLngBounds();
       pins.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
-      m.setBounds(bounds, top, right, bottom, left);
+      const [t, r, b, l] = fitPadding([top, right, bottom, left], el.current?.clientWidth ?? 0, el.current?.clientHeight ?? 0);
+      m.setBounds(bounds, t, r, b, l);
     });
   }, [ready, pins, top, right, bottom, left, refit]);
 

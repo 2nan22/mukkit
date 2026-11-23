@@ -92,7 +92,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
   if (!me) redirect(SIGNED_OUT_HOME);
   if (!/^[0-9a-f-]{36}$/.test(placeId)) notFound();
   // 장소 id 만 있으면 되는 조회는 한 번에 — 차례로 기다리지 않게
-  const [place, mine, myMedia, others, lists, myVisits, covers] = await Promise.all([
+  const [place, mine, myMedia, others, lists, myVisits, covers, listed] = await Promise.all([
     getPlace(supabase, placeId),
     getSavedPlace(supabase, me, placeId),
     getMyMedia(supabase, me, placeId),
@@ -100,8 +100,11 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
     getMyLists(supabase, me),
     getMyVisits(supabase, placeId),
     getPlaceCovers(supabase, [placeId]),
+    supabase.from("list_items").select("list_id, lists!inner(owner_id)").eq("place_id", placeId).eq("lists.owner_id", me),
   ]);
   if (!place) notFound();
+  // 담기 시트에 '담김' 표시 — 내 리스트 것만
+  const inLists = (listed.data ?? []).map((r) => r.list_id as string);
   const myRated = Boolean(mine && ["three", "two", "one", "notRecommended"].includes(mine.tier));
   const reactions = await getReactions(supabase, [...others.map((o) => ({ ownerId: o.userId, placeId })), ...(myRated ? [{ ownerId: me, placeId }] : [])]);
   const reactionOf = (owner: string) => reactions.get(reactionKey(owner, placeId)) ?? null;
@@ -210,7 +213,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         )}
       </section>
 
-      <PlaceBottomBar placeId={place.id} saved={Boolean(mine)} rated={Boolean(mine && ["three", "two", "one", "notRecommended"].includes(mine.tier))} lists={lists.map((l) => ({ id: l.id, name: l.name }))} />
+      <PlaceBottomBar placeId={place.id} saved={Boolean(mine)} rated={Boolean(mine && ["three", "two", "one", "notRecommended"].includes(mine.tier))} lists={lists.map((l) => ({ id: l.id, name: l.name }))} inLists={inLists} />
     </>
   );
 }

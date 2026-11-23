@@ -68,7 +68,13 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
   return (
     <>
       <header className="flex flex-col gap-1 px-5 pt-5 pb-4">
-        <span className="text-meta font-semibold text-muted">{list.ownerNickname}님의 리스트</span>
+        {meta ? (
+          <Link href={`/u/${meta.ownerId}`} className="self-start text-meta font-semibold text-muted underline-offset-2 hover:underline">
+            {list.ownerNickname}님의 리스트
+          </Link>
+        ) : (
+          <span className="text-meta font-semibold text-muted">{list.ownerNickname}님의 리스트</span>
+        )}
         <h1 className="text-title font-bold tracking-tight">{list.name}</h1>
         <span className="text-meta text-muted">
           {list.places.length}곳{meta && meta.saves > 0 ? ` · ${meta.saves}명 저장` : ""}
@@ -83,7 +89,7 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
       />
       {!signedIn && (
         <div className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-[480px] bg-white px-5 pt-3 pb-5 shadow-sheet">
-          <Link href="/" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+          <Link href={`/?next=${encodeURIComponent(`/l/${listId}`)}`} className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
             먹킷에서 내 리스트 만들기
           </Link>
         </div>

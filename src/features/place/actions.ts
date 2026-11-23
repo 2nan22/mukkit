@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
-import { addPlaces } from "@/features/lists/lists";
+import { addPlaces, removePlaces } from "@/features/lists/lists";
 
 async function requireUser() {
   const supabase = await createSupabaseServerClient();
@@ -41,4 +41,30 @@ export async function savePlaceToList(placeId: string, listId: string): Promise<
   revalidatePath(`/p/${placeId}`);
   revalidatePath(`/lists/${listId}`);
   return {};
+}
+
+// 리스트에서 빼기 — 담기 시트에서 이미 담긴 리스트를 다시 누를 때
+export async function removePlaceFromList(placeId: string, listId: string): Promise<{ error?: string }> {
+  if (!z.uuid().safeParse(placeId).success || !z.uuid().safeParse(listId).success) return { error: "빼지 못했어요." };
+  const { supabase, me } = await requireUser();
+  try {
+    await removePlaces(supabase, me, listId, [placeId]);
+  } catch {
+    return { error: "빼지 못했어요. 다시 시도해 주세요." };
+  }
+  revalidatePath(`/p/${placeId}`);
+  revalidatePath(`/lists/${listId}`);
+  return {};
+}
+
+// 다녀온 곳을 바로 평가 — 저장(평가 전) 뒤 평가 화면으로. 이미 저장했으면 등급 · 메모는 그대로
+export async function rateNewPlace(placeId: string): Promise<{ error?: string }> {
+  if (!z.uuid().safeParse(placeId).success) return { error: "장소를 찾을 수 없어요." };
+  const { supabase, me } = await requireUser();
+  const { error } = await supabase
+    .from("user_places")
+    .upsert({ user_id: me, place_id: placeId, tier: "unrated" }, { onConflict: "user_id,place_id", ignoreDuplicates: true });
+  if (error) return { error: "저장하지 못했어요. 다시 시도해 주세요." };
+  revalidatePath(`/p/${placeId}`);
+  redirect(`/rate/${placeId}?next=${encodeURIComponent(`/p/${placeId}`)}`, RedirectType.push);
 }

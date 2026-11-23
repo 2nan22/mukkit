@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { readPublicEnv } from "@/config/env";
-import { isProtectedPath, NICKNAME_SETUP, ONBOARDED_COOKIE, SIGNED_IN_HOME, SIGNED_OUT_HOME } from "@/features/auth/paths";
+import { isProtectedPath, NICKNAME_SETUP, ONBOARDED_COOKIE, safeNextPath, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { needsAgreement, TERMS_VERSION } from "@/features/legal/legal";
 
 // 요청마다 세션을 갱신하고, 로그인 여부로 보호 경로를 가른다
@@ -26,8 +26,9 @@ export async function proxy(request: NextRequest) {
   const signedIn = Boolean(data?.claims);
   const { pathname } = request.nextUrl;
 
-  if (!signedIn && isProtectedPath(pathname)) return redirectKeepingCookies(request, response, SIGNED_OUT_HOME);
-  if (signedIn && pathname === SIGNED_OUT_HOME) return redirectKeepingCookies(request, response, SIGNED_IN_HOME);
+  // 로그인 뒤 원래 화면으로 돌아오게 주소를 싣는다 (알림 링크 · 공유 시트로 바로 연 경우)
+  if (!signedIn && isProtectedPath(pathname)) return redirectKeepingCookies(request, response, `${SIGNED_OUT_HOME}?next=${encodeURIComponent(pathname + request.nextUrl.search)}`);
+  if (signedIn && pathname === SIGNED_OUT_HOME) return redirectKeepingCookies(request, response, safeNextPath(request.nextUrl.searchParams.get("next")));
   if (signedIn && isProtectedPath(pathname) && !pathname.startsWith("/onboarding")) {
     const mark = `${data!.claims.sub}:${TERMS_VERSION}`;
     if (request.cookies.get(ONBOARDED_COOKIE)?.value !== mark) {

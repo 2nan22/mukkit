@@ -58,8 +58,19 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
       )}
       {ranked.length === 0 ? (
         <div className="flex flex-col gap-1 py-8 text-meta text-muted">
-          <p>아직 순위를 정한 3숟가락이 없어요.</p>
-          <p>아래에서 하나씩 정해 보세요.</p>
+          {unranked.length > 0 ? (
+            <>
+              <p>아직 순위를 정한 3숟가락이 없어요.</p>
+              <p>아래에서 하나씩 정해 보세요.</p>
+            </>
+          ) : (
+            <>
+              <p>3숟가락을 준 곳이 아직 없어요.</p>
+              <Link href="/rate" className="self-start py-2 font-semibold text-ink underline underline-offset-[3px]">
+                빠르게 평가하러 가기
+              </Link>
+            </>
+          )}
         </div>
       ) : (
         <>
