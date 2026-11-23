@@ -22,24 +22,42 @@ export async function refreshImportedList(listId: string): Promise<{ error?: str
 
   const list = await supabase.from("lists").select("source, source_list_id").eq("id", listId).eq("owner_id", userId).maybeSingle();
   if (!list.data?.source || !list.data.source_list_id) return { error: "가져온 리스트가 아니에요." };
+  return refreshSource(supabase, userId, list.data.source as PlaceSourceName, list.data.source_list_id as string, [`/lists/${listId}`]);
+}
+
+// 가져온 원본 관리 › ⋯ › 지금 새로 고치기 — 리스트가 없는 등급 리스트 원본도
+export async function refreshImportSource(source: string, sourceListId: string): Promise<{ error?: string; done?: string }> {
+  const t = z.object({ source: z.enum(["naver", "kakao"]), sourceListId: z.string().min(1).max(200) }).safeParse({ source, sourceListId });
+  if (!t.success) return { error: "새로 고치지 못했어요." };
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims?.sub;
+  if (!userId) redirect(SIGNED_OUT_HOME);
+  return refreshSource(supabase, userId, t.data.source, t.data.sourceListId, ["/import/sources"]);
+}
+
+// 원본 다시 읽기 — 1시간 간격 · 직접 누르면 실패 횟수를 지워 새벽 작업도 다시 시작
+async function refreshSource(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+  source: PlaceSourceName,
+  sourceListId: string,
+  paths: string[],
+): Promise<{ error?: string; done?: string }> {
   const src = await supabase
     .from("import_sources")
     .select("mode, tier, last_synced_at, status")
     .eq("user_id", userId)
-    .eq("source", list.data.source)
-    .eq("source_list_id", list.data.source_list_id)
+    .eq("source", source)
+    .eq("source_list_id", sourceListId)
     .maybeSingle();
   const last = src.data?.last_synced_at ? new Date(src.data.last_synced_at as string).getTime() : 0;
   if (Date.now() - last < COOLDOWN_MS) return { done: "조금 전에 확인했어요. 잠시 뒤에 다시 눌러 주세요." };
-  // 직접 누르면 실패 횟수를 지워 새벽 작업도 다시 시작
-  if (src.data) await supabase.from("import_sources").update({ fail_count: 0 }).eq("user_id", userId).eq("source", list.data.source).eq("source_list_id", list.data.source_list_id);
+  if (src.data) await supabase.from("import_sources").update({ fail_count: 0 }).eq("user_id", userId).eq("source", source).eq("source_list_id", sourceListId);
 
   const mode = src.data?.mode === "tier" && src.data.tier ? modeFromValue(src.data.tier as string) : { kind: "plain" as const };
-  const res = await refreshImport(supabase, userId, { source: list.data.source as PlaceSourceName, sourceListId: list.data.source_list_id as string, mode }).catch(
-    () => ({ status: "error" as const }),
-  );
-  revalidatePath(`/lists/${listId}`);
-  revalidatePath("/lists");
+  const res = await refreshImport(supabase, userId, { source, sourceListId, mode }).catch(() => ({ status: "error" as const }));
+  for (const p of [...paths, "/lists", "/import/sources"]) revalidatePath(p);
   switch (res.status) {
     case "unchanged":
       return { done: "원본과 같아요. 바뀐 곳이 없어요." };
