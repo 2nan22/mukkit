@@ -831,7 +831,8 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
             </Link>
             <TierBadge tier={place.tier} />
           </span>
-          <MetaLine items={[...placeMeta(place), !place.available && "지도에 정보 없음"]} />
+          <MetaLine items={placeMeta(place)} />
+          {!place.available && <span className="text-meta font-semibold text-danger">지도에 정보 없음</span>}
         </div>
         <button type="button" onClick={onClose} aria-label="닫기" className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
@@ -875,7 +876,8 @@ function FollowingCard({ place, onClose }: { place: MapPlace; onClose: () => voi
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-1">
           <h2 className="truncate text-section font-bold">{place.name}</h2>
-          <MetaLine items={[...placeMeta(place), !place.available && "지도에 정보 없음"]} />
+          <MetaLine items={placeMeta(place)} />
+          {!place.available && <span className="text-meta font-semibold text-danger">지도에 정보 없음</span>}
           {place.myTier && <span className="text-meta text-ink-2">{["three", "two", "one", "notRecommended"].includes(place.myTier) ? `내 평가 ${TIER_LABEL[place.myTier]}` : "내가 저장한 곳"}</span>}
         </div>
         <button type="button" onClick={onClose} aria-label="닫기" className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">

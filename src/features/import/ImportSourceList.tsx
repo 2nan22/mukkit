@@ -88,7 +88,14 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
                 <SourceMark source={r.source} size={16} />
                 <span className="truncate text-body font-semibold">{nameOf(r)}</span>
               </span>
-              <MetaLine className={`text-meta ${line.warn ? "font-semibold text-ink" : "text-muted"}`} items={[`${r.count}곳`, line.text]} />
+              {line.warn ? (
+                <>
+                  <span className="text-meta text-muted">{r.count}곳</span>
+                  <span className="text-meta font-semibold text-ink">{line.text}</span>
+                </>
+              ) : (
+                <MetaLine items={[`${r.count}곳`, line.text]} />
+              )}
             </>
           );
           return (
@@ -224,7 +231,8 @@ function SourceSheet({ row, initialStep, onClose, onDone }: { row: ImportSourceR
           <>
             <div className="flex flex-col gap-1 pt-1">
               <h2 className="text-[18px] leading-snug font-bold">{name}</h2>
-              <MetaLine items={[`${row.count}곳`, syncLine(row.sync).text]} />
+              <span className="text-meta text-muted">{row.count}곳</span>
+              <span className={`text-meta ${syncLine(row.sync).warn ? "font-semibold text-ink" : "text-muted"}`}>{syncLine(row.sync).text}</span>
             </div>
             <div className="flex flex-col">
               <button type="button" disabled={pending} onClick={() => (row.sync ? refresh() : setStep("setup"))} className="flex h-12 items-center text-body text-ink disabled:opacity-50">

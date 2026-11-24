@@ -119,7 +119,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
               <h2 className="text-section font-bold">
                 리스트 {rows.length}개 <span className="ml-1.5 font-normal text-muted">{total}곳</span>
               </h2>
-              <span className="text-caption text-muted">눌러서 등급과 공개 범위</span>
+              <span className="text-caption text-muted">누르면 등급과 공개 범위를 바꿔요</span>
             </div>
             <ul>
               {rows.map((row) => (
@@ -399,9 +399,7 @@ function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean;
   const rated = isRatedMode(row.mode);
   const detail: string[] = rated
     ? [row.visibility ? VISIBILITY_LABEL[row.visibility] : "공개 범위 고르기", row.noteVisibility && row.noteVisibility !== "same" ? `메모 ${VISIBILITY_LABEL[row.noteVisibility]}` : ""].filter(Boolean)
-    : row.mode.kind === "plain"
-      ? ["리스트로 만들기"]
-      : [];
+    : [];
   return (
     <li className={`-mx-2 flex items-center rounded-[10px] border-b border-line transition-colors duration-700 ${fresh ? "bg-surface" : ""}`}>
       <button

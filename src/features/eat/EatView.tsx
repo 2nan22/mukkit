@@ -227,7 +227,7 @@ export function EatView({ regions, initial = null }: { regions: Region[]; initia
                   cuisine={p.cuisine}
                   tier={p.myTier}
                   meta={[km(p.distance), p.categoryName && !["음식점", CUISINE_LABEL[p.cuisine]].includes(p.categoryName) ? p.categoryName : null]}
-                  note={othersReasons(p.reasons).length > 0 ? <MetaLine className="text-ink-2" items={othersReasons(p.reasons)} /> : undefined}
+                  note={othersReasons(p.reasons).length > 0 ? <MetaLine wrap className="text-meta text-ink-2" items={othersReasons(p.reasons)} /> : undefined}
                 />
               ))}
             </div>

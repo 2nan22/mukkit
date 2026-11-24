@@ -9,6 +9,7 @@ export function AgreeCheck() {
       <span className="flex flex-col gap-1">
         <span className="text-body font-semibold">이용약관과 개인정보 처리방침에 동의해요 (필수)</span>
         <MetaLine
+          wrap
           items={[
             "만 14세 이상이에요",
             <Link key="terms" href="/terms" className="underline underline-offset-2">

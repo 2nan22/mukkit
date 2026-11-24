@@ -87,7 +87,7 @@ export function TextImportFlow() {
       setBusy(null);
       if (res.error) return setMessage({ text: res.error, error: true });
       setSaved((s) => ({ ...s, [h.kakaoId]: res.placeId! }));
-      setMessage({ text: `${h.name}, 가고 싶은 곳으로 저장했어요` });
+      setMessage({ text: `${h.name}${objectParticle(h.name)} 가고 싶은 곳으로 저장했어요` });
     });
   }
 
@@ -214,4 +214,10 @@ function flag(filled: boolean) {
       <path d="M6 21V4h11l-2 4 2 4H6" />
     </svg>
   );
+}
+
+// 이름 뒤 목적격 조사 — 받침이 있으면 '을', 없으면 '를'
+function objectParticle(name: string): string {
+  const code = name.charCodeAt(name.length - 1) - 0xac00;
+  return code >= 0 && code <= 11171 && code % 28 !== 0 ? "을" : "를";
 }

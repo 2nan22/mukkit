@@ -108,7 +108,7 @@ export function ListDetail({ list, places, origin, covers = {}, saves = 0, impor
         )}
         <div className="flex items-center gap-2 text-meta text-muted">
           <span>{list.count}곳</span>
-          <span aria-hidden="true" className="h-2.5 w-px bg-line-strong" />
+          <span aria-hidden="true" className="h-2.5 w-px shrink-0 bg-line-strong" />
           <button
             type="button"
             onClick={() => (setVisibilityOpen((v) => !v), setColorOpen(false))}

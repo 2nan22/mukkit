@@ -33,7 +33,7 @@ function lateWarning(plan: AreaPlan): string | null {
 // 추천 이유 — 내 등급은 배지로 이미 보이니 남의 평가만
 function reasonLine(reasons: string[]) {
   const others = reasons.filter((r) => !r.startsWith("내 ") && !r.startsWith("내가 "));
-  return others.length > 0 ? <MetaLine className="text-ink-2" items={others} /> : undefined;
+  return others.length > 0 ? <MetaLine wrap className="text-meta text-ink-2" items={others} /> : undefined;
 }
 
 export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaPlan[]; meetupUrl: string; waitingCount: number }) {
@@ -98,6 +98,7 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
           {plan.people.map((p) => (
             <li key={p.id} className={p.late ? "font-medium text-danger" : ""}>
               <MetaLine
+                wrap
                 className=""
                 items={[`${who(p)} ${Math.round(p.minutes / 5) * 5}분쯤`, p.last ? `막차 늦어도 ${nightClock(p.last)}쯤 출발` : p.isMe ? "귀가지를 넣으면 막차도 알려 드려요" : null]}
               />
