@@ -86,14 +86,14 @@ function same(a: unknown[] | undefined, b: unknown[]): boolean {
   return Boolean(a) && a!.length === b.length && a!.every((v, i) => v === b[i]);
 }
 
-// 이 좌표의 '구 동' (행정동) — SDK 가 아직 없거나 못 찾으면 null
-export function regionName(lat: number, lng: number): Promise<string | null> {
+// 이 좌표의 구 · 동 (행정동) — SDK 가 아직 없거나 못 찾으면 null
+export function regionName(lat: number, lng: number): Promise<{ gu: string; dong: string } | null> {
   const services = window.kakao?.maps.services;
   if (!services) return Promise.resolve(null);
   return new Promise((resolve) => {
     new services.Geocoder().coord2RegionCode(lng, lat, (res, status) => {
       const h = status === "OK" ? (res.find((r) => r.region_type === "H") ?? res[0]) : undefined;
-      resolve(h ? [h.region_2depth_name, h.region_3depth_name].filter(Boolean).join(" ") || null : null);
+      resolve(h?.region_2depth_name ? { gu: h.region_2depth_name, dong: h.region_3depth_name } : null);
     });
   });
 }
@@ -270,8 +270,8 @@ export function PlaceMap({
       requestAnimationFrame(() => m0.relayout());
       window.kakao?.maps.event.addListener(m0, "dragstart", () => onMoveRef.current?.());
       window.kakao?.maps.event.addListener(m0, "tilesloaded", () => setDrawn(true));
-      // 타일 소식이 끝내 안 와도(숨은 지도 등) 로딩이 남지 않게
-      setTimeout(() => setDrawn(true), 6000);
+      // 핀이 뜬 뒤에도 로딩이 핀을 오래 가리지 않게 — 타일이 늦어도 1.5초면 걷는다 (65 디자인 검토)
+      setTimeout(() => setDrawn(true), 1500);
       window.kakao?.maps.event.addListener(m0, "idle", () => {
         const b = m0.getBounds();
         const sw = b.getSouthWest();

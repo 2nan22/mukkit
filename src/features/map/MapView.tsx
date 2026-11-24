@@ -737,7 +737,7 @@ function PullCard({ placeId, onClose, children }: { placeId: string; onClose: ()
   return (
     <div ref={card} onPointerDown={onDown} className="touch-none transition-transform duration-200 ease-out select-none [-webkit-touch-callout:none]">
       <button type="button" onClick={open} aria-label="장소 상세 보기" className="mx-auto flex h-6 w-16 items-center justify-center">
-        <span aria-hidden="true" className="h-1 w-9 rounded-full bg-line-strong" />
+        <span aria-hidden="true" className="h-1 w-9 rounded-full bg-subtle/50" />
       </button>
       {children}
       {opening && (
