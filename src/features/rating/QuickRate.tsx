@@ -234,7 +234,7 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
       )}
       {visOpen && (
         <VisibilitySheet
-          noteVis={place?.note ? noteVis : undefined}
+          noteVis={place?.note || place?.alias ? noteVis : undefined}
           value={shownVisibility}
           onPick={(v) => {
             setVisibility(v);

@@ -117,7 +117,11 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
     if (!now) continue;
     // 별명만 바뀌면 원본 기록만 (별명은 원본 기록에서 읽는다, 68-7)
     if (now.memo === old.memo) {
-      if ((now.alias ?? "") !== (old.alias ?? "")) await client.from("imported_items").update({ alias: now.alias ?? "" }).match({ ...where, source_place_id: old.source_place_id });
+      if ((now.alias ?? "") !== (old.alias ?? "")) {
+        await client.from("imported_items").update({ alias: now.alias ?? "" }).match({ ...where, source_place_id: old.source_place_id });
+        // 새 별명도 이 리스트에 고른 메모 공개 범위로
+        if (now.alias) changedPlaces.push(old.place_id);
+      }
       continue;
     }
     const res = await client

@@ -130,3 +130,43 @@ AS $function$
 $function$;
 revoke execute on function public.rating_detail(uuid, uuid) from public, anon;
 grant execute on function public.rating_detail(uuid, uuid) to authenticated;
+
+-- 별명만 있고 메모가 빈 곳도 메모 공개 범위를 받게 — 별명은 메모와 같은 공개 범위 (68-7 검토)
+create or replace function public.set_imported_note_visibility(p_user uuid, p_vis public.rating_visibility, p_places uuid[] default null)
+returns int language sql security invoker set search_path = '' as $$
+  with done as (
+    update public.user_places up
+       set note_visibility = p_vis
+     where up.user_id = p_user
+       and (p_places is null or up.place_id = any (p_places))
+       and up.tier in ('three', 'two', 'one', 'not_recommended')
+       and up.note_visibility is distinct from p_vis
+       and (p_places is null or public.note_rank(p_vis) < public.note_rank(up.note_visibility))
+       and (
+         (btrim(up.note) <> '' and exists (
+           select 1 from public.imported_items i
+            where i.user_id = up.user_id and i.place_id = up.place_id and left(i.memo, 300) = up.note))
+         or (btrim(up.note) = '' and exists (
+           select 1 from public.imported_items i
+            where i.user_id = up.user_id and i.place_id = up.place_id and i.alias <> ''))
+       )
+    returning 1
+  )
+  select count(*)::int from done
+$$;
+
+create or replace function public.count_private_imported_notes(p_user uuid)
+returns int language sql stable security invoker set search_path = '' as $$
+  select count(*)::int from public.user_places up
+   where up.user_id = p_user
+     and up.tier in ('three', 'two', 'one', 'not_recommended')
+     and up.note_visibility = 'private'
+     and (
+       (btrim(up.note) <> '' and exists (
+         select 1 from public.imported_items i
+          where i.user_id = up.user_id and i.place_id = up.place_id and left(i.memo, 300) = up.note))
+       or (btrim(up.note) = '' and exists (
+         select 1 from public.imported_items i
+          where i.user_id = up.user_id and i.place_id = up.place_id and i.alias <> ''))
+     )
+$$;

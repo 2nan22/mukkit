@@ -6,7 +6,8 @@ const SOURCE_NAME: Record<MemoSource, string> = { naver: "네이버 지도 메�
 // 가운데 점으로 이름표와 내용을 한 줄에 잇지 않는다. caption: 내 메모를 누가 보는지 (내 화면에서만)
 // alias: 지도 앱 별명 — 메모와 따로 '별명' 배지 줄 (68-7)
 export function Memo({ text, alias, source, caption, tone = "surface", clamp }: { text: string; alias?: string; source?: string | null; caption?: string; tone?: "surface" | "white"; clamp?: 3 }) {
-  const mark = source === "naver" || source === "kakao" || source === "google" ? source : null;
+  // 별명만 있으면 별명이 온 네이버 로고 (별명은 네이버에만 있음)
+  const mark = source === "naver" || source === "kakao" || source === "google" ? source : alias && !text ? "naver" : null;
   return (
     <div className={`flex gap-2.5 rounded-btn-s px-3 py-2.5 ${tone === "white" ? "bg-white" : "bg-surface"}`}>
       {/* 아이콘을 첫 줄 높이(1lh)에 맞춰 가운데 — 글 첫 줄과 나란히 */}

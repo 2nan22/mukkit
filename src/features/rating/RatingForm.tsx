@@ -232,7 +232,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
       </form>
       {visOpen && (
         <VisibilitySheet
-          noteVis={place.note ? noteVis : undefined}
+          noteVis={place.note || place.alias ? noteVis : undefined}
           value={visibility}
           onPick={(v) => {
             setVisibility(v);
