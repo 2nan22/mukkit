@@ -19,6 +19,10 @@ import {
 import type { ImportResult } from "./saveImportedList";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { tierFromDb } from "@/domain/tier";
+import { RATING_VISIBILITIES, type RatingVisibility } from "@/features/rating/rating";
+
+const RATED_TIERS: string[] = ["three", "two", "one", "not_recommended"];
+const VISIBILITY_LABEL: Record<RatingVisibility, string> = { private: "나만", followers: "팔로워", public: "전체 공개" };
 
 type Row = ListPreview & { link: string; mode: ImportMode };
 type RowStatus = { state: "waiting" | "running" } | { state: "done"; result: ImportResult } | { state: "failed"; error: string };
@@ -49,6 +53,9 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
   // 방금 담긴 줄 — 잠깐 강조
   const [fresh, setFresh] = useState<string[]>([]);
   const android = useSyncExternalStore(noop, isAndroid, () => false);
+  // 등급 리스트로 가져오는 게 있으면 그 등급을 누구에게 보여 줄지 묻는다 (68) — 고를 때까지 가져오기를 막는다
+  const [visibility, setVisibility] = useState<RatingVisibility | null>(null);
+  const rating = rows.some((r) => r.mode.kind === "tier" && RATED_TIERS.includes(r.mode.tier));
 
   async function runImport() {
     setRan(rows);
@@ -56,7 +63,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
     setStatus(Object.fromEntries(rows.map((r) => [r.listId, { state: "waiting" }])));
     for (const row of rows) {
       setStatus((s) => ({ ...s, [row.listId]: { state: "running" } }));
-      const res = await importList(row.link, row.mode);
+      const res = await importList(row.link, row.mode, rating && visibility ? visibility : undefined);
       setStatus((s) => ({
         ...s,
         [row.listId]: res.ok ? { state: "done", result: res.data } : { state: "failed", error: res.error },
@@ -128,8 +135,22 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
         )}
       </section>
       {rows.length > 0 && (
-        <div className="px-5 pt-3 pb-5">
-          <button type="button" onClick={runImport} className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+        <div className="flex flex-col gap-3 px-5 pt-3 pb-5">
+          {rating && (
+            <fieldset className="flex flex-col gap-2">
+              <legend className="pb-2 text-body font-semibold">가져온 등급을 누구에게 보여 줄까요?</legend>
+              <div className="grid grid-cols-3 gap-1.5">
+                {RATING_VISIBILITIES.map((v) => (
+                  <label key={v} className="flex h-11 cursor-pointer items-center justify-center rounded-[10px] bg-surface text-meta font-semibold text-ink-2 has-checked:bg-ink has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-ink has-focus-visible:ring-offset-2">
+                    <input type="radio" name="import-visibility" value={v} checked={visibility === v} onChange={() => setVisibility(v)} className="sr-only" />
+                    {VISIBILITY_LABEL[v]}
+                  </label>
+                ))}
+              </div>
+              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요</span>
+            </fieldset>
+          )}
+          <button type="button" onClick={runImport} disabled={rating && !visibility} className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:opacity-40">
             {total}곳 가져오기
           </button>
         </div>

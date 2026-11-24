@@ -6,6 +6,7 @@ import { ImportError, type ImportedList, type PlaceSource, type PlaceSourceName 
 import type { ImportMode } from "./importMode";
 import { applyToSavedPlaces, saveImportedList } from "./saveImportedList";
 import { placeSourceFor } from "./sources";
+import type { RatingVisibility } from "@/features/rating/rating";
 
 const NOTE_MAX = 300;
 const LIST_NAME_MAX = 40;
@@ -26,7 +27,7 @@ export function hashList(list: ImportedList): string {
 }
 
 // 가져올 때 · 새로 고칠 때 기록 남기기
-export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode): Promise<void> {
+export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode, visibility?: RatingVisibility): Promise<void> {
   await client.from("import_sources").upsert(
     {
       user_id: userId,
@@ -39,6 +40,8 @@ export async function recordImportSource(client: SupabaseClient, userId: string,
       last_synced_at: new Date().toISOString(),
       status: "ok",
       fail_count: 0,
+      // 고르지 않았으면(새로 고침 등) 그 전 값을 그대로 둔다
+      ...(visibility ? { visibility } : {}),
     },
     { onConflict: "user_id,source,source_list_id" },
   );
@@ -123,7 +126,9 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
 
   // 새 곳만 가져오기 규칙으로
   const added = list.places.filter((p) => !known.has(p.sourcePlaceId));
-  const saved = added.length > 0 ? await saveImportedList(client, userId, { ...list, places: added }, key.mode) : null;
+  // 새로 들어온 곳도 가져올 때 고른 공개 범위로 (68)
+  const vis = added.length > 0 && key.mode.kind === "tier" ? await client.from("import_sources").select("visibility").match(where).maybeSingle() : null;
+  const saved = added.length > 0 ? await saveImportedList(client, userId, { ...list, places: added }, key.mode, (vis?.data?.visibility as RatingVisibility | null) ?? undefined) : null;
 
   // 빠진 곳 — 원본 기록 · 먹킷 리스트에서만
   if (gone.length > 0) {

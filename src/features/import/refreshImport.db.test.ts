@@ -118,4 +118,19 @@ describe.skipIf(!hasLocalDb)("가져온 리스트 새로 고침 (로컬 DB)", ()
     const mine = await supabase.from("user_places").select("tier, note").eq("user_id", userId).single();
     expect(mine.data).toEqual({ tier: "two", note: "맛있음" });
   });
+
+  it("새로 고침으로 새로 들어온 곳도 가져올 때 고른 공개 범위 · updated_at 은 원본 저장 때 (68)", async () => {
+    const { supabase, userId } = await signUp();
+    const mode = { kind: "tier" as const, tier: "three" as const };
+    const three = { source: "naver" as const, sourceListId: `vis-${run}`, name: "3스타", memo: "", places: [place(31)], expectedCount: 1, skipped: [] };
+    await saveImportedList(supabase, userId, three, mode, "followers");
+    await recordImportSource(supabase, userId, three, mode, "followers");
+    await supabase.from("import_sources").update({ last_synced_at: new Date(0).toISOString() }).eq("user_id", userId);
+    const more = { ...three, places: [place(31), place(32)], expectedCount: 2 };
+    const res = await refreshImport(supabase, userId, { source: "naver", sourceListId: three.sourceListId, mode }, { placeSource: sourceOf(more) });
+    expect(res.status).toBe("updated");
+    const rows = await supabase.from("user_places").select("visibility, updated_at").eq("user_id", userId);
+    expect(rows.data?.map((r) => r.visibility)).toEqual(["followers", "followers"]);
+    expect(rows.data?.every((r) => r.updated_at.startsWith("2025-06-14"))).toBe(true);
+  });
 });

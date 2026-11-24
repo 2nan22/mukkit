@@ -107,4 +107,16 @@ describe.skipIf(!hasLocalDb)("가져오기 저장 (로컬 DB)", () => {
     const kakaoItem = items.data!.find((i) => i.memo === "카카오 메모")!;
     expect(kakaoItem.place_id).toBe(naverItem.place_id);
   }, 20_000);
+
+  it("등급 리스트는 가져올 때 고른 공개 범위로 — 새로 넣은 곳 · 평가 전이던 곳 모두, 가고 싶은 곳은 그대로 (68)", async () => {
+    const { supabase, userId } = await signUp();
+    await saveImportedList(supabase, userId, list("vp", [place(20)]), { kind: "plain" });
+    await saveImportedList(supabase, userId, list("vt", [place(20), place(21)]), { kind: "tier", tier: "three" }, "followers");
+    await saveImportedList(supabase, userId, list("vw", [place(22)]), { kind: "tier", tier: "want_to_go" }, "public");
+    const rows = await supabase.from("user_places").select("tier, visibility, places(source_place_id)").eq("user_id", userId);
+    const by = new Map((rows.data ?? []).map((r) => [(r.places as unknown as { source_place_id: string }).source_place_id, [r.tier, r.visibility]]));
+    expect(by.get(`test-${run}-20`)).toEqual(["three", "followers"]);
+    expect(by.get(`test-${run}-21`)).toEqual(["three", "followers"]);
+    expect(by.get(`test-${run}-22`)).toEqual(["want_to_go", "private"]);
+  }, 20_000);
 });

@@ -10,6 +10,8 @@ import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { notifyVisitTag } from "@/features/visit/notify";
 import { MAX_COMPANIONS, syncMyVisit } from "@/features/visit/visit";
 import {
+  RATED_DB_TIERS,
+  RATING_VISIBILITIES,
   countUnrated,
   nextUnrated,
   RatingSchema,
@@ -140,4 +142,21 @@ export async function clearRating(placeId: string): Promise<{ error?: string }> 
   }
   revalidatePath("/", "layout");
   return {};
+}
+
+// 내 평가 공개 범위 한 번에 바꾸기 (68) — 다녀온 등급(3 · 2 · 1숟가락 · 추천 안 함)만. 메모는 언제나 나만
+export async function setAllRatingVisibility(visibility: string): Promise<{ error?: string; changed?: number }> {
+  const parsed = z.enum(RATING_VISIBILITIES).safeParse(visibility);
+  if (!parsed.success) return { error: SAVE_FAILED };
+  const { supabase, userId } = await requireUser();
+  // updated_at 은 건드리지 않는다 — 피드(updated_at 순)에 수백 곳이 '방금 평가'로 뜨지 않게 · 개수만 받는다(1000행 제한)
+  const { count, error } = await supabase
+    .from("user_places")
+    .update({ visibility: parsed.data }, { count: "exact" })
+    .eq("user_id", userId)
+    .in("tier", RATED_DB_TIERS)
+    .neq("visibility", parsed.data);
+  if (error) return { error: SAVE_FAILED };
+  revalidatePath("/", "layout");
+  return { changed: count ?? 0 };
 }
