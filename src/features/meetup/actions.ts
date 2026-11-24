@@ -32,7 +32,8 @@ export async function createMeetup(input: z.input<typeof CreateInput>): Promise<
     .single();
   if (error || !data) return { error: FAILED };
   revalidatePath("/meet");
-  redirect(`/meet/${data.id}`, RedirectType.replace);
+  // 만든 뒤 바로 초대 화면 (67)
+  redirect(`/meet/${data.id}/invite?created=1`, RedirectType.replace);
 }
 
 export async function joinMeetup(token: string): Promise<Result> {
