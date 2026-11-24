@@ -1,4 +1,5 @@
 import "server-only";
+import { honor } from "@/domain/honor";
 import { sendPush } from "@/features/push/send";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -14,7 +15,7 @@ export async function notifyMeetup(meetupId: string, actorId: string, event: Eve
     admin.from("meetup_members").select("user_id").eq("meetup_id", meetupId),
   ]);
   if (!meetup || meetup.status !== "open" || !actor) return;
-  const name = `${actor.nickname}님`;
+  const name = honor(actor.nickname as string);
   const url = `/meet/${meetupId}`;
   const others = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== actorId);
 
