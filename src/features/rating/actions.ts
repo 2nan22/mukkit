@@ -124,15 +124,20 @@ async function runUpdate(update: () => Promise<void>): Promise<string | null> {
 export async function clearRating(placeId: string): Promise<{ error?: string }> {
   if (!z.uuid().safeParse(placeId).success) return { error: SAVE_FAILED };
   const { supabase, userId } = await requireUser();
-  const { data: media } = await supabase.from("rating_media").select("id, path").eq("user_id", userId).eq("place_id", placeId);
-  const rows = (media ?? []) as { id: string; path: string }[];
-  if (rows.length) {
-    const del = await supabase.from("rating_media").delete().in("id", rows.map((m) => m.id));
-    if (del.error) return { error: SAVE_FAILED };
-    await supabase.storage.from("rating-media").remove(rows.map((m) => m.path));
-  }
+  // 평가 먼저 지우고 사진 — 중간에 실패해도 '사진만 사라진 평가'가 남지 않게
   const result = await runUpdate(() => updateUserPlace(supabase, userId, placeId, { tier: "unrated", review: "", menus: [], sponsored: false }));
   if (result) return { error: result };
+  const { data: media, error: listError } = await supabase.from("rating_media").select("id, path").eq("user_id", userId).eq("place_id", placeId);
+  const rows = (media ?? []) as { id: string; path: string }[];
+  if (listError) console.warn("[rating] 사진 목록 실패: code=%s", listError.code);
+  if (rows.length) {
+    const del = await supabase.from("rating_media").delete().in("id", rows.map((m) => m.id));
+    if (del.error) console.warn("[rating] 사진 행 삭제 실패: code=%s", del.error.code);
+    else {
+      const files = await supabase.storage.from("rating-media").remove(rows.map((m) => m.path));
+      if (files.error) console.warn("[rating] 사진 파일 삭제 실패");
+    }
+  }
   revalidatePath("/", "layout");
   return {};
 }

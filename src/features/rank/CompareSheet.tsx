@@ -149,7 +149,7 @@ export function CompareSheet({
             </div>
             <div className="grid grid-cols-2 gap-2.5 px-5 pt-6">
               {card(target, label, picked === "target", () => pick("target"))}
-              {card(other, `3숟가락 · ${other.rank ?? mid + 1}위`, picked === "other", () => pick("other"))}
+              {card(other, `3숟가락 · ${(other.rank ?? mid) + 1}위`, picked === "other", () => pick("other"))}
             </div>
             {error && (
               <p role="alert" className="px-5 pt-3 text-meta text-danger">

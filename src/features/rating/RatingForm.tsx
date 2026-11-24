@@ -17,17 +17,18 @@ import { CompareSheet } from "@/features/rank/CompareSheet";
 import type { RankPlace } from "@/features/rank/rank";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 
-const VISIBILITY: Record<RatingVisibility, { label: string; seen: string; desc: string }> = {
-  private: { label: "나만", seen: "나만 봐요", desc: "등급 · 한 줄 평가 · 사진 모두 나만" },
-  followers: { label: "팔로워", seen: "팔로워에게 보여요", desc: "나를 팔로우하는 사람 피드에" },
-  public: { label: "전체 공개", seen: "모두에게 보여요", desc: "프로필 · 공유 리스트에서 누구나" },
+const VISIBILITY: Record<RatingVisibility, { label: string; desc: string }> = {
+  private: { label: "나만", desc: "등급 · 한 줄 평가 · 사진 모두 나만" },
+  followers: { label: "팔로워", desc: "나를 팔로우하는 사람 피드에" },
+  public: { label: "전체 공개", desc: "프로필 · 공유 리스트에서 누구나" },
 };
 // 새로 평가할 때 공개 범위는 지난번 고른 값으로 — 한 번 정하면 잘 바꾸지 않는다 (67-2)
 const LAST_VISIBILITY = "mk_rating_visibility";
+const visKey = (userId: string) => `${LAST_VISIBILITY}:${userId}`;
 const noSubscribe = () => () => undefined;
-function readLastVisibility(): RatingVisibility | null {
+function readLastVisibility(userId: string): RatingVisibility | null {
   try {
-    const v = localStorage.getItem(LAST_VISIBILITY);
+    const v = localStorage.getItem(visKey(userId));
     return v && (RATING_VISIBILITIES as readonly string[]).includes(v) ? (v as RatingVisibility) : null;
   } catch {
     return null;
@@ -47,13 +48,14 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
   // 이미 평가한 곳은 바로 기록으로
   const [step, setStep] = useState<Step>(rated ? "record" : "tier");
   // 고르기 전에는 — 처음 평가하는 곳이면 지난번 값, 아니면 저장된 값
-  const last = useSyncExternalStore(noSubscribe, readLastVisibility, () => null);
+  const last = useSyncExternalStore(noSubscribe, () => readLastVisibility(userId), () => null);
   const [chosen, setVisibility] = useState<RatingVisibility | null>(null);
   const visibility = chosen ?? (rated ? place.visibility : (last ?? place.visibility));
   const [visOpen, setVisOpen] = useState(false);
   const [sponsored, setSponsored] = useState(place.sponsored);
   const [review, setReview] = useState(place.review);
   const form = useRef<HTMLFormElement>(null);
+  const visButton = useRef<HTMLButtonElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const leave = useLeave(next);
 
@@ -66,10 +68,13 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
   const [compare, setCompare] = useState<ReturnType<typeof compareScope> | null>(null);
   useEffect(() => {
     if (!state.saved) return;
-    try {
-      localStorage.setItem(LAST_VISIBILITY, visibility);
-    } catch {
-      // 기억 못 해도 저장은 끝남
+    // 다녀온 등급으로 저장했을 때만 기억 (가고 싶은 곳 저장은 공개 범위를 고른 게 아님)
+    if (RATED.includes(tier)) {
+      try {
+        localStorage.setItem(visKey(userId), visibility);
+      } catch {
+        // 기억 못 해도 저장은 끝남
+      }
     }
     if (tier !== "three") return leave();
     (async () => {
@@ -103,6 +108,11 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
         <input type="hidden" name="next" value={next} />
         <input type="hidden" name="tier" value={tier} />
         <input type="hidden" name="visibility" value={visibility} />
+        {state.error && step === "tier" && (
+          <p role="alert" className="px-5 pt-2 text-meta text-danger">
+            {state.error}
+          </p>
+        )}
 
         {step === "tier" && (
           <section className="meet-rise flex flex-1 flex-col px-5 pt-2">
@@ -125,7 +135,8 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
                 </button>
               ))}
             </div>
-            <div className="mt-5 border-t border-line pt-2">
+            {/* 이미 평가한 곳은 가고 싶은 곳으로 돌리지 않는다 — 평가를 지우려면 장소 상세의 '평가 삭제' */}
+            {!rated && <div className="mt-5 border-t border-line pt-2">
               <button type="button" disabled={pending} onClick={saveWantToGo} className="flex min-h-12 w-full items-center justify-between text-body">
                 <span className="text-ink-2">아직 안 가 봤어요</span>
                 <span className="flex items-center gap-1.5 whitespace-nowrap font-semibold">
@@ -133,9 +144,8 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
                   가고 싶은 곳으로
                 </span>
               </button>
-            </div>
-            <div className="flex-1" />
-            <button type="button" onClick={leave} className="h-12 text-meta text-muted">
+            </div>}
+            <button type="button" onClick={leave} className="mt-3 h-12 rounded-btn-m bg-surface text-body font-medium text-ink-2">
               나중에 할게요
             </button>
           </section>
@@ -179,25 +189,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
 
           <VisitedOn initial={place.visitedOn} />
 
-          <div className="flex flex-col gap-2 px-5 pt-6">
-            <label htmlFor="note" className="flex items-center gap-1.5 text-body font-semibold">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" className="text-muted" aria-hidden="true">
-                <rect x="5" y="11" width="14" height="10" rx="2" />
-                <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-              </svg>
-              나만 보는 메모
-            </label>
-            <textarea
-              id="note"
-              name="note"
-              rows={2}
-              maxLength={NOTE_MAX}
-              defaultValue={place.note}
-              placeholder="다음에 갈 때 참고할 것"
-              className="w-full resize-none rounded-[12px] border border-transparent bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink focus:bg-white"
-            />
-          </div>
-
+          <Note initial={place.note} />
           <div className="flex flex-col gap-2 px-5 pt-6">
             <label className="flex min-h-11 items-center gap-2.5">
               <input type="checkbox" name="sponsored" checked={sponsored} onChange={(e) => setSponsored(e.target.checked)} className="size-5 shrink-0 accent-ink" />
@@ -223,12 +215,12 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
                 {state.error}
               </p>
             )}
-            <button type="button" onClick={() => setVisOpen(true)} aria-label={`공개 범위 바꾸기, 지금 ${VISIBILITY[visibility].seen}`} className="flex h-10 items-center justify-center gap-1.5 text-meta text-ink-2">
+            <button ref={visButton} type="button" onClick={() => setVisOpen(true)} aria-label={`공개 범위 바꾸기, 지금 ${VISIBILITY[visibility].label}`} className="flex h-10 items-center justify-center gap-1.5 text-meta text-ink-2">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
-              {VISIBILITY[visibility].seen}
+              공개 범위 · <b className="font-semibold text-ink">{VISIBILITY[visibility].label}</b>
               <span className="text-muted underline underline-offset-[3px]">바꾸기</span>
             </button>
             <button type="submit" disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
@@ -237,7 +229,20 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
           </div>
         </div>
       </form>
-      {visOpen && <VisibilitySheet value={visibility} onPick={(v) => (setVisibility(v), setVisOpen(false))} onClose={() => setVisOpen(false)} />}
+      {visOpen && (
+        <VisibilitySheet
+          value={visibility}
+          onPick={(v) => {
+            setVisibility(v);
+            setVisOpen(false);
+            visButton.current?.focus();
+          }}
+          onClose={() => {
+            setVisOpen(false);
+            visButton.current?.focus();
+          }}
+        />
+      )}
     </>
   );
 }
@@ -245,7 +250,8 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
 // 3숟가락 비교 범위 (67-2, Beli 업종별 순위 · '다른 종류를 비교하게 한다'는 불만) — 같은 업종 3숟가락이 있으면 그 안에서만 비교하고,
 // 정한 자리는 전체 순위에서 '그 같은 업종 가게 바로 아래(1등이면 그 가게 바로 위)'로 넣는다
 export function compareScope(target: RankPlace, ranked: RankPlace[]) {
-  const same = ranked.filter((p) => p.cuisine === target.cuisine);
+  // 업종을 못 정한 곳(기타)끼리는 서로 다른 가게라 묶지 않는다
+  const same = target.cuisine === "other" ? [] : ranked.filter((p) => p.cuisine === target.cuisine);
   if (same.length === 0) return { target, ranked, afterOf: undefined, scope: undefined };
   const afterOf = (pos: number): string | null => {
     if (pos > 0) return same[pos - 1].placeId;
@@ -300,44 +306,107 @@ function VisibilitySheet({ value, onPick, onClose }: { value: RatingVisibility; 
   );
 }
 
+// 나만 보는 메모 — 한 줄로 접어 두고 누르면 펼침, 내용이 있으면 첫 줄 (네이버에서 가져온 메모가 들어오는 칸)
+function Note({ initial }: { initial: string }) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(initial);
+  const area = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (open) area.current?.focus();
+  }, [open]);
+  return (
+    <div className="flex flex-col gap-2 px-5 pt-6">
+      {open ? (
+        <>
+          <label htmlFor="note" className="flex items-center gap-1.5 text-body font-semibold">
+            <LockIcon />
+            나만 보는 메모
+          </label>
+          <textarea
+            ref={area}
+            id="note"
+            name="note"
+            rows={2}
+            maxLength={NOTE_MAX}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="다음에 갈 때 참고할 것"
+            className="w-full resize-none rounded-[12px] border border-transparent bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink focus:bg-white"
+          />
+        </>
+      ) : (
+        <>
+          <input type="hidden" name="note" value={value} />
+          <button type="button" onClick={() => setOpen(true)} aria-expanded={false} className="flex min-h-12 items-center justify-between gap-3 border-y border-line text-left">
+            <span className="flex shrink-0 items-center gap-1.5 text-body font-semibold">
+              <LockIcon />
+              나만 보는 메모
+            </span>
+            <span className="min-w-0 truncate text-meta text-muted">{value.split("\n")[0] || "추가"} ›</span>
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" className="text-muted" aria-hidden="true">
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
 function isoDay(offset: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offset);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// 방문일 — 오늘 · 어제 · 날짜 선택 세 칸을 같은 폭으로 (칩 줄 맞춤 규칙, 67)
+// 방문일 — 오늘 · 어제 · 날짜 선택 세 칸을 같은 폭으로 (칩 줄 맞춤 규칙, 67) · 날짜 선택은 휴대폰 날짜 창을 바로 띄우고 칸에 고른 날
 function VisitedOn({ initial }: { initial: string | null }) {
   const [value, setValue] = useState(initial ?? "");
-  const [picking, setPicking] = useState(Boolean(initial) && initial !== isoDay(0) && initial !== isoDay(-1));
+  const picker = useRef<HTMLInputElement>(null);
+  const other = Boolean(value) && value !== isoDay(0) && value !== isoDay(-1);
   const cell = (on: boolean) => `h-10 rounded-[10px] text-meta font-semibold ${on ? "bg-ink text-white" : "bg-surface text-ink-2"}`;
+  function openPicker() {
+    const el = picker.current;
+    if (!el) return;
+    try {
+      el.showPicker();
+    } catch {
+      el.focus();
+    }
+  }
   return (
     <div role="group" aria-labelledby="visited-label" className="flex flex-col gap-2 px-5 pt-6">
       <span id="visited-label" className="text-body font-semibold">
         방문일
       </span>
       <input type="hidden" name="visitedOn" value={value} />
-      <div className="grid grid-cols-3 gap-1.5">
-        <button type="button" aria-pressed={!picking && value === isoDay(0)} onClick={() => { setPicking(false); setValue(value === isoDay(0) ? "" : isoDay(0)); }} className={cell(!picking && value === isoDay(0))}>
+      <div className="relative grid grid-cols-3 gap-1.5">
+        <button type="button" aria-pressed={value === isoDay(0)} onClick={() => setValue(value === isoDay(0) ? "" : isoDay(0))} className={cell(value === isoDay(0))}>
           오늘
         </button>
-        <button type="button" aria-pressed={!picking && value === isoDay(-1)} onClick={() => { setPicking(false); setValue(value === isoDay(-1) ? "" : isoDay(-1)); }} className={cell(!picking && value === isoDay(-1))}>
+        <button type="button" aria-pressed={value === isoDay(-1)} onClick={() => setValue(value === isoDay(-1) ? "" : isoDay(-1))} className={cell(value === isoDay(-1))}>
           어제
         </button>
-        <button type="button" aria-pressed={picking} onClick={() => setPicking(true)} className={cell(picking)}>
-          날짜 선택
+        <button type="button" aria-pressed={other} onClick={openPicker} className={cell(other)}>
+          {other ? `${Number(value.slice(5, 7))}월 ${Number(value.slice(8, 10))}일` : "날짜 선택"}
         </button>
-      </div>
-      {picking && (
         <input
+          ref={picker}
           type="date"
-          aria-label="방문일 선택"
+          tabIndex={-1}
+          aria-hidden="true"
           value={value}
           max={isoDay(0)}
           onChange={(e) => setValue(e.target.value)}
-          className="h-12 w-full rounded-[12px] border border-transparent bg-surface px-3.5 text-body text-ink outline-none focus:border-ink"
+          className="pointer-events-none absolute right-0 bottom-0 h-10 w-1/3 opacity-0"
         />
-      )}
+      </div>
     </div>
   );
 }
