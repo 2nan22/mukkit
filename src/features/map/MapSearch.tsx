@@ -7,6 +7,7 @@ import { CuisineIcon } from "@/components/ui/CuisineIcon";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { searchAll, type NewPlaceHit } from "@/features/search/actions";
 import type { MapPlace } from "./myPlaces";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 const MINE_MAX = 8;
 const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
@@ -151,7 +152,7 @@ export function MapSearch({
                     <CuisineIcon cuisine={p.cuisine} size={40} />
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate text-body font-semibold">{p.name}</span>
-                      <span className="truncate text-meta text-muted">{[CUISINE_LABEL[p.cuisine], p.address.split(" ").slice(0, 2).join(" ")].join(" · ")}</span>
+                      <MetaLine items={[CUISINE_LABEL[p.cuisine], p.address.split(" ").slice(0, 2).join(" ")]} />
                     </span>
                     <TierBadge tier={p.tier} />
                   </button>
@@ -177,7 +178,7 @@ export function MapSearch({
                     <CuisineIcon cuisine={h.cuisine} size={40} />
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate text-body font-semibold">{h.name}</span>
-                      <span className="truncate text-meta text-muted">{h.meta}</span>
+                      <MetaLine items={h.meta} />
                     </span>
                   </button>
                 </li>

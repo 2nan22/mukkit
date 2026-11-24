@@ -11,6 +11,7 @@ import { getBio, getFollowCounts, getPerson } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyGrowth } from "@/features/growth/growth";
 import { GrowthCard } from "@/features/growth/GrowthCard";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 export const metadata = { title: "내 정보" };
 
@@ -62,9 +63,7 @@ async function MyContent() {
           <Avatar name={nickname} size={56} />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate text-section font-bold">{nickname}</span>
-            <span className="text-meta text-muted">
-              팔로워 {counts.followers} · 팔로잉 {counts.following}
-            </span>
+            <MetaLine items={[`팔로워 ${counts.followers}`, `팔로잉 ${counts.following}`]} />
           </div>
         </div>
         {bio && <p className="text-body leading-normal text-ink-2">{bio}</p>}
@@ -79,9 +78,17 @@ async function MyContent() {
         </div>
         {/* 등급별 숫자는 리스트 탭 등급 보기로 — 여기는 한 줄 요약만 */}
         <Link href="/lists?view=tier" className="flex h-12 items-center justify-between rounded-[14px] bg-surface px-4 text-body">
-          <span>
-            저장 <b>{saved}</b>곳 · 평가 <b>{rated}</b>곳
-          </span>
+          <MetaLine
+            className="text-body"
+            items={[
+              <>
+                저장 <b>{saved}</b>곳
+              </>,
+              <>
+                평가 <b>{rated}</b>곳
+              </>,
+            ]}
+          />
           <span className="flex items-center gap-0.5 text-meta font-semibold">
             등급별 보기
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">

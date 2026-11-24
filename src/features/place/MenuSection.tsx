@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Menu } from "./menu";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 const SHOWN = 6;
 
@@ -39,12 +40,15 @@ export function MenuSection({ menu }: { menu: Menu }) {
           </svg>
         </button>
       )}
-      <p className="pt-3 text-caption leading-normal text-muted">
-        출처 {SOURCE[menu.source]}{menu.updatedAt ? ` · ${menu.updatedAt.slice(0, 10).replaceAll("-", ".")} 갱신` : ""} · 가격은 바뀔 수 있어요.{" "}
-        <a href={menu.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">
-          {SOURCE[menu.source]}에서 보기
-        </a>
-      </p>
+      <div className="flex flex-col gap-0.5 pt-3 text-caption leading-normal text-muted">
+        <MetaLine className="" items={[`출처 ${SOURCE[menu.source]}`, menu.updatedAt && `${menu.updatedAt.slice(0, 10).replaceAll("-", ".")} 갱신`]} />
+        <p>
+          가격은 바뀔 수 있어요.{" "}
+          <a href={menu.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+            {SOURCE[menu.source]}에서 보기
+          </a>
+        </p>
+      </div>
     </section>
   );
 }

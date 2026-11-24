@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { refreshImportedList } from "./refreshActions";
 import { SOURCE_LABEL } from "./sources";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 function ago(iso: string | null): string {
   if (!iso) return "아직 확인 안 함";
@@ -29,7 +30,7 @@ export function RefreshImportButton({ listId, source, status, lastSyncedAt }: { 
             ? `${SOURCE_LABEL[source]} 원본을 볼 수 없어요`
             : status === "error"
               ? `${SOURCE_LABEL[source]} 원본을 불러오지 못했어요`
-              : `${SOURCE_LABEL[source]} 원본 · ${ago(lastSyncedAt)}`}
+              : <MetaLine className="" items={[`${SOURCE_LABEL[source]} 원본`, ago(lastSyncedAt)]} />}
         </span>
         <button
           type="button"

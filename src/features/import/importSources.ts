@@ -79,9 +79,9 @@ export async function getImportSources(supabase: SupabaseClient, userId: string)
 // 마지막 확인 한 줄 — '오늘 확인' · 'N일 전 확인' · 비공개 · 실패 (한국 시각 날짜 기준)
 export function syncLine(sync: ImportSourceRow["sync"], now = Date.now()): { text: string; warn: boolean } {
   if (!sync) return { text: "새로 고친 적 없음", warn: false };
-  if (sync.status === "unavailable") return { text: "원본이 비공개예요 · 공개 범위를 확인해 주세요", warn: true };
+  if (sync.status === "unavailable") return { text: "원본이 비공개예요. 공개 범위를 확인해 주세요", warn: true };
   // error 는 마지막 확인이 실패한 것 (다음 새벽에 다시)
-  if (sync.status === "error") return { text: "최근 확인 실패 · 다시 시도해요", warn: true };
+  if (sync.status === "error") return { text: "최근 확인에 실패했어요. 새벽에 다시 확인해요", warn: true };
   if (!sync.lastSyncedAt) return { text: "확인 전", warn: false };
   // 날짜(달력) 기준 — 어제 밤 확인은 '어제'
   const day = (t: number) => Math.floor((t + 9 * 3_600_000) / 86_400_000);

@@ -7,7 +7,7 @@ import { TierBadge } from "@/components/ui/TierBadge";
 import { TierIcon } from "@/components/ui/TierIcon";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
 import { saveRating, type RatingFormState } from "./actions";
-import { NOTE_MAX, RATING_VISIBILITIES, REVIEW_MAX, type RatingVisibility, type SavedPlace } from "./rating";
+import { NOTE_MAX, RATING_VISIBILITIES, REVIEW_MAX, type NoteVisibility, type RatingVisibility, type SavedPlace } from "./rating";
 import { MediaUploader } from "./MediaUploader";
 import { MenuPicker } from "./MenuPicker";
 import { CompanionPicker } from "@/features/visit/CompanionPicker";
@@ -16,12 +16,10 @@ import { loadThreeCompare, placeInThree } from "@/features/rank/actions";
 import { CompareSheet } from "@/features/rank/CompareSheet";
 import type { RankPlace } from "@/features/rank/rank";
 import { CUISINE_LABEL } from "@/domain/cuisine";
+import { VISIBILITY, VisibilitySheet } from "./VisibilitySheet";
+import { NoteVisibilityPicker } from "./NoteVisibilityPicker";
+import { effectiveNote } from "./noteAudience";
 
-const VISIBILITY: Record<RatingVisibility, { label: string; desc: string }> = {
-  private: { label: "나만", desc: "등급 · 한 줄 평가 · 사진 모두 나만" },
-  followers: { label: "팔로워", desc: "나를 팔로우하는 사람 피드에" },
-  public: { label: "전체 공개", desc: "프로필 · 공유 리스트에서 누구나" },
-};
 // 새로 평가할 때 공개 범위는 지난번 고른 값으로 — 한 번 정하면 잘 바꾸지 않는다 (67-2)
 const LAST_VISIBILITY = "mk_rating_visibility";
 const visKey = (userId: string) => `${LAST_VISIBILITY}:${userId}`;
@@ -52,6 +50,8 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
   const [chosen, setVisibility] = useState<RatingVisibility | null>(null);
   const visibility = chosen ?? (rated ? place.visibility : (last ?? place.visibility));
   const [visOpen, setVisOpen] = useState(false);
+  // 메모 공개 범위 — 기본 평가와 같게 (68-5)
+  const [noteVis, setNoteVis] = useState(place.noteVisibility);
   const [sponsored, setSponsored] = useState(place.sponsored);
   const [review, setReview] = useState(place.review);
   const form = useRef<HTMLFormElement>(null);
@@ -108,6 +108,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
         <input type="hidden" name="next" value={next} />
         <input type="hidden" name="tier" value={tier} />
         <input type="hidden" name="visibility" value={visibility} />
+        <input type="hidden" name="noteVisibility" value={noteVis} />
         {state.error && step === "tier" && (
           <p role="alert" className="px-5 pt-2 text-meta text-danger">
             {state.error}
@@ -189,11 +190,11 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
 
           <VisitedOn initial={place.visitedOn} />
 
-          <Note initial={place.note} />
+          <Note initial={place.note} noteVis={noteVis} onNoteVis={setNoteVis} visibility={visibility} />
           <div className="flex flex-col gap-2 px-5 pt-6">
             <label className="flex min-h-11 items-center gap-2.5">
               <input type="checkbox" name="sponsored" checked={sponsored} onChange={(e) => setSponsored(e.target.checked)} className="size-5 shrink-0 accent-ink" />
-              <span className="text-body">협찬 · 이벤트로 방문했어요</span>
+              <span className="text-body">협찬이나 이벤트로 방문했어요</span>
             </label>
             {sponsored && (
               // 켜면 그 자리에서 어떻게 보이는지 (공정위 '첫 부분 표시' · 캐치테이블 신뢰도 표시)
@@ -203,13 +204,13 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
                   <span className="mr-1.5 inline-flex h-5 items-center rounded border border-line-strong px-1.5 align-[1px] text-caption font-semibold text-muted">협찬</span>
                   {review.trim() || "한 줄 평가"}
                 </span>
-                <span className="text-caption text-muted">등급 통계 · 추천에서 빠져요</span>
+                <span className="text-caption text-muted">등급 통계와 추천에서 빠져요</span>
               </div>
             )}
           </div>
 
           <div className="flex-1" />
-          <div className="sticky bottom-0 mt-6 flex flex-col gap-1 border-t border-line bg-white px-5 pt-2 pb-5">
+          <div className="sticky bottom-0 mt-6 flex flex-col gap-1 border-t border-line bg-white px-5 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
             {state.error && (
               <p role="alert" className="text-meta text-danger">
                 {state.error}
@@ -220,7 +221,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
                 <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
-              공개 범위 · <b className="font-semibold text-ink">{VISIBILITY[visibility].label}</b>
+              공개 범위 <b className="font-semibold text-ink">{VISIBILITY[visibility].label}</b>
               <span className="text-muted underline underline-offset-[3px]">바꾸기</span>
             </button>
             <button type="submit" disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
@@ -231,6 +232,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
       </form>
       {visOpen && (
         <VisibilitySheet
+          noteVis={place.note || place.alias ? noteVis : undefined}
           value={visibility}
           onPick={(v) => {
             setVisibility(v);
@@ -262,65 +264,24 @@ export function compareScope(target: RankPlace, ranked: RankPlace[]) {
   return { target, ranked: same, afterOf, scope: `${CUISINE_LABEL[target.cuisine]} 3숟가락끼리 비교해요` };
 }
 
-// 누가 볼 수 있어요? — 저장 버튼 위 한 줄에서 여는 시트
-function VisibilitySheet({ value, onPick, onClose }: { value: RatingVisibility; onPick: (v: RatingVisibility) => void; onClose: () => void }) {
-  const sheet = useRef<HTMLElement>(null);
-  useEffect(() => sheet.current?.focus(), []);
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45" onClick={onClose}>
-      <section
-        ref={sheet}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="vis-title"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.key === "Escape" && onClose()}
-        className="flex w-full max-w-[480px] flex-col gap-2 rounded-t-[20px] bg-white px-5 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))] outline-none"
-      >
-        <span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-line-strong" />
-        <h2 id="vis-title" className="pt-2 text-section font-bold">
-          누가 볼 수 있어요?
-        </h2>
-        <p className="text-meta text-muted">메모는 언제나 나만 봐요</p>
-        <div role="radiogroup" aria-labelledby="vis-title" className="flex flex-col gap-1.5 pt-1">
-          {RATING_VISIBILITIES.map((v) => (
-            <button
-              key={v}
-              type="button"
-              role="radio"
-              aria-checked={value === v}
-              onClick={() => onPick(v)}
-              className={`flex min-h-14 items-center justify-between gap-3 rounded-[12px] border px-4 text-left ${value === v ? "border-[1.5px] border-ink" : "border-line"}`}
-            >
-              <span className="flex flex-col">
-                <span className="text-body font-semibold">{VISIBILITY[v].label}</span>
-                <span className="text-meta text-muted">{VISIBILITY[v].desc}</span>
-              </span>
-              <span aria-hidden="true" className={`size-5 shrink-0 rounded-full ${value === v ? "border-[6px] border-ink" : "border-[1.5px] border-line-strong"}`} />
-            </button>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-}
 
-// 나만 보는 메모 — 한 줄로 접어 두고 누르면 펼침, 내용이 있으면 첫 줄 (네이버에서 가져온 메모가 들어오는 칸)
-function Note({ initial }: { initial: string }) {
+// 메모 — 한 줄로 접어 두고 누르면 펼침, 내용이 있으면 첫 줄 (네이버에서 가져온 메모가 들어오는 칸)
+// 메모 공개 범위는 기본 평가와 같게 · 나만 · 팔로워 · 전체 공개 (68-5)
+function Note({ initial, noteVis, onNoteVis, visibility }: { initial: string; noteVis: NoteVisibility; onNoteVis: (v: NoteVisibility) => void; visibility: RatingVisibility }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(initial);
   const area = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (open) area.current?.focus();
   }, [open]);
+  const locked = effectiveNote(visibility, noteVis) === "private";
   return (
     <div className="flex flex-col gap-2 px-5 pt-6">
       {open ? (
         <>
           <label htmlFor="note" className="flex items-center gap-1.5 text-body font-semibold">
-            <LockIcon />
-            나만 보는 메모
+            {locked && <LockIcon />}
+            메모
           </label>
           <textarea
             ref={area}
@@ -330,17 +291,18 @@ function Note({ initial }: { initial: string }) {
             maxLength={NOTE_MAX}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="다음에 갈 때 참고할 것"
+            placeholder="예: 주차, 대기, 다음에 먹을 메뉴"
             className="w-full resize-none rounded-[12px] border border-transparent bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink focus:bg-white"
           />
+          <NoteVisibilityPicker value={noteVis} onChange={onNoteVis} rating={visibility} />
         </>
       ) : (
         <>
           <input type="hidden" name="note" value={value} />
           <button type="button" onClick={() => setOpen(true)} aria-expanded={false} className="flex min-h-12 items-center justify-between gap-3 border-y border-line text-left">
             <span className="flex shrink-0 items-center gap-1.5 text-body font-semibold">
-              <LockIcon />
-              나만 보는 메모
+              {locked && <LockIcon />}
+              메모
             </span>
             <span className="min-w-0 truncate text-meta text-muted">{value.split("\n")[0] || "추가"} ›</span>
           </button>

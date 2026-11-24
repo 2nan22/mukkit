@@ -17,6 +17,9 @@ import {
   RatingSchema,
   updateUserPlace,
   UserPlaceNotFoundError,
+  type RatingVisibility,
+  NOTE_VISIBILITIES,
+  type NoteVisibility,
   type SavedPlace,
   type UnratedCursor,
 } from "./rating";
@@ -47,6 +50,7 @@ export async function saveRating(_prev: RatingFormState, formData: FormData): Pr
     placeId: formData.get("placeId"),
     tier: formData.get("tier"),
     note: String(formData.get("note") ?? ""),
+    noteVisibility: formData.get("noteVisibility") ?? "same",
     visitedOn: formData.get("visitedOn") || null,
     sponsored: formData.get("sponsored") === "on",
     review: String(formData.get("review") ?? ""),
@@ -82,14 +86,20 @@ export async function saveRating(_prev: RatingFormState, formData: FormData): Pr
   return { saved: true };
 }
 
-const TierInput = z.object({ placeId: z.uuid(), tier: z.enum(TIERS) });
+const TierInput = z.object({
+  placeId: z.uuid(),
+  tier: z.enum(TIERS),
+  visibility: z.enum(RATING_VISIBILITIES).optional(),
+  noteVisibility: z.enum(NOTE_VISIBILITIES).optional(),
+});
 
-// 빠르게 평가하기 — 등급만 바꾼다 (되돌리기는 unrated 로)
-export async function setTier(placeId: string, tier: Tier): Promise<{ error?: string }> {
-  const parsed = TierInput.safeParse({ placeId, tier });
+// 빠르게 평가하기 — 등급(과 고른 경우 공개 범위 · 메모 공개 범위)만 바꾼다 (되돌리기는 unrated 로)
+export async function setTier(placeId: string, tier: Tier, opts: { visibility?: RatingVisibility; noteVisibility?: NoteVisibility } = {}): Promise<{ error?: string }> {
+  const parsed = TierInput.safeParse({ placeId, tier, ...opts });
   if (!parsed.success) return { error: SAVE_FAILED };
   const { supabase, userId } = await requireUser();
-  const error = await runUpdate(() => updateUserPlace(supabase, userId, parsed.data.placeId, { tier: parsed.data.tier }));
+  const { placeId: id, tier: t, visibility, noteVisibility } = parsed.data;
+  const error = await runUpdate(() => updateUserPlace(supabase, userId, id, { tier: t, visibility, noteVisibility }));
   if (error) return { error };
   // 돌아간 홈 · 리스트의 평가 전 · 등급 숫자가 낡지 않게
   revalidatePath("/", "layout");
@@ -159,4 +169,13 @@ export async function setAllRatingVisibility(visibility: string): Promise<{ erro
   if (error) return { error: SAVE_FAILED };
   revalidatePath("/", "layout");
   return { changed: count ?? 0 };
+}
+
+// 나만으로 둔 가져온 메모를 평가 공개 범위대로 한 번에 (68-5) — 지도 앱 메모 그대로인 곳만 (DB 함수가 거름). updated_at 그대로
+export async function shareImportedMemos(): Promise<{ error?: string; changed?: number }> {
+  const { supabase, userId } = await requireUser();
+  const { data, error } = await supabase.rpc("set_imported_note_visibility", { p_user: userId, p_vis: null, p_places: null });
+  if (error) return { error: SAVE_FAILED };
+  revalidatePath("/", "layout");
+  return { changed: (data as number) ?? 0 };
 }

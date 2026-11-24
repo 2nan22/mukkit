@@ -33,7 +33,16 @@ export function NaverN({ size = 14, color = "#FFFFFF" }: { size?: number; color?
 }
 
 // 리스트 줄 · 카드에서 출처를 작게 표시하는 정사각 마크
-export function SourceMark({ source, size = 16 }: { source: "naver" | "kakao"; size?: number }) {
+export type MemoSource = "naver" | "kakao" | "google";
+
+export function SourceMark({ source, size = 16 }: { source: MemoSource; size?: number }) {
+  if (source === "google") {
+    return (
+      <span aria-hidden="true" className="inline-flex shrink-0 items-center justify-center rounded-[4px] border border-line bg-white" style={{ width: size, height: size }}>
+        <GoogleG size={size * 0.66} />
+      </span>
+    );
+  }
   if (source === "naver") {
     return (
       <span aria-hidden="true" className="inline-flex shrink-0 items-center justify-center rounded-[4px] bg-[#03C75A]" style={{ width: size, height: size }}>

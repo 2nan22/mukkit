@@ -16,7 +16,7 @@ export const IMPORT_TIER_LABEL = Object.fromEntries(
   IMPORT_TIERS.map((t) => [t, TIER_LABEL[tierFromDb(t)]]),
 ) as Record<ImportTier, string>;
 
-export const PLAIN_LABEL = "리스트로 · 평가 전";
+export const PLAIN_LABEL = "리스트로 저장";
 
 export function modeLabel(mode: ImportMode): string {
   return mode.kind === "plain" ? PLAIN_LABEL : IMPORT_TIER_LABEL[mode.tier];

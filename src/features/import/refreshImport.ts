@@ -6,7 +6,7 @@ import { ImportError, type ImportedList, type PlaceSource, type PlaceSourceName 
 import type { ImportMode } from "./importMode";
 import { applyToSavedPlaces, saveImportedList } from "./saveImportedList";
 import { placeSourceFor } from "./sources";
-import type { RatingVisibility } from "@/features/rating/rating";
+import { noteVisibilityFromDb, noteVisibilityToDb, type NoteVisibility, type RatingVisibility } from "@/features/rating/rating";
 
 const NOTE_MAX = 300;
 const LIST_NAME_MAX = 40;
@@ -22,12 +22,12 @@ export type RefreshResult =
 
 // 원본 요약 — 반영하는 값(목록 · 메모 · 리스트 이름)만. 장소 자체 정보(이름 · 업종 · 폐업)는 폐업 확인 작업 몫
 export function hashList(list: ImportedList): string {
-  const places = [...list.places].sort((a, b) => a.sourcePlaceId.localeCompare(b.sourcePlaceId)).map((p) => [p.sourcePlaceId, p.memo]);
+  const places = [...list.places].sort((a, b) => a.sourcePlaceId.localeCompare(b.sourcePlaceId)).map((p) => [p.sourcePlaceId, p.memo, p.alias ?? ""]);
   return createHash("sha256").update(JSON.stringify([list.name, list.memo, places])).digest("hex");
 }
 
 // 가져올 때 · 새로 고칠 때 기록 남기기
-export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode, visibility?: RatingVisibility): Promise<void> {
+export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode, visibility?: RatingVisibility, noteVisibility?: NoteVisibility): Promise<void> {
   await client.from("import_sources").upsert(
     {
       user_id: userId,
@@ -42,6 +42,7 @@ export async function recordImportSource(client: SupabaseClient, userId: string,
       fail_count: 0,
       // 고르지 않았으면(새로 고침 등) 그 전 값을 그대로 둔다
       ...(visibility ? { visibility } : {}),
+      ...(noteVisibility !== undefined ? { note_visibility: noteVisibilityToDb(noteVisibility) } : {}),
     },
     { onConflict: "user_id,source,source_list_id" },
   );
@@ -68,13 +69,13 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
 
   // 원본 기록이 1000곳을 넘어도 끝까지 — 잘리면 남아 있는 곳을 빠진 곳으로 보고 리스트에서 뺀다
   const before = await fetchAll((from, to) =>
-    client.from("imported_items").select("source_place_id, place_id, memo").match(where).order("source_place_id").range(from, to),
+    client.from("imported_items").select("source_place_id, place_id, memo, alias").match(where).order("source_place_id").range(from, to),
   );
   if (before.error) {
     await markFailed(client, userId, key, "error");
     return { status: "error" };
   }
-  const oldItems = before.data as { source_place_id: string; place_id: string; memo: string }[];
+  const oldItems = before.data as { source_place_id: string; place_id: string; memo: string; alias: string }[];
   const known = new Set(oldItems.map((o) => o.source_place_id));
 
   let list: ImportedList;
@@ -110,9 +111,19 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
 
   // 원본 메모가 바뀌었고 내 메모가 예전 원본 그대로면 새 메모로 · 원본 기록의 메모도 갱신
   let memos = 0;
+  const changedPlaces: string[] = [];
   for (const old of oldItems) {
     const now = fresh.get(old.source_place_id);
-    if (!now || now.memo === old.memo) continue;
+    if (!now) continue;
+    // 별명만 바뀌면 원본 기록만 (별명은 원본 기록에서 읽는다, 68-7)
+    if (now.memo === old.memo) {
+      if ((now.alias ?? "") !== (old.alias ?? "")) {
+        await client.from("imported_items").update({ alias: now.alias ?? "" }).match({ ...where, source_place_id: old.source_place_id });
+        // 새 별명도 이 리스트에 고른 메모 공개 범위로
+        if (now.alias) changedPlaces.push(old.place_id);
+      }
+      continue;
+    }
     const res = await client
       .from("user_places")
       .update({ note: now.memo.slice(0, NOTE_MAX) })
@@ -121,14 +132,25 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
       .eq("note", old.memo.slice(0, NOTE_MAX))
       .select("place_id");
     memos += res.data?.length ?? 0;
-    await client.from("imported_items").update({ memo: now.memo }).match({ ...where, source_place_id: old.source_place_id });
+    if (res.data?.length) changedPlaces.push(old.place_id);
+    await client.from("imported_items").update({ memo: now.memo, alias: now.alias ?? "" }).match({ ...where, source_place_id: old.source_place_id });
+  }
+
+  // 바뀐 메모도 이 리스트에 고른 메모 공개 범위로 — 좁히기만 (DB 함수가 거름, 68-5)
+  if (changedPlaces.length > 0 && key.mode.kind === "tier") {
+    const src = await client.from("import_sources").select("note_visibility").match(where).maybeSingle();
+    const vis = (src.data?.note_visibility as RatingVisibility | null) ?? null;
+    if (vis) await client.rpc("set_imported_note_visibility", { p_user: userId, p_vis: vis, p_places: changedPlaces });
   }
 
   // 새 곳만 가져오기 규칙으로
   const added = list.places.filter((p) => !known.has(p.sourcePlaceId));
   // 새로 들어온 곳도 가져올 때 고른 공개 범위로 (68)
-  const vis = added.length > 0 && key.mode.kind === "tier" ? await client.from("import_sources").select("visibility").match(where).maybeSingle() : null;
-  const saved = added.length > 0 ? await saveImportedList(client, userId, { ...list, places: added }, key.mode, (vis?.data?.visibility as RatingVisibility | null) ?? undefined) : null;
+  const vis = added.length > 0 && key.mode.kind === "tier" ? await client.from("import_sources").select("visibility, note_visibility").match(where).maybeSingle() : null;
+  const saved =
+    added.length > 0
+      ? await saveImportedList(client, userId, { ...list, places: added }, key.mode, (vis?.data?.visibility as RatingVisibility | null) ?? undefined, noteVisibilityFromDb((vis?.data?.note_visibility as string | null) ?? null))
+      : null;
 
   // 빠진 곳 — 원본 기록 · 먹킷 리스트에서만
   if (gone.length > 0) {

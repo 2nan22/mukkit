@@ -18,10 +18,10 @@ export function WithdrawSection() {
     <form action={action} className="flex flex-col gap-3 rounded-[16px] border border-line p-4">
       <h2 className="text-body font-bold">탈퇴하면 바로 지워져요</h2>
       <ul className="flex flex-col gap-1 text-meta leading-normal text-ink-2 [&_li]:ml-4 [&_li]:list-disc">
-        <li>저장한 장소 · 등급 · 한 줄 평가 · 메모</li>
-        <li>올린 사진 · 영상</li>
-        <li>만든 리스트(공유 링크도 더 이상 열리지 않아요) · 팔로우</li>
-        <li>네이버 · 카카오에서 가져온 원본</li>
+        <li>저장한 장소, 등급, 한 줄 평가, 메모</li>
+        <li>올린 사진과 영상</li>
+        <li>만든 리스트(공유 링크도 더 이상 열리지 않아요)와 팔로우</li>
+        <li>네이버, 카카오에서 가져온 원본</li>
       </ul>
       <p className="text-meta text-muted">되돌릴 수 없어요. 계속하려면 아래에 &lsquo;탈퇴&rsquo;를 입력해 주세요.</p>
       <input

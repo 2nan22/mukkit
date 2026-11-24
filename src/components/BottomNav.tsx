@@ -68,7 +68,7 @@ const ITEMS: Item[] = [
 export function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav aria-label="하단 메뉴" className="grid h-15 shrink-0 grid-cols-5 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label="하단 메뉴" className="grid h-[calc(3.75rem+env(safe-area-inset-bottom))] shrink-0 grid-cols-5 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
       {ITEMS.map((item) => {
         const active = item.match.some((m) => pathname === m || pathname.startsWith(`${m}/`));
         return (

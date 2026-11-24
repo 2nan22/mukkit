@@ -11,6 +11,7 @@ import { KakaoInvite } from "@/features/meetup/KakaoInvite";
 import { getMeetupStatus } from "@/features/meetup/meetup";
 import { QuickInvite } from "@/features/meetup/QuickInvite";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 export const metadata = { title: "약속 초대" };
 
@@ -54,15 +55,14 @@ async function Invite({ params, searchParams }: { params: Promise<{ meetupId: st
               </svg>
             </span>
             <h1 className="pt-1 text-[22px] font-bold tracking-tight">약속을 만들었어요</h1>
-            <p className="text-meta text-muted">
-              {meetWhen(status.startsAt, status.endsAt)} · {purpose}
-            </p>
+            <MetaLine items={[meetWhen(status.startsAt, status.endsAt), purpose]} />
           </section>
         )}
         <section className="flex flex-col gap-2">
           <h2 className="text-body font-semibold">팔로우하는 사람</h2>
           <QuickInvite meetupId={status.id} invited={status.invitees.map((i) => i.id)} memberIds={status.members.map((m) => m.id)} />
-          <p className="text-meta text-muted">나를 포함해 {status.maxMembers}명까지 · 남은 자리 {left}명 · 먹킷을 안 쓰는 친구도 링크로 들어와요</p>
+          <MetaLine items={[`나를 포함해 ${status.maxMembers}명까지`, `남은 자리 ${left}명`]} />
+          <p className="text-meta text-muted">먹킷을 안 쓰는 친구도 링크로 들어와요</p>
         </section>
         <div className="flex-1" />
         <div className="sticky bottom-0 flex flex-col gap-1 bg-white pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">

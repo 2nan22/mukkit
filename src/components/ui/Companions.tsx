@@ -37,7 +37,7 @@ export function Companions({ people }: { people: Person[] }) {
               {label(p)}
             </Link>
           )}
-          {i < sorted.length - 1 ? " ·" : extra > 0 ? ` 외 ${extra}명과 함께 방문` : `${withParticle(last)} 함께 방문`}
+          {i < sorted.length - 1 ? "," : extra > 0 ? ` 외 ${extra}명과 함께 방문` : `${withParticle(last)} 함께 방문`}
         </span>
       ))}
     </p>

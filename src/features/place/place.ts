@@ -24,6 +24,10 @@ export type OtherRating = {
   followed: boolean;
   tier: Tier;
   review: string;
+  // 공개로 켠 메모만 (68-4)
+  note: string;
+  noteSource: string | null;
+  alias: string;
   visitedOn: string | null;
   sponsored: boolean;
   media: MediaRef[];
@@ -70,7 +74,7 @@ export function sourceLinks(p: PlaceInfo): { naver: string; kakao: string; direc
 }
 
 type Row = {
-  user_id: string; nickname: string; followed: boolean; tier: string; review: string; visited_on: string | null;
+  user_id: string; nickname: string; followed: boolean; tier: string; review: string; note?: string | null; note_source?: string | null; alias?: string | null; visited_on: string | null;
   sponsored: boolean; media: { path: string; kind: "image" | "video" }[]; rated_count: number; three_ratio: number;
   companions: { id: string; nickname: string; isMe?: boolean }[];
   menus: string[] | null;
@@ -89,6 +93,9 @@ export async function getOtherRatings(supabase: SupabaseClient, placeId: string)
     followed: r.followed,
     tier: tierFromDb(r.tier),
     review: r.review,
+    note: r.note ?? "",
+    noteSource: r.note_source ?? null,
+    alias: r.alias ?? "",
     visitedOn: r.visited_on,
     sponsored: r.sponsored,
     media: r.media.flatMap((m) => (urlOf.get(m.path) ? [{ kind: m.kind, url: urlOf.get(m.path)! }] : [])),

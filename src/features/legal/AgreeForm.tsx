@@ -5,7 +5,7 @@ import { agreeToTerms, type AgreeState } from "./actions";
 import { AgreeCheck } from "./AgreeCheck";
 
 const SUMMARY: [string, string][] = [
-  ["저장하는 것", "가져오거나 저장한 가게, 등급 · 한 줄 평가 · 메모 · 올린 사진이에요."],
+  ["저장하는 것", "가져오거나 저장한 가게, 등급, 한 줄 평가, 메모, 올린 사진이에요."],
   ["보이는 범위", "평가는 고른 공개 범위대로 보이고, 메모는 언제나 나만 봐요."],
   ["지우기", "설정에서 탈퇴하면 기록과 사진을 모두 지워요."],
 ];

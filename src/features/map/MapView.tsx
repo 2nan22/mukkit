@@ -1,5 +1,6 @@
 "use client";
 
+import { Memo } from "@/components/ui/Memo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type PointerEvent } from "react";
@@ -22,6 +23,7 @@ import { openKakaoPlace, type NewPlaceHit } from "@/features/search/actions";
 import { ratersLine, type MapPlace } from "./myPlaces";
 import { Avatar } from "@/components/ui/Avatar";
 import { LoaderBubble } from "@/components/ui/EatingLoader";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
 // 팔로잉 지도는 평가한 곳만이라 평가 등급만
@@ -539,7 +541,7 @@ export function MapView({
             role="dialog"
             aria-label="음식 종류"
             onClick={(e) => e.stopPropagation()}
-            className="flex w-full max-w-[480px] flex-col gap-4 rounded-t-[20px] bg-white px-5 pt-3 pb-6"
+            className="flex w-full max-w-[480px] flex-col gap-4 rounded-t-[20px] bg-white px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
           >
             <span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-line-strong" />
             <div className="flex items-center justify-between">
@@ -676,7 +678,7 @@ export function MapView({
                     <PlaceThumb src={covers[p.placeId]} cuisine={p.cuisine} kind={p.kind} />
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate text-body font-semibold">{p.name}</span>
-                      <span className="truncate text-meta text-muted">{p.raters ? `${ratersLine(p.raters)} · ${placeMeta(p)}` : placeMeta(p)}</span>
+                      <MetaLine items={[p.raters && ratersLine(p.raters), ...placeMeta(p)]} />
                     </span>
                     {p.raters && p.raters.length > 1 ? <span className="shrink-0 text-meta text-muted">{p.raters.length}명 평가</span> : <TierBadge tier={p.tier} />}
                   </button>
@@ -798,7 +800,7 @@ function FoundCard({ hit, onClose }: { hit: NewPlaceHit; onClose: () => void }) 
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-1">
           <span className="truncate text-section font-bold">{hit.name}</span>
-          <span className="truncate text-meta text-muted">{hit.meta}</span>
+          <MetaLine items={hit.meta} />
         </div>
         <button type="button" onClick={onClose} aria-label="닫기" className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
@@ -829,10 +831,8 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
             </Link>
             <TierBadge tier={place.tier} />
           </span>
-          <span className="text-meta text-muted">
-            {placeMeta(place)}
-            {!place.available && " · 지도에 정보 없음"}
-          </span>
+          <MetaLine items={placeMeta(place)} />
+          {!place.available && <span className="text-meta font-semibold text-danger">지도에 정보 없음</span>}
         </div>
         <button type="button" onClick={onClose} aria-label="닫기" className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
@@ -840,11 +840,7 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
           </svg>
         </button>
       </div>
-      {place.note && (
-        <p className="rounded-btn-s bg-surface px-3 py-2.5 text-meta leading-normal text-ink-2">
-          <span className="text-muted">내 메모</span> · {place.note}
-        </p>
-      )}
+      {(place.note || place.alias) && <Memo text={place.note} alias={place.alias} source={place.noteSource} />}
       <div className="grid grid-cols-2 gap-2 pt-2">
         {place.links[0] ? (
           <a
@@ -880,10 +876,8 @@ function FollowingCard({ place, onClose }: { place: MapPlace; onClose: () => voi
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-1">
           <h2 className="truncate text-section font-bold">{place.name}</h2>
-          <span className="text-meta text-muted">
-            {placeMeta(place)}
-            {!place.available && " · 지도에 정보 없음"}
-          </span>
+          <MetaLine items={placeMeta(place)} />
+          {!place.available && <span className="text-meta font-semibold text-danger">지도에 정보 없음</span>}
           {place.myTier && <span className="text-meta text-ink-2">{["three", "two", "one", "notRecommended"].includes(place.myTier) ? `내 평가 ${TIER_LABEL[place.myTier]}` : "내가 저장한 곳"}</span>}
         </div>
         <button type="button" onClick={onClose} aria-label="닫기" className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted">
@@ -947,7 +941,7 @@ function toggle<T>(list: T[], item: T): T[] {
   return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
 }
 
-function placeMeta(p: MapPlace): string {
+function placeMeta(p: MapPlace): string[] {
   const region = p.address.split(" ").slice(0, 2).join(" ");
-  return [...new Set([CUISINE_LABEL[p.cuisine], p.categoryName, region])].filter((v) => v && v !== "음식점").join(" · ");
+  return [...new Set([CUISINE_LABEL[p.cuisine], p.categoryName, region])].filter((v) => v && v !== "음식점");
 }

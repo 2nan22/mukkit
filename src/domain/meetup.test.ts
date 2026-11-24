@@ -24,7 +24,7 @@ describe("planAreaShops", () => {
     });
     const shops = planAreaShops([cand("a", "korean"), rated], area, "meal", {}, companions);
     expect(shops[0].placeId).toBe("b");
-    expect(shops[0].reasons[0]).toBe("같이 가는 단골친구님 3숟가락 · 미식가님 2숟가락");
+    expect(shops[0].reasons[0]).toBe("같이 가는 단골친구님 3숟가락, 미식가님 2숟가락");
     expect(shops[0].reasons.filter((r) => r.startsWith("단골친구 ") || r.startsWith("미식가 "))).toHaveLength(0);
   });
 
@@ -46,11 +46,11 @@ describe("purposeFit · areaReason", () => {
   });
   it("두 사람: 비슷하면 '두 사람 모두', 다르면 나 먼저", () => {
     expect(areaReason([person("나", 28, null, true), person("단골", 33)])).toBe("두 사람 모두 30분쯤");
-    expect(areaReason([person("단골", 45), person("나", 15, null, true)])).toBe("나 15분쯤 · 단골님 45분쯤");
+    expect(areaReason([person("단골", 45), person("나", 15, null, true)])).toBe("나 15분쯤, 단골님 45분쯤");
   });
   it("여러 명: 비슷하면 'N명 모두', 다르면 가장 먼 사람 · 평균", () => {
     expect(areaReason([person("a", 28), person("b", 30), person("c", 33)])).toBe("3명 모두 30분쯤");
-    expect(areaReason([person("a", 15), person("b", 20), person("c", 50)])).toBe("가장 먼 c님 50분쯤 · 평균 30분");
+    expect(areaReason([person("a", 15), person("b", 20), person("c", 50)])).toBe("가장 먼 c님 50분쯤, 평균 30분");
   });
   it("막차 시각을 밤 표기로", () => {
     expect(nightClock("23:50")).toBe("밤 11:50");

@@ -140,7 +140,7 @@ export function CompanionPicker({ visits }: { visits: MyVisit[] }) {
           <span className="text-meta text-ink-2">
             <b className="font-semibold text-ink">{honor(v.creatorNickname)}</b>이 함께 갔다고 남겼어요
           </span>
-          {v.members.length > 0 && <span className="text-caption text-muted">함께: {v.members.map((m) => honor(m.nickname)).join(" · ")}</span>}
+          {v.members.length > 0 && <span className="text-caption text-muted">함께: {v.members.map((m) => honor(m.nickname)).join(", ")}</span>}
           <input type="hidden" name="visitFeedIds" value={v.visitId} />
           <FeedCheck name="visitFeedOn" value={v.visitId} defaultChecked={v.myShowInFeed} />
         </div>

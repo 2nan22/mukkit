@@ -9,9 +9,7 @@ import { SourceMark } from "@/components/brand/BrandLogo";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import {
   guessMode,
-  IMPORT_TIER_LABEL,
-  IMPORT_TIERS,
-  modeFromValue,
+  ImportModeSchema,
   modeLabel,
   modeToValue,
   type ImportMode,
@@ -19,12 +17,15 @@ import {
 import type { ImportResult } from "./saveImportedList";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { tierFromDb } from "@/domain/tier";
-import { RATING_VISIBILITIES, type RatingVisibility } from "@/features/rating/rating";
+import { RATING_VISIBILITIES, type NoteVisibility, type RatingVisibility } from "@/features/rating/rating";
+import { ImportModeSheet, isRatedMode, type RowChoice } from "./ImportModeSheet";
+import { NoteVisibilityPicker } from "@/features/rating/NoteVisibilityPicker";
+import { MetaLine } from "@/components/ui/MetaLine";
 
-const RATED_TIERS: string[] = ["three", "two", "one", "not_recommended"];
 const VISIBILITY_LABEL: Record<RatingVisibility, string> = { private: "나만", followers: "팔로워", public: "전체 공개" };
 
-type Row = ListPreview & { link: string; mode: ImportMode };
+// visibility · noteVisibility: 다녀온 등급으로 가져올 때 이 리스트만의 공개 범위 · 지도 앱 메모 공개 범위 (68-4 · 68-5)
+type Row = ListPreview & { link: string; mode: ImportMode; visibility?: RatingVisibility; noteVisibility?: NoteVisibility };
 type RowStatus = { state: "waiting" | "running" } | { state: "done"; result: ImportResult } | { state: "failed"; error: string };
 type Phase = "select" | "running" | "done";
 
@@ -35,7 +36,7 @@ const isAndroid = () => /Android/i.test(navigator.userAgent);
 // 기기에 남겨 둔 목록을 다시 읽을 때 — 모양이 맞는 것만
 function isRow(v: unknown): v is Row {
   const r = v as Partial<Row> | null;
-  return !!r && typeof r.listId === "string" && typeof r.link === "string" && typeof r.name === "string" && typeof r.count === "number" && !!r.mode;
+  return !!r && typeof r.listId === "string" && typeof r.link === "string" && typeof r.name === "string" && typeof r.count === "number" && ImportModeSchema.safeParse(r.mode).success;
 }
 
 const ERROR_TEXT = "text-danger";
@@ -53,9 +54,16 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
   // 방금 담긴 줄 — 잠깐 강조
   const [fresh, setFresh] = useState<string[]>([]);
   const android = useSyncExternalStore(noop, isAndroid, () => false);
-  // 등급 리스트로 가져오는 게 있으면 그 등급을 누구에게 보여 줄지 묻는다 (68) — 고를 때까지 가져오기를 막는다
-  const [visibility, setVisibility] = useState<RatingVisibility | null>(null);
-  const rating = rows.some((r) => r.mode.kind === "tier" && RATED_TIERS.includes(r.mode.tier));
+  // 다녀온 등급으로 가져오는 리스트는 누구에게 보여 줄지 묻는다 (68) — 모두 고를 때까지 가져오기를 막는다
+  // 한 번에 정하거나 리스트마다 (68-4). 지도 앱 메모는 기본 평가와 같게, 나만 등도 고름 (68-5)
+  const ratedRows = rows.filter((r) => isRatedMode(r.mode));
+  const rating = ratedRows.length > 0;
+  const sameVis = ratedRows.every((r) => r.visibility === ratedRows[0]?.visibility) ? (ratedRows[0]?.visibility ?? null) : null;
+  const mixedVis = rating && !sameVis && ratedRows.some((r) => r.visibility);
+  const noteOf = (r: Row): NoteVisibility => r.noteVisibility ?? "same";
+  const sameNote = ratedRows.every((r) => noteOf(r) === noteOf(ratedRows[0])) ? (ratedRows[0] ? noteOf(ratedRows[0]) : "same") : null;
+  const missing = ratedRows.some((r) => !r.visibility);
+  const setAllRated = (patch: Partial<Row>) => setRows((rs) => rs.map((r) => (isRatedMode(r.mode) ? { ...r, ...patch } : r)));
 
   async function runImport() {
     setRan(rows);
@@ -63,7 +71,8 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
     setStatus(Object.fromEntries(rows.map((r) => [r.listId, { state: "waiting" }])));
     for (const row of rows) {
       setStatus((s) => ({ ...s, [row.listId]: { state: "running" } }));
-      const res = await importList(row.link, row.mode, rating && visibility ? visibility : undefined);
+      const rated = isRatedMode(row.mode);
+      const res = await importList(row.link, row.mode, rated ? row.visibility : undefined, rated ? noteOf(row) : "same");
       setStatus((s) => ({
         ...s,
         [row.listId]: res.ok ? { state: "done", result: res.data } : { state: "failed", error: res.error },
@@ -92,7 +101,9 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
         quiet={rows.length > 0}
         has={(listId) => peekImportDraft(isRow).some((r) => r.listId === listId)}
         onAdd={(added) => {
-          setRows((rs) => [...rs, ...added.filter((a) => !rs.some((r) => r.listId === a.listId))]);
+          // 아래에서 모두 같게 정해 둔 공개 범위 · 메모는 새로 담긴 등급 리스트도 물려받는다
+          const inherit = (a: Row): Row => (isRatedMode(a.mode) && sameVis ? { ...a, visibility: sameVis, noteVisibility: sameNote ?? "same" } : a);
+          setRows((rs) => [...rs, ...added.filter((a) => !rs.some((r) => r.listId === a.listId)).map(inherit)]);
           setFresh(added.map((a) => a.listId));
           setTimeout(() => setFresh([]), 2500);
         }}
@@ -106,9 +117,9 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
           <>
             <div className="flex items-baseline justify-between pb-1">
               <h2 className="text-section font-bold">
-                리스트 {rows.length}개 <span className="font-normal text-muted">· {total}곳</span>
+                리스트 {rows.length}개 <span className="ml-1.5 font-normal text-muted">{total}곳</span>
               </h2>
-              <span className="pr-12 text-caption text-muted">등급</span>
+              <span className="text-caption text-muted">누르면 등급과 공개 범위를 바꿔요</span>
             </div>
             <ul>
               {rows.map((row) => (
@@ -116,7 +127,16 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
                   key={row.listId}
                   row={row}
                   fresh={fresh.includes(row.listId)}
-                  onChange={(mode) => setRows((rs) => rs.map((r) => (r.listId === row.listId ? { ...r, mode } : r)))}
+                  onChange={(v) =>
+                    setRows((rs) =>
+                      rs.map((r) => {
+                        if (r.listId !== row.listId) return r;
+                        // 평가 전 · 가고 싶은 곳에서 등급으로 바꾸면 아래에서 정해 둔 값을 물려받는다
+                        const fresh = isRatedMode(v.mode) && !isRatedMode(r.mode) && !v.visibility && sameVis;
+                        return { ...r, visibility: undefined, noteVisibility: undefined, ...v, ...(fresh ? { visibility: sameVis, noteVisibility: sameNote ?? "same" } : {}) };
+                      }),
+                    )
+                  }
                   onRemove={() => setRows((rs) => rs.filter((r) => r.listId !== row.listId))}
                 />
               ))}
@@ -139,19 +159,23 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
           {rating && (
             <fieldset className="flex flex-col gap-2">
               <legend className="pb-2 text-body font-semibold">가져온 등급을 누구에게 보여 줄까요?</legend>
+              {mixedVis && <span className="-mt-1 pb-1 text-caption text-muted">리스트마다 다르게 정했어요. 고르면 모두 같게 바뀌어요</span>}
               <div className="grid grid-cols-3 gap-1.5">
                 {RATING_VISIBILITIES.map((v) => (
                   <label key={v} className="flex h-11 cursor-pointer items-center justify-center rounded-[10px] bg-surface text-meta font-semibold text-ink-2 has-checked:bg-ink has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-ink has-focus-visible:ring-offset-2">
-                    <input type="radio" name="import-visibility" value={v} checked={visibility === v} onChange={() => setVisibility(v)} className="sr-only" />
+                    <input type="radio" name="import-visibility" value={v} checked={sameVis === v} onChange={() => setAllRated({ visibility: v })} className="sr-only" />
                     {VISIBILITY_LABEL[v]}
                   </label>
                 ))}
               </div>
-              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요</span>
+              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요. 리스트마다 바꾸려면 등급을 누르세요</span>
+              <div className="pt-2">
+                <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={sameNote ?? "same"} onChange={(v) => setAllRated({ noteVisibility: v })} rating={sameVis} warn />
+              </div>
             </fieldset>
           )}
-          <button type="button" onClick={runImport} disabled={rating && !visibility} className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:opacity-40">
-            {total}곳 가져오기
+          <button type="button" onClick={runImport} disabled={missing} className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:opacity-40">
+            {missing ? "공개 범위를 골라 주세요" : `${total}곳 가져오기`}
           </button>
         </div>
       )}
@@ -220,7 +244,7 @@ function LinkForm({
       added.length === 1 ? `${withObject(added[0].name)} 담았어요` : added.length > 1 ? `리스트 ${added.length}개를 담았어요` : "",
       dupes > 0 ? (added.length === 0 && dupes === 1 ? "이미 담긴 리스트예요" : `${dupes}개는 이미 담겨 있어요`) : "",
     ].filter(Boolean);
-    setNotice(parts.join(" · "));
+    setNotice(parts.join(". "));
   }
 
   return (
@@ -293,7 +317,7 @@ const HELP: Record<PlaceSourceName, { app: string; url: string; find: ReactNode[
     url: "https://map.naver.com/",
     find: [
       <><b>저장</b>에서 리스트의 <b>⋮</b>를 눌러요</>,
-      <><b>공유 › 복사</b>를 눌러요</>,
+      <><b>공유 › 복사</b>를 눌러요 — <b>공유</b>가 없으면 비공개 리스트예요. <b>수정 › 공개 범위</b>를 <b>일부 공개</b>로 바꾸면 생겨요</>,
       <>위 칸에 붙여 넣어요</>,
     ],
     pc: <>PC에서는 리스트의 <b>⋮ › 공유</b>에서 링크 <b>복사</b></>,
@@ -368,44 +392,62 @@ function LinkHelp({ source, privateList }: { source: PlaceSourceName | null; pri
   );
 }
 
-function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean; onChange: (mode: ImportMode) => void; onRemove: () => void }) {
-  const selectId = `mode-${row.listId}`;
+// 줄 전체를 누르면 가져올 방식 시트 — 오른쪽엔 고른 등급 배지와 › (드롭다운 칩 대신, 68-5)
+function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean; onChange: (v: RowChoice) => void; onRemove: () => void }) {
+  const [open, setOpen] = useState(false);
+  const opener = useRef<HTMLButtonElement>(null);
+  const rated = isRatedMode(row.mode);
+  const detail: string[] = rated
+    ? [row.visibility ? VISIBILITY_LABEL[row.visibility] : "공개 범위 고르기", row.noteVisibility && row.noteVisibility !== "same" ? `메모 ${VISIBILITY_LABEL[row.noteVisibility]}` : ""].filter(Boolean)
+    : [];
   return (
-    <li className={`-mx-2 flex min-h-16 items-center gap-3 rounded-[10px] border-b border-line px-2 transition-colors duration-700 ${fresh ? "bg-surface" : ""}`}>
-      <SourceMark source={row.source} size={20} />
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-body font-semibold">{row.name}</span>
-        <span className="text-meta text-muted">{row.count}곳</span>
-      </span>
-      <label htmlFor={selectId} className="sr-only">
-        {row.name} 가져올 방식
-      </label>
-      <span className="relative flex h-9 shrink-0 items-center gap-1 rounded-full bg-surface pr-2.5 pl-3 text-meta font-semibold text-ink">
-        {row.mode.kind === "plain" ? "평가 전" : IMPORT_TIER_LABEL[row.mode.tier]}
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
-          <path d="M6 9l6 6 6-6" />
+    <li className={`-mx-2 flex items-center rounded-[10px] border-b border-line transition-colors duration-700 ${fresh ? "bg-surface" : ""}`}>
+      <button
+        ref={opener}
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`${row.name} ${row.count}곳, 가져올 방식 ${modeLabel(row.mode)}${detail.length ? `, ${detail.join(", ")}` : ""}, 바꾸기`}
+        className="flex min-h-16 min-w-0 flex-1 items-center gap-3 py-2 pl-2 text-left"
+      >
+        <SourceMark source={row.source} size={20} />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-body font-semibold">{row.name}</span>
+          <MetaLine
+            items={[
+              `${row.count}곳`,
+              ...detail.map((d, i) =>
+                i === 0 && rated && !row.visibility ? (
+                  <span key="pick" className="font-semibold text-ink">
+                    {d}
+                  </span>
+                ) : (
+                  d
+                ),
+              ),
+            ]}
+          />
+        </span>
+        <TierBadge tier={row.mode.kind === "plain" ? "unrated" : tierFromDb(row.mode.tier)} />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-subtle" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" />
         </svg>
-        <select
-          id={selectId}
-          value={modeToValue(row.mode)}
-          onChange={(e) => onChange(modeFromValue(e.target.value))}
-          className="absolute inset-0 cursor-pointer opacity-0"
-        >
-          <option value="plain">평가 전 · 리스트로 만들기</option>
-          <optgroup label="한 번에 등급 매기기">
-            {IMPORT_TIERS.map((tier) => (
-              <option key={tier} value={tier}>
-                {IMPORT_TIER_LABEL[tier]}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-      </span>
-      <button type="button" onClick={onRemove} aria-label={`${row.name} 빼기`} className="-mr-2 flex size-10 shrink-0 items-center justify-center text-subtle">
+      </button>
+      <button type="button" onClick={onRemove} aria-label={`${row.name} 빼기`} className="flex size-11 shrink-0 items-center justify-center text-subtle">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
       </button>
+      {open && (
+        <ImportModeSheet
+          name={row.name}
+          value={{ mode: row.mode, visibility: row.visibility, noteVisibility: row.noteVisibility }}
+          onChange={onChange}
+          onClose={() => {
+            setOpen(false);
+            opener.current?.focus();
+          }}
+        />
+      )}
     </li>
   );
 }
@@ -541,9 +583,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
               {g.mode.kind === "plain" ? (
                 <span className="flex min-w-0 flex-col gap-0.5 py-2">
                   <span className="text-body">평가 전</span>
-                  <span className="truncate text-meta text-muted">
-                    리스트 {g.names.length}개 · {g.names.join(", ")}
-                  </span>
+                  <MetaLine items={[`리스트 ${g.names.length}개`, g.names.join(", ")]} />
                 </span>
               ) : (
                 <ModeChip mode={g.mode} />
@@ -574,8 +614,9 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
           <h3 className="text-body font-bold">가져오지 못한 리스트</h3>
           <p className="text-meta text-muted">목록에 남겨 뒀어요</p>
           {failed.map(({ row, error }) => (
-            <p key={row.listId} className="text-meta leading-normal">
-              {row.name} · <span className={ERROR_TEXT}>{error}</span>
+            <p key={row.listId} className="flex flex-col text-meta leading-normal">
+              <span>{row.name}</span>
+              <span className={ERROR_TEXT}>{error}</span>
             </p>
           ))}
         </section>

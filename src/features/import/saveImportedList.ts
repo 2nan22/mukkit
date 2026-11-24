@@ -4,7 +4,7 @@ import type { ImportedList, ImportedPlace } from "@/domain/importedPlace";
 import { isSamePlace } from "@/domain/samePlace";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { ImportMode } from "./importMode";
-import { RATED_DB_TIERS, type RatingVisibility } from "@/features/rating/rating";
+import { noteVisibilityToDb, RATED_DB_TIERS, type NoteVisibility, type RatingVisibility } from "@/features/rating/rating";
 
 
 const NOTE_MAX = 300;
@@ -37,12 +37,19 @@ export async function saveImportedList(
   mode: ImportMode,
   // 등급 리스트로 가져온 등급의 공개 범위 — 가져올 때 묻는다 (68). 없으면 DB 기본(나만)
   visibility?: RatingVisibility,
+  // 지도 앱 메모 공개 범위 — 가져올 때 리스트마다 고른다, 기본 평가와 같게 (68-5)
+  noteVisibility: NoteVisibility = "same",
 ): Promise<ImportResult> {
   const places = dedupeBySourceId(list.places);
   const placeIds = await upsertPlaces(places);
   await saveImportedItems(supabase, userId, list, places, placeIds);
   const alreadySaved = await saveUserPlaces(supabase, userId, places, placeIds, mode, visibility);
   const listId = mode.kind === "plain" ? await saveList(supabase, userId, list, [...new Set(placeIds.values())]) : null;
+  // 가져온 메모에 고른 공개 범위를 — 다녀온 등급 · 가져온 메모 그대로인 곳만(DB 함수가 거름, 직접 쓴 메모는 그대로)
+  if (mode.kind === "tier" && RATED_DB_TIERS.includes(mode.tier)) {
+    const res = await supabase.rpc("set_imported_note_visibility", { p_user: userId, p_vis: noteVisibilityToDb(noteVisibility), p_places: [...new Set(placeIds.values())] });
+    if (res.error) throw new ImportSaveError("set_imported_note_visibility", res.error.code);
+  }
 
   return {
     listId,
@@ -170,6 +177,7 @@ async function saveImportedItems(
             place_id: placeId,
             list_name: list.name,
             memo: p.memo,
+            alias: p.alias ?? "",
             category_name: p.categoryName,
             category_path: p.categoryPath,
             saved_at: p.savedAt.toISOString(),

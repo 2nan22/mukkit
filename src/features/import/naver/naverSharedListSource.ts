@@ -21,6 +21,8 @@ const BookmarkSchema = z.object({
   py: z.number(),
   address: z.string().nullable().optional(),
   memo: z.string().nullable().optional(),
+  // 사용자가 붙인 별명 (68-3) — 안 붙였으면 빈 값
+  displayName: z.string().nullable().optional(),
   mcidName: z.string().nullable().optional(),
   cidPath: z.array(z.string()).nullable().optional(),
   creationTime: z.number(),
@@ -129,7 +131,8 @@ function toImportedList(
       categoryPath,
       cuisine: naverCuisineOf(categoryPath).cuisine,
       categoryName: b.mcidName ?? "",
-      memo: b.memo ?? "",
+      memo: (b.memo ?? "").trim(),
+      alias: aliasOf(b.name, b.displayName),
       savedAt: new Date(b.creationTime),
       available: b.available ?? true,
       raw,
@@ -145,4 +148,10 @@ function toImportedList(
     expectedCount: data.folder.bookmarkCount,
     skipped,
   };
+}
+
+// 네이버 지도에서 장소에 붙인 별명 (68-3 · 68-7) — 메모와 따로 두고 화면에선 '별명' 배지로. 가게 이름과 같은 별명은 뺀다
+export function aliasOf(name: string, alias: string | null | undefined): string {
+  const a = (alias ?? "").trim();
+  return a && a !== name.trim() ? a : "";
 }

@@ -8,6 +8,11 @@ export const MENUS_MAX = 10;
 export const MENU_NAME_MAX = 30;
 export const RATING_VISIBILITIES = ["private", "followers", "public"] as const;
 export type RatingVisibility = (typeof RATING_VISIBILITIES)[number];
+// 메모 공개 범위 (68-5) — 기본 평가와 같게(DB null) · 평가보다 넓어지지는 않는다(평가를 볼 수 있는 사람 중에서만)
+export const NOTE_VISIBILITIES = ["same", ...RATING_VISIBILITIES] as const;
+export type NoteVisibility = (typeof NOTE_VISIBILITIES)[number];
+export const noteVisibilityToDb = (v: NoteVisibility): RatingVisibility | null => (v === "same" ? null : v);
+export const noteVisibilityFromDb = (v: string | null): NoteVisibility => ((RATING_VISIBILITIES as readonly string[]).includes(v ?? "") ? (v as RatingVisibility) : "same");
 // 다녀온 등급(DB 값) — 공개 범위가 뜻을 갖는 등급 (68)
 export const RATED_DB_TIERS = ["three", "two", "one", "not_recommended"];
 
@@ -15,6 +20,7 @@ export const RatingSchema = z.object({
   placeId: z.uuid(),
   tier: z.enum(TIERS),
   note: z.string().trim().max(NOTE_MAX, `메모는 ${NOTE_MAX}자까지 쓸 수 있어요`),
+  noteVisibility: z.enum(NOTE_VISIBILITIES),
   visitedOn: z.iso.date().nullable(),
   sponsored: z.boolean(),
   review: z.string().trim().max(REVIEW_MAX, `한 줄 평가는 ${REVIEW_MAX}자까지 쓸 수 있어요`),
@@ -40,6 +46,7 @@ export class RatingSaveError extends Error {
 type Patch = {
   tier?: Tier;
   note?: string;
+  noteVisibility?: NoteVisibility;
   visitedOn?: string | null;
   sponsored?: boolean;
   review?: string;
@@ -57,6 +64,7 @@ export async function updateUserPlace(
   const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (patch.tier) row.tier = tierToDb(patch.tier);
   if (patch.note !== undefined) row.note = patch.note;
+  if (patch.noteVisibility !== undefined) row.note_visibility = noteVisibilityToDb(patch.noteVisibility);
   if (patch.visitedOn !== undefined) row.visited_on = patch.visitedOn;
   if (patch.sponsored !== undefined) row.sponsored = patch.sponsored;
   if (patch.review !== undefined) row.review = patch.review;
@@ -81,6 +89,12 @@ export type SavedPlace = {
   cuisine: string;
   tier: Tier;
   note: string;
+  // 메모 공개 범위 (68-5) — 기본 평가와 같게
+  noteVisibility: NoteVisibility;
+  // 지도 앱 원본 메모 그대로면 그 앱 (68-6)
+  noteSource: string | null;
+  // 지도 앱 별명 (68-7)
+  alias: string;
   visitedOn: string | null;
   sponsored: boolean;
   review: string;
@@ -90,12 +104,15 @@ export type SavedPlace = {
   rank?: number | null;
 };
 
-const SAVED_PLACE_COLUMNS = "place_id, tier, note, visited_on, sponsored, review, visibility, menus, tier_rank, places(name, address, category_name, cuisine)";
+const SAVED_PLACE_COLUMNS = "place_id, tier, note, note_visibility, note_source, place_alias, visited_on, sponsored, review, visibility, menus, tier_rank, places(name, address, category_name, cuisine)";
 
 type SavedPlaceRow = {
   place_id: string;
   tier: string;
   note: string;
+  note_visibility: RatingVisibility | null;
+  note_source: string | null;
+  place_alias: string | null;
   visited_on: string | null;
   sponsored: boolean;
   review: string;
@@ -114,6 +131,9 @@ function toSavedPlace(row: SavedPlaceRow): SavedPlace {
     cuisine: row.places?.cuisine ?? "other",
     tier: tierFromDb(row.tier),
     note: row.note,
+    noteVisibility: noteVisibilityFromDb(row.note_visibility),
+    noteSource: row.note_source,
+    alias: row.place_alias ?? "",
     visitedOn: row.visited_on,
     sponsored: row.sponsored,
     review: row.review,

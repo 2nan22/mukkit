@@ -71,7 +71,7 @@ export function MyRatingMenu({ placeId, three }: { placeId: string; three: boole
             ) : (
               <>
                 <h2 className="pb-1 text-section font-bold">평가를 삭제할까요?</h2>
-                <p className="text-meta leading-normal text-ink-2">등급 · 한 줄 평가 · 먹은 메뉴 · 사진이 지워지고, 내 장소에는 평가 전으로 남아요. 메모 · 리스트 · 함께 방문 기록은 그대로이고, 받은 좋아요 · 댓글은 보이지 않게 돼요.</p>
+                <p className="text-meta leading-normal text-ink-2">등급, 한 줄 평가, 먹은 메뉴, 사진이 지워지고, 내 장소에는 평가 전으로 남아요. 메모, 리스트, 함께 방문 기록은 그대로이고, 받은 좋아요와 댓글은 보이지 않게 돼요.</p>
                 {error && (
                   <p role="alert" className="text-meta text-danger">
                     {error}

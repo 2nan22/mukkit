@@ -54,15 +54,15 @@ export function MediaUploader({ userId, placeId }: { userId: string; placeId: st
   async function add(files: FileList) {
     setError(null);
     const room = MAX_ITEMS - items.length;
-    if (files.length > room) return setError(`사진 · 영상은 한 평가에 ${MAX_ITEMS}개까지예요.`);
+    if (files.length > room) return setError(`사진과 영상은 한 평가에 ${MAX_ITEMS}개까지예요.`);
     setBusy(true);
     try {
       for (const file of Array.from(files)) {
         const isVideo = file.type.startsWith("video/");
-        if (isVideo && !VIDEO_TYPES.includes(file.type)) throw new Error("mp4 · mov · webm 영상만 올릴 수 있어요.");
+        if (isVideo && !VIDEO_TYPES.includes(file.type)) throw new Error("mp4, mov, webm 영상만 올릴 수 있어요.");
         if (isVideo && file.size > MAX_VIDEO_BYTES) throw new Error("영상은 30MB 까지예요.");
         const body = isVideo ? file : await toJpeg(file).catch(() => {
-          throw new Error("이 사진 형식은 열 수 없어요. JPG · PNG 로 올려 주세요.");
+          throw new Error("이 사진 형식은 열 수 없어요. JPG나 PNG로 올려 주세요.");
         });
         const ext = isVideo ? (file.name.split(".").pop() ?? "mp4").toLowerCase() : "jpg";
         const path = `${userId}/${placeId}/${crypto.randomUUID()}.${ext}`;
@@ -96,7 +96,7 @@ export function MediaUploader({ userId, placeId }: { userId: string; placeId: st
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-meta font-bold">사진 · 영상</span>
+      <span className="text-meta font-bold">사진과 영상</span>
       <div className="flex gap-2 overflow-x-auto pb-1">
         {items.map((m) => (
           <div key={m.id} className="relative size-20 shrink-0 overflow-hidden rounded-btn-m bg-surface">
@@ -114,7 +114,7 @@ export function MediaUploader({ userId, placeId }: { userId: string; placeId: st
               type="button"
               onClick={() => remove(m)}
               disabled={busy}
-              aria-label="사진 · 영상 삭제"
+              aria-label="사진이나 영상 삭제"
               className="absolute top-0.5 right-0.5 flex size-6 items-center justify-center rounded-full bg-black/60 text-white"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">

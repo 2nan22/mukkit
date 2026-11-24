@@ -21,6 +21,6 @@ describe("mode 직렬화", () => {
     expect(modeFromValue(modeToValue({ kind: "tier", tier: "one" }))).toEqual({ kind: "tier", tier: "one" });
     expect(modeFromValue("plain")).toEqual({ kind: "plain" });
     expect(modeFromValue("unrated")).toEqual({ kind: "plain" });
-    expect(modeLabel({ kind: "plain" })).toBe("리스트로 · 평가 전");
+    expect(modeLabel({ kind: "plain" })).toBe("리스트로 저장");
   });
 });

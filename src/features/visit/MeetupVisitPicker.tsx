@@ -126,7 +126,7 @@ export function MeetupVisitPicker({ meetupId, people, startIndex, cancelHref }: 
                   name={m.name}
                   cuisine={m.cuisine}
                   tier={m.tier}
-                  meta={[CUISINE_LABEL[m.cuisine], m.region, "내 장소"].filter(Boolean).join(" · ")}
+                  meta={[CUISINE_LABEL[m.cuisine], m.region, "내 장소"]}
                   onClick={() => add({ key: m.placeId, name: m.name, placeId: m.placeId, kakao: null })}
                 />
               </li>
@@ -153,7 +153,7 @@ export function MeetupVisitPicker({ meetupId, people, startIndex, cancelHref }: 
       )}
 
       {entries.length > 0 && (
-        <div className="sticky bottom-0 -mx-5 mt-auto flex flex-col gap-2 border-t border-line bg-white px-5 pt-3 pb-5">
+        <div className="sticky bottom-0 -mx-5 mt-auto flex flex-col gap-2 border-t border-line bg-white px-5 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
           {error && (
             <p role="alert" className="text-meta text-danger">
               {error}

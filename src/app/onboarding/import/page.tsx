@@ -25,7 +25,7 @@ export default function OnboardingImportPage({ searchParams }: PageProps<"/onboa
           <br />
           가져와요
         </h1>
-        <p className="text-body leading-normal text-ink-2">네이버 지도 · 카카오맵 리스트를 링크로 가져오면 첫 화면부터 내 지도가 채워져요.</p>
+        <p className="text-body leading-normal text-ink-2">네이버 지도나 카카오맵 리스트를 링크로 가져오면 첫 화면부터 내 지도가 채워져요.</p>
       </div>
       <Suspense fallback={<PageLoader />}>
         <Gate searchParams={searchParams} />

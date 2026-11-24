@@ -24,7 +24,7 @@ export function PlaceBottomBar({ placeId, saved, rated, lists, inLists }: Props)
   }
 
   return (
-    <div className="sticky bottom-0 flex flex-col gap-2 border-t border-line bg-white px-5 pt-3 pb-5">
+    <div className="sticky bottom-0 flex flex-col gap-2 border-t border-line bg-white px-5 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
       {message && (
         <p role="status" className="text-center text-meta text-ink-2">
           {message}
@@ -85,7 +85,7 @@ export function PlaceBottomBar({ placeId, saved, rated, lists, inLists }: Props)
       </div>
       {!saved && (
         <button type="button" disabled={pending} onClick={() => run(() => rateNewPlace(placeId), "")} className="h-11 text-meta font-semibold text-ink-2 disabled:opacity-60">
-          다녀왔어요 · 바로 평가하기
+          다녀왔다면 바로 평가하기
         </button>
       )}
     </div>

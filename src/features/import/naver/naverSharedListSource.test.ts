@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ImportError } from "@/domain/importedPlace";
-import { NaverSharedListSource } from "./naverSharedListSource";
+import { aliasOf, NaverSharedListSource } from "./naverSharedListSource";
 import fixture from "./__fixtures__/sharedList.json";
 
 const SHARE_ID = "0123456789abcdef0123456789abcdef";
@@ -99,5 +99,13 @@ describe("NaverSharedListSource.fetchList", () => {
       fakeFetch({ [bookmarksPrefix]: () => Response.json({ items: [] }) }),
     );
     await expect(changed.fetchList(SHARE_ID)).rejects.toMatchObject({ code: "UNEXPECTED_RESPONSE" });
+  });
+});
+
+describe("aliasOf (68-7)", () => {
+  it("별명은 메모와 따로, 가게 이름과 같은 별명은 뺌", () => {
+    expect(aliasOf("즐거운술상", "흑백요리사 이모카세")).toBe("흑백요리사 이모카세");
+    expect(aliasOf("남영돈", "남영돈")).toBe("");
+    expect(aliasOf("남영돈", null)).toBe("");
   });
 });

@@ -148,7 +148,7 @@ async function HomeContent() {
         <section className="mx-5 flex flex-col gap-3 rounded-[20px] border border-line p-5">
           <span className="flex flex-col gap-1">
             <span className="text-[20px] font-bold tracking-tight">저장해 둔 맛집부터 가져와요</span>
-            <span className="text-meta text-ink-2">네이버 · 카카오맵 리스트를 붙이면 지도가 바로 채워져요</span>
+            <span className="text-meta text-ink-2">네이버 지도나 카카오맵 리스트를 붙이면 지도가 바로 채워져요</span>
           </span>
           <Link href="/import" className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
             저장한 맛집 가져오기
