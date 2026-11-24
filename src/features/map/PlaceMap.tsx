@@ -248,7 +248,7 @@ export function PlaceMap({
   const [failed, setFailed] = useState(false);
   // 마지막으로 지도에 반영한 값 — 다른 화면에 갔다 뒤로 돌아오면(화면이 숨었다 다시 보임) 효과가 다시 돌아도
   // 같은 값이면 지도를 옮기거나 핀을 다시 만들지 않는다 → 떠날 때의 위치 · 확대 그대로 (65)
-  const applied = useRef<{ pins?: Pin[]; cluster?: boolean; fit?: unknown[]; focus?: unknown; pick?: unknown[] }>({});
+  const applied = useRef<{ pins?: Pin[]; cluster?: boolean; fit?: unknown[]; focus?: unknown; pick?: unknown[]; center?: unknown }>({});
   // 첫 타일이 다 깔렸는지 — 그 전엔 빈 땅색 위에 로딩 (65)
   const [drawn, setDrawn] = useState(false);
   const onSelectRef = useRef(onSelect);
@@ -360,6 +360,7 @@ export function PlaceMap({
   useEffect(() => {
     const maps = window.kakao?.maps;
     const pin = pins.find((p) => p.id === selectedId);
+    if (!pin) applied.current.pick = undefined; // 닫았다가 같은 가게를 다시 고르면 다시 다가간다
     if (!ready || !maps || !map.current || !pin) return;
     if (same(applied.current.pick, [pin, selectedId])) return;
     applied.current.pick = [pin, selectedId];
@@ -370,7 +371,8 @@ export function PlaceMap({
   // 넘긴 카드의 가게를 가운데로 — 확대 수준은 그대로
   useEffect(() => {
     const pin = centerOn ? pins.find((p) => p.id === centerOn.id) : undefined;
-    if (!ready || !pin) return;
+    if (!ready || !pin || applied.current.center === centerOn) return;
+    applied.current.center = centerOn;
     panToVisible(pin.lat, pin.lng);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 넘길 때만 (핀 목록이 바뀔 때는 옮기지 않음)
   }, [ready, centerOn]);

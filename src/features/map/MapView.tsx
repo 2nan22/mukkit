@@ -693,6 +693,9 @@ export function MapView({
 // 지도에서 고른 가게 카드 — 위로 끌면 장소 상세, 아래로 끌면 닫기 (65, 지도 앱 관례)
 // 손잡이를 누르면 상세. 끌다 놓은 자리의 클릭(평가하기 등)은 한 번 무시
 const PULL = 56;
+// 카드 안 버튼을 누르다 손가락이 조금 밀려도 끌기로 보지 않게 · 짧게 튕긴 건 이 거리부터
+const CARD_SLOP = 12;
+const FLICK_MIN = 20;
 function PullCard({ placeId, onClose, children }: { placeId: string; onClose: () => void; children: React.ReactNode }) {
   const router = useRouter();
   const card = useRef<HTMLDivElement>(null);
@@ -702,13 +705,15 @@ function PullCard({ placeId, onClose, children }: { placeId: string; onClose: ()
 
   function onDown(e: PointerEvent<HTMLDivElement>) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    // 카드 안에서 따로 스크롤되는 목록(평가한 사람 전체)은 끌지 않는다
+    if ((e.target as Element).closest("[data-scroll]")) return;
     const el = card.current;
     if (!el) return;
     const start = { y: e.clientY, t: e.timeStamp };
     let moved = false;
     const move = (ev: globalThis.PointerEvent) => {
       const dy = ev.clientY - start.y;
-      if (!moved && Math.abs(dy) < TAP_SLOP) return;
+      if (!moved && Math.abs(dy) < CARD_SLOP) return;
       moved = true;
       // 위로는 따라오다 점점 무겁게, 아래로는 그대로
       el.style.transition = "none";
@@ -726,8 +731,8 @@ function PullCard({ placeId, onClose, children }: { placeId: string; onClose: ()
       setTimeout(() => window.removeEventListener("click", swallow, true), 300);
       const dy = ev.clientY - start.y;
       const speed = dy / Math.max(1, ev.timeStamp - start.t);
-      if (dy < -PULL || speed < -0.5) open();
-      else if (dy > PULL || speed > 0.5) onClose();
+      if (dy < -PULL || (speed < -0.5 && dy < -FLICK_MIN)) open();
+      else if (dy > PULL || (speed > 0.5 && dy > FLICK_MIN)) onClose();
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -735,7 +740,7 @@ function PullCard({ placeId, onClose, children }: { placeId: string; onClose: ()
   }
 
   return (
-    <div ref={card} onPointerDown={onDown} className="touch-none transition-transform duration-200 ease-out select-none [-webkit-touch-callout:none]">
+    <div ref={card} onPointerDown={onDown} className="touch-none transition-transform duration-200 ease-out">
       <button type="button" onClick={open} aria-label="장소 상세 보기" className="mx-auto flex h-6 w-16 items-center justify-center">
         <span aria-hidden="true" className="h-1 w-9 rounded-full bg-subtle/50" />
       </button>
@@ -887,7 +892,7 @@ function FollowingCard({ place, onClose }: { place: MapPlace; onClose: () => voi
           </svg>
         </button>
       </div>
-      <ul aria-label="평가한 사람" className={`flex flex-col ${all ? "max-h-56 overflow-y-auto" : ""}`}>
+      <ul aria-label="평가한 사람" data-scroll="" className={`flex flex-col ${all ? "max-h-56 touch-pan-y overflow-y-auto overscroll-contain" : ""}`}>
         {(all ? raters : raters.slice(0, SHOW)).map((r) => (
           <li key={r.userId}>
             <Link href={`/p/${place.placeId}/r/${r.userId}`} aria-label={`${r.nickname} ${TIER_LABEL[r.tier]} 평가 보기`} className="flex h-11 items-center gap-2.5">

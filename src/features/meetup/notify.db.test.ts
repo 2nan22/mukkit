@@ -57,9 +57,12 @@ describe.skipIf(!admin)("notifyMeetup", () => {
     const { notifyMeetup } = await import("./notify");
     const nick = `손님${Math.random().toString(36).slice(2, 6)}님`;
     await admin!.from("profiles").update({ nickname: nick }).eq("id", users[0].id);
-    await notifyMeetup(meetupId, users[0].id, { kind: "invited", to: users[1].id });
-    expect(sent()[0].body).toBe(`${nick}이 약속에 초대했어요`);
-    await admin!.from("profiles").update({ nickname: users[0].name }).eq("id", users[0].id);
+    try {
+      await notifyMeetup(meetupId, users[0].id, { kind: "invited", to: users[1].id });
+      expect(sent()[0].body).toBe(`${nick}이 약속에 초대했어요`);
+    } finally {
+      await admin!.from("profiles").update({ nickname: users[0].name }).eq("id", users[0].id);
+    }
   });
 
   it("참여하면 나머지 참여자에게 · 다시 열어도 한 번만", async () => {

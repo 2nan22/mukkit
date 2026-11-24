@@ -61,13 +61,23 @@ export function HomeMapCard({ points, total }: { points: HomePoint[]; total: Vie
   }, [seen, points]);
 
   // 지도가 멈출 때마다 — 가운데 동네 이름 (내 위치로 열렸으면 내 위치 기준)
+  // 첫 위치로 옮기기 전(SDK 기본 위치)에 오는 멈춤은 버린다 · 늦게 온 이름 응답은 버린다
+  const settled = useRef(false);
+  const asked = useRef(0);
   const onView = useCallback(
     (v: MapViewport) => {
+      if (!settled.current) {
+        if (!focus || Math.abs(v.center.lat - focus.lat) > 0.002 || Math.abs(v.center.lng - focus.lng) > 0.002) return;
+        settled.current = true;
+      }
       setView(v);
       const at = me ?? v.center;
-      void regionName(at.lat, at.lng).then((r) => setPlace(r ? regionLabel(r.gu, r.dong, v.north - v.south) : null));
+      const n = ++asked.current;
+      void regionName(at.lat, at.lng).then((r) => {
+        if (n === asked.current) setPlace(r ? regionLabel(r.gu, r.dong, v.north - v.south) : null);
+      });
     },
-    [me],
+    [me, focus],
   );
 
   const label = `내 지도 열기${place ? ` · ${place}` : ""} · ${view ? "지도에" : "저장"} ${counts.saved}곳 · 3숟가락 ${counts.three}곳 · 가고 싶은 곳 ${counts.want}곳`;
