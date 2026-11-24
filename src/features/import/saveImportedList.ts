@@ -303,7 +303,8 @@ async function fillImportedMemos(
     const res = await supabase.from("user_places").update({ note: memo }).eq("user_id", userId).eq("place_id", id).eq("note", note);
     if (res.error) throw new ImportSaveError("user_places_note_update", res.error.code);
     // 옛 메모를 옮긴 한 줄 평가가 손대지 않은 채면 새 메모로 — 원본에서 지운 개인정보가 피드에 남지 않게 (68-2)
-    if (note.trim()) {
+    // 원본에서 내용을 줄였을 때만 — 별명 추가처럼 새 정보가 묻지 않고 공개되지 않게 (68-3)
+    if (note.trim() && note.trim().includes(memo.trim())) {
       const rv = await supabase
         .from("user_places")
         .update({ review: memo.trim().slice(0, REVIEW_MAX) })

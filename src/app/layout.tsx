@@ -16,6 +16,9 @@ const pretendard = localFont({
 export const metadata: Metadata = {
   title: "먹킷",
   description: "광고도 별점 평균도 없는, 아는 사람들의 맛집 지도",
+  // 홈 화면 앱 상태바는 default — 화면이 상태바 아래에서 시작한다. black-translucent 로 바꾸면 헤더가 상태바에 가리니
+  // 그때는 모든 sticky top-0 헤더 · 실행 화면에 env(safe-area-inset-top) 을 더해야 한다 (68-3, viewportFit cover)
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "먹킷" },
 };
 
 export const viewport: Viewport = {

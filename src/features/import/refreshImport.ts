@@ -26,6 +26,11 @@ export function hashList(list: ImportedList): string {
   return createHash("sha256").update(JSON.stringify([list.name, list.memo, places])).digest("hex");
 }
 
+// 원본 메모가 줄었는지 — 새 메모가 옛 메모 안에 들어 있으면(지우거나 비움) 공개해도 새 정보가 아니다 (68-3)
+export function reducedMemo(oldMemo: string, newMemo: string): boolean {
+  return oldMemo.trim().includes(newMemo.trim());
+}
+
 // 가져올 때 · 새로 고칠 때 기록 남기기
 export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode, visibility?: RatingVisibility, memoToReview?: boolean): Promise<void> {
   await client.from("import_sources").upsert(
@@ -111,6 +116,8 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
 
   // 원본 메모가 바뀌었고 내 메모가 예전 원본 그대로면 새 메모로 · 원본 기록의 메모도 갱신
   let memos = 0;
+  const flags = await client.from("import_sources").select("memo_to_review").match(where).maybeSingle();
+  const memoToReview = flags.data?.memo_to_review === true;
   for (const old of oldItems) {
     const now = fresh.get(old.source_place_id);
     if (!now || now.memo === old.memo) continue;
@@ -123,7 +130,8 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
       .select("place_id");
     memos += res.data?.length ?? 0;
     // 옛 메모를 옮긴 한 줄 평가가 손대지 않은 채면 새 메모로 — 원본에서 지운 개인정보가 피드에 남지 않게 (68-2)
-    if (old.memo.trim()) {
+    // 단 '메모도 한 줄 평가로'를 켠 원본이거나 원본에서 내용을 줄였을 때만 — 별명 추가처럼 새 정보가 묻지 않고 공개되지 않게 (68-3)
+    if (old.memo.trim() && (memoToReview || reducedMemo(old.memo, now.memo))) {
       await client
         .from("user_places")
         .update({ review: now.memo.trim().slice(0, REVIEW_MAX) })
