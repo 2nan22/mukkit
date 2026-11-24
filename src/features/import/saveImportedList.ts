@@ -4,7 +4,7 @@ import type { ImportedList, ImportedPlace } from "@/domain/importedPlace";
 import { isSamePlace } from "@/domain/samePlace";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { ImportMode } from "./importMode";
-import { RATED_DB_TIERS, type RatingVisibility } from "@/features/rating/rating";
+import { RATED_DB_TIERS, REVIEW_MAX, type RatingVisibility } from "@/features/rating/rating";
 
 
 const NOTE_MAX = 300;
@@ -300,6 +300,16 @@ async function fillImportedMemos(
     if (note !== "" && (emptyOnly || !importedMemos.get(`${id}:${p.source}`)?.has(note))) continue;
     const res = await supabase.from("user_places").update({ note: memo }).eq("user_id", userId).eq("place_id", id).eq("note", note);
     if (res.error) throw new ImportSaveError("user_places_note_update", res.error.code);
+    // 옛 메모를 옮긴 한 줄 평가가 손대지 않은 채면 새 메모로 — 원본에서 지운 개인정보가 피드에 남지 않게 (68-2)
+    if (note.trim()) {
+      const rv = await supabase
+        .from("user_places")
+        .update({ review: memo.trim().slice(0, REVIEW_MAX) })
+        .eq("user_id", userId)
+        .eq("place_id", id)
+        .eq("review", note.trim().slice(0, REVIEW_MAX));
+      if (rv.error) throw new ImportSaveError("user_places_review_update", rv.error.code);
+    }
   }
 }
 

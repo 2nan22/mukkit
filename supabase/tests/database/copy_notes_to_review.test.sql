@@ -1,7 +1,7 @@
 -- 가져온 메모를 한 줄 평가로 (68-2) — 가져온 메모 그대로 · 다녀온 등급 · 한 줄 평가가 빈 곳만, 메모 · updated_at 은 그대로, 남의 것은 못 바꿈
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(7);
+select plan(8);
 
 insert into auth.users (id, email) values
   ('f1111111-1111-1111-1111-111111111111', 'cn-a@test.local'),
@@ -27,6 +27,7 @@ select is(public.copy_notes_to_review('f1111111-1111-1111-1111-111111111111'), 0
 
 select set_config('request.jwt.claims', '{"sub":"f1111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 select is(public.count_notes_to_review('f1111111-1111-1111-1111-111111111111'), 1, '옮길 곳 1');
+select is(public.copy_notes_to_review('f1111111-1111-1111-1111-111111111111', array['f9000000-0000-0000-0000-000000000004'::uuid]), 0, '고른 장소에 해당 없으면 0줄');
 select is(public.copy_notes_to_review('f1111111-1111-1111-1111-111111111111'), 1, '가져온 메모 그대로인 곳만 옮김');
 reset role;
 select is((select review from public.user_places where place_id = 'f9000000-0000-0000-0000-000000000001'), '혼밥하기 좋음', '한 줄 평가가 됨');

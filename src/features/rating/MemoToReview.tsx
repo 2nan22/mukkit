@@ -13,6 +13,7 @@ export function MemoToReview({ count }: { count: number }) {
     <section className="flex flex-col gap-2 border-t-8 border-surface px-5 pt-6 pb-8">
       <h2 className="text-section font-bold">가져온 메모를 한 줄 평가로</h2>
       <p className="text-meta leading-normal text-ink-2">한 줄 평가는 공개 범위대로 피드 · 장소에서 보여요. 나만 보는 메모는 그대로 남아요.</p>
+      <p className="rounded-[12px] bg-surface px-3.5 py-3 text-meta leading-normal text-ink-2">전화번호처럼 남에게 보이면 안 되는 내용이 메모에 있으면 먼저 지워 주세요. 옮긴 뒤에도 평가에서 고치거나 지울 수 있어요.</p>
       {message && (
         <p role="status" className="text-meta text-ink-2">
           {message}
