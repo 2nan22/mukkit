@@ -86,6 +86,13 @@ export function MeetupForm() {
   const [pending, startTransition] = useTransition();
   const heading = useRef<HTMLHeadingElement>(null);
   const advance = useRef<number>(0);
+  // 한 번 확인 단계까지 갔으면, 앞 질문을 바꾼 뒤 바로 확인으로 돌아온다
+  const [reached, setReached] = useState(false);
+  function go(next: Step) {
+    window.clearTimeout(advance.current);
+    if (next === "confirm") setReached(true);
+    setStep(next);
+  }
 
   // 새 질문이 올라오면 그 제목으로 포커스 — 화면 읽기 · 키보드도 다음 질문으로
   useEffect(() => {
@@ -94,7 +101,8 @@ export function MeetupForm() {
   }, [step]);
   useEffect(() => () => window.clearTimeout(advance.current), []);
 
-  const todayOpen = BANDS.some((b) => bandOpen(0, b, now));
+  // 오늘 고를 수 있는 시각이 하나라도 남았으면 오늘을 열어 둔다 (늦은 밤이 시작한 뒤에도 직접 시각으로)
+  const todayOpen = TIMES.slice(0, -2).some((t) => t > now);
   // 오늘이면 이미 지난 시각은 빼고 고른다
   const startOptions = TIMES.slice(0, -2).filter((t) => day > 0 || t > now);
   const startAt = startOptions.includes(start) ? start : (startOptions[0] ?? start);
@@ -105,16 +113,21 @@ export function MeetupForm() {
     setPurpose(p);
     // 고른 칸이 잠깐 보인 뒤 다음 질문으로
     window.clearTimeout(advance.current);
-    advance.current = window.setTimeout(() => setStep("when"), 250);
+    advance.current = window.setTimeout(() => setStep((s) => (s === "what" ? (reached ? "confirm" : "when") : s)), 250);
   }
   function pickDay(d: number) {
     setDay(d);
     setCalendar(false);
     // 오늘로 바꿨는데 고른 시간대가 지났으면 남은 첫 시간대로
     const open = BANDS.filter((b) => bandOpen(d, b, now));
-    if (d === 0 && !exact && band && !bandOpen(0, band, now) && open[0]) {
-      setStart(open[0].start);
-      setEnd(open[0].end);
+    if (d === 0 && !exact && band && !bandOpen(0, band, now)) {
+      if (open[0]) {
+        setStart(open[0].start);
+        setEnd(open[0].end);
+      } else {
+        // 시간대가 다 지났으면 남은 시각에서 직접 고르기
+        setExact(true);
+      }
     }
   }
   function pickBand(b: Band) {
@@ -125,6 +138,11 @@ export function MeetupForm() {
 
   function submit() {
     if (endAt <= startAt) return setError("헤어지는 시간을 만나는 시간보다 늦게 골라 주세요");
+    // 화면을 오래 켜 두어 그 사이 시각이 지났으면 다시 고르게
+    if (day === 0 && startAt <= nowMinutesKst()) {
+      setStep("when");
+      return setError("이미 지난 시각이에요. 다시 골라 주세요");
+    }
     startTransition(async () => {
       const res = await createMeetup({ purpose, startsAt: toIso(day, startAt), endsAt: toIso(day, endAt) });
       if (res?.error) setError(res.error);
@@ -137,8 +155,8 @@ export function MeetupForm() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 px-5 pb-5">
-      {step !== "what" && <Answered label="약속" value={PURPOSE_LABEL[purpose]} onChange={() => setStep("what")} />}
-      {step === "confirm" && <Answered label="언제" value={`${dayLabel(day)} ${timeRange(startAt, endAt)}`} onChange={() => setStep("when")} />}
+      {step !== "what" && <Answered label="약속" value={PURPOSE_LABEL[purpose]} onChange={() => go("what")} />}
+      {step === "confirm" && <Answered label="언제" value={`${dayLabel(day)} ${timeRange(startAt, endAt)}`} onChange={() => go("when")} />}
 
       {step === "what" && (
         <section key="what" className="meet-rise flex flex-col gap-4 pt-2">
@@ -249,7 +267,7 @@ export function MeetupForm() {
             {pending ? "만드는 중" : "약속 만들기"}
           </button>
         ) : (
-          <button type="button" onClick={() => setStep(step === "what" ? "when" : "confirm")} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+          <button type="button" onClick={() => go(step === "what" && !reached ? "when" : "confirm")} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
             다음
           </button>
         )}

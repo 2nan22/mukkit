@@ -146,7 +146,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
         </>
       ) : (
         <>
-          {status.meReady ? (
+          {status.status !== "open" ? null : status.meReady ? (
             <details className="group rounded-[16px] bg-surface">
               <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-meta">
                 <span className="truncate text-ink-2">
@@ -166,12 +166,12 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
               {editors}
             </section>
           )}
-          <section className="flex flex-col gap-0.5 rounded-[16px] border border-line p-4">
+          {status.status === "open" && <section className="flex flex-col gap-0.5 rounded-[16px] border border-line p-4">
             <h3 className="text-body font-bold">추천 지역</h3>
             <span className="text-meta leading-normal text-muted">
               {status.meReady ? (readyCount < 2 ? "다른 분이 출발지를 넣으면 모두 오가기 편한 곳 3곳이 나와요" : "") : readyCount >= 1 ? `${readyCount}명이 출발지를 넣었어요. 내 출발지만 넣으면 나와요` : "2명 이상 출발지를 넣으면 모두 오가기 편한 곳 3곳이 나와요"}
             </span>
-          </section>
+          </section>}
           {invite}
         </>
       )}

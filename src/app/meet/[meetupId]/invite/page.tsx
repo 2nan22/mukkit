@@ -35,7 +35,8 @@ async function Invite({ params, searchParams }: { params: Promise<{ meetupId: st
   const status = await getMeetupStatus(supabase, meetupId);
   if (!status) notFound();
   const back = `/meet/${status.id}`;
-  if (!status.isHost || status.status !== "open" || !status.inviteToken) redirect(back);
+  // 주인 · 열린 약속 · 남은 자리가 있을 때만 (정원이 차면 초대해도 수락할 수 없다)
+  if (!status.isHost || status.status !== "open" || !status.inviteToken || status.members.length >= status.maxMembers) redirect(back);
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
   const purpose = PURPOSE_LABEL[status.purpose];
