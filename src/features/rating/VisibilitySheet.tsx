@@ -30,7 +30,7 @@ export function VisibilitySheet({ value, onPick, onClose, noteVis }: { value: Ra
         <h2 id="vis-title" className="pt-2 text-section font-bold">
           누가 볼 수 있어요?
         </h2>
-        {noteVis !== undefined && <p className="text-meta text-muted">{noteVis === "same" ? "메모도 이 범위대로 보여요" : "메모는 따로 정한 범위를 넘지 않아요"}</p>}
+        {noteVis !== undefined && <p className="text-meta text-muted">{noteVis === "same" ? "메모도 이 범위대로 보여요" : `메모는 따로 정했어요 · ${VISIBILITY[noteVis].label}`}</p>}
         <div role="radiogroup" aria-labelledby="vis-title" className="flex flex-col gap-1.5 pt-1">
           {RATING_VISIBILITIES.map((v) => (
             <button

@@ -111,6 +111,7 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
 
   // 원본 메모가 바뀌었고 내 메모가 예전 원본 그대로면 새 메모로 · 원본 기록의 메모도 갱신
   let memos = 0;
+  const changedPlaces: string[] = [];
   for (const old of oldItems) {
     const now = fresh.get(old.source_place_id);
     if (!now || now.memo === old.memo) continue;
@@ -122,7 +123,15 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
       .eq("note", old.memo.slice(0, NOTE_MAX))
       .select("place_id");
     memos += res.data?.length ?? 0;
+    if (res.data?.length) changedPlaces.push(old.place_id);
     await client.from("imported_items").update({ memo: now.memo }).match({ ...where, source_place_id: old.source_place_id });
+  }
+
+  // 바뀐 메모도 이 리스트에 고른 메모 공개 범위로 — 좁히기만 (DB 함수가 거름, 68-5)
+  if (changedPlaces.length > 0 && key.mode.kind === "tier") {
+    const src = await client.from("import_sources").select("note_visibility").match(where).maybeSingle();
+    const vis = (src.data?.note_visibility as RatingVisibility | null) ?? null;
+    if (vis) await client.rpc("set_imported_note_visibility", { p_user: userId, p_vis: vis, p_places: changedPlaces });
   }
 
   // 새 곳만 가져오기 규칙으로

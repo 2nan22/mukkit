@@ -2,7 +2,7 @@
 -- 가져온 메모 한 번에 바꾸기는 지도 앱 메모 그대로 · 다녀온 등급만, updated_at 그대로, 남의 것은 못 바꿈
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(15);
 
 insert into auth.users (id, email) values
   ('f1111111-1111-1111-1111-111111111111', 'nv-owner@test.local'),
@@ -47,6 +47,20 @@ select is((select count(*)::int from public.place_ratings('f9000000-0000-0000-00
 select set_config('request.jwt.claims', '{"sub":"f2222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
 select is((select note from public.place_ratings('f9000000-0000-0000-0000-000000000001') limit 1), '같게 메모', '팔로워는 평가와 메모 모두');
 reset role;
+
+-- 로그인 안 한 사람 — 전체 공개 평가의 평가와 같게 · 전체 메모만, 팔로워 메모는 빈 값
+update public.user_places set visibility = 'public', note_visibility = null where place_id = 'f9000000-0000-0000-0000-000000000001';
+set local role anon;
+select set_config('request.jwt.claims', '', true);
+select is((select note from public.profile_ratings('f1111111-1111-1111-1111-111111111111') where place_id = 'f9000000-0000-0000-0000-000000000001'), '같게 메모', '로그인 안 해도 평가와 같게(전체) 메모는 보임');
+select is((select note from public.profile_ratings('f1111111-1111-1111-1111-111111111111') where place_id = 'f9000000-0000-0000-0000-000000000002'), '', '로그인 안 하면 팔로워 메모는 빈 값');
+reset role;
+
+-- 가져오기 · 새로 고침(장소를 고른 경우)은 좁히기만 — 나만으로 둔 메모가 다시 가져오며 넓어지지 않음
+update public.user_places set note_visibility = 'private' where place_id = 'f9000000-0000-0000-0000-000000000003';
+select is(public.set_imported_note_visibility('f1111111-1111-1111-1111-111111111111', null, array['f9000000-0000-0000-0000-000000000003'::uuid]), 0, '다시 가져와도 넓어지지 않음');
+update public.user_places set note_visibility = null where place_id = 'f9000000-0000-0000-0000-000000000003';
+select is(public.set_imported_note_visibility('f1111111-1111-1111-1111-111111111111', 'followers', array['f9000000-0000-0000-0000-000000000003'::uuid]), 1, '좁히기는 됨');
 
 select * from finish();
 rollback;

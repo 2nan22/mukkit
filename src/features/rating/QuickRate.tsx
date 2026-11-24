@@ -29,7 +29,7 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
   // 이번에 고른 공개 범위 — 고르기 전엔 장소마다 저장된 값 그대로 (68-4)
   const [visibility, setVisibility] = useState<RatingVisibility | null>(null);
   const [visOpen, setVisOpen] = useState(false);
-  // 이 장소 메모를 보여 줄지 — 장소가 바뀌면 그 장소 값으로
+  // 이 장소 메모 공개 범위 — 장소가 바뀌면 그 장소 값으로
   const [noteChoice, setNoteChoice] = useState<{ placeId: string; vis: NoteVisibility } | null>(null);
   const leave = useLeave("/my");
 

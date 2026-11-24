@@ -74,7 +74,7 @@ export function ImportModeSheet({ name, value, onChange, onClose }: { name: stri
                 ))}
               </div>
               <div className="pt-2">
-                <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={value.noteVisibility ?? "same"} onChange={(v) => onChange({ ...value, noteVisibility: v })} rating={value.visibility ?? null} />
+                <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={value.noteVisibility ?? "same"} onChange={(v) => onChange({ ...value, noteVisibility: v })} rating={value.visibility ?? null} warn />
               </div>
             </fieldset>
           )}

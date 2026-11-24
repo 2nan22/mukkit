@@ -54,7 +54,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
   const [fresh, setFresh] = useState<string[]>([]);
   const android = useSyncExternalStore(noop, isAndroid, () => false);
   // 다녀온 등급으로 가져오는 리스트는 누구에게 보여 줄지 묻는다 (68) — 모두 고를 때까지 가져오기를 막는다
-  // 한 번에 정하거나 리스트마다 (68-4). 메모는 남에게 보이면 안 되는 내용이 있을 수 있어 기본은 끔
+  // 한 번에 정하거나 리스트마다 (68-4). 지도 앱 메모는 기본 평가와 같게, 나만 등도 고름 (68-5)
   const ratedRows = rows.filter((r) => isRatedMode(r.mode));
   const rating = ratedRows.length > 0;
   const sameVis = ratedRows.every((r) => r.visibility === ratedRows[0]?.visibility) ? (ratedRows[0]?.visibility ?? null) : null;
@@ -169,7 +169,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
               </div>
               <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요 · 리스트마다 바꾸려면 등급을 누르세요</span>
               <div className="pt-2">
-                <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={sameNote ?? "same"} onChange={(v) => setAllRated({ noteVisibility: v })} rating={sameVis} />
+                <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={sameNote ?? "same"} onChange={(v) => setAllRated({ noteVisibility: v })} rating={sameVis} warn />
               </div>
             </fieldset>
           )}

@@ -23,11 +23,18 @@ returns boolean language sql stable security definer set search_path = '' as $$
     else false
   end
 $$;
-revoke execute on function public.can_see_note(uuid, public.rating_visibility) from public, anon;
-grant execute on function public.can_see_note(uuid, public.rating_visibility) to anon, authenticated;
+-- 보여 주는 함수(security definer) 안에서만 쓴다 — 바로 부를 길은 막음
+revoke execute on function public.can_see_note(uuid, public.rating_visibility) from public, anon, authenticated;
+
+-- 메모 공개 범위의 넓이 — 나만 0 · 팔로워 1 · 전체 2 · 평가와 같게(null) 3
+create function public.note_rank(p_vis public.rating_visibility)
+returns int language sql immutable set search_path = '' as $$
+  select case p_vis when 'private' then 0 when 'followers' then 1 when 'public' then 2 else 3 end
+$$;
 
 -- 가져온 메모의 공개 범위를 한 번에 — 다녀온 등급 · 메모가 지도 앱 메모 그대로인 곳만(직접 쓴 메모는 건드리지 않음). updated_at 그대로
 -- p_places null 이면 전부(설정), 있으면 그 장소만(가져오기 · 새로 고침). security invoker — RLS 로 자기 줄만
+-- 가져오기 · 새로 고침은 좁히기만 — 평가에서 나만으로 바꿔 둔 메모가 다시 가져오며 넓어지지 않게 (평가와 같게(null)가 가장 넓음)
 create function public.set_imported_note_visibility(p_user uuid, p_vis public.rating_visibility, p_places uuid[] default null)
 returns int language sql security invoker set search_path = '' as $$
   with done as (
@@ -37,6 +44,7 @@ returns int language sql security invoker set search_path = '' as $$
        and (p_places is null or up.place_id = any (p_places))
        and up.tier in ('three', 'two', 'one', 'not_recommended')
        and up.note_visibility is distinct from p_vis
+       and (p_places is null or public.note_rank(p_vis) < public.note_rank(up.note_visibility))
        and btrim(up.note) <> ''
        and exists (
          select 1 from public.imported_items i

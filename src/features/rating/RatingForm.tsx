@@ -266,7 +266,7 @@ export function compareScope(target: RankPlace, ranked: RankPlace[]) {
 
 
 // 메모 — 한 줄로 접어 두고 누르면 펼침, 내용이 있으면 첫 줄 (네이버에서 가져온 메모가 들어오는 칸)
-// 기본 나만 · 켜면 평가 공개 범위대로 보임 (68-4)
+// 메모 공개 범위는 기본 평가와 같게 · 나만 · 팔로워 · 전체 공개 (68-5)
 function Note({ initial, noteVis, onNoteVis, visibility }: { initial: string; noteVis: NoteVisibility; onNoteVis: (v: NoteVisibility) => void; visibility: RatingVisibility }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(initial);
