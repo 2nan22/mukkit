@@ -28,7 +28,7 @@ export function LoaderBubble({ label }: { label?: string }) {
 // 화면 하나가 통째로 기다릴 때 — 화면 정가운데
 export function PageLoader({ label }: { label?: string }) {
   return (
-    <div className="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center">
+    <div data-loading="" className="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center">
       <LoaderBubble label={label} />
     </div>
   );

@@ -54,7 +54,7 @@ export function HomeMiniMap({ points }: { points: HomePoint[] }) {
 
   return (
     <div ref={box} inert aria-hidden="true" className="relative isolate h-[132px] w-full bg-map-land">
-      {seen && <PlaceMap pins={pins} selectedId={null} onSelect={noop} padding={PADDING} cluster focus={focus} me={me} />}
+      {seen && <PlaceMap pins={pins} selectedId={null} onSelect={noop} padding={PADDING} cluster focus={focus} me={me} quiet />}
     </div>
   );
 }

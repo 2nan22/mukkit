@@ -2,6 +2,7 @@
 
 import Script from "next/script";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LoaderBubble } from "@/components/ui/EatingLoader";
 import { tierIconSvg } from "@/components/ui/TierIcon";
 import type { Tier } from "@/domain/tier";
 
@@ -184,7 +185,10 @@ export function PlaceMap({
   onViewChange,
   highlightId = null,
   centerOn = null,
+  quiet = false,
 }: {
+  // 타일이 깔릴 때까지 가운데 로딩을 띄우지 않는다 — 홈 미리보기처럼 작은 지도
+  quiet?: boolean;
   // 이 핀을 보이는 칸 가운데로 옮긴다(확대는 그대로) — 접힌 카드를 넘길 때. n 이 바뀌면 같은 핀도 다시
   centerOn?: { id: string; n: number } | null;
   pins: Pin[];
@@ -219,6 +223,8 @@ export function PlaceMap({
   const clusterer = useRef<KakaoClusterer | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  // 첫 타일이 다 깔렸는지 — 그 전엔 빈 땅색 위에 로딩 (65)
+  const [drawn, setDrawn] = useState(false);
   const onSelectRef = useRef(onSelect);
   const onMoveRef = useRef(onUserMove);
   const onViewRef = useRef(onViewChange);
@@ -237,6 +243,9 @@ export function PlaceMap({
       const m0 = map.current;
       requestAnimationFrame(() => m0.relayout());
       window.kakao?.maps.event.addListener(m0, "dragstart", () => onMoveRef.current?.());
+      window.kakao?.maps.event.addListener(m0, "tilesloaded", () => setDrawn(true));
+      // 타일 소식이 끝내 안 와도(숨은 지도 등) 로딩이 남지 않게
+      setTimeout(() => setDrawn(true), 6000);
       window.kakao?.maps.event.addListener(m0, "idle", () => {
         const b = m0.getBounds();
         const sw = b.getSouthWest();
@@ -436,6 +445,11 @@ export function PlaceMap({
       {!ready && (
         <div className="pointer-events-none absolute inset-0 animate-pulse bg-map-land">
           <span className="sr-only">지도를 불러오는 중이에요</span>
+        </div>
+      )}
+      {!quiet && !drawn && (
+        <div data-loading="" className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <LoaderBubble label="지도를 불러오는 중" />
         </div>
       )}
     </>
