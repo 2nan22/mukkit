@@ -59,6 +59,13 @@ describe.skipIf(!admin)("notifyFollow", () => {
     expect(sent()).toHaveLength(0);
   });
 
+  it("빠르게 두 번 불러도 한 번만", async () => {
+    const { notifyFollow } = await import("./notify");
+    await admin!.from("follows").insert({ follower_id: users[1].id, followee_id: users[0].id });
+    await Promise.all([notifyFollow(users[1].id, users[0].id), notifyFollow(users[1].id, users[0].id)]);
+    expect(sent()).toHaveLength(1);
+  });
+
   it("팔로우 알림을 끈 사람 · 차단한 사이는 빼고", async () => {
     await admin!.from("profiles").update({ push_off: ["follow"] }).eq("id", users[2].id);
     await admin!.from("follows").insert({ follower_id: users[0].id, followee_id: users[2].id });
@@ -66,6 +73,8 @@ describe.skipIf(!admin)("notifyFollow", () => {
     await notifyFollow(users[0].id, users[2].id);
     expect(sent()).toHaveLength(0);
 
+    // 차단 확인은 알림을 다시 켠 뒤에 — 끈 것 때문에 0건이 되는 거짓 통과를 막는다
+    await admin!.from("profiles").update({ push_off: [] }).eq("id", users[2].id);
     await admin!.from("blocks").insert({ blocker_id: users[2].id, blocked_id: users[1].id });
     await admin!.from("follows").insert({ follower_id: users[1].id, followee_id: users[2].id });
     await notifyFollow(users[1].id, users[2].id);

@@ -1,5 +1,6 @@
 import "server-only";
 import { honor } from "@/domain/honor";
+import { claimFreshNotifications } from "@/features/push/claim";
 import { sendPush } from "@/features/push/send";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -10,35 +11,30 @@ type Event = { kind: "invited"; to: string } | { kind: "joined" } | { kind: "loc
 export async function notifyMeetup(meetupId: string, actorId: string, event: Event): Promise<void> {
   const admin = createSupabaseAdminClient();
   if (!admin) return;
-  const [{ data: meetup }, { data: actor }, { data: members }] = await Promise.all([
+  const [{ data: meetup }, { data: actor }] = await Promise.all([
     admin.from("meetups").select("status").eq("id", meetupId).maybeSingle(),
     admin.from("profiles").select("nickname").eq("id", actorId).maybeSingle(),
-    admin.from("meetup_members").select("user_id").eq("meetup_id", meetupId),
   ]);
   if (!meetup || meetup.status !== "open" || !actor) return;
   const name = honor(actor.nickname as string);
   const url = `/meet/${meetupId}`;
-  const others = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== actorId);
 
   if (event.kind === "invited") {
     await sendPush([event.to], { title: "약속 초대", body: `${name}이 초대했어요`, url, tag: `invite-${meetupId}` }, "meetup");
     return;
   }
+  // 참여 · 추천 지역 — 받는 사람은 알림함 트리거가 방금 만든 줄 (차단 · 되풀이 거르기가 알림함과 같게, 66)
   if (event.kind === "joined") {
-    // 이미 참여한 사람이 링크를 다시 열어도 알리지 않게 — 방금 들어온 경우만
-    const { data: row } = await admin.from("meetup_members").select("joined_at").eq("meetup_id", meetupId).eq("user_id", actorId).maybeSingle();
-    if (!row || Date.now() - new Date(row.joined_at as string).getTime() > 120_000) return;
-    await sendPush(others, { title: "약속 참여", body: `${name}이 참여했어요`, url, tag: `meet-${meetupId}` }, "meetup");
+    const to = await claimFreshNotifications(admin, "meetup_join", actorId, { meetup_id: meetupId });
+    await sendPush(to.map((r) => r.user_id), { title: "약속 참여", body: `${name}이 참여했어요`, url, tag: `meet-${meetupId}` }, "meetup");
     return;
   }
-  // 위치를 넣은 사람이 둘 이상이 됐을 때만 — 추천이 새로 나오거나 바뀜
-  const { data: pts } = await admin.from("meetup_points").select("user_id").eq("meetup_id", meetupId);
-  const ready = new Set(((pts ?? []) as { user_id: string }[]).map((p) => p.user_id));
-  if (ready.size < 2) return;
+  const to = await claimFreshNotifications(admin, "meetup_ready", actorId, { meetup_id: meetupId });
+  if (to.length === 0) return;
   await sendPush(
-    others.filter((id) => ready.has(id)),
+    to.map((r) => r.user_id),
     {
-      title: ready.size === 2 ? "추천 지역이 나왔어요" : "추천 지역이 바뀌었어요",
+      title: to[0].first_ready ? "추천 지역이 나왔어요" : "추천 지역이 바뀌었어요",
       body: `${name}이 ${event.point === "origin" ? "출발지" : "귀가지"}를 넣었어요`,
       url,
       tag: `meet-${meetupId}`,
