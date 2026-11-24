@@ -4,7 +4,8 @@ const SOURCE_NAME: Record<MemoSource, string> = { naver: "네이버 지도 메�
 
 // 메모 한 칸 — 왼쪽 아이콘(지도 앱에서 가져온 메모면 그 앱 로고, 아니면 메모 아이콘) · 오른쪽 내용 (68-6)
 // 가운데 점으로 이름표와 내용을 한 줄에 잇지 않는다. caption: 내 메모를 누가 보는지 (내 화면에서만)
-export function Memo({ text, source, caption, tone = "surface", clamp }: { text: string; source?: string | null; caption?: string; tone?: "surface" | "white"; clamp?: 3 }) {
+// alias: 지도 앱 별명 — 메모와 따로 '별명' 배지 줄 (68-7)
+export function Memo({ text, alias, source, caption, tone = "surface", clamp }: { text: string; alias?: string; source?: string | null; caption?: string; tone?: "surface" | "white"; clamp?: 3 }) {
   const mark = source === "naver" || source === "kakao" || source === "google" ? source : null;
   return (
     <div className={`flex gap-2.5 rounded-btn-s px-3 py-2.5 ${tone === "white" ? "bg-white" : "bg-surface"}`}>
@@ -12,7 +13,13 @@ export function Memo({ text, source, caption, tone = "surface", clamp }: { text:
       <span className="flex h-[1lh] shrink-0 items-center text-meta leading-normal">{mark ? <SourceMark source={mark} size={16} /> : <MemoIcon />}</span>
       <span className="sr-only">{mark ? SOURCE_NAME[mark] : "메모"}</span>
       <div className="flex min-w-0 flex-col gap-0.5">
-        <p className={`text-meta leading-normal whitespace-pre-line text-ink-2 ${clamp ? "line-clamp-3" : ""}`}>{text}</p>
+        {alias && (
+          <span className="flex min-w-0 items-center gap-1.5 text-meta leading-normal">
+            <span className="flex h-[18px] shrink-0 items-center rounded-[5px] border border-line-strong bg-white px-1.5 text-[11px] font-semibold text-muted">별명</span>
+            <span className="truncate font-semibold text-ink">{alias}</span>
+          </span>
+        )}
+        {text && <p className={`text-meta leading-normal whitespace-pre-line text-ink-2 ${clamp ? "line-clamp-3" : ""}`}>{text}</p>}
         {caption && <span className="text-caption text-muted">{caption}</span>}
       </div>
     </div>

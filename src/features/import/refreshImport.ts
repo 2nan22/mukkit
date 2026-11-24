@@ -22,7 +22,7 @@ export type RefreshResult =
 
 // 원본 요약 — 반영하는 값(목록 · 메모 · 리스트 이름)만. 장소 자체 정보(이름 · 업종 · 폐업)는 폐업 확인 작업 몫
 export function hashList(list: ImportedList): string {
-  const places = [...list.places].sort((a, b) => a.sourcePlaceId.localeCompare(b.sourcePlaceId)).map((p) => [p.sourcePlaceId, p.memo]);
+  const places = [...list.places].sort((a, b) => a.sourcePlaceId.localeCompare(b.sourcePlaceId)).map((p) => [p.sourcePlaceId, p.memo, p.alias ?? ""]);
   return createHash("sha256").update(JSON.stringify([list.name, list.memo, places])).digest("hex");
 }
 
@@ -69,13 +69,13 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
 
   // 원본 기록이 1000곳을 넘어도 끝까지 — 잘리면 남아 있는 곳을 빠진 곳으로 보고 리스트에서 뺀다
   const before = await fetchAll((from, to) =>
-    client.from("imported_items").select("source_place_id, place_id, memo").match(where).order("source_place_id").range(from, to),
+    client.from("imported_items").select("source_place_id, place_id, memo, alias").match(where).order("source_place_id").range(from, to),
   );
   if (before.error) {
     await markFailed(client, userId, key, "error");
     return { status: "error" };
   }
-  const oldItems = before.data as { source_place_id: string; place_id: string; memo: string }[];
+  const oldItems = before.data as { source_place_id: string; place_id: string; memo: string; alias: string }[];
   const known = new Set(oldItems.map((o) => o.source_place_id));
 
   let list: ImportedList;
@@ -114,7 +114,12 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
   const changedPlaces: string[] = [];
   for (const old of oldItems) {
     const now = fresh.get(old.source_place_id);
-    if (!now || now.memo === old.memo) continue;
+    if (!now) continue;
+    // 별명만 바뀌면 원본 기록만 (별명은 원본 기록에서 읽는다, 68-7)
+    if (now.memo === old.memo) {
+      if ((now.alias ?? "") !== (old.alias ?? "")) await client.from("imported_items").update({ alias: now.alias ?? "" }).match({ ...where, source_place_id: old.source_place_id });
+      continue;
+    }
     const res = await client
       .from("user_places")
       .update({ note: now.memo.slice(0, NOTE_MAX) })
@@ -124,7 +129,7 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
       .select("place_id");
     memos += res.data?.length ?? 0;
     if (res.data?.length) changedPlaces.push(old.place_id);
-    await client.from("imported_items").update({ memo: now.memo }).match({ ...where, source_place_id: old.source_place_id });
+    await client.from("imported_items").update({ memo: now.memo, alias: now.alias ?? "" }).match({ ...where, source_place_id: old.source_place_id });
   }
 
   // 바뀐 메모도 이 리스트에 고른 메모 공개 범위로 — 좁히기만 (DB 함수가 거름, 68-5)

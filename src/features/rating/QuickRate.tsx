@@ -119,9 +119,9 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
           <section key={place.placeId} className={`meet-rise flex flex-1 flex-col px-5 pt-6 ${pending ? "opacity-60" : ""}`}>
             <MetaLine items={placeMeta(place)} />
             <h2 className="pt-0.5 text-[22px] leading-snug font-bold tracking-tight">{place.name}</h2>
-            {place.note && (
+            {(place.note || place.alias) && (
               <div className="mt-3 flex flex-col gap-2.5 rounded-[12px] bg-surface px-3.5 py-3">
-                <Memo tone="white" clamp={3} text={place.note} source={place.noteSource} />
+                <Memo tone="white" clamp={3} text={place.note} alias={place.alias} source={place.noteSource} />
                 <NoteVisibilityPicker onSurface value={noteVis} onChange={(v) => setNoteChoice({ placeId: place.placeId, vis: v })} rating={shownVisibility} />
               </div>
             )}
