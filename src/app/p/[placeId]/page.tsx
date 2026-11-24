@@ -189,7 +189,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <MediaStrip media={myMedia} />
             {mine.note && (
               <p className="rounded-btn-s bg-white px-3 py-2.5 text-meta leading-normal text-ink-2">
-                <span className="block text-caption text-muted">{noteLabel(mine.visibility, mine.notePublic)}</span>
+                <span className="block text-caption text-muted">{noteLabel(mine.visibility, mine.noteVisibility)}</span>
                 {mine.note}
               </p>
             )}

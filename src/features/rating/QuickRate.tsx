@@ -6,11 +6,11 @@ import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { TIER_MEANING, type Tier } from "@/domain/tier";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { TierIcon } from "@/components/ui/TierIcon";
-import { Switch } from "@/components/ui/Switch";
 import { useLeave } from "@/lib/nav/useLeave";
 import { loadNextUnrated, setTier } from "./actions";
-import type { RatingVisibility, SavedPlace, UnratedCursor } from "./rating";
-import { noteAudience, VISIBILITY, VisibilitySheet } from "./VisibilitySheet";
+import type { NoteVisibility, RatingVisibility, SavedPlace, UnratedCursor } from "./rating";
+import { VISIBILITY, VisibilitySheet } from "./VisibilitySheet";
+import { NoteVisibilityPicker } from "./NoteVisibilityPicker";
 
 // 평가 화면 ① 과 같은 줄 — 숟가락 아이콘 배지 + 뜻 (68-4, 색 카드 넷 대신)
 const RATED: Tier[] = ["three", "two", "one", "notRecommended"];
@@ -30,7 +30,7 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
   const [visibility, setVisibility] = useState<RatingVisibility | null>(null);
   const [visOpen, setVisOpen] = useState(false);
   // 이 장소 메모를 보여 줄지 — 장소가 바뀌면 그 장소 값으로
-  const [shared, setShared] = useState<{ placeId: string; on: boolean } | null>(null);
+  const [noteChoice, setNoteChoice] = useState<{ placeId: string; vis: NoteVisibility } | null>(null);
   const leave = useLeave("/my");
 
   function loadNext(after: UnratedCursor | null) {
@@ -44,8 +44,8 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
     if (!place) return;
     const current = place;
     startTransition(async () => {
-      const notePublic = current.note && shared?.placeId === current.placeId ? shared.on : undefined;
-      const res = await setTier(current.placeId, tier, { visibility: visibility ?? undefined, notePublic });
+      const noteVisibility = noteChoice?.placeId === current.placeId ? noteChoice.vis : undefined;
+      const res = await setTier(current.placeId, tier, { visibility: visibility ?? undefined, noteVisibility });
       if (res.error) return setError(res.error);
       setError(null);
       setDone((d) => [...d, current]);
@@ -64,11 +64,11 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
     const last = done.at(-1);
     if (!last) return;
     startTransition(async () => {
-      // 평가하며 바꾼 공개 범위 · 메모 보여 주기도 원래대로 — 남은 공개 값이 다시 평가할 때 묻지 않고 나가지 않게
-      const res = await setTier(last.placeId, "unrated", { visibility: last.visibility, notePublic: last.notePublic ? true : null });
+      // 평가하며 바꾼 공개 범위 · 메모 공개 범위도 원래대로 — 남은 값이 다시 평가할 때 묻지 않고 나가지 않게
+      const res = await setTier(last.placeId, "unrated", { visibility: last.visibility, noteVisibility: last.noteVisibility });
       if (res.error) return setError(res.error);
       setError(null);
-      setShared(null);
+      setNoteChoice(null);
       setDone((d) => d.slice(0, -1));
       setRemaining((r) => r + 1);
       setPlace(last);
@@ -85,7 +85,7 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
   // 이번에 평가한 수 대 아직 남은 평가 전 — 건너뛴 곳은 남은 쪽에 그대로 있다
   const scale = done.length + remaining;
   const shownVisibility = visibility ?? place?.visibility ?? "private";
-  const noteOn = place ? (shared?.placeId === place.placeId ? shared.on : place.notePublic) : false;
+  const noteVis: NoteVisibility = place ? (noteChoice?.placeId === place.placeId ? noteChoice.vis : place.noteVisibility) : "same";
 
   return (
     <div className="flex flex-1 flex-col">
@@ -118,16 +118,11 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
             <span className="text-meta text-muted">{placeMeta(place)}</span>
             <h2 className="pt-0.5 text-[22px] leading-snug font-bold tracking-tight">{place.name}</h2>
             {place.note && (
-              <div className="mt-3 flex flex-col rounded-[12px] bg-surface px-3.5 pt-2.5 pb-1">
-                <span className="flex items-center gap-1 text-caption text-muted">메모</span>
-                <p className="line-clamp-3 text-meta leading-normal text-ink-2">{place.note}</p>
-                <Switch
-                  size="meta"
-                  label="메모도 보여 주기"
-                  hint={noteAudience(shownVisibility, noteOn)}
-                  checked={noteOn}
-                  onChange={(on) => setShared({ placeId: place.placeId, on })}
-                />
+              <div className="mt-3 flex flex-col gap-2.5 rounded-[12px] bg-surface px-3.5 py-3">
+                <p className="line-clamp-3 text-meta leading-normal text-ink-2">
+                  <span className="text-muted">메모</span> · {place.note}
+                </p>
+                <NoteVisibilityPicker onSurface value={noteVis} onChange={(v) => setNoteChoice({ placeId: place.placeId, vis: v })} rating={shownVisibility} />
               </div>
             )}
 
@@ -239,7 +234,7 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
       )}
       {visOpen && (
         <VisibilitySheet
-          noteOn={place?.note ? noteOn : undefined}
+          noteVis={place?.note ? noteVis : undefined}
           value={shownVisibility}
           onPick={(v) => {
             setVisibility(v);

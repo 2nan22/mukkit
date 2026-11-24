@@ -17,15 +17,14 @@ import {
 import type { ImportResult } from "./saveImportedList";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { tierFromDb } from "@/domain/tier";
-import { RATING_VISIBILITIES, type RatingVisibility } from "@/features/rating/rating";
+import { RATING_VISIBILITIES, type NoteVisibility, type RatingVisibility } from "@/features/rating/rating";
 import { ImportModeSheet, isRatedMode, type RowChoice } from "./ImportModeSheet";
-import { noteAudience } from "@/features/rating/VisibilitySheet";
-import { Switch } from "@/components/ui/Switch";
+import { NoteVisibilityPicker } from "@/features/rating/NoteVisibilityPicker";
 
 const VISIBILITY_LABEL: Record<RatingVisibility, string> = { private: "나만", followers: "팔로워", public: "전체 공개" };
 
-// visibility · notePublic: 다녀온 등급으로 가져올 때 이 리스트만의 공개 범위 · 메모 보여 주기 (68-4)
-type Row = ListPreview & { link: string; mode: ImportMode; visibility?: RatingVisibility; notePublic?: boolean };
+// visibility · noteVisibility: 다녀온 등급으로 가져올 때 이 리스트만의 공개 범위 · 지도 앱 메모 공개 범위 (68-4 · 68-5)
+type Row = ListPreview & { link: string; mode: ImportMode; visibility?: RatingVisibility; noteVisibility?: NoteVisibility };
 type RowStatus = { state: "waiting" | "running" } | { state: "done"; result: ImportResult } | { state: "failed"; error: string };
 type Phase = "select" | "running" | "done";
 
@@ -60,8 +59,8 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
   const rating = ratedRows.length > 0;
   const sameVis = ratedRows.every((r) => r.visibility === ratedRows[0]?.visibility) ? (ratedRows[0]?.visibility ?? null) : null;
   const mixedVis = rating && !sameVis && ratedRows.some((r) => r.visibility);
-  const allNotes = rating && ratedRows.every((r) => r.notePublic);
-  const someNotes = !allNotes && ratedRows.some((r) => r.notePublic);
+  const noteOf = (r: Row): NoteVisibility => r.noteVisibility ?? "same";
+  const sameNote = ratedRows.every((r) => noteOf(r) === noteOf(ratedRows[0])) ? (ratedRows[0] ? noteOf(ratedRows[0]) : "same") : null;
   const missing = ratedRows.some((r) => !r.visibility);
   const setAllRated = (patch: Partial<Row>) => setRows((rs) => rs.map((r) => (isRatedMode(r.mode) ? { ...r, ...patch } : r)));
 
@@ -72,7 +71,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
     for (const row of rows) {
       setStatus((s) => ({ ...s, [row.listId]: { state: "running" } }));
       const rated = isRatedMode(row.mode);
-      const res = await importList(row.link, row.mode, rated ? row.visibility : undefined, rated && !!row.notePublic);
+      const res = await importList(row.link, row.mode, rated ? row.visibility : undefined, rated ? noteOf(row) : "same");
       setStatus((s) => ({
         ...s,
         [row.listId]: res.ok ? { state: "done", result: res.data } : { state: "failed", error: res.error },
@@ -102,7 +101,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
         has={(listId) => peekImportDraft(isRow).some((r) => r.listId === listId)}
         onAdd={(added) => {
           // 아래에서 모두 같게 정해 둔 공개 범위 · 메모는 새로 담긴 등급 리스트도 물려받는다
-          const inherit = (a: Row): Row => (isRatedMode(a.mode) && sameVis ? { ...a, visibility: sameVis, notePublic: allNotes } : a);
+          const inherit = (a: Row): Row => (isRatedMode(a.mode) && sameVis ? { ...a, visibility: sameVis, noteVisibility: sameNote ?? "same" } : a);
           setRows((rs) => [...rs, ...added.filter((a) => !rs.some((r) => r.listId === a.listId)).map(inherit)]);
           setFresh(added.map((a) => a.listId));
           setTimeout(() => setFresh([]), 2500);
@@ -119,7 +118,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
               <h2 className="text-section font-bold">
                 리스트 {rows.length}개 <span className="font-normal text-muted">· {total}곳</span>
               </h2>
-              <span className="pr-12 text-caption text-muted">등급</span>
+              <span className="text-caption text-muted">눌러서 등급 · 공개 범위</span>
             </div>
             <ul>
               {rows.map((row) => (
@@ -133,7 +132,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
                         if (r.listId !== row.listId) return r;
                         // 평가 전 · 가고 싶은 곳에서 등급으로 바꾸면 아래에서 정해 둔 값을 물려받는다
                         const fresh = isRatedMode(v.mode) && !isRatedMode(r.mode) && !v.visibility && sameVis;
-                        return { ...r, visibility: undefined, notePublic: undefined, ...v, ...(fresh ? { visibility: sameVis, notePublic: allNotes } : {}) };
+                        return { ...r, visibility: undefined, noteVisibility: undefined, ...v, ...(fresh ? { visibility: sameVis, noteVisibility: sameNote ?? "same" } : {}) };
                       }),
                     )
                   }
@@ -169,12 +168,9 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
                 ))}
               </div>
               <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요 · 리스트마다 바꾸려면 등급을 누르세요</span>
-              <Switch
-                label="지도 앱 메모도 보여 주기"
-                hint={someNotes ? "일부 리스트만 켰어요 · 켜면 모두 켜져요" : sameVis ? noteAudience(sameVis, allNotes) : "남에게 보이면 안 되는 내용이 없을 때만 켜 주세요"}
-                checked={allNotes}
-                onChange={(on) => setAllRated({ notePublic: on })}
-              />
+              <div className="pt-2">
+                <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={sameNote ?? "same"} onChange={(v) => setAllRated({ noteVisibility: v })} rating={sameVis} />
+              </div>
             </fieldset>
           )}
           <button type="button" onClick={runImport} disabled={missing} className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:opacity-40">
@@ -395,33 +391,38 @@ function LinkHelp({ source, privateList }: { source: PlaceSourceName | null; pri
   );
 }
 
+// 줄 전체를 누르면 가져올 방식 시트 — 오른쪽엔 고른 등급 배지와 › (드롭다운 칩 대신, 68-5)
 function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean; onChange: (v: RowChoice) => void; onRemove: () => void }) {
   const [open, setOpen] = useState(false);
-  const chip = useRef<HTMLButtonElement>(null);
+  const opener = useRef<HTMLButtonElement>(null);
   const rated = isRatedMode(row.mode);
-  const detail = rated ? [row.visibility ? VISIBILITY_LABEL[row.visibility] : "공개 범위 고르기", row.notePublic ? "메모도" : null].filter(Boolean).join(" · ") : null;
+  const detail = rated
+    ? [row.visibility ? VISIBILITY_LABEL[row.visibility] : "공개 범위 고르기", row.noteVisibility && row.noteVisibility !== "same" ? `메모 ${VISIBILITY_LABEL[row.noteVisibility]}` : null].filter(Boolean).join(" · ")
+    : row.mode.kind === "plain"
+      ? "리스트로 만들기"
+      : null;
   return (
-    <li className={`-mx-2 flex min-h-16 items-center gap-3 rounded-[10px] border-b border-line px-2 transition-colors duration-700 ${fresh ? "bg-surface" : ""}`}>
-      <SourceMark source={row.source} size={20} />
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-body font-semibold">{row.name}</span>
-        <span className="truncate text-meta text-muted">
-          {row.count}곳{detail && <span className={row.visibility ? "" : "text-ink-2"}> · {detail}</span>}
-        </span>
-      </span>
+    <li className={`-mx-2 flex items-center rounded-[10px] border-b border-line transition-colors duration-700 ${fresh ? "bg-surface" : ""}`}>
       <button
-        ref={chip}
+        ref={opener}
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={`${row.name} 가져올 방식, 지금 ${modeLabel(row.mode)}`}
-        className="flex h-9 shrink-0 items-center gap-1 rounded-full bg-surface pr-2.5 pl-2.5 text-meta font-semibold text-ink"
+        aria-label={`${row.name} ${row.count}곳, 가져올 방식 ${modeLabel(row.mode)}${detail ? ` · ${detail}` : ""}, 바꾸기`}
+        className="flex min-h-16 min-w-0 flex-1 items-center gap-3 py-2 pl-2 text-left"
       >
-        {row.mode.kind === "plain" ? <span className="pl-0.5">평가 전</span> : <TierBadge tier={tierFromDb(row.mode.tier)} />}
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
-          <path d="M6 9l6 6 6-6" />
+        <SourceMark source={row.source} size={20} />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-body font-semibold">{row.name}</span>
+          <span className="truncate text-meta text-muted">
+            {row.count}곳{detail && <span className={rated && !row.visibility ? "font-semibold text-ink" : ""}> · {detail}</span>}
+          </span>
+        </span>
+        <TierBadge tier={row.mode.kind === "plain" ? "unrated" : tierFromDb(row.mode.tier)} />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-subtle" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" />
         </svg>
       </button>
-      <button type="button" onClick={onRemove} aria-label={`${row.name} 빼기`} className="-mr-2 flex size-10 shrink-0 items-center justify-center text-subtle">
+      <button type="button" onClick={onRemove} aria-label={`${row.name} 빼기`} className="flex size-11 shrink-0 items-center justify-center text-subtle">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
@@ -429,11 +430,11 @@ function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean;
       {open && (
         <ImportModeSheet
           name={row.name}
-          value={{ mode: row.mode, visibility: row.visibility, notePublic: row.notePublic }}
+          value={{ mode: row.mode, visibility: row.visibility, noteVisibility: row.noteVisibility }}
           onChange={onChange}
           onClose={() => {
             setOpen(false);
-            chip.current?.focus();
+            opener.current?.focus();
           }}
         />
       )}

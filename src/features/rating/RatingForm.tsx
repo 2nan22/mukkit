@@ -7,7 +7,7 @@ import { TierBadge } from "@/components/ui/TierBadge";
 import { TierIcon } from "@/components/ui/TierIcon";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
 import { saveRating, type RatingFormState } from "./actions";
-import { NOTE_MAX, RATING_VISIBILITIES, REVIEW_MAX, type RatingVisibility, type SavedPlace } from "./rating";
+import { NOTE_MAX, RATING_VISIBILITIES, REVIEW_MAX, type NoteVisibility, type RatingVisibility, type SavedPlace } from "./rating";
 import { MediaUploader } from "./MediaUploader";
 import { MenuPicker } from "./MenuPicker";
 import { CompanionPicker } from "@/features/visit/CompanionPicker";
@@ -16,8 +16,9 @@ import { loadThreeCompare, placeInThree } from "@/features/rank/actions";
 import { CompareSheet } from "@/features/rank/CompareSheet";
 import type { RankPlace } from "@/features/rank/rank";
 import { CUISINE_LABEL } from "@/domain/cuisine";
-import { noteAudience, VISIBILITY, VisibilitySheet } from "./VisibilitySheet";
-import { Switch } from "@/components/ui/Switch";
+import { VISIBILITY, VisibilitySheet } from "./VisibilitySheet";
+import { NoteVisibilityPicker } from "./NoteVisibilityPicker";
+import { effectiveNote } from "./noteAudience";
 
 // 새로 평가할 때 공개 범위는 지난번 고른 값으로 — 한 번 정하면 잘 바꾸지 않는다 (67-2)
 const LAST_VISIBILITY = "mk_rating_visibility";
@@ -49,9 +50,8 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
   const [chosen, setVisibility] = useState<RatingVisibility | null>(null);
   const visibility = chosen ?? (rated ? place.visibility : (last ?? place.visibility));
   const [visOpen, setVisOpen] = useState(false);
-  // 메모도 보여 줄지 — 건드렸을 때만 저장 (안 건드린 가져온 메모는 '가져온 메모 보여 주기'로 한 번에 켤 수 있게 남김)
-  const [noteShared, setNoteShared] = useState(place.notePublic);
-  const [noteTouched, setNoteTouched] = useState(false);
+  // 메모 공개 범위 — 기본 평가와 같게 (68-5)
+  const [noteVis, setNoteVis] = useState(place.noteVisibility);
   const [sponsored, setSponsored] = useState(place.sponsored);
   const [review, setReview] = useState(place.review);
   const form = useRef<HTMLFormElement>(null);
@@ -108,8 +108,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
         <input type="hidden" name="next" value={next} />
         <input type="hidden" name="tier" value={tier} />
         <input type="hidden" name="visibility" value={visibility} />
-        {noteTouched && <input type="hidden" name="noteTouched" value="1" />}
-        {noteShared && <input type="hidden" name="notePublic" value="on" />}
+        <input type="hidden" name="noteVisibility" value={noteVis} />
         {state.error && step === "tier" && (
           <p role="alert" className="px-5 pt-2 text-meta text-danger">
             {state.error}
@@ -191,10 +190,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
 
           <VisitedOn initial={place.visitedOn} />
 
-          <Note initial={place.note} shared={noteShared} onShared={(on) => {
-            setNoteShared(on);
-            setNoteTouched(true);
-          }} visibility={visibility} />
+          <Note initial={place.note} noteVis={noteVis} onNoteVis={setNoteVis} visibility={visibility} />
           <div className="flex flex-col gap-2 px-5 pt-6">
             <label className="flex min-h-11 items-center gap-2.5">
               <input type="checkbox" name="sponsored" checked={sponsored} onChange={(e) => setSponsored(e.target.checked)} className="size-5 shrink-0 accent-ink" />
@@ -236,7 +232,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
       </form>
       {visOpen && (
         <VisibilitySheet
-          noteOn={place.note ? noteShared : undefined}
+          noteVis={place.note ? noteVis : undefined}
           value={visibility}
           onPick={(v) => {
             setVisibility(v);
@@ -271,14 +267,14 @@ export function compareScope(target: RankPlace, ranked: RankPlace[]) {
 
 // 메모 — 한 줄로 접어 두고 누르면 펼침, 내용이 있으면 첫 줄 (네이버에서 가져온 메모가 들어오는 칸)
 // 기본 나만 · 켜면 평가 공개 범위대로 보임 (68-4)
-function Note({ initial, shared, onShared, visibility }: { initial: string; shared: boolean; onShared: (on: boolean) => void; visibility: RatingVisibility }) {
+function Note({ initial, noteVis, onNoteVis, visibility }: { initial: string; noteVis: NoteVisibility; onNoteVis: (v: NoteVisibility) => void; visibility: RatingVisibility }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(initial);
   const area = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (open) area.current?.focus();
   }, [open]);
-  const locked = !shared || visibility === "private";
+  const locked = effectiveNote(visibility, noteVis) === "private";
   return (
     <div className="flex flex-col gap-2 px-5 pt-6">
       {open ? (
@@ -298,7 +294,7 @@ function Note({ initial, shared, onShared, visibility }: { initial: string; shar
             placeholder="예: 주차 · 대기 · 다음에 먹을 메뉴"
             className="w-full resize-none rounded-[12px] border border-transparent bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink focus:bg-white"
           />
-          <Switch label="메모도 보여 주기" hint={noteAudience(visibility, shared)} checked={shared} onChange={onShared} />
+          <NoteVisibilityPicker value={noteVis} onChange={onNoteVis} rating={visibility} />
         </>
       ) : (
         <>

@@ -111,18 +111,18 @@ describe.skipIf(!hasLocalDb)("가져오기 저장 (로컬 DB)", () => {
   it("등급 리스트는 가져올 때 고른 공개 범위로 — 새로 넣은 곳 · 평가 전이던 곳 모두, 가고 싶은 곳은 그대로 (68)", async () => {
     const { supabase, userId } = await signUp();
     await saveImportedList(supabase, userId, list("vp", [place(20)]), { kind: "plain" });
-    await saveImportedList(supabase, userId, list("vt", [place(20), place(21)]), { kind: "tier", tier: "three" }, "followers", true);
+    await saveImportedList(supabase, userId, list("vt", [place(20), place(21)]), { kind: "tier", tier: "three" }, "followers", "private");
     await saveImportedList(supabase, userId, list("vw", [place(22)]), { kind: "tier", tier: "want_to_go" }, "public");
     const rows = await supabase.from("user_places").select("tier, visibility, places(source_place_id)").eq("user_id", userId);
     const by = new Map((rows.data ?? []).map((r) => [(r.places as unknown as { source_place_id: string }).source_place_id, [r.tier, r.visibility]]));
     expect(by.get(`test-${run}-20`)).toEqual(["three", "followers"]);
     expect(by.get(`test-${run}-21`)).toEqual(["three", "followers"]);
     expect(by.get(`test-${run}-22`)).toEqual(["want_to_go", "private"]);
-    // 고르면 등급 리스트의 메모를 공개 (68-4) · 한 줄 평가는 그대로 · 가고 싶은 곳은 아님
-    const notes = await supabase.from("user_places").select("review, note_public, places(source_place_id)").eq("user_id", userId);
-    const np = new Map((notes.data ?? []).map((r) => [(r.places as unknown as { source_place_id: string }).source_place_id, [r.note_public, r.review]]));
-    expect(np.get(`test-${run}-20`)).toEqual([true, ""]);
-    expect(np.get(`test-${run}-21`)).toEqual([true, ""]);
-    expect(np.get(`test-${run}-22`)).toEqual([null, ""]);
+    // 등급 리스트의 메모는 고른 메모 공개 범위로 (68-5) · 가고 싶은 곳은 평가와 같게(기본)
+    const notes = await supabase.from("user_places").select("note_visibility, places(source_place_id)").eq("user_id", userId);
+    const nv = new Map((notes.data ?? []).map((r) => [(r.places as unknown as { source_place_id: string }).source_place_id, r.note_visibility]));
+    expect(nv.get(`test-${run}-20`)).toBe("private");
+    expect(nv.get(`test-${run}-21`)).toBe("private");
+    expect(nv.get(`test-${run}-22`)).toBe(null);
   }, 20_000);
 });

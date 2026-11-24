@@ -3,13 +3,13 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { TierBadge } from "@/components/ui/TierBadge";
-import { Switch } from "@/components/ui/Switch";
 import { TIER_MEANING, tierFromDb } from "@/domain/tier";
-import { RATING_VISIBILITIES, type RatingVisibility } from "@/features/rating/rating";
-import { noteAudience, VISIBILITY } from "@/features/rating/VisibilitySheet";
+import { RATING_VISIBILITIES, type NoteVisibility, type RatingVisibility } from "@/features/rating/rating";
+import { VISIBILITY } from "@/features/rating/VisibilitySheet";
+import { NoteVisibilityPicker } from "@/features/rating/NoteVisibilityPicker";
 import { IMPORT_TIERS, modeToValue, type ImportMode } from "./importMode";
 
-export type RowChoice = { mode: ImportMode; visibility?: RatingVisibility; notePublic?: boolean };
+export type RowChoice = { mode: ImportMode; visibility?: RatingVisibility; noteVisibility?: NoteVisibility };
 
 const RATED: string[] = ["three", "two", "one", "not_recommended"];
 export const isRatedMode = (mode: ImportMode) => mode.kind === "tier" && RATED.includes(mode.tier);
@@ -73,12 +73,9 @@ export function ImportModeSheet({ name, value, onChange, onClose }: { name: stri
                   </label>
                 ))}
               </div>
-              <Switch
-                label="지도 앱 메모도 보여 주기"
-                hint={value.visibility ? noteAudience(value.visibility, !!value.notePublic) : "남에게 보이면 안 되는 내용이 없을 때만 켜 주세요"}
-                checked={!!value.notePublic}
-                onChange={(on) => onChange({ ...value, notePublic: on })}
-              />
+              <div className="pt-2">
+                <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={value.noteVisibility ?? "same"} onChange={(v) => onChange({ ...value, noteVisibility: v })} rating={value.visibility ?? null} />
+              </div>
             </fieldset>
           )}
         </div>

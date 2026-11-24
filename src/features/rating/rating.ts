@@ -8,6 +8,11 @@ export const MENUS_MAX = 10;
 export const MENU_NAME_MAX = 30;
 export const RATING_VISIBILITIES = ["private", "followers", "public"] as const;
 export type RatingVisibility = (typeof RATING_VISIBILITIES)[number];
+// 메모 공개 범위 (68-5) — 기본 평가와 같게(DB null) · 평가보다 넓어지지는 않는다(평가를 볼 수 있는 사람 중에서만)
+export const NOTE_VISIBILITIES = ["same", ...RATING_VISIBILITIES] as const;
+export type NoteVisibility = (typeof NOTE_VISIBILITIES)[number];
+export const noteVisibilityToDb = (v: NoteVisibility): RatingVisibility | null => (v === "same" ? null : v);
+export const noteVisibilityFromDb = (v: string | null): NoteVisibility => ((RATING_VISIBILITIES as readonly string[]).includes(v ?? "") ? (v as RatingVisibility) : "same");
 // 다녀온 등급(DB 값) — 공개 범위가 뜻을 갖는 등급 (68)
 export const RATED_DB_TIERS = ["three", "two", "one", "not_recommended"];
 
@@ -15,8 +20,7 @@ export const RatingSchema = z.object({
   placeId: z.uuid(),
   tier: z.enum(TIERS),
   note: z.string().trim().max(NOTE_MAX, `메모는 ${NOTE_MAX}자까지 쓸 수 있어요`),
-  // 스위치를 건드렸을 때만 — 안 건드리면 정하지 않음 그대로 (한 번에 공개 대상으로 남게)
-  notePublic: z.boolean().optional(),
+  noteVisibility: z.enum(NOTE_VISIBILITIES),
   visitedOn: z.iso.date().nullable(),
   sponsored: z.boolean(),
   review: z.string().trim().max(REVIEW_MAX, `한 줄 평가는 ${REVIEW_MAX}자까지 쓸 수 있어요`),
@@ -42,7 +46,7 @@ export class RatingSaveError extends Error {
 type Patch = {
   tier?: Tier;
   note?: string;
-  notePublic?: boolean;
+  noteVisibility?: NoteVisibility;
   visitedOn?: string | null;
   sponsored?: boolean;
   review?: string;
@@ -60,8 +64,7 @@ export async function updateUserPlace(
   const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (patch.tier) row.tier = tierToDb(patch.tier);
   if (patch.note !== undefined) row.note = patch.note;
-  // 직접 켜고 끈 것만 적는다 — 빈 메모는 DB 트리거가 공개에서 뺀다 (68-4)
-  if (patch.notePublic !== undefined) row.note_public = patch.notePublic;
+  if (patch.noteVisibility !== undefined) row.note_visibility = noteVisibilityToDb(patch.noteVisibility);
   if (patch.visitedOn !== undefined) row.visited_on = patch.visitedOn;
   if (patch.sponsored !== undefined) row.sponsored = patch.sponsored;
   if (patch.review !== undefined) row.review = patch.review;
@@ -86,8 +89,8 @@ export type SavedPlace = {
   cuisine: string;
   tier: Tier;
   note: string;
-  // 메모를 평가 공개 범위대로 보여 줄지 (68-4) — 기본 나만
-  notePublic: boolean;
+  // 메모 공개 범위 (68-5) — 기본 평가와 같게
+  noteVisibility: NoteVisibility;
   visitedOn: string | null;
   sponsored: boolean;
   review: string;
@@ -97,14 +100,13 @@ export type SavedPlace = {
   rank?: number | null;
 };
 
-const SAVED_PLACE_COLUMNS = "place_id, tier, note, note_public, visited_on, sponsored, review, visibility, menus, tier_rank, places(name, address, category_name, cuisine)";
+const SAVED_PLACE_COLUMNS = "place_id, tier, note, note_visibility, visited_on, sponsored, review, visibility, menus, tier_rank, places(name, address, category_name, cuisine)";
 
 type SavedPlaceRow = {
   place_id: string;
   tier: string;
   note: string;
-  // null 정하지 않음 · false 직접 끔 (68-4)
-  note_public: boolean | null;
+  note_visibility: RatingVisibility | null;
   visited_on: string | null;
   sponsored: boolean;
   review: string;
@@ -123,7 +125,7 @@ function toSavedPlace(row: SavedPlaceRow): SavedPlace {
     cuisine: row.places?.cuisine ?? "other",
     tier: tierFromDb(row.tier),
     note: row.note,
-    notePublic: row.note_public === true,
+    noteVisibility: noteVisibilityFromDb(row.note_visibility),
     visitedOn: row.visited_on,
     sponsored: row.sponsored,
     review: row.review,
