@@ -10,6 +10,7 @@ import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { notifyVisitTag } from "@/features/visit/notify";
 import { MAX_COMPANIONS, syncMyVisit } from "@/features/visit/visit";
 import {
+  RATED_DB_TIERS,
   RATING_VISIBILITIES,
   countUnrated,
   nextUnrated,
@@ -24,7 +25,6 @@ export type RatingFormState = { error?: string; saved?: boolean };
 
 const SAVE_FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
 const VISITED_TIERS: Tier[] = ["three", "two", "one", "notRecommended"];
-const RATED_DB_TIERS = ["three", "two", "one", "not_recommended"];
 
 const CompanionsField = z.object({
   userIds: z.array(z.uuid()).max(MAX_COMPANIONS),
@@ -149,14 +149,14 @@ export async function setAllRatingVisibility(visibility: string): Promise<{ erro
   const parsed = z.enum(RATING_VISIBILITIES).safeParse(visibility);
   if (!parsed.success) return { error: SAVE_FAILED };
   const { supabase, userId } = await requireUser();
-  const { data, error } = await supabase
+  // updated_at 은 건드리지 않는다 — 피드(updated_at 순)에 수백 곳이 '방금 평가'로 뜨지 않게 · 개수만 받는다(1000행 제한)
+  const { count, error } = await supabase
     .from("user_places")
-    .update({ visibility: parsed.data, updated_at: new Date().toISOString() })
+    .update({ visibility: parsed.data }, { count: "exact" })
     .eq("user_id", userId)
     .in("tier", RATED_DB_TIERS)
-    .neq("visibility", parsed.data)
-    .select("place_id");
+    .neq("visibility", parsed.data);
   if (error) return { error: SAVE_FAILED };
   revalidatePath("/", "layout");
-  return { changed: data.length };
+  return { changed: count ?? 0 };
 }

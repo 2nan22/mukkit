@@ -4,9 +4,7 @@ import type { ImportedList, ImportedPlace } from "@/domain/importedPlace";
 import { isSamePlace } from "@/domain/samePlace";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { ImportMode } from "./importMode";
-import type { RatingVisibility } from "@/features/rating/rating";
-
-const RATED_DB: string[] = ["three", "two", "one", "not_recommended"];
+import { RATED_DB_TIERS, type RatingVisibility } from "@/features/rating/rating";
 
 
 const NOTE_MAX = 300;
@@ -197,7 +195,7 @@ async function saveUserPlaces(
 ): Promise<number> {
   const tier = mode.kind === "tier" ? mode.tier : "unrated";
   // 공개 범위는 다녀온 등급(3 · 2 · 1숟가락 · 추천 안 함)일 때만 뜻이 있다
-  const vis = visibility && mode.kind === "tier" && RATED_DB.includes(mode.tier) ? { visibility } : {};
+  const vis = visibility && mode.kind === "tier" && RATED_DB_TIERS.includes(mode.tier) ? { visibility } : {};
   let alreadySaved = 0;
 
   for (const part of chunks(places)) {
@@ -215,6 +213,8 @@ async function saveUserPlaces(
         tier,
         note: p.memo.slice(0, NOTE_MAX),
         saved_at: p.savedAt.toISOString(),
+        // 피드는 updated_at 순 — 가져온 등급이 '방금 평가'로 한꺼번에 뜨지 않게 원본에 저장한 때로 (68)
+        updated_at: p.savedAt.toISOString(),
         ...vis,
       }));
     if (rows.length > 0) {
@@ -248,7 +248,8 @@ export async function applyToSavedPlaces(
     for (const part of chunks([...saved])) {
       const update = await supabase
         .from("user_places")
-        .update({ tier: mode.tier, updated_at: new Date().toISOString(), ...(visibility ? { visibility } : {}) })
+        // updated_at 은 그대로 — 가져온 등급이 피드에 '방금 평가'로 몰리지 않게 (68)
+        .update({ tier: mode.tier, ...(visibility ? { visibility } : {}) })
         .eq("user_id", userId)
         .in("tier", ["unrated", "want_to_go"])
         .neq("tier", mode.tier)

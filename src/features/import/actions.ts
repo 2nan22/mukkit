@@ -59,7 +59,7 @@ export async function importList(input: string, mode: ImportMode, visibility?: R
     const list = await placeSourceFor(source).fetchList(link);
     const saved = await saveImportedList(supabase, userId, list, parsedMode.data, visibility);
     // 자동 새로 고침을 위해 방식 · 원본 요약을 남긴다
-    await recordImportSource(supabase, userId, list, parsedMode.data);
+    await recordImportSource(supabase, userId, list, parsedMode.data, visibility);
     return { ok: true, data: saved };
   } catch (error) {
     return failure(error, source);
