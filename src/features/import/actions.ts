@@ -8,7 +8,7 @@ import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { extractLink, placeSourceFor, sourceNameForLink } from "./sources";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { ImportModeSchema, type ImportMode } from "./importMode";
-import { RATING_VISIBILITIES, type RatingVisibility } from "@/features/rating/rating";
+import { NOTE_VISIBILITIES, RATING_VISIBILITIES, type NoteVisibility, type RatingVisibility } from "@/features/rating/rating";
 import { recordImportSource } from "./refreshImport";
 import { ImportSaveError, saveImportedList, type ImportResult } from "./saveImportedList";
 
@@ -46,20 +46,21 @@ export async function previewList(input: string): Promise<ActionResult<ListPrevi
   }
 }
 
-export async function importList(input: string, mode: ImportMode, visibility?: RatingVisibility, notePublic = false): Promise<ActionResult<ImportResult>> {
+export async function importList(input: string, mode: ImportMode, visibility?: RatingVisibility, noteVisibility: NoteVisibility = "same"): Promise<ActionResult<ImportResult>> {
   const link = extractLink(input);
   const parsedMode = ImportModeSchema.safeParse(mode);
   if (!parsedMode.success) return { ok: false, error: SAVE_FAILED, code: "SAVE_FAILED" };
   if (visibility !== undefined && !(RATING_VISIBILITIES as readonly string[]).includes(visibility)) return { ok: false, error: SAVE_FAILED, code: "SAVE_FAILED" };
+  if (!(NOTE_VISIBILITIES as readonly string[]).includes(noteVisibility)) return { ok: false, error: SAVE_FAILED, code: "SAVE_FAILED" };
   const { supabase, userId } = await requireUserId();
   if (!allowCall(`import:${userId}`, SOURCE_CALLS_PER_MINUTE, 60_000)) return { ok: false, error: TOO_FAST, code: "UPSTREAM_ERROR" };
   const source = sourceNameForLink(link);
   if (!source) return { ok: false, error: ERROR_MESSAGE.INVALID_LINK, code: "INVALID_LINK" };
   try {
     const list = await placeSourceFor(source).fetchList(link);
-    const saved = await saveImportedList(supabase, userId, list, parsedMode.data, visibility, notePublic === true);
+    const saved = await saveImportedList(supabase, userId, list, parsedMode.data, visibility, noteVisibility);
     // 자동 새로 고침을 위해 방식 · 원본 요약을 남긴다
-    await recordImportSource(supabase, userId, list, parsedMode.data, visibility, notePublic === true);
+    await recordImportSource(supabase, userId, list, parsedMode.data, visibility, noteVisibility);
     return { ok: true, data: saved };
   } catch (error) {
     return failure(error, source);

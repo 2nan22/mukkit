@@ -4,9 +4,9 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ImportError, type ImportedList, type PlaceSource, type PlaceSourceName } from "@/domain/importedPlace";
 import type { ImportMode } from "./importMode";
-import { applyToSavedPlaces, reducedMemo, saveImportedList } from "./saveImportedList";
+import { applyToSavedPlaces, saveImportedList } from "./saveImportedList";
 import { placeSourceFor } from "./sources";
-import { type RatingVisibility } from "@/features/rating/rating";
+import { noteVisibilityFromDb, noteVisibilityToDb, type NoteVisibility, type RatingVisibility } from "@/features/rating/rating";
 
 const NOTE_MAX = 300;
 const LIST_NAME_MAX = 40;
@@ -27,7 +27,7 @@ export function hashList(list: ImportedList): string {
 }
 
 // 가져올 때 · 새로 고칠 때 기록 남기기
-export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode, visibility?: RatingVisibility, notePublic?: boolean): Promise<void> {
+export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode, visibility?: RatingVisibility, noteVisibility?: NoteVisibility): Promise<void> {
   await client.from("import_sources").upsert(
     {
       user_id: userId,
@@ -42,7 +42,7 @@ export async function recordImportSource(client: SupabaseClient, userId: string,
       fail_count: 0,
       // 고르지 않았으면(새로 고침 등) 그 전 값을 그대로 둔다
       ...(visibility ? { visibility } : {}),
-      ...(notePublic !== undefined ? { note_public: notePublic } : {}),
+      ...(noteVisibility !== undefined ? { note_visibility: noteVisibilityToDb(noteVisibility) } : {}),
     },
     { onConflict: "user_id,source,source_list_id" },
   );
@@ -111,31 +111,36 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
 
   // 원본 메모가 바뀌었고 내 메모가 예전 원본 그대로면 새 메모로 · 원본 기록의 메모도 갱신
   let memos = 0;
-  const flags = await client.from("import_sources").select("note_public").match(where).maybeSingle();
-  const notePublic = flags.data?.note_public === true;
+  const changedPlaces: string[] = [];
   for (const old of oldItems) {
     const now = fresh.get(old.source_place_id);
     if (!now || now.memo === old.memo) continue;
-    // 공개한 메모에 새 내용이 붙으면(별명 등) 다시 나만으로 — '메모도 공개'를 켠 원본이거나 내용을 줄였을 때만 공개 유지 (68-4)
-    const keepPublic = notePublic || reducedMemo(old.memo, now.memo);
     const res = await client
       .from("user_places")
-      .update(keepPublic ? { note: now.memo.slice(0, NOTE_MAX) } : { note: now.memo.slice(0, NOTE_MAX), note_public: null })
+      .update({ note: now.memo.slice(0, NOTE_MAX) })
       .eq("user_id", userId)
       .eq("place_id", old.place_id)
       .eq("note", old.memo.slice(0, NOTE_MAX))
       .select("place_id");
     memos += res.data?.length ?? 0;
+    if (res.data?.length) changedPlaces.push(old.place_id);
     await client.from("imported_items").update({ memo: now.memo }).match({ ...where, source_place_id: old.source_place_id });
+  }
+
+  // 바뀐 메모도 이 리스트에 고른 메모 공개 범위로 — 좁히기만 (DB 함수가 거름, 68-5)
+  if (changedPlaces.length > 0 && key.mode.kind === "tier") {
+    const src = await client.from("import_sources").select("note_visibility").match(where).maybeSingle();
+    const vis = (src.data?.note_visibility as RatingVisibility | null) ?? null;
+    if (vis) await client.rpc("set_imported_note_visibility", { p_user: userId, p_vis: vis, p_places: changedPlaces });
   }
 
   // 새 곳만 가져오기 규칙으로
   const added = list.places.filter((p) => !known.has(p.sourcePlaceId));
   // 새로 들어온 곳도 가져올 때 고른 공개 범위로 (68)
-  const vis = added.length > 0 && key.mode.kind === "tier" ? await client.from("import_sources").select("visibility, note_public").match(where).maybeSingle() : null;
+  const vis = added.length > 0 && key.mode.kind === "tier" ? await client.from("import_sources").select("visibility, note_visibility").match(where).maybeSingle() : null;
   const saved =
     added.length > 0
-      ? await saveImportedList(client, userId, { ...list, places: added }, key.mode, (vis?.data?.visibility as RatingVisibility | null) ?? undefined, vis?.data?.note_public === true)
+      ? await saveImportedList(client, userId, { ...list, places: added }, key.mode, (vis?.data?.visibility as RatingVisibility | null) ?? undefined, noteVisibilityFromDb((vis?.data?.note_visibility as string | null) ?? null))
       : null;
 
   // 빠진 곳 — 원본 기록 · 먹킷 리스트에서만

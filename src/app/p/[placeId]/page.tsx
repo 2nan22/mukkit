@@ -1,4 +1,5 @@
 import { SafetyMenu } from "@/features/safety/SafetyMenu";
+import { Memo } from "@/components/ui/Memo";
 import { ReactionBar } from "@/features/reactions/ReactionBar";
 import { getReactions, reactionKey, type Reaction } from "@/features/reactions/reactions";
 import { getPlaceCovers } from "@/features/place/covers";
@@ -76,11 +77,7 @@ function OtherRow({ r, placeId, reaction }: { r: OtherRating; placeId: string; r
         <SafetyMenu userId={r.userId} nickname={r.nickname} placeId={placeId} />
       </div>
       {r.review && <p className="text-body leading-normal text-ink-2">{r.review}</p>}
-      {r.note && (
-        <p className="text-meta leading-normal text-muted">
-          <span className="font-semibold">메모</span> · {r.note}
-        </p>
-      )}
+      {r.note && <Memo text={r.note} />}
       <AteMenus menus={r.menus} />
       <Companions people={r.companions} />
       <MediaStrip media={r.media} />
@@ -187,12 +184,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <AteMenus menus={mine.menus} />
             <Companions people={myCompanions} />
             <MediaStrip media={myMedia} />
-            {mine.note && (
-              <p className="rounded-btn-s bg-white px-3 py-2.5 text-meta leading-normal text-ink-2">
-                <span className="block text-caption text-muted">{noteLabel(mine.visibility, mine.notePublic)}</span>
-                {mine.note}
-              </p>
-            )}
+            {mine.note && <Memo tone="white" label={noteLabel(mine.visibility, mine.noteVisibility)} text={mine.note} />}
             {reactionOf(me) && <ReactionBar ownerId={me} placeId={place.id} reaction={reactionOf(me)!} mine />}
           </div>
         ) : mine ? (
@@ -200,11 +192,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <div className="flex items-center gap-2">
               <TierBadge tier={mine.tier} />
             </div>
-            {mine.note && (
-              <p className="rounded-btn-s bg-surface px-3 py-2.5 text-meta leading-normal text-ink-2">
-                <span className="text-muted">나만 보는 메모</span> · {mine.note}
-              </p>
-            )}
+            {mine.note && <Memo label="나만 보는 메모" text={mine.note} />}
           </div>
         ) : (
           <p className="text-meta text-muted">아직 저장하지 않은 곳이에요</p>

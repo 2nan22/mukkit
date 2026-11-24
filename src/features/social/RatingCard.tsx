@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Memo } from "@/components/ui/Memo";
 import { Avatar } from "@/components/ui/Avatar";
 import { AteMenus } from "@/components/ui/AteMenus";
 import { Companions } from "@/components/ui/Companions";
@@ -70,11 +71,7 @@ export function RatingCard({
         </span>
       </div>
       {rating.review && <p className="text-body leading-normal text-ink-2">{rating.review}</p>}
-      {rating.note && (
-        <p className="text-meta leading-normal text-muted">
-          <span className="font-semibold">메모</span> · {rating.note}
-        </p>
-      )}
+      {rating.note && <Memo text={rating.note} />}
       <AteMenus menus={rating.menus} />
       <Companions people={rating.companions} />
       {reaction && <ReactionBar ownerId={rating.ownerId} placeId={rating.placeId} reaction={reaction} mine={viewerId === rating.ownerId} showComments={showComments} />}

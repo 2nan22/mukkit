@@ -1,5 +1,6 @@
 "use client";
 
+import { Memo } from "@/components/ui/Memo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type PointerEvent } from "react";
@@ -840,11 +841,7 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
           </svg>
         </button>
       </div>
-      {place.note && (
-        <p className="rounded-btn-s bg-surface px-3 py-2.5 text-meta leading-normal text-ink-2">
-          <span className="text-muted">내 메모</span> · {place.note}
-        </p>
-      )}
+      {place.note && <Memo label="내 메모" text={place.note} />}
       <div className="grid grid-cols-2 gap-2 pt-2">
         {place.links[0] ? (
           <a

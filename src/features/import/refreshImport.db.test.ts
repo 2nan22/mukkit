@@ -134,33 +134,19 @@ describe.skipIf(!hasLocalDb)("가져온 리스트 새로 고침 (로컬 DB)", ()
     expect(rows.data?.every((r) => r.updated_at.startsWith("2025-06-14"))).toBe(true);
   });
 
-  it("'메모도 공개'를 켠 원본은 메모가 바뀌어도 공개 그대로 (68-4)", async () => {
+  it("새로 고침으로 들어온 곳도 가져올 때 고른 메모 공개 범위 · 메모가 바뀌어도 범위는 그대로 (68-5)", async () => {
     const { supabase, userId } = await signUp();
     const mode = { kind: "tier" as const, tier: "two" as const };
     const two = { source: "naver" as const, sourceListId: `memo-${run}`, name: "2스타", memo: "", places: [place(41, { memo: "옛 메모" })], expectedCount: 1, skipped: [] };
-    await saveImportedList(supabase, userId, two, mode, "followers", true);
-    await recordImportSource(supabase, userId, two, mode, "followers", true);
+    await saveImportedList(supabase, userId, two, mode, "followers", "private");
+    await recordImportSource(supabase, userId, two, mode, "followers", "private");
     await supabase.from("import_sources").update({ last_synced_at: new Date(0).toISOString() }).eq("user_id", userId);
-    const changed = { ...two, places: [place(41, { memo: "옛 메모 · 새 내용" })] };
+    const changed = { ...two, places: [place(41, { memo: "옛 메모 · 새 내용" }), place(42, { memo: "새 곳 메모" })], expectedCount: 2 };
     await refreshImport(supabase, userId, { source: "naver", sourceListId: two.sourceListId, mode }, { placeSource: sourceOf(changed) });
-    const row = await supabase.from("user_places").select("note, note_public").eq("user_id", userId).single();
-    expect(row.data).toEqual({ note: "옛 메모 · 새 내용", note_public: true });
-  });
-
-  it("켜지 않은 원본은 공개한 메모에 새 내용이 붙으면 다시 정하지 않음 · 줄면 공개 그대로 (68-4)", async () => {
-    const { supabase, userId } = await signUp();
-    const mode = { kind: "tier" as const, tier: "one" as const };
-    const one = { source: "naver" as const, sourceListId: `alias-${run}`, name: "1스타", memo: "", places: [place(51, { memo: "맛있음" })], expectedCount: 1, skipped: [] };
-    // 가져온 뒤 평가에서 메모 하나만 공개로 켬
-    await saveImportedList(supabase, userId, one, mode, "public");
-    await recordImportSource(supabase, userId, one, mode, "public", false);
-    await supabase.from("user_places").update({ note_public: true }).eq("user_id", userId);
-    const refresh = async (memo: string) => {
-      await supabase.from("import_sources").update({ last_synced_at: new Date(0).toISOString(), last_hash: "x" }).eq("user_id", userId);
-      await refreshImport(supabase, userId, { source: "naver", sourceListId: one.sourceListId, mode }, { placeSource: sourceOf({ ...one, places: [place(51, { memo })] }) });
-      return (await supabase.from("user_places").select("note, note_public").eq("user_id", userId).single()).data;
-    };
-    expect(await refresh("맛")).toEqual({ note: "맛", note_public: true });
-    expect(await refresh("엄마 회사 앞 · 맛")).toEqual({ note: "엄마 회사 앞 · 맛", note_public: null });
+    const rows = await supabase.from("user_places").select("note, note_visibility").eq("user_id", userId).order("note");
+    expect(rows.data).toEqual([
+      { note: "새 곳 메모", note_visibility: "private" },
+      { note: "옛 메모 · 새 내용", note_visibility: "private" },
+    ]);
   });
 });

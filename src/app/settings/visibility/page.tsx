@@ -34,7 +34,7 @@ async function Counts() {
     count("private"),
     count("followers"),
     count("public"),
-    supabase.rpc("count_unpublished_imported_notes", { p_user: me }).then((r) => (r.data as number | null) ?? 0),
+    supabase.rpc("count_private_imported_notes", { p_user: me }).then((r) => (r.data as number | null) ?? 0),
   ]);
   return (
     <>
