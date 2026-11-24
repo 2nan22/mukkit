@@ -236,7 +236,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
       </form>
       {visOpen && (
         <VisibilitySheet
-          noteOn={noteShared}
+          noteOn={place.note ? noteShared : undefined}
           value={visibility}
           onPick={(v) => {
             setVisibility(v);

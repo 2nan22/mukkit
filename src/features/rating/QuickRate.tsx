@@ -64,9 +64,11 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
     const last = done.at(-1);
     if (!last) return;
     startTransition(async () => {
-      const res = await setTier(last.placeId, "unrated");
+      // 평가하며 바꾼 공개 범위 · 메모 보여 주기도 원래대로 — 남은 공개 값이 다시 평가할 때 묻지 않고 나가지 않게
+      const res = await setTier(last.placeId, "unrated", { visibility: last.visibility, notePublic: last.notePublic ? true : null });
       if (res.error) return setError(res.error);
       setError(null);
+      setShared(null);
       setDone((d) => d.slice(0, -1));
       setRemaining((r) => r + 1);
       setPlace(last);
@@ -106,10 +108,13 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
         </div>
       </div>
 
+      <p role="status" className="sr-only">
+        {place ? `${place.name}, ${remaining}곳 남음` : ""}
+      </p>
       {place ? (
         <>
           {/* 장소가 바뀔 때마다 아래에서 올라오게 — 약속 · 평가 화면과 같은 움직임 */}
-          <section key={place.placeId} aria-live="polite" className={`meet-rise flex flex-1 flex-col px-5 pt-6 ${pending ? "opacity-60" : ""}`}>
+          <section key={place.placeId} className={`meet-rise flex flex-1 flex-col px-5 pt-6 ${pending ? "opacity-60" : ""}`}>
             <span className="text-meta text-muted">{placeMeta(place)}</span>
             <h2 className="pt-0.5 text-[22px] leading-snug font-bold tracking-tight">{place.name}</h2>
             {place.note && (

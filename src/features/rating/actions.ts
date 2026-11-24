@@ -88,11 +88,11 @@ const TierInput = z.object({
   placeId: z.uuid(),
   tier: z.enum(TIERS),
   visibility: z.enum(RATING_VISIBILITIES).optional(),
-  notePublic: z.boolean().optional(),
+  notePublic: z.boolean().nullable().optional(),
 });
 
 // 빠르게 평가하기 — 등급(과 고른 경우 공개 범위 · 메모 공개)만 바꾼다 (되돌리기는 unrated 로)
-export async function setTier(placeId: string, tier: Tier, opts: { visibility?: RatingVisibility; notePublic?: boolean } = {}): Promise<{ error?: string }> {
+export async function setTier(placeId: string, tier: Tier, opts: { visibility?: RatingVisibility; notePublic?: boolean | null } = {}): Promise<{ error?: string }> {
   const parsed = TierInput.safeParse({ placeId, tier, ...opts });
   if (!parsed.success) return { error: SAVE_FAILED };
   const { supabase, userId } = await requireUser();
@@ -100,6 +100,7 @@ export async function setTier(placeId: string, tier: Tier, opts: { visibility?: 
   const error = await runUpdate(() => updateUserPlace(supabase, userId, id, { tier: t, visibility }));
   if (error) return { error };
   // 메모 공개는 메모가 있을 때만 켠다 (68-4)
+  // null 은 정하지 않음으로 되돌리기(빠르게 평가하기 되돌리기)
   if (notePublic !== undefined) {
     const q = supabase.from("user_places").update({ note_public: notePublic }).eq("user_id", userId).eq("place_id", id);
     const res = notePublic ? await q.neq("note", "") : await q;

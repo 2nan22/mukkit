@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { RATING_VISIBILITIES, type RatingVisibility } from "./rating";
+export { noteAudience, noteLabel } from "./noteAudience";
 
 export const VISIBILITY: Record<RatingVisibility, { label: string; desc: string }> = {
   private: { label: "나만", desc: "등급 · 한 줄 평가 · 사진 · 메모 모두 나만" },
@@ -9,24 +11,11 @@ export const VISIBILITY: Record<RatingVisibility, { label: string; desc: string 
   public: { label: "전체 공개", desc: "프로필 · 공유 리스트에서 누구나" },
 };
 
-// 메모를 실제로 누가 보는지 — 스위치만 켜고 공개 범위가 나만이면 아무도 못 본다 (68-4 디자인 검토)
-export function noteAudience(visibility: RatingVisibility, on: boolean): string {
-  if (!on) return "나만 봐요";
-  if (visibility === "private") return "지금은 공개 범위가 나만이라 아무도 못 봐요";
-  return visibility === "followers" ? "팔로워에게 보여요" : "누구나 볼 수 있어요";
-}
-
-// 남에게 보이는 메모의 이름표 — 내 평가 화면에서
-export function noteLabel(visibility: RatingVisibility, on: boolean): string {
-  if (!on || visibility === "private") return "나만 보는 메모";
-  return visibility === "followers" ? "메모 · 팔로워에게 보임" : "메모 · 전체 공개";
-}
-
 // 누가 볼 수 있어요? — 저장 버튼 위 한 줄에서 여는 시트 · noteOn: 메모도 이 범위를 따르는지
 export function VisibilitySheet({ value, onPick, onClose, noteOn }: { value: RatingVisibility; onPick: (v: RatingVisibility) => void; onClose: () => void; noteOn?: boolean }) {
   const sheet = useRef<HTMLElement>(null);
   useEffect(() => sheet.current?.focus(), []);
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45" onClick={onClose}>
       <section
         ref={sheet}
@@ -62,6 +51,7 @@ export function VisibilitySheet({ value, onPick, onClose, noteOn }: { value: Rat
           ))}
         </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

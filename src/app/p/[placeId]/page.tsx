@@ -22,7 +22,7 @@ import { PlaceHeaderMap } from "@/features/place/PlaceHeaderMap";
 import { getMenu } from "@/features/place/menu";
 import { MenuSection } from "@/features/place/MenuSection";
 import { getSavedPlace } from "@/features/rating/rating";
-import { noteLabel } from "@/features/rating/VisibilitySheet";
+import { noteLabel } from "@/features/rating/noteAudience";
 import type { MediaRef } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
