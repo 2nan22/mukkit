@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { Suspense } from "react";
 import { PURPOSE_LABEL, type Purpose } from "@/domain/meetup";
+import { meetWhen } from "@/domain/meetTime";
 import { JoinButton } from "@/features/meetup/JoinButton";
 import { LoginButtons } from "@/features/onboarding/LoginButtons";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -40,10 +41,7 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
   }
   if (invite.joined || invite.is_host) redirect(`/meet/${invite.meetup_id}`);
 
-  const fmt = (d: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", ...o }).format(new Date(d));
-  const when = invite.starts_at
-    ? `${fmt(invite.starts_at, { month: "long", day: "numeric", weekday: "short", hour: "numeric", minute: "2-digit" })}${invite.ends_at ? `~${fmt(invite.ends_at, { hour: "numeric", minute: "2-digit" })}` : ""}쯤`
-    : null;
+  const when = invite.starts_at ? meetWhen(invite.starts_at, invite.ends_at) : null;
 
   return (
     <>

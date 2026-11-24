@@ -19,7 +19,9 @@ const FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
 
 const CreateInput = z
   .object({ purpose: z.enum(PURPOSES), startsAt: z.iso.datetime({ offset: true }).nullable(), endsAt: z.iso.datetime({ offset: true }).nullable() })
-  .refine((v) => !v.startsAt || !v.endsAt || v.endsAt > v.startsAt, { message: "끝나는 시간이 시작보다 뒤여야 해요" });
+  .refine((v) => !v.startsAt || !v.endsAt || v.endsAt > v.startsAt, { message: "끝나는 시간이 시작보다 뒤여야 해요" })
+  // 지난 시각으로는 만들지 않는다 — 화면을 오래 켜 둔 경우 (몇 분 여유)
+  .refine((v) => !v.startsAt || new Date(v.startsAt).getTime() > Date.now() - 10 * 60_000, { message: "이미 지난 시각이에요. 다시 골라 주세요" });
 
 export async function createMeetup(input: z.input<typeof CreateInput>): Promise<Result> {
   const parsed = CreateInput.safeParse(input);
@@ -32,7 +34,8 @@ export async function createMeetup(input: z.input<typeof CreateInput>): Promise<
     .single();
   if (error || !data) return { error: FAILED };
   revalidatePath("/meet");
-  redirect(`/meet/${data.id}`, RedirectType.replace);
+  // 만든 뒤 바로 초대 화면 (67)
+  redirect(`/meet/${data.id}/invite?created=1`, RedirectType.replace);
 }
 
 export async function joinMeetup(token: string): Promise<Result> {
