@@ -126,7 +126,7 @@ export function MeetupVisitPicker({ meetupId, people, startIndex, cancelHref }: 
                   name={m.name}
                   cuisine={m.cuisine}
                   tier={m.tier}
-                  meta={[CUISINE_LABEL[m.cuisine], m.region, "내 장소"].filter(Boolean).join(" · ")}
+                  meta={[CUISINE_LABEL[m.cuisine], m.region, "내 장소"]}
                   onClick={() => add({ key: m.placeId, name: m.name, placeId: m.placeId, kakao: null })}
                 />
               </li>

@@ -16,10 +16,3 @@ export function noteAudience(rating: RatingVisibility, note: NoteVisibility): st
   if (eff === "followers") return capped ? "평가가 팔로워 공개라 메모도 팔로워에게만 보여요" : "팔로워에게 보여요";
   return "누구나 볼 수 있어요";
 }
-
-// 내 평가 화면의 메모 이름표
-export function noteLabel(rating: RatingVisibility, note: NoteVisibility): string {
-  const eff = effectiveNote(rating, note);
-  if (eff === "private") return "나만 보는 메모";
-  return eff === "followers" ? "팔로워에게 보이는 메모" : "누구나 보는 메모";
-}

@@ -33,7 +33,7 @@ function who(v: MeetupVisit): { names: string; waiting: string | null } {
   if (live.length === 0) return { names: "나 혼자", waiting: null };
   const waiting = live.filter((m) => m.status === "invited").length;
   return {
-    names: live.map((m) => (m.guest ? m.nickname : honor(m.nickname))).join(" · "),
+    names: live.map((m) => (m.guest ? m.nickname : honor(m.nickname))).join(", "),
     waiting: waiting === 0 ? null : waiting === live.length ? "아직 아무도 수락하지 않았어요" : `${waiting}명 수락 전`,
   };
 }
@@ -57,7 +57,7 @@ async function MeetVisit({ params, searchParams }: { params: Promise<{ meetupId:
       <section className="flex flex-col gap-1">
         <h2 className="text-title font-bold tracking-tight">{recorded.length ? "다녀온 곳" : "어디서 만났어요?"}</h2>
         <span className="text-meta leading-normal text-muted">
-          {recorded.length === 0 ? "1차 · 2차처럼 여러 곳을 한 번에 기록할 수 있어요." : adding ? "더 간 곳을 이어서 기록해요." : "가게마다 평가와 함께한 사람을 고칠 수 있어요."}
+          {recorded.length === 0 ? "1차, 2차처럼 여러 곳을 한 번에 기록할 수 있어요." : adding ? "더 간 곳을 이어서 기록해요." : "가게마다 평가와 함께한 사람을 고칠 수 있어요."}
         </span>
       </section>
 

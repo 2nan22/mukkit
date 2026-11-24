@@ -84,7 +84,7 @@ export function CommentThread({
                       </Link>
                       {c.authorId === ownerId && <span className="rounded bg-surface px-1.5 py-0.5 text-caption text-ink-2">글쓴이</span>}
                       <span className="text-muted" suppressHydrationWarning>
-                        · {timeLabel(c.createdAt)}
+                        {timeLabel(c.createdAt)}
                       </span>
                     </span>
                     <p className="text-body leading-normal break-words whitespace-pre-line text-ink">{c.body}</p>

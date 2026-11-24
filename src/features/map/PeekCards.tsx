@@ -6,6 +6,7 @@ import { TierIcon } from "@/components/ui/TierIcon";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import { PlaceThumb } from "@/components/ui/PlaceThumb";
 import { ratersLine, type MapPlace } from "./myPlaces";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 const SHOWN = 10;
 
@@ -96,7 +97,7 @@ export function PeekCards({
               ) : (
                 <span className="flex items-center gap-1.5 truncate text-meta text-muted">
                   <TierIcon tier={p.tier} height={12} />
-                  {p.raters ? ratersLine(p.raters) : TIER_LABEL[p.tier]} · {p.meters !== null ? distance(p.meters) : CUISINE_LABEL[p.cuisine]}
+                  <MetaLine className="" items={[p.raters ? ratersLine(p.raters) : TIER_LABEL[p.tier], p.meters !== null ? distance(p.meters) : CUISINE_LABEL[p.cuisine]]} />
                 </span>
               )}
             </span>
@@ -120,7 +121,8 @@ function ListLine({ l, tier }: { l: { name: string; hex: string; more: number } 
     <span className="flex min-w-0 items-center gap-1.5 text-meta text-muted">
       <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${l ? "" : "border border-pin-none bg-white"}`} style={l ? { background: l.hex } : undefined} />
       <span className="truncate">{l ? `${l.name}${l.more > 0 ? ` 외 ${l.more}` : ""}` : "리스트 없음"}</span>
-      <span className="shrink-0">· {TIER_LABEL[tier]}</span>
+      <span aria-hidden="true" className="h-2.5 w-px shrink-0 bg-line-strong" />
+      <span className="shrink-0">{TIER_LABEL[tier]}</span>
     </span>
   );
 }

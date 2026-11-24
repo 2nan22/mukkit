@@ -48,7 +48,7 @@ export function scoreCandidate(c: Candidate, origin: { lat: number; lng: number 
   if (mine) reasons.push(mine.reason);
   for (const r of ranked.slice(0, 2)) {
     const why = r.followed ? "팔로잉" : r.overlap >= MIN_OVERLAP && (r.similarity ?? 0) >= SIMILAR_ENOUGH ? "취향 비슷" : "";
-    reasons.push(`${r.nickname} ${r.tier === "three" ? "3숟가락" : "2숟가락"}${why ? ` · ${why}` : ""}`);
+    reasons.push(`${r.nickname} ${r.tier === "three" ? "3숟가락" : "2숟가락"}${why ? `(${why})` : ""}`);
   }
   if (ranked.length > 2) reasons.push(`외 ${ranked.length - 2}명`);
   return { ...c, score, distance, reasons };

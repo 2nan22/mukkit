@@ -101,7 +101,7 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
       {result && result.mine.length > 0 && (
         <Section title="내가 저장한 곳">
           {result.mine.map((p) => (
-            <PlaceRow key={p.placeId} href={`/p/${p.placeId}`} name={p.name} cuisine={p.cuisine} tier={p.tier} meta={[CUISINE_LABEL[p.cuisine], p.region].filter(Boolean).join(" · ")} />
+            <PlaceRow key={p.placeId} href={`/p/${p.placeId}`} name={p.name} cuisine={p.cuisine} tier={p.tier} meta={[CUISINE_LABEL[p.cuisine], p.region]} />
           ))}
         </Section>
       )}
@@ -128,7 +128,7 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
                 onClick={() => open(p)}
                 name={p.name}
                 cuisine={p.cuisine}
-                meta={opening === p.kakaoId ? "여는 중이에요" : p.meta}
+                meta={opening === p.kakaoId ? ["여는 중이에요"] : p.meta}
               />
             ),
           )}

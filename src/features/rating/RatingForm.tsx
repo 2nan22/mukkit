@@ -194,7 +194,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
           <div className="flex flex-col gap-2 px-5 pt-6">
             <label className="flex min-h-11 items-center gap-2.5">
               <input type="checkbox" name="sponsored" checked={sponsored} onChange={(e) => setSponsored(e.target.checked)} className="size-5 shrink-0 accent-ink" />
-              <span className="text-body">협찬 · 이벤트로 방문했어요</span>
+              <span className="text-body">협찬이나 이벤트로 방문했어요</span>
             </label>
             {sponsored && (
               // 켜면 그 자리에서 어떻게 보이는지 (공정위 '첫 부분 표시' · 캐치테이블 신뢰도 표시)
@@ -204,7 +204,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
                   <span className="mr-1.5 inline-flex h-5 items-center rounded border border-line-strong px-1.5 align-[1px] text-caption font-semibold text-muted">협찬</span>
                   {review.trim() || "한 줄 평가"}
                 </span>
-                <span className="text-caption text-muted">등급 통계 · 추천에서 빠져요</span>
+                <span className="text-caption text-muted">등급 통계와 추천에서 빠져요</span>
               </div>
             )}
           </div>
@@ -221,7 +221,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
                 <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
-              공개 범위 · <b className="font-semibold text-ink">{VISIBILITY[visibility].label}</b>
+              공개 범위 <b className="font-semibold text-ink">{VISIBILITY[visibility].label}</b>
               <span className="text-muted underline underline-offset-[3px]">바꾸기</span>
             </button>
             <button type="submit" disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
@@ -291,7 +291,7 @@ function Note({ initial, noteVis, onNoteVis, visibility }: { initial: string; no
             maxLength={NOTE_MAX}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="예: 주차 · 대기 · 다음에 먹을 메뉴"
+            placeholder="예: 주차, 대기, 다음에 먹을 메뉴"
             className="w-full resize-none rounded-[12px] border border-transparent bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink focus:bg-white"
           />
           <NoteVisibilityPicker value={noteVis} onChange={onNoteVis} rating={visibility} />

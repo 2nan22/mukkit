@@ -9,12 +9,12 @@ import { ImportArt, RateArt, TrustArt } from "./IntroArt";
 const SLIDES = [
   {
     title: "저장해 둔 맛집,\n지도로 꺼내요",
-    body: "네이버 · 카카오맵 리스트를 링크 하나로 가져와요.",
+    body: "네이버 지도나 카카오맵 리스트를 링크 하나로 가져와요.",
     art: <ImportArt />,
     tint: "bg-[#eaeee6]",
   },
   {
-    title: "별점 대신\n숟가락 3 · 2 · 1",
+    title: "별점 대신\n숟가락 3, 2, 1",
     body: "나만 알고 싶은 곳에 3숟가락을 줘요.",
     art: <RateArt />,
     tint: "bg-[#f8ece3]",

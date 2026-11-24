@@ -7,7 +7,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="이용약관"
-      intro={<p>본 약관은 먹킷 서비스 이용에 관한 조건 및 절차, 운영자와 회원의 권리 · 의무 및 책임사항을 정합니다.</p>}
+      intro={<p>본 약관은 먹킷 서비스 이용에 관한 조건 및 절차, 운영자와 회원의 권리, 의무 및 책임사항을 정합니다.</p>}
       sections={[
         {
           title: "제1조 (목적)",
@@ -18,7 +18,7 @@ export default function TermsPage() {
           body: (
             <ol>
               <li>&ldquo;회원&rdquo;이란 이 약관에 동의하고 소셜 계정으로 가입하여 서비스를 이용하는 자를 말합니다.</li>
-              <li>&ldquo;게시물&rdquo;이란 회원이 서비스에 등록한 등급, 한 줄 평가, 메모, 사진 · 영상, 리스트 등 일체의 정보를 말합니다.</li>
+              <li>&ldquo;게시물&rdquo;이란 회원이 서비스에 등록한 등급, 한 줄 평가, 메모, 사진, 영상, 리스트 등 일체의 정보를 말합니다.</li>
               <li>&ldquo;공개 범위&rdquo;란 회원이 게시물마다 지정하는 열람 가능 범위(나만 보기, 팔로워 공개, 전체 공개, 링크 공유)를 말합니다.</li>
             </ol>
           ),

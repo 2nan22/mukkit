@@ -25,7 +25,7 @@ describe("scoreCandidate", () => {
     expect(scoreCandidate(cand("park", { cuisine: "nonFood", myTier: "wantToGo" }), origin, 1000, {})).toBeNull();
     expect(scoreCandidate(cand("none"), origin, 1000, {})).toBeNull();
     const s = scoreCandidate(cand("a", { myTier: "wantToGo", raters: [rater({ nickname: "단골", followed: true })] }), origin, 1000, {});
-    expect(s?.reasons).toEqual(["내가 가고 싶은 곳", "단골 3숟가락 · 팔로잉"]);
+    expect(s?.reasons).toEqual(["내가 가고 싶은 곳", "단골 3숟가락(팔로잉)"]);
   });
 });
 

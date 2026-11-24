@@ -36,7 +36,7 @@ export function MyMap({ home, tiers }: { home: MyHome; tiers: TierCounts }) {
         <SectionHead title="내 지도" />
         <div className="mx-5 flex flex-col items-center gap-1 rounded-[16px] bg-surface px-4 py-6 text-center">
           <span className="text-body font-semibold">아직 저장한 곳이 없어요</span>
-          <span className="text-meta text-muted">네이버 · 카카오 리스트를 링크로 가져와요</span>
+          <span className="text-meta text-muted">네이버나 카카오 리스트를 링크로 가져와요</span>
           <Link href="/import" className="mt-2 flex h-11 items-center rounded-btn-m bg-white px-4 text-body font-bold text-ink">
             저장한 장소 가져오기
           </Link>

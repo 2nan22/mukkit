@@ -10,13 +10,14 @@ import { CUISINE_LABEL } from "@/domain/cuisine";
 import type { CuisineGroup } from "@/domain/eatScore";
 import { findEats, findSpots, type Spot } from "./actions";
 import type { Region } from "./eat";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 const RADII = [500, 1000, 3000] as const;
 type Where = { label: string; lat: number; lng: number };
 
 // 내 등급은 배지로 이미 보이니 이유에서는 남의 평가 · 취향만
-function othersReasons(reasons: string[]): string {
-  return reasons.filter((r) => !r.startsWith("내 ") && !r.startsWith("내가 ")).join(" · ");
+function othersReasons(reasons: string[]): string[] {
+  return reasons.filter((r) => !r.startsWith("내 ") && !r.startsWith("내가 "));
 }
 
 function km(m: number): string {
@@ -126,7 +127,7 @@ export function EatView({ regions, initial = null }: { regions: Region[]; initia
             }}
             maxLength={40}
             enterKeyHint="search"
-            placeholder="역 · 동네 · 가게 이름으로 기준 정하기"
+            placeholder="역, 동네, 가게 이름으로 기준 정하기"
             aria-label="기준 위치 찾기"
             className="h-11 min-w-0 flex-1 rounded-[12px] bg-surface px-3.5 text-body outline-none focus:bg-white focus:ring-1 focus:ring-ink [&::-webkit-search-cancel-button]:hidden"
           />
@@ -141,7 +142,7 @@ export function EatView({ regions, initial = null }: { regions: Region[]; initia
               <li key={s.id} className="border-b border-line last:border-b-0">
                 <button type="button" onClick={() => pickSpot(s)} className="flex min-h-12 w-full flex-col items-start justify-center px-4 py-2 text-left">
                   <span className="text-body font-semibold text-ink">{s.name}</span>
-                  {s.meta && <span className="text-meta text-muted">{s.meta}</span>}
+                  {s.meta.length > 0 && <MetaLine items={s.meta} />}
                 </button>
               </li>
             ))}
@@ -205,9 +206,7 @@ export function EatView({ regions, initial = null }: { regions: Region[]; initia
 
       {!pending && groups && where && (
         <section className="flex flex-col gap-8">
-          <p className="text-meta text-subtle">
-            {where.label} {km(radius)} 안 · {total}곳
-          </p>
+          <MetaLine className="text-meta text-subtle" items={[`${where.label} ${km(radius)} 안`, `${total}곳`]} />
           {groups.length === 0 && (
             <p className="rounded-btn-l bg-surface p-4 text-meta leading-normal text-ink-2">
               이 범위에는 저장하거나 평가한 곳이 없어요. 범위를 넓혀 보세요.
@@ -227,8 +226,8 @@ export function EatView({ regions, initial = null }: { regions: Region[]; initia
                   name={p.name}
                   cuisine={p.cuisine}
                   tier={p.myTier}
-                  meta={[km(p.distance), p.categoryName && !["음식점", CUISINE_LABEL[p.cuisine]].includes(p.categoryName) ? p.categoryName : null].filter(Boolean).join(" · ")}
-                  note={othersReasons(p.reasons) || undefined}
+                  meta={[km(p.distance), p.categoryName && !["음식점", CUISINE_LABEL[p.cuisine]].includes(p.categoryName) ? p.categoryName : null]}
+                  note={othersReasons(p.reasons).length > 0 ? <MetaLine wrap className="text-meta text-ink-2" items={othersReasons(p.reasons)} /> : undefined}
                 />
               ))}
             </div>

@@ -3,6 +3,7 @@ import { BrandSymbol } from "@/components/brand/Wordmark";
 import { Avatar } from "@/components/ui/Avatar";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { TIER_LABEL, TIER_MEANING, type Tier } from "@/domain/tier";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 // 소개 3장의 그림 — 세 장 모두 같은 틀: 색 패널 위에 아래로 잘린 휴대폰 화면 하나 + 떠 있는 카드
 // 화면 안 내용은 실제 화면을 본뜬 장식이라 글자가 작다 (낭독기에는 숨긴다)
@@ -113,7 +114,7 @@ function PlaceHead() {
       </span>
       <span className="flex flex-col">
         <span className="text-[14px] leading-tight font-bold tracking-tight text-ink">영남 순대국</span>
-        <span className="text-[11px] leading-snug text-muted">순대국 · 을지로</span>
+        <MetaLine className="text-[11px] leading-snug text-muted" items={["순대국", "을지로"]} />
       </span>
     </div>
   );
@@ -198,7 +199,7 @@ export function TrustArt() {
         <Avatar name="민지" size={24} />
         <span className="flex flex-col">
           <span className="text-[12px] leading-tight font-bold text-ink">취향 일치 82%</span>
-          <span className="text-[10.5px] leading-snug text-muted">민지 · 팔로잉</span>
+          <MetaLine className="text-[10.5px] leading-snug text-muted" items={["민지", "팔로잉"]} />
         </span>
       </div>
     </>

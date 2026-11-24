@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { FollowButton } from "./FollowButton";
 import type { TasteMatch } from "./social";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 // 취향이 비슷한 사람 — 홈과 같은 줄 모양
 export function TasteMatches({ matches: all, title = "취향이 비슷한 사람" }: { matches: TasteMatch[]; title?: string }) {
@@ -24,9 +25,7 @@ export function TasteMatches({ matches: all, title = "취향이 비슷한 사람
                 <Avatar name={m.nickname} size={40} />
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="truncate text-body font-bold">{m.nickname}</span>
-                  <span className="truncate text-meta text-muted">
-                    {m.bothThree > 0 ? `둘 다 3숟가락 ${m.bothThree}곳` : `같이 평가한 곳 ${m.overlap}곳`} · 취향 일치 {Math.round(m.similarity * 100)}%
-                  </span>
+                  <MetaLine items={[m.bothThree > 0 ? `둘 다 3숟가락 ${m.bothThree}곳` : `같이 평가한 곳 ${m.overlap}곳`, `취향 일치 ${Math.round(m.similarity * 100)}%`]} />
                 </span>
               </Link>
               <FollowButton targetId={m.userId} following={false} compact />

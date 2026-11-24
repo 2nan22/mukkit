@@ -10,6 +10,7 @@ import { getNotifications, groupNotifications, notificationHref, type GroupedNot
 import { MarkRead } from "@/features/notifications/MarkRead";
 import { FollowButton } from "@/features/social/FollowButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 export const metadata = { title: "알림" };
 
@@ -82,7 +83,7 @@ async function List() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 px-8 pb-24 text-center">
         <span className="text-body font-semibold">아직 알림이 없어요</span>
-        <span className="text-meta text-muted">댓글 · 좋아요 · 팔로우 · 약속 · 함께 방문 소식이 여기에 모여요</span>
+        <span className="text-meta text-muted">댓글, 좋아요, 팔로우, 약속, 함께 방문 소식이 여기에 모여요</span>
         <MarkRead />
       </div>
     );
@@ -124,10 +125,14 @@ function Row({ n, followBack }: { n: GroupedNotification; followBack: boolean })
             <Avatar name={n.actorNickname} size={40} />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-body leading-snug text-pretty text-ink">{message(n)}</span>
-              <span className="truncate text-meta text-muted" suppressHydrationWarning>
-                {sub(n) ? `${sub(n)} · ` : ""}
-                {timeLabel(n.createdAt)}
-              </span>
+              <MetaLine
+                items={[
+                  sub(n),
+                  <span key="time" suppressHydrationWarning>
+                    {timeLabel(n.createdAt)}
+                  </span>,
+                ]}
+              />
             </span>
           </Link>
           {followBack && <FollowButton targetId={n.actorId} following={false} compact />}

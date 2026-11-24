@@ -154,5 +154,6 @@ export function memoWithAlias(name: string, alias: string | null | undefined, me
   const a = (alias ?? "").trim();
   const m = (memo ?? "").trim();
   const label = a && a !== name.trim() ? a : "";
-  return [label, m].filter(Boolean).join(" · ");
+  // 별명과 메모는 줄을 나눈다 — 가운데 점으로 잇지 않음 (68-6)
+  return [label, m].filter(Boolean).join("\n");
 }

@@ -20,6 +20,7 @@ import { tierFromDb } from "@/domain/tier";
 import { RATING_VISIBILITIES, type NoteVisibility, type RatingVisibility } from "@/features/rating/rating";
 import { ImportModeSheet, isRatedMode, type RowChoice } from "./ImportModeSheet";
 import { NoteVisibilityPicker } from "@/features/rating/NoteVisibilityPicker";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 const VISIBILITY_LABEL: Record<RatingVisibility, string> = { private: "나만", followers: "팔로워", public: "전체 공개" };
 
@@ -116,9 +117,9 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
           <>
             <div className="flex items-baseline justify-between pb-1">
               <h2 className="text-section font-bold">
-                리스트 {rows.length}개 <span className="font-normal text-muted">· {total}곳</span>
+                리스트 {rows.length}개 <span className="ml-1.5 font-normal text-muted">{total}곳</span>
               </h2>
-              <span className="text-caption text-muted">눌러서 등급 · 공개 범위</span>
+              <span className="text-caption text-muted">누르면 등급과 공개 범위를 바꿔요</span>
             </div>
             <ul>
               {rows.map((row) => (
@@ -158,7 +159,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
           {rating && (
             <fieldset className="flex flex-col gap-2">
               <legend className="pb-2 text-body font-semibold">가져온 등급을 누구에게 보여 줄까요?</legend>
-              {mixedVis && <span className="-mt-1 pb-1 text-caption text-muted">리스트마다 다르게 정했어요 · 고르면 모두 같게 바뀌어요</span>}
+              {mixedVis && <span className="-mt-1 pb-1 text-caption text-muted">리스트마다 다르게 정했어요. 고르면 모두 같게 바뀌어요</span>}
               <div className="grid grid-cols-3 gap-1.5">
                 {RATING_VISIBILITIES.map((v) => (
                   <label key={v} className="flex h-11 cursor-pointer items-center justify-center rounded-[10px] bg-surface text-meta font-semibold text-ink-2 has-checked:bg-ink has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-ink has-focus-visible:ring-offset-2">
@@ -167,7 +168,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
                   </label>
                 ))}
               </div>
-              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요 · 리스트마다 바꾸려면 등급을 누르세요</span>
+              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요. 리스트마다 바꾸려면 등급을 누르세요</span>
               <div className="pt-2">
                 <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={sameNote ?? "same"} onChange={(v) => setAllRated({ noteVisibility: v })} rating={sameVis} warn />
               </div>
@@ -243,7 +244,7 @@ function LinkForm({
       added.length === 1 ? `${withObject(added[0].name)} 담았어요` : added.length > 1 ? `리스트 ${added.length}개를 담았어요` : "",
       dupes > 0 ? (added.length === 0 && dupes === 1 ? "이미 담긴 리스트예요" : `${dupes}개는 이미 담겨 있어요`) : "",
     ].filter(Boolean);
-    setNotice(parts.join(" · "));
+    setNotice(parts.join(". "));
   }
 
   return (
@@ -396,26 +397,35 @@ function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean;
   const [open, setOpen] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
   const rated = isRatedMode(row.mode);
-  const detail = rated
-    ? [row.visibility ? VISIBILITY_LABEL[row.visibility] : "공개 범위 고르기", row.noteVisibility && row.noteVisibility !== "same" ? `메모 ${VISIBILITY_LABEL[row.noteVisibility]}` : null].filter(Boolean).join(" · ")
-    : row.mode.kind === "plain"
-      ? "리스트로 만들기"
-      : null;
+  const detail: string[] = rated
+    ? [row.visibility ? VISIBILITY_LABEL[row.visibility] : "공개 범위 고르기", row.noteVisibility && row.noteVisibility !== "same" ? `메모 ${VISIBILITY_LABEL[row.noteVisibility]}` : ""].filter(Boolean)
+    : [];
   return (
     <li className={`-mx-2 flex items-center rounded-[10px] border-b border-line transition-colors duration-700 ${fresh ? "bg-surface" : ""}`}>
       <button
         ref={opener}
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={`${row.name} ${row.count}곳, 가져올 방식 ${modeLabel(row.mode)}${detail ? ` · ${detail}` : ""}, 바꾸기`}
+        aria-label={`${row.name} ${row.count}곳, 가져올 방식 ${modeLabel(row.mode)}${detail.length ? `, ${detail.join(", ")}` : ""}, 바꾸기`}
         className="flex min-h-16 min-w-0 flex-1 items-center gap-3 py-2 pl-2 text-left"
       >
         <SourceMark source={row.source} size={20} />
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-body font-semibold">{row.name}</span>
-          <span className="truncate text-meta text-muted">
-            {row.count}곳{detail && <span className={rated && !row.visibility ? "font-semibold text-ink" : ""}> · {detail}</span>}
-          </span>
+          <MetaLine
+            items={[
+              `${row.count}곳`,
+              ...detail.map((d, i) =>
+                i === 0 && rated && !row.visibility ? (
+                  <span key="pick" className="font-semibold text-ink">
+                    {d}
+                  </span>
+                ) : (
+                  d
+                ),
+              ),
+            ]}
+          />
         </span>
         <TierBadge tier={row.mode.kind === "plain" ? "unrated" : tierFromDb(row.mode.tier)} />
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-subtle" aria-hidden="true">
@@ -573,9 +583,7 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
               {g.mode.kind === "plain" ? (
                 <span className="flex min-w-0 flex-col gap-0.5 py-2">
                   <span className="text-body">평가 전</span>
-                  <span className="truncate text-meta text-muted">
-                    리스트 {g.names.length}개 · {g.names.join(", ")}
-                  </span>
+                  <MetaLine items={[`리스트 ${g.names.length}개`, g.names.join(", ")]} />
                 </span>
               ) : (
                 <ModeChip mode={g.mode} />
@@ -606,8 +614,9 @@ function ImportDone({ rows, status, onRestart }: { rows: Row[]; status: Record<s
           <h3 className="text-body font-bold">가져오지 못한 리스트</h3>
           <p className="text-meta text-muted">목록에 남겨 뒀어요</p>
           {failed.map(({ row, error }) => (
-            <p key={row.listId} className="text-meta leading-normal">
-              {row.name} · <span className={ERROR_TEXT}>{error}</span>
+            <p key={row.listId} className="flex flex-col text-meta leading-normal">
+              <span>{row.name}</span>
+              <span className={ERROR_TEXT}>{error}</span>
             </p>
           ))}
         </section>

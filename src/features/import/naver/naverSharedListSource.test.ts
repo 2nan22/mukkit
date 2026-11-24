@@ -103,9 +103,9 @@ describe("NaverSharedListSource.fetchList", () => {
 });
 
 describe("memoWithAlias (68-3)", () => {
-  it("별명 · 메모를 함께, 가게 이름과 같은 별명은 뺌", () => {
+  it("별명과 메모를 줄을 나눠 함께, 가게 이름과 같은 별명은 뺌 (68-6)", () => {
     expect(memoWithAlias("즐거운술상", "흑백요리사 이모카세", "")).toBe("흑백요리사 이모카세");
-    expect(memoWithAlias("남영돈", "먹을텐데", "웨이팅 김")).toBe("먹을텐데 · 웨이팅 김");
+    expect(memoWithAlias("남영돈", "먹을텐데", "웨이팅 김")).toBe("먹을텐데\n웨이팅 김");
     expect(memoWithAlias("남영돈", "남영돈", "웨이팅 김")).toBe("웨이팅 김");
     expect(memoWithAlias("남영돈", "", null)).toBe("");
   });

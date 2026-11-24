@@ -8,6 +8,7 @@ import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getPlaceCovers } from "@/features/place/covers";
 import { getPopularPublicLists } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 export const metadata = { title: "공개 리스트" };
 
@@ -47,10 +48,7 @@ async function Grid() {
               cuisines={topCuisines(l.points)}
             />
             <span className="truncate text-body font-bold">{l.name}</span>
-            <span className="truncate text-meta text-muted">
-              {l.ownerNickname}
-              {l.saves ? ` · ${l.saves}명 저장` : ""}
-            </span>
+            <MetaLine items={[l.ownerNickname, l.saves ? `${l.saves}명 저장` : null]} />
           </Link>
         ))}
       </div>

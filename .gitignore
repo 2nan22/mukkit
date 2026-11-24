@@ -68,3 +68,7 @@ next-env.d.ts
 
 # QA 캡처 (보고서 아티팩트에만)
 docs/qa/*/shots/
+
+# 브라우저 시험 캡처 · 로그 · 시안 (커밋 안 함)
+.playwright-mcp/
+design/

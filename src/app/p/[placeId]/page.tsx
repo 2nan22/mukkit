@@ -23,9 +23,10 @@ import { PlaceHeaderMap } from "@/features/place/PlaceHeaderMap";
 import { getMenu } from "@/features/place/menu";
 import { MenuSection } from "@/features/place/MenuSection";
 import { getSavedPlace } from "@/features/rating/rating";
-import { noteLabel } from "@/features/rating/noteAudience";
+import { noteAudience } from "@/features/rating/noteAudience";
 import type { MediaRef } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 export const metadata = { title: "장소" };
 
@@ -67,9 +68,7 @@ function OtherRow({ r, placeId, reaction }: { r: OtherRating; placeId: string; r
           <Avatar name={r.nickname} size={40} />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-body font-bold">{r.nickname}</span>
-            <span className="truncate text-meta text-muted">
-              평가 {r.ratedCount}곳 · 3숟가락 비율 {r.threeRatio}%
-            </span>
+            <MetaLine items={[`평가 ${r.ratedCount}곳`, `3숟가락 비율 ${r.threeRatio}%`]} />
           </span>
         </Link>
         {r.sponsored && <span className="rounded border border-line-strong px-1.5 text-caption text-muted">협찬</span>}
@@ -77,7 +76,7 @@ function OtherRow({ r, placeId, reaction }: { r: OtherRating; placeId: string; r
         <SafetyMenu userId={r.userId} nickname={r.nickname} placeId={placeId} />
       </div>
       {r.review && <p className="text-body leading-normal text-ink-2">{r.review}</p>}
-      {r.note && <Memo text={r.note} />}
+      {r.note && <Memo text={r.note} source={r.noteSource} />}
       <AteMenus menus={r.menus} />
       <Companions people={r.companions} />
       <MediaStrip media={r.media} />
@@ -131,7 +130,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
       <PlaceHeaderMap id={place.id} name={place.name} lat={place.lat} lng={place.lng} tier={mine?.tier ?? "unrated"} cover={covers.get(place.id) ?? null} />
 
       <section className="flex flex-col gap-1 border-b-8 border-surface px-5 pt-4 pb-5">
-        <span className="text-meta text-muted">{[CUISINE_LABEL[place.cuisine], place.categoryName].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i).join(" · ")}</span>
+        <MetaLine items={[CUISINE_LABEL[place.cuisine], place.categoryName].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i)} />
         <h1 className="text-title font-bold tracking-tight">{place.name}</h1>
         <span className="text-body text-ink-2">{place.address}</span>
         {!place.available && <span className="text-meta text-danger">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
@@ -184,7 +183,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <AteMenus menus={mine.menus} />
             <Companions people={myCompanions} />
             <MediaStrip media={myMedia} />
-            {mine.note && <Memo tone="white" label={noteLabel(mine.visibility, mine.noteVisibility)} text={mine.note} />}
+            {mine.note && <Memo tone="white" text={mine.note} source={mine.noteSource} caption={noteAudience(mine.visibility, mine.noteVisibility)} />}
             {reactionOf(me) && <ReactionBar ownerId={me} placeId={place.id} reaction={reactionOf(me)!} mine />}
           </div>
         ) : mine ? (
@@ -192,7 +191,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <div className="flex items-center gap-2">
               <TierBadge tier={mine.tier} />
             </div>
-            {mine.note && <Memo label="나만 보는 메모" text={mine.note} />}
+            {mine.note && <Memo text={mine.note} source={mine.noteSource} caption="나만 봐요" />}
           </div>
         ) : (
           <p className="text-meta text-muted">아직 저장하지 않은 곳이에요</p>

@@ -22,6 +22,7 @@ import {
   isFollowing,
 } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 export const metadata = { title: "프로필" };
 
@@ -95,9 +96,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
               <span className="truncate text-section font-bold">{person.nickname}</span>
               {me && me !== person.id && <SafetyMenu userId={person.id} nickname={person.nickname} />}
             </span>
-            <span className="text-meta text-muted">
-              평가 {ratedTotal}곳 · 팔로워 {counts.followers} · 팔로잉 {counts.following}
-            </span>
+            <MetaLine items={[`평가 ${ratedTotal}곳`, `팔로워 ${counts.followers}`, `팔로잉 ${counts.following}`]} />
           </div>
         </div>
         {bio && <p className="text-body leading-normal text-ink-2">{bio}</p>}
@@ -114,7 +113,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
               <span>
                 3숟가락 비율 <b className="text-ink">{Math.round(share(stats.three))}%</b>
               </span>
-              <span>협찬 · 이벤트 평가 {stats.sponsored}건</span>
+              <span>협찬이나 이벤트 평가 {stats.sponsored}건</span>
             </div>
             {me === person.id && stats.three > 0 && (
               <Link href="/rank" className="flex h-11 items-center justify-between border-t border-line text-body font-medium">
@@ -130,9 +129,17 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
         {taste && taste.overlap > 0 && (
           <div className="flex flex-col gap-1 rounded-[16px] bg-brand-soft px-4 py-3.5">
             <span className="text-body font-bold text-brand">취향 일치 {Math.round(taste.similarity * 100)}%</span>
-            <span className="text-meta text-ink-2">
-              같이 평가한 곳 <b className="whitespace-nowrap text-ink">{taste.overlap}곳</b> · 둘 다 3숟가락 <b className="whitespace-nowrap text-ink">{taste.bothThree}곳</b>
-            </span>
+            <MetaLine
+              className="text-meta text-ink-2"
+              items={[
+                <>
+                  같이 평가한 곳 <b className="whitespace-nowrap text-ink">{taste.overlap}곳</b>
+                </>,
+                <>
+                  둘 다 3숟가락 <b className="whitespace-nowrap text-ink">{taste.bothThree}곳</b>
+                </>,
+              ]}
+            />
           </div>
         )}
 
@@ -161,9 +168,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
             lists.map((l) => (
               <Link key={l.id} href={l.visibility ? `/lists/${l.id}` : `/l/${l.id}`} className="flex min-h-16 flex-col justify-center gap-0.5 border-b border-line py-2">
                 <span className="truncate text-body font-bold">{l.name}</span>
-                <span className="text-meta text-muted">
-                  {l.count}곳{l.visibility && ` · ${VISIBILITY_LABEL[l.visibility]}`}
-                </span>
+                <MetaLine items={[`${l.count}곳`, l.visibility && VISIBILITY_LABEL[l.visibility]]} />
               </Link>
             ))
           )

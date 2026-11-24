@@ -21,7 +21,7 @@ async function requireUser() {
   return { supabase, me };
 }
 
-export type FoundHit = { kakaoId: string; name: string; lat: number; lng: number; cuisine: Cuisine; meta: string; placeId: string | null; tier: Tier | null };
+export type FoundHit = { kakaoId: string; name: string; lat: number; lng: number; cuisine: Cuisine; meta: string[]; placeId: string | null; tier: Tier | null };
 // failed: 카카오 검색이 오류로 실패 (0건과 구분)
 export type CandidateResult = { candidate: PlaceCandidate; hits: FoundHit[]; failed: boolean };
 
@@ -54,7 +54,7 @@ export async function findCandidatePlaces(candidates: PlaceCandidate[]): Promise
       lat: h.lat,
       lng: h.lng,
       cuisine: h.cuisine,
-      meta: [h.categoryName, h.address].filter(Boolean).join(" · "),
+      meta: [h.categoryName, h.address].filter(Boolean),
       placeId: known.get(h.id)?.placeId ?? null,
       tier: known.get(h.id)?.tier ?? null,
     })),
