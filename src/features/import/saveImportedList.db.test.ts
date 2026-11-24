@@ -118,5 +118,11 @@ describe.skipIf(!hasLocalDb)("가져오기 저장 (로컬 DB)", () => {
     expect(by.get(`test-${run}-20`)).toEqual(["three", "followers"]);
     expect(by.get(`test-${run}-21`)).toEqual(["three", "followers"]);
     expect(by.get(`test-${run}-22`)).toEqual(["want_to_go", "private"]);
+    // 등급 리스트의 메모는 한 줄 평가로도 (68-2) · 가고 싶은 곳은 아님
+    const reviews = await supabase.from("user_places").select("review, places(source_place_id)").eq("user_id", userId);
+    const rv = new Map((reviews.data ?? []).map((r) => [(r.places as unknown as { source_place_id: string }).source_place_id, r.review]));
+    expect(rv.get(`test-${run}-20`)).toBe("한마디 20");
+    expect(rv.get(`test-${run}-21`)).toBe("한마디 21");
+    expect(rv.get(`test-${run}-22`)).toBe("");
   }, 20_000);
 });

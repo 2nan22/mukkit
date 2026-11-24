@@ -43,6 +43,11 @@ export async function saveImportedList(
   await saveImportedItems(supabase, userId, list, places, placeIds);
   const alreadySaved = await saveUserPlaces(supabase, userId, places, placeIds, mode, visibility);
   const listId = mode.kind === "plain" ? await saveList(supabase, userId, list, [...new Set(placeIds.values())]) : null;
+  // 등급 리스트면 가져온 메모를 한 줄 평가로도 — 피드 · 장소에 보이게 (68-2). 한 줄 평가가 빈 곳 · 가져온 메모 그대로인 곳만(DB 함수가 거름)
+  if (mode.kind === "tier" && RATED_DB_TIERS.includes(mode.tier)) {
+    const copied = await supabase.rpc("copy_notes_to_review", { p_user: userId, p_places: [...new Set(placeIds.values())] });
+    if (copied.error) throw new ImportSaveError("copy_notes_to_review", copied.error.code);
+  }
 
   return {
     listId,

@@ -160,3 +160,12 @@ export async function setAllRatingVisibility(visibility: string): Promise<{ erro
   revalidatePath("/", "layout");
   return { changed: count ?? 0 };
 }
+
+// 가져온 메모를 한 줄 평가로 한 번에 (68-2) — 다녀온 등급 · 한 줄 평가가 빈 곳 · 지도 앱 메모 그대로인 곳만 (DB 함수가 거름)
+export async function copyImportedMemosToReview(): Promise<{ error?: string; copied?: number }> {
+  const { supabase, userId } = await requireUser();
+  const { data, error } = await supabase.rpc("copy_notes_to_review", { p_user: userId, p_places: null });
+  if (error) return { error: SAVE_FAILED };
+  revalidatePath("/", "layout");
+  return { copied: (data as number) ?? 0 };
+}
