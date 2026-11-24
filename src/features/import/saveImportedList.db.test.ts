@@ -123,6 +123,6 @@ describe.skipIf(!hasLocalDb)("가져오기 저장 (로컬 DB)", () => {
     const np = new Map((notes.data ?? []).map((r) => [(r.places as unknown as { source_place_id: string }).source_place_id, [r.note_public, r.review]]));
     expect(np.get(`test-${run}-20`)).toEqual([true, ""]);
     expect(np.get(`test-${run}-21`)).toEqual([true, ""]);
-    expect(np.get(`test-${run}-22`)).toEqual([false, ""]);
+    expect(np.get(`test-${run}-22`)).toEqual([null, ""]);
   }, 20_000);
 });

@@ -55,7 +55,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
   const android = useSyncExternalStore(noop, isAndroid, () => false);
   // 등급 리스트로 가져오는 게 있으면 그 등급을 누구에게 보여 줄지 묻는다 (68) — 고를 때까지 가져오기를 막는다
   const [visibility, setVisibility] = useState<RatingVisibility | null>(null);
-  // 지도 앱 메모를 한 줄 평가로도 보여 줄지 — 사람이 판단 (68-3). 메모엔 남에게 보이면 안 되는 내용이 있을 수 있어 기본은 끔
+  // 지도 앱 메모도 보여 줄지 — 사람이 판단 (68-3 · 68-4). 메모엔 남에게 보이면 안 되는 내용이 있을 수 있어 기본은 끔
   const [notePublic, setNotePublic] = useState(false);
   const rating = rows.some((r) => r.mode.kind === "tier" && RATED_TIERS.includes(r.mode.tier));
 

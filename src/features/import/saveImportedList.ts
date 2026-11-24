@@ -30,8 +30,10 @@ export class ImportSaveError extends Error {
 }
 
 // 원본 메모가 줄었는지 — 새 메모가 옛 메모 안에 들어 있으면(지우거나 비움) 공개해도 새 정보가 아니다 (68-3)
+// 저장되는 길이(NOTE_MAX)로 잘라 비교 — 잘려서 안 보이던 뒷부분이 새로 드러나는 것도 새 정보
 export function reducedMemo(oldMemo: string, newMemo: string): boolean {
-  return oldMemo.trim().includes(newMemo.trim());
+  const cut = (m: string) => m.slice(0, NOTE_MAX).trim();
+  return cut(newMemo) !== "" && cut(oldMemo).includes(cut(newMemo));
 }
 
 // 다시 가져와도 늘지 않고, 먹킷에서 고친 등급 · 메모는 덮어쓰지 않는다
@@ -305,9 +307,9 @@ async function fillImportedMemos(
     const memo = p.memo.slice(0, NOTE_MAX);
     if (note === memo) continue;
     if (note !== "" && (emptyOnly || !importedMemos.get(`${id}:${p.source}`)?.has(note))) continue;
-    // 공개한 메모에 새 내용이 붙으면(별명 등) 묻지 않고 나가지 않게 다시 나만으로 (68-4)
+    // 공개한 메모에 새 내용이 붙으면(별명 등) 묻지 않고 나가지 않게 다시 정하지 않음으로 (68-4)
     const hide = !reducedMemo(note, memo);
-    const res = await supabase.from("user_places").update(hide ? { note: memo, note_public: false } : { note: memo }).eq("user_id", userId).eq("place_id", id).eq("note", note);
+    const res = await supabase.from("user_places").update(hide ? { note: memo, note_public: null } : { note: memo }).eq("user_id", userId).eq("place_id", id).eq("note", note);
     if (res.error) throw new ImportSaveError("user_places_note_update", res.error.code);
   }
 }

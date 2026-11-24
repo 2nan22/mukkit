@@ -265,6 +265,8 @@ function Note({ initial, initialPublic }: { initial: string; initialPublic: bool
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(initial);
   const [shared, setShared] = useState(initialPublic);
+  // 건드렸을 때만 저장 — 안 건드린 가져온 메모는 '가져온 메모 공개'로 한 번에 켤 수 있게 남김
+  const [touched, setTouched] = useState(false);
   const title = shared ? "메모" : "나만 보는 메모";
   const area = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -272,6 +274,7 @@ function Note({ initial, initialPublic }: { initial: string; initialPublic: bool
   }, [open]);
   return (
     <div className="flex flex-col gap-2 px-5 pt-6">
+      {touched && <input type="hidden" name="noteTouched" value="1" />}
       {open ? (
         <>
           <label htmlFor="note" className="flex items-center gap-1.5 text-body font-semibold">
@@ -294,7 +297,12 @@ function Note({ initial, initialPublic }: { initial: string; initialPublic: bool
               <span className="text-body">메모도 보여 주기</span>
               <span className="text-caption text-muted">켜면 평가 공개 범위대로 보여요</span>
             </span>
-            <input type="checkbox" name="notePublic" role="switch" checked={shared} onChange={(e) => setShared(e.target.checked)} className="peer sr-only" />
+            <input type="checkbox" name="notePublic" role="switch" checked={shared} onChange={(e) => {
+                setShared(e.target.checked);
+                setTouched(true);
+              }}
+              className="peer sr-only"
+            />
             <span aria-hidden="true" className="relative h-7 w-12 shrink-0 rounded-full bg-line-strong transition-colors peer-checked:bg-ink peer-focus-visible:ring-2 peer-focus-visible:ring-ink peer-focus-visible:ring-offset-2 after:absolute after:top-0.5 after:left-0.5 after:size-6 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5" />
           </label>
         </>

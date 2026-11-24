@@ -48,7 +48,7 @@ export async function saveRating(_prev: RatingFormState, formData: FormData): Pr
     placeId: formData.get("placeId"),
     tier: formData.get("tier"),
     note: String(formData.get("note") ?? ""),
-    notePublic: formData.get("notePublic") === "on",
+    notePublic: formData.get("noteTouched") ? formData.get("notePublic") === "on" : undefined,
     visitedOn: formData.get("visitedOn") || null,
     sponsored: formData.get("sponsored") === "on",
     review: String(formData.get("review") ?? ""),

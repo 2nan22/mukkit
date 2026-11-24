@@ -120,7 +120,7 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
     const keepPublic = notePublic || reducedMemo(old.memo, now.memo);
     const res = await client
       .from("user_places")
-      .update(keepPublic ? { note: now.memo.slice(0, NOTE_MAX) } : { note: now.memo.slice(0, NOTE_MAX), note_public: false })
+      .update(keepPublic ? { note: now.memo.slice(0, NOTE_MAX) } : { note: now.memo.slice(0, NOTE_MAX), note_public: null })
       .eq("user_id", userId)
       .eq("place_id", old.place_id)
       .eq("note", old.memo.slice(0, NOTE_MAX))

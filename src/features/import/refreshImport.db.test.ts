@@ -147,7 +147,7 @@ describe.skipIf(!hasLocalDb)("가져온 리스트 새로 고침 (로컬 DB)", ()
     expect(row.data).toEqual({ note: "옛 메모 · 새 내용", note_public: true });
   });
 
-  it("켜지 않은 원본은 공개한 메모에 새 내용이 붙으면 다시 나만 · 줄면 공개 그대로 (68-4)", async () => {
+  it("켜지 않은 원본은 공개한 메모에 새 내용이 붙으면 다시 정하지 않음 · 줄면 공개 그대로 (68-4)", async () => {
     const { supabase, userId } = await signUp();
     const mode = { kind: "tier" as const, tier: "one" as const };
     const one = { source: "naver" as const, sourceListId: `alias-${run}`, name: "1스타", memo: "", places: [place(51, { memo: "맛있음" })], expectedCount: 1, skipped: [] };
@@ -161,6 +161,6 @@ describe.skipIf(!hasLocalDb)("가져온 리스트 새로 고침 (로컬 DB)", ()
       return (await supabase.from("user_places").select("note, note_public").eq("user_id", userId).single()).data;
     };
     expect(await refresh("맛")).toEqual({ note: "맛", note_public: true });
-    expect(await refresh("엄마 회사 앞 · 맛")).toEqual({ note: "엄마 회사 앞 · 맛", note_public: false });
+    expect(await refresh("엄마 회사 앞 · 맛")).toEqual({ note: "엄마 회사 앞 · 맛", note_public: null });
   });
 });

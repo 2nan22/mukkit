@@ -2,7 +2,7 @@
 -- 공개한 메모만 feed · place_ratings 에 나간다
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('f1111111-1111-1111-1111-111111111111', 'cn-a@test.local'),
@@ -34,12 +34,19 @@ select is(public.publish_imported_notes('f1111111-1111-1111-1111-111111111111'),
 select is(public.count_unpublished_imported_notes('f1111111-1111-1111-1111-111111111111'), 0, '다 공개하면 0');
 reset role;
 select is((select note || '|' || review || '|' || updated_at::date from public.user_places where place_id = 'f9000000-0000-0000-0000-000000000001'), '혼밥하기 좋음||2025-01-01', '메모 · 한 줄 평가 · updated_at 그대로');
-select is((select string_agg(note_public::text, ',' order by place_id) from public.user_places where place_id in ('f9000000-0000-0000-0000-000000000002', 'f9000000-0000-0000-0000-000000000003')), 'false,false', '직접 쓴 메모 · 가고 싶은 곳은 그대로');
+select is((select count(*)::int from public.user_places where note_public and place_id in ('f9000000-0000-0000-0000-000000000002', 'f9000000-0000-0000-0000-000000000003')), 0, '직접 쓴 메모 · 가고 싶은 곳은 그대로');
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"f2222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
 select is((select note from public.place_ratings('f9000000-0000-0000-0000-000000000004') limit 1), '원본 메모', '공개한 메모는 남에게 보임');
 select is((select note from public.place_ratings('f9000000-0000-0000-0000-000000000002') limit 1), '', '공개 안 한 메모는 빈 값');
+
+reset role;
+-- 직접 끈 메모는 한 번에 공개가 다시 켜지 않음 · 빈 메모는 공개로 남지 않음
+update public.user_places set note_public = false where place_id = 'f9000000-0000-0000-0000-000000000001';
+select is(public.publish_imported_notes('f1111111-1111-1111-1111-111111111111'), 0, '직접 끈 메모는 다시 켜지 않음');
+update public.user_places set note = '' where place_id = 'f9000000-0000-0000-0000-000000000004';
+select is((select note_public from public.user_places where place_id = 'f9000000-0000-0000-0000-000000000004'), null, '메모를 비우면 공개도 풀림');
 
 select * from finish();
 rollback;
