@@ -16,7 +16,8 @@ import { loadThreeCompare, placeInThree } from "@/features/rank/actions";
 import { CompareSheet } from "@/features/rank/CompareSheet";
 import type { RankPlace } from "@/features/rank/rank";
 import { CUISINE_LABEL } from "@/domain/cuisine";
-import { VISIBILITY, VisibilitySheet } from "./VisibilitySheet";
+import { noteAudience, VISIBILITY, VisibilitySheet } from "./VisibilitySheet";
+import { Switch } from "@/components/ui/Switch";
 
 // 새로 평가할 때 공개 범위는 지난번 고른 값으로 — 한 번 정하면 잘 바꾸지 않는다 (67-2)
 const LAST_VISIBILITY = "mk_rating_visibility";
@@ -48,6 +49,9 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
   const [chosen, setVisibility] = useState<RatingVisibility | null>(null);
   const visibility = chosen ?? (rated ? place.visibility : (last ?? place.visibility));
   const [visOpen, setVisOpen] = useState(false);
+  // 메모도 보여 줄지 — 건드렸을 때만 저장 (안 건드린 가져온 메모는 '가져온 메모 보여 주기'로 한 번에 켤 수 있게 남김)
+  const [noteShared, setNoteShared] = useState(place.notePublic);
+  const [noteTouched, setNoteTouched] = useState(false);
   const [sponsored, setSponsored] = useState(place.sponsored);
   const [review, setReview] = useState(place.review);
   const form = useRef<HTMLFormElement>(null);
@@ -104,6 +108,8 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
         <input type="hidden" name="next" value={next} />
         <input type="hidden" name="tier" value={tier} />
         <input type="hidden" name="visibility" value={visibility} />
+        {noteTouched && <input type="hidden" name="noteTouched" value="1" />}
+        {noteShared && <input type="hidden" name="notePublic" value="on" />}
         {state.error && step === "tier" && (
           <p role="alert" className="px-5 pt-2 text-meta text-danger">
             {state.error}
@@ -185,7 +191,10 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
 
           <VisitedOn initial={place.visitedOn} />
 
-          <Note initial={place.note} initialPublic={place.notePublic} />
+          <Note initial={place.note} shared={noteShared} onShared={(on) => {
+            setNoteShared(on);
+            setNoteTouched(true);
+          }} visibility={visibility} />
           <div className="flex flex-col gap-2 px-5 pt-6">
             <label className="flex min-h-11 items-center gap-2.5">
               <input type="checkbox" name="sponsored" checked={sponsored} onChange={(e) => setSponsored(e.target.checked)} className="size-5 shrink-0 accent-ink" />
@@ -227,6 +236,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
       </form>
       {visOpen && (
         <VisibilitySheet
+          noteOn={noteShared}
           value={visibility}
           onPick={(v) => {
             setVisibility(v);
@@ -261,25 +271,21 @@ export function compareScope(target: RankPlace, ranked: RankPlace[]) {
 
 // 메모 — 한 줄로 접어 두고 누르면 펼침, 내용이 있으면 첫 줄 (네이버에서 가져온 메모가 들어오는 칸)
 // 기본 나만 · 켜면 평가 공개 범위대로 보임 (68-4)
-function Note({ initial, initialPublic }: { initial: string; initialPublic: boolean }) {
+function Note({ initial, shared, onShared, visibility }: { initial: string; shared: boolean; onShared: (on: boolean) => void; visibility: RatingVisibility }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(initial);
-  const [shared, setShared] = useState(initialPublic);
-  // 건드렸을 때만 저장 — 안 건드린 가져온 메모는 '가져온 메모 공개'로 한 번에 켤 수 있게 남김
-  const [touched, setTouched] = useState(false);
-  const title = shared ? "메모" : "나만 보는 메모";
   const area = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (open) area.current?.focus();
   }, [open]);
+  const locked = !shared || visibility === "private";
   return (
     <div className="flex flex-col gap-2 px-5 pt-6">
-      {touched && <input type="hidden" name="noteTouched" value="1" />}
       {open ? (
         <>
           <label htmlFor="note" className="flex items-center gap-1.5 text-body font-semibold">
-            {!shared && <LockIcon />}
-            {title}
+            {locked && <LockIcon />}
+            메모
           </label>
           <textarea
             ref={area}
@@ -289,31 +295,18 @@ function Note({ initial, initialPublic }: { initial: string; initialPublic: bool
             maxLength={NOTE_MAX}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="다음에 갈 때 참고할 것"
+            placeholder="예: 주차 · 대기 · 다음에 먹을 메뉴"
             className="w-full resize-none rounded-[12px] border border-transparent bg-surface px-3.5 py-3 text-body leading-normal text-ink outline-none focus:border-ink focus:bg-white"
           />
-          <label className="flex min-h-11 items-center justify-between gap-3">
-            <span className="flex flex-col">
-              <span className="text-body">메모도 보여 주기</span>
-              <span className="text-caption text-muted">켜면 평가 공개 범위대로 보여요</span>
-            </span>
-            <input type="checkbox" name="notePublic" role="switch" checked={shared} onChange={(e) => {
-                setShared(e.target.checked);
-                setTouched(true);
-              }}
-              className="peer sr-only"
-            />
-            <span aria-hidden="true" className="relative h-7 w-12 shrink-0 rounded-full bg-line-strong transition-colors peer-checked:bg-ink peer-focus-visible:ring-2 peer-focus-visible:ring-ink peer-focus-visible:ring-offset-2 after:absolute after:top-0.5 after:left-0.5 after:size-6 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5" />
-          </label>
+          <Switch label="메모도 보여 주기" hint={noteAudience(visibility, shared)} checked={shared} onChange={onShared} />
         </>
       ) : (
         <>
           <input type="hidden" name="note" value={value} />
-          {shared && <input type="hidden" name="notePublic" value="on" />}
           <button type="button" onClick={() => setOpen(true)} aria-expanded={false} className="flex min-h-12 items-center justify-between gap-3 border-y border-line text-left">
             <span className="flex shrink-0 items-center gap-1.5 text-body font-semibold">
-              {!shared && <LockIcon />}
-              {title}
+              {locked && <LockIcon />}
+              메모
             </span>
             <span className="min-w-0 truncate text-meta text-muted">{value.split("\n")[0] || "추가"} ›</span>
           </button>

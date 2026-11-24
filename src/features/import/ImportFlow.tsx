@@ -9,9 +9,6 @@ import { SourceMark } from "@/components/brand/BrandLogo";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import {
   guessMode,
-  IMPORT_TIER_LABEL,
-  IMPORT_TIERS,
-  modeFromValue,
   modeLabel,
   modeToValue,
   type ImportMode,
@@ -20,11 +17,12 @@ import type { ImportResult } from "./saveImportedList";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { tierFromDb } from "@/domain/tier";
 import { RATING_VISIBILITIES, type RatingVisibility } from "@/features/rating/rating";
+import { ImportModeSheet, isRatedMode, type RowChoice } from "./ImportModeSheet";
 
-const RATED_TIERS: string[] = ["three", "two", "one", "not_recommended"];
 const VISIBILITY_LABEL: Record<RatingVisibility, string> = { private: "나만", followers: "팔로워", public: "전체 공개" };
 
-type Row = ListPreview & { link: string; mode: ImportMode };
+// visibility · notePublic: 다녀온 등급으로 가져올 때 이 리스트만의 공개 범위 · 메모 보여 주기 (68-4)
+type Row = ListPreview & { link: string; mode: ImportMode; visibility?: RatingVisibility; notePublic?: boolean };
 type RowStatus = { state: "waiting" | "running" } | { state: "done"; result: ImportResult } | { state: "failed"; error: string };
 type Phase = "select" | "running" | "done";
 
@@ -53,11 +51,15 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
   // 방금 담긴 줄 — 잠깐 강조
   const [fresh, setFresh] = useState<string[]>([]);
   const android = useSyncExternalStore(noop, isAndroid, () => false);
-  // 등급 리스트로 가져오는 게 있으면 그 등급을 누구에게 보여 줄지 묻는다 (68) — 고를 때까지 가져오기를 막는다
-  const [visibility, setVisibility] = useState<RatingVisibility | null>(null);
-  // 지도 앱 메모도 보여 줄지 — 사람이 판단 (68-3 · 68-4). 메모엔 남에게 보이면 안 되는 내용이 있을 수 있어 기본은 끔
-  const [notePublic, setNotePublic] = useState(false);
-  const rating = rows.some((r) => r.mode.kind === "tier" && RATED_TIERS.includes(r.mode.tier));
+  // 다녀온 등급으로 가져오는 리스트는 누구에게 보여 줄지 묻는다 (68) — 모두 고를 때까지 가져오기를 막는다
+  // 한 번에 정하거나 리스트마다 (68-4). 메모는 남에게 보이면 안 되는 내용이 있을 수 있어 기본은 끔
+  const ratedRows = rows.filter((r) => isRatedMode(r.mode));
+  const rating = ratedRows.length > 0;
+  const sameVis = ratedRows.every((r) => r.visibility === ratedRows[0]?.visibility) ? (ratedRows[0]?.visibility ?? null) : null;
+  const mixedVis = rating && !sameVis && ratedRows.some((r) => r.visibility);
+  const allNotes = rating && ratedRows.every((r) => r.notePublic);
+  const missing = ratedRows.some((r) => !r.visibility);
+  const setAllRated = (patch: Partial<Row>) => setRows((rs) => rs.map((r) => (isRatedMode(r.mode) ? { ...r, ...patch } : r)));
 
   async function runImport() {
     setRan(rows);
@@ -65,7 +67,8 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
     setStatus(Object.fromEntries(rows.map((r) => [r.listId, { state: "waiting" }])));
     for (const row of rows) {
       setStatus((s) => ({ ...s, [row.listId]: { state: "running" } }));
-      const res = await importList(row.link, row.mode, rating && visibility ? visibility : undefined, rating && notePublic);
+      const rated = isRatedMode(row.mode);
+      const res = await importList(row.link, row.mode, rated ? row.visibility : undefined, rated && !!row.notePublic);
       setStatus((s) => ({
         ...s,
         [row.listId]: res.ok ? { state: "done", result: res.data } : { state: "failed", error: res.error },
@@ -118,7 +121,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
                   key={row.listId}
                   row={row}
                   fresh={fresh.includes(row.listId)}
-                  onChange={(mode) => setRows((rs) => rs.map((r) => (r.listId === row.listId ? { ...r, mode } : r)))}
+                  onChange={(v) => setRows((rs) => rs.map((r) => (r.listId === row.listId ? { ...r, ...v } : r)))}
                   onRemove={() => setRows((rs) => rs.filter((r) => r.listId !== row.listId))}
                 />
               ))}
@@ -141,17 +144,18 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
           {rating && (
             <fieldset className="flex flex-col gap-2">
               <legend className="pb-2 text-body font-semibold">가져온 등급을 누구에게 보여 줄까요?</legend>
+              {mixedVis && <span className="-mt-1 pb-1 text-caption text-muted">리스트마다 다르게 정했어요 · 고르면 모두 같게 바뀌어요</span>}
               <div className="grid grid-cols-3 gap-1.5">
                 {RATING_VISIBILITIES.map((v) => (
                   <label key={v} className="flex h-11 cursor-pointer items-center justify-center rounded-[10px] bg-surface text-meta font-semibold text-ink-2 has-checked:bg-ink has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-ink has-focus-visible:ring-offset-2">
-                    <input type="radio" name="import-visibility" value={v} checked={visibility === v} onChange={() => setVisibility(v)} className="sr-only" />
+                    <input type="radio" name="import-visibility" value={v} checked={sameVis === v} onChange={() => setAllRated({ visibility: v })} className="sr-only" />
                     {VISIBILITY_LABEL[v]}
                   </label>
                 ))}
               </div>
-              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요</span>
+              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요 · 리스트마다 바꾸려면 등급을 누르세요</span>
               <label className="mt-1 flex min-h-11 items-start gap-2.5">
-                <input type="checkbox" checked={notePublic} onChange={(e) => setNotePublic(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-ink" />
+                <input type="checkbox" checked={allNotes} onChange={(e) => setAllRated({ notePublic: e.target.checked })} className="mt-0.5 size-5 shrink-0 accent-ink" />
                 <span className="flex flex-col gap-0.5">
                   <span className="text-body">지도 앱 메모도 함께 보여 주기</span>
                   <span className="text-caption text-muted">메모에 남에게 보이면 안 되는 내용이 없을 때만 켜 주세요</span>
@@ -159,7 +163,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
               </label>
             </fieldset>
           )}
-          <button type="button" onClick={runImport} disabled={rating && !visibility} className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:opacity-40">
+          <button type="button" onClick={runImport} disabled={missing} className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:opacity-40">
             {total}곳 가져오기
           </button>
         </div>
@@ -377,44 +381,43 @@ function LinkHelp({ source, privateList }: { source: PlaceSourceName | null; pri
   );
 }
 
-function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean; onChange: (mode: ImportMode) => void; onRemove: () => void }) {
-  const selectId = `mode-${row.listId}`;
+function ListRow({ row, fresh, onChange, onRemove }: { row: Row; fresh: boolean; onChange: (v: RowChoice) => void; onRemove: () => void }) {
+  const [open, setOpen] = useState(false);
+  const rated = isRatedMode(row.mode);
+  const detail = rated ? [row.visibility ? VISIBILITY_LABEL[row.visibility] : "공개 범위 고르기", row.notePublic ? "메모도" : null].filter(Boolean).join(" · ") : null;
   return (
     <li className={`-mx-2 flex min-h-16 items-center gap-3 rounded-[10px] border-b border-line px-2 transition-colors duration-700 ${fresh ? "bg-surface" : ""}`}>
       <SourceMark source={row.source} size={20} />
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-body font-semibold">{row.name}</span>
-        <span className="text-meta text-muted">{row.count}곳</span>
+        <span className="truncate text-meta text-muted">
+          {row.count}곳{detail && <span className={row.visibility ? "" : "text-ink-2"}> · {detail}</span>}
+        </span>
       </span>
-      <label htmlFor={selectId} className="sr-only">
-        {row.name} 가져올 방식
-      </label>
-      <span className="relative flex h-9 shrink-0 items-center gap-1 rounded-full bg-surface pr-2.5 pl-3 text-meta font-semibold text-ink">
-        {row.mode.kind === "plain" ? "평가 전" : IMPORT_TIER_LABEL[row.mode.tier]}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`${row.name} 가져올 방식, 지금 ${modeLabel(row.mode)}`}
+        className="flex h-9 shrink-0 items-center gap-1 rounded-full bg-surface pr-2.5 pl-2.5 text-meta font-semibold text-ink"
+      >
+        {row.mode.kind === "plain" ? <span className="pl-0.5">평가 전</span> : <TierBadge tier={tierFromDb(row.mode.tier)} />}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
           <path d="M6 9l6 6 6-6" />
         </svg>
-        <select
-          id={selectId}
-          value={modeToValue(row.mode)}
-          onChange={(e) => onChange(modeFromValue(e.target.value))}
-          className="absolute inset-0 cursor-pointer opacity-0"
-        >
-          <option value="plain">평가 전 · 리스트로 만들기</option>
-          <optgroup label="한 번에 등급 매기기">
-            {IMPORT_TIERS.map((tier) => (
-              <option key={tier} value={tier}>
-                {IMPORT_TIER_LABEL[tier]}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-      </span>
+      </button>
       <button type="button" onClick={onRemove} aria-label={`${row.name} 빼기`} className="-mr-2 flex size-10 shrink-0 items-center justify-center text-subtle">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
       </button>
+      {open && (
+        <ImportModeSheet
+          name={row.name}
+          value={{ mode: row.mode, visibility: row.visibility, notePublic: row.notePublic }}
+          onChange={onChange}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </li>
   );
 }

@@ -4,13 +4,26 @@ import { useEffect, useRef } from "react";
 import { RATING_VISIBILITIES, type RatingVisibility } from "./rating";
 
 export const VISIBILITY: Record<RatingVisibility, { label: string; desc: string }> = {
-  private: { label: "나만", desc: "등급 · 한 줄 평가 · 사진 모두 나만" },
+  private: { label: "나만", desc: "등급 · 한 줄 평가 · 사진 · 메모 모두 나만" },
   followers: { label: "팔로워", desc: "나를 팔로우하는 사람 피드에" },
   public: { label: "전체 공개", desc: "프로필 · 공유 리스트에서 누구나" },
 };
 
-// 누가 볼 수 있어요? — 저장 버튼 위 한 줄에서 여는 시트
-export function VisibilitySheet({ value, onPick, onClose }: { value: RatingVisibility; onPick: (v: RatingVisibility) => void; onClose: () => void }) {
+// 메모를 실제로 누가 보는지 — 스위치만 켜고 공개 범위가 나만이면 아무도 못 본다 (68-4 디자인 검토)
+export function noteAudience(visibility: RatingVisibility, on: boolean): string {
+  if (!on) return "나만 봐요";
+  if (visibility === "private") return "지금은 공개 범위가 나만이라 아무도 못 봐요";
+  return visibility === "followers" ? "팔로워에게 보여요" : "누구나 볼 수 있어요";
+}
+
+// 남에게 보이는 메모의 이름표 — 내 평가 화면에서
+export function noteLabel(visibility: RatingVisibility, on: boolean): string {
+  if (!on || visibility === "private") return "나만 보는 메모";
+  return visibility === "followers" ? "메모 · 팔로워에게 보임" : "메모 · 전체 공개";
+}
+
+// 누가 볼 수 있어요? — 저장 버튼 위 한 줄에서 여는 시트 · noteOn: 메모도 이 범위를 따르는지
+export function VisibilitySheet({ value, onPick, onClose, noteOn }: { value: RatingVisibility; onPick: (v: RatingVisibility) => void; onClose: () => void; noteOn?: boolean }) {
   const sheet = useRef<HTMLElement>(null);
   useEffect(() => sheet.current?.focus(), []);
   return (
@@ -29,7 +42,7 @@ export function VisibilitySheet({ value, onPick, onClose }: { value: RatingVisib
         <h2 id="vis-title" className="pt-2 text-section font-bold">
           누가 볼 수 있어요?
         </h2>
-        <p className="text-meta text-muted">메모는 ‘메모도 보여 주기’를 켰을 때만 보여요</p>
+        {noteOn !== undefined && <p className="text-meta text-muted">{noteOn ? "메모도 이 범위대로 보여요" : "메모는 나만 봐요"}</p>}
         <div role="radiogroup" aria-labelledby="vis-title" className="flex flex-col gap-1.5 pt-1">
           {RATING_VISIBILITIES.map((v) => (
             <button
