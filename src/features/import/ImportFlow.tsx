@@ -147,7 +147,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
                   </label>
                 ))}
               </div>
-              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요</span>
+              <span className="text-caption text-muted">팔로워 이상이면 피드에 보여요 · 지도 앱 메모도 한 줄 평가로 함께</span>
             </fieldset>
           )}
           <button type="button" onClick={runImport} disabled={rating && !visibility} className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:opacity-40">

@@ -6,7 +6,7 @@ import { ImportError, type ImportedList, type PlaceSource, type PlaceSourceName 
 import type { ImportMode } from "./importMode";
 import { applyToSavedPlaces, saveImportedList } from "./saveImportedList";
 import { placeSourceFor } from "./sources";
-import type { RatingVisibility } from "@/features/rating/rating";
+import { REVIEW_MAX, type RatingVisibility } from "@/features/rating/rating";
 
 const NOTE_MAX = 300;
 const LIST_NAME_MAX = 40;
@@ -121,6 +121,15 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
       .eq("note", old.memo.slice(0, NOTE_MAX))
       .select("place_id");
     memos += res.data?.length ?? 0;
+    // 옛 메모를 옮긴 한 줄 평가가 손대지 않은 채면 새 메모로 — 원본에서 지운 개인정보가 피드에 남지 않게 (68-2)
+    if (old.memo.trim()) {
+      await client
+        .from("user_places")
+        .update({ review: now.memo.trim().slice(0, REVIEW_MAX) })
+        .eq("user_id", userId)
+        .eq("place_id", old.place_id)
+        .eq("review", old.memo.trim().slice(0, REVIEW_MAX));
+    }
     await client.from("imported_items").update({ memo: now.memo }).match({ ...where, source_place_id: old.source_place_id });
   }
 

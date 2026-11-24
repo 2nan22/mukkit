@@ -133,4 +133,25 @@ describe.skipIf(!hasLocalDb)("가져온 리스트 새로 고침 (로컬 DB)", ()
     expect(rows.data?.map((r) => r.visibility)).toEqual(["followers", "followers"]);
     expect(rows.data?.every((r) => r.updated_at.startsWith("2025-06-14"))).toBe(true);
   });
+
+  it("원본 메모가 바뀌면 옮긴 한 줄 평가도 새 메모로 · 직접 고친 한 줄 평가는 그대로 (68-2)", async () => {
+    const { supabase, userId } = await signUp();
+    const mode = { kind: "tier" as const, tier: "two" as const };
+    const two = { source: "naver" as const, sourceListId: `memo-${run}`, name: "2스타", memo: "", places: [place(41, { memo: "010-1234 사장님 번호" }), place(42, { memo: "옛 메모" })], expectedCount: 2, skipped: [] };
+    await saveImportedList(supabase, userId, two, mode, "followers");
+    await recordImportSource(supabase, userId, two, mode, "followers");
+    const before = await supabase.from("user_places").select("review").eq("user_id", userId).order("review");
+    expect(before.data?.map((r) => r.review)).toEqual(["010-1234 사장님 번호", "옛 메모"]);
+    // 42 는 한 줄 평가를 직접 고침
+    const ids = await supabase.from("places").select("id, source_place_id").in("source_place_id", [`rf-${run}-41`, `rf-${run}-42`]);
+    const idOf = new Map((ids.data ?? []).map((r) => [r.source_place_id as string, r.id as string]));
+    await supabase.from("user_places").update({ review: "직접 쓴 평가" }).eq("user_id", userId).eq("place_id", idOf.get(`rf-${run}-42`)!);
+    await supabase.from("import_sources").update({ last_synced_at: new Date(0).toISOString() }).eq("user_id", userId);
+    const changed = { ...two, places: [place(41, { memo: "맛있음" }), place(42, { memo: "새 메모" })] };
+    await refreshImport(supabase, userId, { source: "naver", sourceListId: two.sourceListId, mode }, { placeSource: sourceOf(changed) });
+    const after = await supabase.from("user_places").select("place_id, review").eq("user_id", userId);
+    const rv = new Map((after.data ?? []).map((r) => [r.place_id as string, r.review]));
+    expect(rv.get(idOf.get(`rf-${run}-41`)!)).toBe("맛있음");
+    expect(rv.get(idOf.get(`rf-${run}-42`)!)).toBe("직접 쓴 평가");
+  });
 });
