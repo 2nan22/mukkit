@@ -63,7 +63,7 @@ export function PointEditor({ meetupId, kind, current }: { meetupId: string; kin
               </button>
             )}
             <button type="button" onClick={() => setEditing(true)} className="h-8 rounded-full bg-white px-3.5 text-meta font-semibold text-ink raised-soft">
-              {current ? "바꾸기" : "입력"}
+              {current ? "바꾸기" : "넣기"}
             </button>
           </span>
         )}

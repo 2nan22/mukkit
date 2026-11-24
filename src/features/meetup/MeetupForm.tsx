@@ -5,6 +5,7 @@ import { PURPOSE_LABEL, PURPOSES, type Purpose } from "@/domain/meetup";
 import { createMeetup } from "./actions";
 import { DateCalendar, offsetToDate } from "./DateCalendar";
 import { PurposeIcon } from "./PurposeIcon";
+import { timeRange } from "@/domain/meetTime";
 
 const DAY_NAMES = ["오늘", "내일", "모레"];
 const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
@@ -137,7 +138,7 @@ export function MeetupForm() {
   return (
     <div className="flex flex-1 flex-col gap-4 px-5 pb-5">
       {step !== "what" && <Answered label="약속" value={PURPOSE_LABEL[purpose]} onChange={() => setStep("what")} />}
-      {step === "confirm" && <Answered label="언제" value={`${dayLabel(day)} ${band && !exact ? band.label : timeLabel(startAt)}`} onChange={() => setStep("when")} />}
+      {step === "confirm" && <Answered label="언제" value={`${dayLabel(day)} ${timeRange(startAt, endAt)}`} onChange={() => setStep("when")} />}
 
       {step === "what" && (
         <section key="what" className="meet-rise flex flex-col gap-4 pt-2">
@@ -148,7 +149,7 @@ export function MeetupForm() {
             {PURPOSES.map((p) => (
               <button key={p} type="button" aria-pressed={purpose === p} onClick={() => pickPurpose(p)} className={`h-[76px] gap-1.5 px-0.5 text-meta ${cell(purpose === p)}`}>
                 <PurposeIcon purpose={p} />
-                <span className="font-medium">{PURPOSE_SHORT[p]}</span>
+                <span className="font-medium">{PURPOSE_LABEL[p]}</span>
               </button>
             ))}
           </div>
@@ -214,9 +215,7 @@ export function MeetupForm() {
             </div>
           ) : (
             <button type="button" onClick={() => setExact(true)} className="flex h-12 items-center justify-between rounded-[12px] bg-surface px-4 text-body">
-              <span>
-                {timeLabel(startAt)} ~ {timeLabel(endAt)}
-              </span>
+              <span>{timeRange(startAt, endAt)}</span>
               <span className="text-meta font-semibold text-ink-2 underline underline-offset-[3px]">시각 바꾸기</span>
             </button>
           )}
@@ -229,7 +228,11 @@ export function MeetupForm() {
           <h2 ref={heading} tabIndex={-1} className="text-[22px] font-bold tracking-tight outline-none">
             이대로 만들까요?
           </h2>
-          <p className="text-meta leading-normal text-pretty text-muted">만든 뒤 친구를 초대하고, 각자 출발지를 넣으면 지역을 골라 드려요</p>
+          <p className="text-meta leading-normal text-muted">
+            만든 뒤 친구를 초대해요.
+            <br />
+            각자 출발지를 넣으면 지역을 골라 드려요.
+          </p>
         </section>
       )}
 
@@ -252,14 +255,11 @@ export function MeetupForm() {
         )}
       </div>
       <span className="sr-only" aria-live="polite">
-        {step === "confirm" ? `${PURPOSE_LABEL[purpose]} · ${dayLabel(day)} ${timeLabel(startAt)}` : ""}
+        {step === "confirm" ? `${PURPOSE_LABEL[purpose]} · ${dayLabel(day)} ${timeRange(startAt, endAt)}` : ""}
       </span>
     </div>
   );
 }
-
-// 칸에 들어가는 짧은 이름 — '회식 · 모임'은 줄이 꺾여 '모임'으로 (67)
-const PURPOSE_SHORT: Record<Purpose, string> = { meal: "식사", team: "모임", date: "데이트", drinks: "술 한잔", cafe: "카페" };
 
 // 답한 질문 — 한 줄 요약 · 바꾸기
 function Answered({ label, value, onChange }: { label: string; value: string; onChange: () => void }) {

@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { PURPOSE_LABEL } from "@/domain/meetup";
+import { meetWhen } from "@/domain/meetTime";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { CloseMeetup } from "@/features/meetup/CloseMeetup";
 import { InviteAnswer } from "@/features/meetup/InviteAnswer";
@@ -18,15 +19,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "약속" };
 
-function range(startsAt: string | null, endsAt: string | null): string {
-  if (!startsAt) return "시간 미정";
-  const f = (d: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", ...o }).format(new Date(d));
-  const day = f(startsAt, { month: "long", day: "numeric", weekday: "short" });
-  const t = (d: string) => f(d, { hour: "numeric", minute: "2-digit" });
-  const end = endsAt ? `~${t(endsAt).replace(/^(오전|오후) /, (m) => (t(startsAt).startsWith(m.trim()) ? "" : m))}` : "";
-  return `${day} ${t(startsAt)}${end}쯤`;
-}
-
 // 사람마다 상태 (67) — 출발지 넣음 · 출발지 전 · 수락 기다리는 중 (위치 값은 보이지 않음)
 function Members({ members, invitees }: { members: MeetupMember[]; invitees: { id: string; nickname: string }[] }) {
   const ready = members.filter((m) => m.ready).length;
@@ -35,7 +27,7 @@ function Members({ members, invitees }: { members: MeetupMember[]; invitees: { i
       <div className="flex items-baseline justify-between">
         <h3 className="text-[16px] font-bold">함께하는 사람</h3>
         <span className="text-meta text-muted">
-          출발지 {ready} / {members.length}명
+          출발지 넣은 사람 {ready}명
         </span>
       </div>
       <ul className="flex flex-col">
@@ -43,7 +35,7 @@ function Members({ members, invitees }: { members: MeetupMember[]; invitees: { i
           <li key={m.id} className="flex min-h-12 items-center gap-3 border-b border-line last:border-b-0">
             <Avatar name={m.nickname} size={32} />
             <span className="flex-1 truncate text-body">{m.isMe ? `${m.nickname} (나)` : m.nickname}</span>
-            <span className={`shrink-0 text-meta ${m.ready ? "font-semibold text-[#1f7a4d]" : "text-muted"}`}>{m.ready ? "출발지 넣음" : "출발지 전"}</span>
+            <span className={`shrink-0 text-meta ${m.ready ? "font-semibold text-[#1f7a4d]" : "text-muted"}`}>{m.ready ? "출발지 넣음" : "출발지 아직"}</span>
           </li>
         ))}
         {invitees.map((i) => (
@@ -83,7 +75,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
   if (!status.isMember && status.isInvitee) {
     return (
       <div className="flex flex-col gap-6 px-5 pb-10">
-        <InviteAnswer meetupId={status.id} hostNickname={status.hostNickname} purposeLabel={purpose} when={range(status.startsAt, status.endsAt)} />
+        <InviteAnswer meetupId={status.id} hostNickname={status.hostNickname} purposeLabel={purpose} when={meetWhen(status.startsAt, status.endsAt)} />
       </div>
     );
   }
@@ -120,10 +112,8 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
       <MeetupRefresher waiting={!ready && status.status === "open"} />
       <section className="flex flex-col gap-1">
         <h2 className="text-title font-bold tracking-tight">{title}</h2>
-        <span className="text-meta text-muted">
-          {range(status.startsAt, status.endsAt)}
-          {others.length === 0 && status.invitees.length === 0 && " · 함께할 분을 기다리는 중이에요"}
-        </span>
+        <span className="text-meta text-muted">{meetWhen(status.startsAt, status.endsAt)}</span>
+        {others.length === 0 && status.invitees.length === 0 && <span className="text-meta text-muted">함께할 분을 기다리는 중이에요</span>}
       </section>
 
       {status.status === "done" && (
@@ -168,7 +158,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
             </details>
           ) : (
             // 출발지는 각자 넣는다 (67, 위밋플레이스) — 내 할 일을 가장 눈에 띄게
-            <section className="flex flex-col gap-2 rounded-[16px] bg-brand-soft p-4">
+            <section className="flex flex-col gap-2 rounded-[16px] border border-line-strong p-4">
               <span className="flex flex-col gap-0.5">
                 <h3 className="text-[16px] font-bold">내 출발지 넣기</h3>
                 <span className="text-meta text-ink-2">동네 정도로만 저장하고, 다른 분에게는 보이지 않아요</span>

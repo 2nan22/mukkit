@@ -6,8 +6,8 @@ export const PURPOSES = ["meal", "team", "date", "drinks", "cafe"] as const;
 export type Purpose = (typeof PURPOSES)[number];
 
 export const PURPOSE_LABEL: Record<Purpose, string> = {
-  meal: "가벼운 식사",
-  team: "회식 · 모임",
+  meal: "식사",
+  team: "모임",
   date: "데이트",
   drinks: "술 한잔",
   cafe: "카페",

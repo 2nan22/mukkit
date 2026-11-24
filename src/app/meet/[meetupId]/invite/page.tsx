@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { PageLoader } from "@/components/ui/EatingLoader";
 import { PURPOSE_LABEL } from "@/domain/meetup";
+import { meetWhen } from "@/domain/meetTime";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { KakaoInvite } from "@/features/meetup/KakaoInvite";
 import { getMeetupStatus } from "@/features/meetup/meetup";
@@ -12,11 +13,6 @@ import { QuickInvite } from "@/features/meetup/QuickInvite";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "약속 초대" };
-
-function when(startsAt: string | null): string {
-  if (!startsAt) return "";
-  return new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(startsAt));
-}
 
 // 약속을 만든 직후 · '친구 더 초대하기' (67) — 만든 뒤 바로 초대 (Partiful · Doodle · Apple 초대)
 export default function MeetInvitePage({ params, searchParams }: PageProps<"/meet/[meetupId]/invite">) {
@@ -58,12 +54,12 @@ async function Invite({ params, searchParams }: { params: Promise<{ meetupId: st
             </span>
             <h1 className="pt-1 text-[22px] font-bold tracking-tight">약속을 만들었어요</h1>
             <p className="text-meta text-muted">
-              {when(status.startsAt)} · {purpose}
+              {meetWhen(status.startsAt, status.endsAt)} · {purpose}
             </p>
           </section>
         )}
         <section className="flex flex-col gap-2">
-          <h2 className="text-body font-semibold">먹킷에서 초대</h2>
+          <h2 className="text-body font-semibold">팔로우하는 사람</h2>
           <QuickInvite meetupId={status.id} invited={status.invitees.map((i) => i.id)} memberIds={status.members.map((m) => m.id)} />
           <p className="text-meta text-muted">나를 포함해 {status.maxMembers}명까지 · 남은 자리 {left}명 · 먹킷을 안 쓰는 친구도 링크로 들어와요</p>
         </section>
