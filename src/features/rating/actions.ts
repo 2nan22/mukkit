@@ -119,3 +119,20 @@ async function runUpdate(update: () => Promise<void>): Promise<string | null> {
     return error instanceof UserPlaceNotFoundError ? NOT_SAVED : SAVE_FAILED;
   }
 }
+
+// 평가 삭제 (67-2) — 등급 · 한 줄 평가 · 먹은 메뉴 · 사진을 지우고 내 장소에는 평가 전으로 남긴다 (메모 · 리스트는 그대로)
+export async function clearRating(placeId: string): Promise<{ error?: string }> {
+  if (!z.uuid().safeParse(placeId).success) return { error: SAVE_FAILED };
+  const { supabase, userId } = await requireUser();
+  const { data: media } = await supabase.from("rating_media").select("id, path").eq("user_id", userId).eq("place_id", placeId);
+  const rows = (media ?? []) as { id: string; path: string }[];
+  if (rows.length) {
+    const del = await supabase.from("rating_media").delete().in("id", rows.map((m) => m.id));
+    if (del.error) return { error: SAVE_FAILED };
+    await supabase.storage.from("rating-media").remove(rows.map((m) => m.path));
+  }
+  const result = await runUpdate(() => updateUserPlace(supabase, userId, placeId, { tier: "unrated", review: "", menus: [], sponsored: false }));
+  if (result) return { error: result };
+  revalidatePath("/", "layout");
+  return {};
+}
