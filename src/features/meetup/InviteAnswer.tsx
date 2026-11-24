@@ -22,7 +22,7 @@ export function InviteAnswer({ meetupId, hostNickname, purposeLabel, when }: { m
         {hostNickname}님이 {purposeLabel} 약속에 초대했어요
       </span>
       <span className="text-meta text-ink-2">{when}</span>
-      <span className="text-meta leading-normal text-ink-2">수락하면 출발지나 귀가지를 넣고, 두 사람 모두 가기 편한 곳을 함께 볼 수 있어요. 위치는 상대에게 보이지 않아요.</span>
+      <span className="text-meta leading-normal text-ink-2">참여하면 출발지를 넣고 모두 오가기 편한 곳을 함께 봐요. 위치는 다른 분에게 보이지 않아요.</span>
       {error && (
         <p role="alert" className="text-meta text-danger">
           {error}
@@ -30,10 +30,10 @@ export function InviteAnswer({ meetupId, hostNickname, purposeLabel, when }: { m
       )}
       <div className="grid grid-cols-[1fr_2fr] gap-2 pt-1">
         <button type="button" disabled={pending} onClick={() => answer(false)} className="h-btn-m rounded-btn-m bg-white text-body font-medium text-ink">
-          거절
+          못 가요
         </button>
         <button type="button" disabled={pending} onClick={() => answer(true)} className="h-btn-m rounded-btn-m bg-brand text-body font-bold text-white raised-brand disabled:opacity-60">
-          수락하기
+          참여하기
         </button>
       </div>
     </section>

@@ -17,6 +17,7 @@ import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getMyLists } from "@/features/lists/lists";
 import { getMyMedia, getOtherRatings, getPlace, sourceLinks, type OtherRating } from "@/features/place/place";
 import { PlaceBottomBar } from "@/features/place/PlaceBottomBar";
+import { MyRatingMenu } from "@/features/rating/MyRatingMenu";
 import { PlaceHeaderMap } from "@/features/place/PlaceHeaderMap";
 import { getMenu } from "@/features/place/menu";
 import { MenuSection } from "@/features/place/MenuSection";
@@ -161,6 +162,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
       <section className="flex flex-col gap-2 border-b-8 border-surface px-5 pt-4 pb-5">
         <div className="flex items-center justify-between">
           <h2 className="text-section font-bold">내 평가</h2>
+          {mine && ["three", "two", "one", "notRecommended"].includes(mine.tier) && <MyRatingMenu placeId={place.id} three={mine.tier === "three"} />}
         </div>
         {mine && ["three", "two", "one", "notRecommended"].includes(mine.tier) ? (
           <div className="flex flex-col gap-2.5 rounded-[16px] bg-surface p-4">

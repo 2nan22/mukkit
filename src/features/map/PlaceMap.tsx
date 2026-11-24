@@ -2,6 +2,7 @@
 
 import Script from "next/script";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LoaderBubble } from "@/components/ui/EatingLoader";
 import { tierIconSvg } from "@/components/ui/TierIcon";
 import type { Tier } from "@/domain/tier";
 
@@ -32,6 +33,12 @@ type KakaoMaps = {
     fillOpacity: number;
     map?: KakaoMapInstance;
   }) => KakaoCircle;
+  // 좌표 → 행정 구역 이름 (libraries=services)
+  services?: {
+    Geocoder: new () => {
+      coord2RegionCode(lng: number, lat: number, cb: (res: { region_type: string; region_2depth_name: string; region_3depth_name: string }[], status: string) => void): void;
+    };
+  };
   MarkerClusterer?: new (opts: {
     map: KakaoMapInstance;
     averageCenter: boolean;
@@ -74,6 +81,23 @@ declare global {
 // color: 리스트로 보기 — 리스트 색 핀(등급 숫자는 그대로) · text 는 그 색 위 글자색 · null 은 어느 리스트에도 없음(흰 빈 핀)
 export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found"; color?: { bg: string; text: string } | null };
 export type MyLocation = { lat: number; lng: number; accuracy: number };
+// 배열의 칸이 모두 같은 값(같은 참조)인지
+function same(a: unknown[] | undefined, b: unknown[]): boolean {
+  return Boolean(a) && a!.length === b.length && a!.every((v, i) => v === b[i]);
+}
+
+// 이 좌표의 구 · 동 (행정동) — SDK 가 아직 없거나 못 찾으면 null
+export function regionName(lat: number, lng: number): Promise<{ gu: string; dong: string } | null> {
+  const services = window.kakao?.maps.services;
+  if (!services) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    new services.Geocoder().coord2RegionCode(lng, lat, (res, status) => {
+      const h = status === "OK" ? (res.find((r) => r.region_type === "H") ?? res[0]) : undefined;
+      resolve(h?.region_2depth_name ? { gu: h.region_2depth_name, dong: h.region_3depth_name } : null);
+    });
+  });
+}
+
 export type MapViewport = { south: number; west: number; north: number; east: number; center: { lat: number; lng: number }; height: number };
 
 const APP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
@@ -184,7 +208,10 @@ export function PlaceMap({
   onViewChange,
   highlightId = null,
   centerOn = null,
+  quiet = false,
 }: {
+  // 타일이 깔릴 때까지 가운데 로딩을 띄우지 않는다 — 홈 미리보기처럼 작은 지도
+  quiet?: boolean;
   // 이 핀을 보이는 칸 가운데로 옮긴다(확대는 그대로) — 접힌 카드를 넘길 때. n 이 바뀌면 같은 핀도 다시
   centerOn?: { id: string; n: number } | null;
   pins: Pin[];
@@ -219,6 +246,11 @@ export function PlaceMap({
   const clusterer = useRef<KakaoClusterer | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  // 마지막으로 지도에 반영한 값 — 다른 화면에 갔다 뒤로 돌아오면(화면이 숨었다 다시 보임) 효과가 다시 돌아도
+  // 같은 값이면 지도를 옮기거나 핀을 다시 만들지 않는다 → 떠날 때의 위치 · 확대 그대로 (65)
+  const applied = useRef<{ pins?: Pin[]; cluster?: boolean; fit?: unknown[]; focus?: unknown; pick?: unknown[]; center?: unknown }>({});
+  // 첫 타일이 다 깔렸는지 — 그 전엔 빈 땅색 위에 로딩 (65)
+  const [drawn, setDrawn] = useState(false);
   const onSelectRef = useRef(onSelect);
   const onMoveRef = useRef(onUserMove);
   const onViewRef = useRef(onViewChange);
@@ -237,6 +269,9 @@ export function PlaceMap({
       const m0 = map.current;
       requestAnimationFrame(() => m0.relayout());
       window.kakao?.maps.event.addListener(m0, "dragstart", () => onMoveRef.current?.());
+      window.kakao?.maps.event.addListener(m0, "tilesloaded", () => setDrawn(true));
+      // 핀이 뜬 뒤에도 로딩이 핀을 오래 가리지 않게 — 타일이 늦어도 1.5초면 걷는다 (65 디자인 검토)
+      setTimeout(() => setDrawn(true), 1500);
       window.kakao?.maps.event.addListener(m0, "idle", () => {
         const b = m0.getBounds();
         const sw = b.getSouthWest();
@@ -246,6 +281,9 @@ export function PlaceMap({
       });
     }
     const m = map.current;
+    if (applied.current.pins === pins && applied.current.cluster === cluster) return;
+    applied.current.pins = pins;
+    applied.current.cluster = cluster;
     clusterer.current?.clear();
     overlays.current.forEach(({ overlay }) => overlay.setMap(null));
     const useCluster = cluster && Boolean(maps.MarkerClusterer);
@@ -322,7 +360,10 @@ export function PlaceMap({
   useEffect(() => {
     const maps = window.kakao?.maps;
     const pin = pins.find((p) => p.id === selectedId);
+    if (!pin) applied.current.pick = undefined; // 닫았다가 같은 가게를 다시 고르면 다시 다가간다
     if (!ready || !maps || !map.current || !pin) return;
+    if (same(applied.current.pick, [pin, selectedId])) return;
+    applied.current.pick = [pin, selectedId];
     if (map.current.getLevel() > NEIGHBORHOOD_LEVEL) map.current.setLevel(NEIGHBORHOOD_LEVEL);
     panToVisible(pin.lat, pin.lng);
   }, [ready, pins, selectedId, panToVisible]);
@@ -330,7 +371,8 @@ export function PlaceMap({
   // 넘긴 카드의 가게를 가운데로 — 확대 수준은 그대로
   useEffect(() => {
     const pin = centerOn ? pins.find((p) => p.id === centerOn.id) : undefined;
-    if (!ready || !pin) return;
+    if (!ready || !pin || applied.current.center === centerOn) return;
+    applied.current.center = centerOn;
     panToVisible(pin.lat, pin.lng);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 넘길 때만 (핀 목록이 바뀔 때는 옮기지 않음)
   }, [ready, centerOn]);
@@ -341,6 +383,9 @@ export function PlaceMap({
     const maps = window.kakao?.maps;
     if (!ready || !maps || !map.current || pins.length === 0) return;
     const m = map.current;
+    const key = [pins, top, right, bottom, left, refit];
+    if (same(applied.current.fit, key)) return;
+    applied.current.fit = key;
     requestAnimationFrame(() => {
       m.relayout();
       if (refit === "hidden" && fitted.current) {
@@ -368,6 +413,8 @@ export function PlaceMap({
   useEffect(() => {
     const maps = window.kakao?.maps;
     if (!ready || !maps || !map.current || !focus) return;
+    if (applied.current.focus === focus) return;
+    applied.current.focus = focus;
     const m = map.current;
     requestAnimationFrame(() => {
       fitted.current = true;
@@ -424,7 +471,7 @@ export function PlaceMap({
   return (
     <>
       <Script
-        src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${APP_KEY}&autoload=false&libraries=clusterer`}
+        src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${APP_KEY}&autoload=false&libraries=clusterer,services`}
         strategy="afterInteractive"
         onReady={() => {
           if (!window.kakao?.maps) return setFailed(true);
@@ -436,6 +483,11 @@ export function PlaceMap({
       {!ready && (
         <div className="pointer-events-none absolute inset-0 animate-pulse bg-map-land">
           <span className="sr-only">지도를 불러오는 중이에요</span>
+        </div>
+      )}
+      {!quiet && !drawn && (
+        <div data-loading="" className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <LoaderBubble label="지도를 불러오는 중" />
         </div>
       )}
     </>

@@ -8,6 +8,8 @@ export const MENUS_MAX = 10;
 export const MENU_NAME_MAX = 30;
 export const RATING_VISIBILITIES = ["private", "followers", "public"] as const;
 export type RatingVisibility = (typeof RATING_VISIBILITIES)[number];
+// 다녀온 등급(DB 값) — 공개 범위가 뜻을 갖는 등급 (68)
+export const RATED_DB_TIERS = ["three", "two", "one", "not_recommended"];
 
 export const RatingSchema = z.object({
   placeId: z.uuid(),

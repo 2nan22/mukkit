@@ -3,7 +3,7 @@ import { LoaderBubble } from "./EatingLoader";
 // 불러오는 동안 화면 자리 — 흰 화면 대신 모양만 + 화면 가운데 젓가락 로딩
 export function ListSkeleton({ rows = 5, hero = false }: { rows?: number; hero?: boolean }) {
   return (
-    <div className="relative">
+    <div className="relative" data-loading="">
       {/* 페이지 옮길 때 로딩(NavLoading)과 같은 자리 — 화면 정가운데에서 그대로 이어지게 */}
       <div className="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center">
         <LoaderBubble />

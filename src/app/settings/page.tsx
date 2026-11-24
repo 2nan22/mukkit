@@ -18,6 +18,9 @@ export default function SettingsPage() {
       <Group title="계정">
         <Row href="/settings/accounts" label="로그인 연결" />
       </Group>
+      <Group title="평가">
+        <Row href="/settings/visibility" label="평가 공개 범위" />
+      </Group>
       <Group title="알림">
         <Row href="/settings/notifications" label="알림 받기" />
       </Group>
@@ -33,6 +36,12 @@ export default function SettingsPage() {
         <Row href="/terms" label="이용약관" />
         <Row href="/privacy" label="개인정보 처리방침" />
         {CONTACT_EMAIL && <Row href={`mailto:${CONTACT_EMAIL}`} label="문의하기" />}
+        <div className="flex min-h-14 items-center justify-between border-b border-line text-body">
+          버전
+          <span className="text-meta text-muted">
+            {process.env.NEXT_PUBLIC_APP_VERSION} ({process.env.NEXT_PUBLIC_APP_BUILD})
+          </span>
+        </div>
       </Group>
       <div className="flex-1" />
       <div className="flex flex-col items-center gap-3 px-5 pt-10 pb-8">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type PointerEvent } from "react";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { honor } from "@/domain/honor";
@@ -21,6 +21,7 @@ import { MapSearch } from "./MapSearch";
 import { openKakaoPlace, type NewPlaceHit } from "@/features/search/actions";
 import { ratersLine, type MapPlace } from "./myPlaces";
 import { Avatar } from "@/components/ui/Avatar";
+import { LoaderBubble } from "@/components/ui/EatingLoader";
 
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
 // 팔로잉 지도는 평가한 곳만이라 평가 등급만
@@ -616,9 +617,9 @@ export function MapView({
             </Link>
           </div>
         ) : selected ? (
-          <div className="pt-4">
+          <PullCard placeId={selected.placeId} onClose={() => setSelectedId(null)}>
             {isFollowing ? <FollowingCard place={selected} onClose={() => setSelectedId(null)} /> : <PlaceCard place={selected} onClose={() => setSelectedId(null)} />}
-          </div>
+          </PullCard>
         ) : found ? (
           <div className="pt-4">
             <FoundCard hit={found} onClose={() => setFound(null)} />
@@ -685,6 +686,70 @@ export function MapView({
           </>
         )}
       </section>
+    </div>
+  );
+}
+
+// 지도에서 고른 가게 카드 — 위로 끌면 장소 상세, 아래로 끌면 닫기 (65, 지도 앱 관례)
+// 손잡이를 누르면 상세. 끌다 놓은 자리의 클릭(평가하기 등)은 한 번 무시
+const PULL = 56;
+// 카드 안 버튼을 누르다 손가락이 조금 밀려도 끌기로 보지 않게 · 짧게 튕긴 건 이 거리부터
+const CARD_SLOP = 12;
+const FLICK_MIN = 20;
+function PullCard({ placeId, onClose, children }: { placeId: string; onClose: () => void; children: React.ReactNode }) {
+  const router = useRouter();
+  const card = useRef<HTMLDivElement>(null);
+  // 이동이 끝나면 저절로 꺼진다 — 뒤로 돌아와 화면 상태가 그대로 살아나도 로딩이 남지 않게
+  const [opening, startOpening] = useTransition();
+  const open = useCallback(() => startOpening(() => router.push(`/p/${placeId}`)), [router, placeId]);
+
+  function onDown(e: PointerEvent<HTMLDivElement>) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    // 카드 안에서 따로 스크롤되는 목록(평가한 사람 전체)은 끌지 않는다
+    if ((e.target as Element).closest("[data-scroll]")) return;
+    const el = card.current;
+    if (!el) return;
+    const start = { y: e.clientY, t: e.timeStamp };
+    let moved = false;
+    const move = (ev: globalThis.PointerEvent) => {
+      const dy = ev.clientY - start.y;
+      if (!moved && Math.abs(dy) < CARD_SLOP) return;
+      moved = true;
+      // 위로는 따라오다 점점 무겁게, 아래로는 그대로
+      el.style.transition = "none";
+      el.style.transform = `translateY(${dy < 0 ? -Math.sqrt(-dy) * 6 : dy}px)`;
+    };
+    const up = (ev: globalThis.PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      el.style.transition = "";
+      el.style.transform = "";
+      if (!moved) return;
+      const swallow = (c: MouseEvent) => (c.preventDefault(), c.stopPropagation());
+      window.addEventListener("click", swallow, { capture: true, once: true });
+      setTimeout(() => window.removeEventListener("click", swallow, true), 300);
+      const dy = ev.clientY - start.y;
+      const speed = dy / Math.max(1, ev.timeStamp - start.t);
+      if (dy < -PULL || (speed < -0.5 && dy < -FLICK_MIN)) open();
+      else if (dy > PULL || (speed > 0.5 && dy > FLICK_MIN)) onClose();
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
+
+  return (
+    <div ref={card} onPointerDown={onDown} className="touch-none transition-transform duration-200 ease-out">
+      <button type="button" onClick={open} aria-label="장소 상세 보기" className="mx-auto flex h-6 w-16 items-center justify-center">
+        <span aria-hidden="true" className="h-1 w-9 rounded-full bg-subtle/50" />
+      </button>
+      {children}
+      {opening && (
+        <div className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center">
+          <LoaderBubble label="장소 상세를 불러오는 중" />
+        </div>
+      )}
     </div>
   );
 }
@@ -827,7 +892,7 @@ function FollowingCard({ place, onClose }: { place: MapPlace; onClose: () => voi
           </svg>
         </button>
       </div>
-      <ul aria-label="평가한 사람" className={`flex flex-col ${all ? "max-h-56 overflow-y-auto" : ""}`}>
+      <ul aria-label="평가한 사람" data-scroll="" className={`flex flex-col ${all ? "max-h-56 touch-pan-y overflow-y-auto overscroll-contain" : ""}`}>
         {(all ? raters : raters.slice(0, SHOW)).map((r) => (
           <li key={r.userId}>
             <Link href={`/p/${place.placeId}/r/${r.userId}`} aria-label={`${r.nickname} ${TIER_LABEL[r.tier]} 평가 보기`} className="flex h-11 items-center gap-2.5">

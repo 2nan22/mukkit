@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { endFor, timeLabel } from "./MeetupForm";
+import { bandOpen, BANDS, defaultWhen, endFor, timeLabel } from "./MeetupForm";
 
 const LAST = 26 * 60;
 
@@ -20,5 +20,20 @@ describe("timeLabel", () => {
     expect(timeLabel(24 * 60)).toBe("새벽 12:00");
     expect(timeLabel(25 * 60 + 30)).toBe("새벽 1:30");
     expect(timeLabel(23 * 60 + 30)).toBe("오후 11:30");
+  });
+});
+
+describe("시간대 · 기본값 (67)", () => {
+  it("오늘 저녁이 남았으면 오늘 저녁", () => {
+    expect(defaultWhen(15 * 60)).toEqual({ day: 0, start: 19 * 60, end: 21 * 60 + 30 });
+  });
+  it("저녁이 시작했으면 내일 저녁", () => {
+    expect(defaultWhen(19 * 60).day).toBe(1);
+    expect(defaultWhen(23 * 60).day).toBe(1);
+  });
+  it("오늘은 시작이 지난 시간대를 못 고름 · 다른 날은 모두", () => {
+    expect(bandOpen(0, BANDS[0], 13 * 60)).toBe(false);
+    expect(bandOpen(0, BANDS[1], 13 * 60)).toBe(true);
+    expect(bandOpen(1, BANDS[0], 23 * 60)).toBe(true);
   });
 });
