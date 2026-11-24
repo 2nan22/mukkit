@@ -177,6 +177,7 @@ async function saveImportedItems(
             place_id: placeId,
             list_name: list.name,
             memo: p.memo,
+            alias: p.alias ?? "",
             category_name: p.categoryName,
             category_path: p.categoryPath,
             saved_at: p.savedAt.toISOString(),

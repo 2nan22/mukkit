@@ -840,7 +840,7 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
           </svg>
         </button>
       </div>
-      {place.note && <Memo text={place.note} source={place.noteSource} />}
+      {(place.note || place.alias) && <Memo text={place.note} alias={place.alias} source={place.noteSource} />}
       <div className="grid grid-cols-2 gap-2 pt-2">
         {place.links[0] ? (
           <a

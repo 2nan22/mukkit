@@ -2,7 +2,7 @@
 -- 가져온 메모 한 번에 바꾸기는 지도 앱 메모 그대로 · 다녀온 등급만, updated_at 그대로, 남의 것은 못 바꿈
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(17);
 
 insert into auth.users (id, email) values
   ('f1111111-1111-1111-1111-111111111111', 'nv-owner@test.local'),
@@ -61,6 +61,17 @@ update public.user_places set note_visibility = 'private' where place_id = 'f900
 select is(public.set_imported_note_visibility('f1111111-1111-1111-1111-111111111111', null, array['f9000000-0000-0000-0000-000000000003'::uuid]), 0, '다시 가져와도 넓어지지 않음');
 update public.user_places set note_visibility = null where place_id = 'f9000000-0000-0000-0000-000000000003';
 select is(public.set_imported_note_visibility('f1111111-1111-1111-1111-111111111111', 'followers', array['f9000000-0000-0000-0000-000000000003'::uuid]), 1, '좁히기는 됨');
+
+-- 별명만 있는 곳도 메모 공개 범위를 따른다 (68-7)
+insert into public.places (id, source, source_place_id, name, lat, lng, cuisine) values ('f9000000-0000-0000-0000-000000000005', 'naver', 'nv-5', '별명만', 37.5, 127.0, 'korean');
+insert into public.user_places (user_id, place_id, tier, note, visibility) values ('f1111111-1111-1111-1111-111111111111', 'f9000000-0000-0000-0000-000000000005', 'two', '', 'public');
+insert into public.imported_items (user_id, source, source_list_id, source_place_id, place_id, list_name, memo, alias) values
+  ('f1111111-1111-1111-1111-111111111111', 'naver', 'l', 'nv-5', 'f9000000-0000-0000-0000-000000000005', '리스트', '', '비밀 별명');
+select is(public.set_imported_note_visibility('f1111111-1111-1111-1111-111111111111', 'private', array['f9000000-0000-0000-0000-000000000005'::uuid]), 1, '별명만 있는 곳도 메모 공개 범위 적용');
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"f3333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
+select is((select alias from public.place_ratings('f9000000-0000-0000-0000-000000000005') limit 1), '', '나만이면 별명도 남에게 빈 값');
+reset role;
 
 select * from finish();
 rollback;

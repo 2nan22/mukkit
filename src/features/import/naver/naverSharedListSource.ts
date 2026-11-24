@@ -131,7 +131,8 @@ function toImportedList(
       categoryPath,
       cuisine: naverCuisineOf(categoryPath).cuisine,
       categoryName: b.mcidName ?? "",
-      memo: memoWithAlias(b.name, b.displayName, b.memo),
+      memo: (b.memo ?? "").trim(),
+      alias: aliasOf(b.name, b.displayName),
       savedAt: new Date(b.creationTime),
       available: b.available ?? true,
       raw,
@@ -149,11 +150,8 @@ function toImportedList(
   };
 }
 
-// 네이버 지도에서 장소에 붙인 별명도 메모에 함께 (68-3, 사용자 요청) — '별명 · 메모'. 가게 이름과 같은 별명은 뺀다
-export function memoWithAlias(name: string, alias: string | null | undefined, memo: string | null | undefined): string {
+// 네이버 지도에서 장소에 붙인 별명 (68-3 · 68-7) — 메모와 따로 두고 화면에선 '별명' 배지로. 가게 이름과 같은 별명은 뺀다
+export function aliasOf(name: string, alias: string | null | undefined): string {
   const a = (alias ?? "").trim();
-  const m = (memo ?? "").trim();
-  const label = a && a !== name.trim() ? a : "";
-  // 별명과 메모는 줄을 나눈다 — 가운데 점으로 잇지 않음 (68-6)
-  return [label, m].filter(Boolean).join("\n");
+  return a && a !== name.trim() ? a : "";
 }

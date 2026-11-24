@@ -125,4 +125,11 @@ describe.skipIf(!hasLocalDb)("가져오기 저장 (로컬 DB)", () => {
     expect(nv.get(`test-${run}-21`)).toBe("private");
     expect(nv.get(`test-${run}-22`)).toBe(null);
   }, 20_000);
+
+  it("별명은 메모와 따로 원본 기록에 · place_alias 로 읽힘 (68-7)", async () => {
+    const { supabase, userId } = await signUp();
+    await saveImportedList(supabase, userId, list("al", [place(30, { memo: "웨이팅 김", alias: "먹을텐데" })]), { kind: "tier", tier: "two" }, "followers");
+    const row = await supabase.from("user_places").select("note, place_alias").eq("user_id", userId).single();
+    expect(row.data).toEqual({ note: "웨이팅 김", place_alias: "먹을텐데" });
+  }, 20_000);
 });

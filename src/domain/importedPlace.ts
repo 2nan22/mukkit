@@ -15,6 +15,8 @@ export type ImportedPlace = {
   // 출처가 자기 분류로 정한 음식 종류 — 저장은 출처를 모른다
   cuisine: Cuisine;
   memo: string;
+  // 지도 앱에서 장소에 붙인 별명 (네이버, 68-7) — 메모와 따로. 가게 이름과 같으면 빈 값
+  alias?: string;
   savedAt: Date;
   available: boolean;
   // 출처가 준 항목 그대로 — 나중에 분류 · 리스트 만들 때 쓰는 원천 데이터

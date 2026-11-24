@@ -93,6 +93,8 @@ export type SavedPlace = {
   noteVisibility: NoteVisibility;
   // 지도 앱 원본 메모 그대로면 그 앱 (68-6)
   noteSource: string | null;
+  // 지도 앱 별명 (68-7)
+  alias: string;
   visitedOn: string | null;
   sponsored: boolean;
   review: string;
@@ -102,7 +104,7 @@ export type SavedPlace = {
   rank?: number | null;
 };
 
-const SAVED_PLACE_COLUMNS = "place_id, tier, note, note_visibility, note_source, visited_on, sponsored, review, visibility, menus, tier_rank, places(name, address, category_name, cuisine)";
+const SAVED_PLACE_COLUMNS = "place_id, tier, note, note_visibility, note_source, place_alias, visited_on, sponsored, review, visibility, menus, tier_rank, places(name, address, category_name, cuisine)";
 
 type SavedPlaceRow = {
   place_id: string;
@@ -110,6 +112,7 @@ type SavedPlaceRow = {
   note: string;
   note_visibility: RatingVisibility | null;
   note_source: string | null;
+  place_alias: string | null;
   visited_on: string | null;
   sponsored: boolean;
   review: string;
@@ -130,6 +133,7 @@ function toSavedPlace(row: SavedPlaceRow): SavedPlace {
     note: row.note,
     noteVisibility: noteVisibilityFromDb(row.note_visibility),
     noteSource: row.note_source,
+    alias: row.place_alias ?? "",
     visitedOn: row.visited_on,
     sponsored: row.sponsored,
     review: row.review,
