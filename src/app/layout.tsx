@@ -21,6 +21,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // 아이폰 홈 막대 · 둥근 모서리 여백(env(safe-area-inset-*))을 쓰려면 cover 가 있어야 값이 들어온다 (68-3)
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

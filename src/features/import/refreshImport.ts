@@ -27,7 +27,7 @@ export function hashList(list: ImportedList): string {
 }
 
 // 가져올 때 · 새로 고칠 때 기록 남기기
-export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode, visibility?: RatingVisibility): Promise<void> {
+export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode, visibility?: RatingVisibility, memoToReview?: boolean): Promise<void> {
   await client.from("import_sources").upsert(
     {
       user_id: userId,
@@ -42,6 +42,7 @@ export async function recordImportSource(client: SupabaseClient, userId: string,
       fail_count: 0,
       // 고르지 않았으면(새로 고침 등) 그 전 값을 그대로 둔다
       ...(visibility ? { visibility } : {}),
+      ...(memoToReview !== undefined ? { memo_to_review: memoToReview } : {}),
     },
     { onConflict: "user_id,source,source_list_id" },
   );
@@ -136,8 +137,11 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
   // 새 곳만 가져오기 규칙으로
   const added = list.places.filter((p) => !known.has(p.sourcePlaceId));
   // 새로 들어온 곳도 가져올 때 고른 공개 범위로 (68)
-  const vis = added.length > 0 && key.mode.kind === "tier" ? await client.from("import_sources").select("visibility").match(where).maybeSingle() : null;
-  const saved = added.length > 0 ? await saveImportedList(client, userId, { ...list, places: added }, key.mode, (vis?.data?.visibility as RatingVisibility | null) ?? undefined) : null;
+  const vis = added.length > 0 && key.mode.kind === "tier" ? await client.from("import_sources").select("visibility, memo_to_review").match(where).maybeSingle() : null;
+  const saved =
+    added.length > 0
+      ? await saveImportedList(client, userId, { ...list, places: added }, key.mode, (vis?.data?.visibility as RatingVisibility | null) ?? undefined, vis?.data?.memo_to_review === true)
+      : null;
 
   // 빠진 곳 — 원본 기록 · 먹킷 리스트에서만
   if (gone.length > 0) {

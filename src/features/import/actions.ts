@@ -46,7 +46,7 @@ export async function previewList(input: string): Promise<ActionResult<ListPrevi
   }
 }
 
-export async function importList(input: string, mode: ImportMode, visibility?: RatingVisibility): Promise<ActionResult<ImportResult>> {
+export async function importList(input: string, mode: ImportMode, visibility?: RatingVisibility, memoToReview = false): Promise<ActionResult<ImportResult>> {
   const link = extractLink(input);
   const parsedMode = ImportModeSchema.safeParse(mode);
   if (!parsedMode.success) return { ok: false, error: SAVE_FAILED, code: "SAVE_FAILED" };
@@ -57,9 +57,9 @@ export async function importList(input: string, mode: ImportMode, visibility?: R
   if (!source) return { ok: false, error: ERROR_MESSAGE.INVALID_LINK, code: "INVALID_LINK" };
   try {
     const list = await placeSourceFor(source).fetchList(link);
-    const saved = await saveImportedList(supabase, userId, list, parsedMode.data, visibility);
+    const saved = await saveImportedList(supabase, userId, list, parsedMode.data, visibility, memoToReview === true);
     // 자동 새로 고침을 위해 방식 · 원본 요약을 남긴다
-    await recordImportSource(supabase, userId, list, parsedMode.data, visibility);
+    await recordImportSource(supabase, userId, list, parsedMode.data, visibility, memoToReview === true);
     return { ok: true, data: saved };
   } catch (error) {
     return failure(error, source);

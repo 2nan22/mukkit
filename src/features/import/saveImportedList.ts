@@ -37,14 +37,16 @@ export async function saveImportedList(
   mode: ImportMode,
   // 등급 리스트로 가져온 등급의 공개 범위 — 가져올 때 묻는다 (68). 없으면 DB 기본(나만)
   visibility?: RatingVisibility,
+  // 지도 앱 메모를 한 줄 평가로도 — 가져올 때 사람이 고른다 (68-3)
+  memoToReview = false,
 ): Promise<ImportResult> {
   const places = dedupeBySourceId(list.places);
   const placeIds = await upsertPlaces(places);
   await saveImportedItems(supabase, userId, list, places, placeIds);
   const alreadySaved = await saveUserPlaces(supabase, userId, places, placeIds, mode, visibility);
   const listId = mode.kind === "plain" ? await saveList(supabase, userId, list, [...new Set(placeIds.values())]) : null;
-  // 등급 리스트면 가져온 메모를 한 줄 평가로도 — 피드 · 장소에 보이게 (68-2). 한 줄 평가가 빈 곳 · 가져온 메모 그대로인 곳만(DB 함수가 거름)
-  if (mode.kind === "tier" && RATED_DB_TIERS.includes(mode.tier)) {
+  // 고른 경우 가져온 메모를 한 줄 평가로도 — 피드 · 장소에 보이게 (68-2 · 68-3). 한 줄 평가가 빈 곳 · 가져온 메모 그대로인 곳만(DB 함수가 거름)
+  if (memoToReview && mode.kind === "tier" && RATED_DB_TIERS.includes(mode.tier)) {
     const copied = await supabase.rpc("copy_notes_to_review", { p_user: userId, p_places: [...new Set(placeIds.values())] });
     if (copied.error) throw new ImportSaveError("copy_notes_to_review", copied.error.code);
   }

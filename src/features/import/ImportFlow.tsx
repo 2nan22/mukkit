@@ -55,6 +55,8 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
   const android = useSyncExternalStore(noop, isAndroid, () => false);
   // 등급 리스트로 가져오는 게 있으면 그 등급을 누구에게 보여 줄지 묻는다 (68) — 고를 때까지 가져오기를 막는다
   const [visibility, setVisibility] = useState<RatingVisibility | null>(null);
+  // 지도 앱 메모를 한 줄 평가로도 보여 줄지 — 사람이 판단 (68-3). 메모엔 남에게 보이면 안 되는 내용이 있을 수 있어 기본은 끔
+  const [memoToReview, setMemoToReview] = useState(false);
   const rating = rows.some((r) => r.mode.kind === "tier" && RATED_TIERS.includes(r.mode.tier));
 
   async function runImport() {
@@ -63,7 +65,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
     setStatus(Object.fromEntries(rows.map((r) => [r.listId, { state: "waiting" }])));
     for (const row of rows) {
       setStatus((s) => ({ ...s, [row.listId]: { state: "running" } }));
-      const res = await importList(row.link, row.mode, rating && visibility ? visibility : undefined);
+      const res = await importList(row.link, row.mode, rating && visibility ? visibility : undefined, rating && memoToReview);
       setStatus((s) => ({
         ...s,
         [row.listId]: res.ok ? { state: "done", result: res.data } : { state: "failed", error: res.error },
@@ -147,7 +149,14 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
                   </label>
                 ))}
               </div>
-              <span className="text-caption text-muted">팔로워 이상이면 피드에 보여요 · 지도 앱 메모도 한 줄 평가로 함께</span>
+              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요</span>
+              <label className="mt-1 flex min-h-11 items-start gap-2.5">
+                <input type="checkbox" checked={memoToReview} onChange={(e) => setMemoToReview(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-ink" />
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-body">지도 앱 메모도 한 줄 평가로 보여 주기</span>
+                  <span className="text-caption text-muted">메모에 남에게 보이면 안 되는 내용이 없을 때만 켜 주세요</span>
+                </span>
+              </label>
             </fieldset>
           )}
           <button type="button" onClick={runImport} disabled={rating && !visibility} className="h-btn-l w-full rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand disabled:opacity-40">
@@ -293,7 +302,7 @@ const HELP: Record<PlaceSourceName, { app: string; url: string; find: ReactNode[
     url: "https://map.naver.com/",
     find: [
       <><b>저장</b>에서 리스트의 <b>⋮</b>를 눌러요</>,
-      <><b>공유 › 복사</b>를 눌러요</>,
+      <><b>공유 › 복사</b>를 눌러요 — <b>공유</b>가 없으면 비공개 리스트예요. <b>수정 › 공개 범위</b>를 <b>일부 공개</b>로 바꾸면 생겨요</>,
       <>위 칸에 붙여 넣어요</>,
     ],
     pc: <>PC에서는 리스트의 <b>⋮ › 공유</b>에서 링크 <b>복사</b></>,
