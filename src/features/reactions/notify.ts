@@ -27,7 +27,7 @@ export async function notifyComment(authorId: string, ownerId: string, placeId: 
     .or(`blocker_id.eq.${ownerId},blocked_id.eq.${ownerId}`);
   const cut = new Set((blocked ?? []).flatMap((b) => [b.blocker_id as string, b.blocked_id as string]));
   const viewers = await stillViewing(admin, ownerId, placeId, ids.filter((id) => !cut.has(id)));
-  await sendPush(viewers, { title: "새 댓글", body: `${who}이 댓글을 남겼어요`, url, tag }, "comment");
+  await sendPush(viewers, { title: "새 댓글", body: `${who}이 자기 평가에 댓글을 남겼어요`, url, tag }, "comment");
 }
 
 // 평가를 지금도 볼 수 있는 사람만 — 비공개로 바꿨거나 팔로우를 끊었거나 신고로 숨겨졌으면 뺀다 (can_view_rating 과 같은 기준)

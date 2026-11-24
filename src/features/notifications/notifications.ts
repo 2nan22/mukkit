@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // 앱 안 알림함 — 받는 사람만 · 차단한 사이 · 볼 수 없게 된 평가 알림은 함수가 거른다
-export type NotificationKind = "comment" | "like" | "follow" | "meetup_invite" | "meetup_join" | "visit_tag";
+export type NotificationKind = "comment" | "like" | "follow" | "meetup_invite" | "meetup_join" | "meetup_ready" | "visit_tag";
 export type AppNotification = {
   id: string;
   kind: NotificationKind;
@@ -14,6 +14,9 @@ export type AppNotification = {
   visitId: string | null;
   createdAt: string;
   read: boolean;
+  // 추천 지역 알림 — 넣은 위치 종류 · 처음 나왔는지 (66)
+  pointKind: "origin" | "return" | null;
+  firstReady: boolean;
 };
 
 export async function getNotifications(supabase: SupabaseClient): Promise<AppNotification[]> {
@@ -31,6 +34,8 @@ export async function getNotifications(supabase: SupabaseClient): Promise<AppNot
     visitId: (r.visit_id as string) ?? null,
     createdAt: r.created_at as string,
     read: r.read as boolean,
+    pointKind: (r.point_kind as "origin" | "return" | null) ?? null,
+    firstReady: Boolean(r.first_ready),
   }));
 }
 
@@ -49,6 +54,7 @@ export function notificationHref(n: AppNotification): string {
       return `/u/${n.actorId}`;
     case "meetup_invite":
     case "meetup_join":
+    case "meetup_ready":
       return n.meetupId ? `/meet/${n.meetupId}` : "/meet";
     case "visit_tag":
       return "/visits";
