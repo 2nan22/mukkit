@@ -94,6 +94,7 @@ async function MyContent() {
       <nav aria-label="내 정보 메뉴" className="flex flex-col px-5 pt-4 pb-6">
         {[
           { href: "/meet", label: "약속", icon: "M7 3v3M17 3v3M4 9h16M5 5h14v15H5z" },
+          { href: "/my/stats", label: "내 기록 통계", icon: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
           { href: "/rank", label: "나만의 맛집 순위", icon: "M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" },
           { href: "/people", label: "사람 찾기", icon: "M10 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM3 20c.8-3.5 3.6-5.5 7-5.5M15.5 15.5a3 3 0 1 0 4.2 4.2 3 3 0 0 0-4.2-4.2zM19.7 19.7L21 21" },
           { href: "/import", label: "저장한 장소 가져오기", icon: "M12 4v11M7 10l5 5 5-5M5 20h14" },
