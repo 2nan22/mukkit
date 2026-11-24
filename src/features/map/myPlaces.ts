@@ -19,6 +19,8 @@ export type MapPlace = {
   available: boolean;
   tier: Tier;
   note: string;
+  // 지도 앱 원본 메모 그대로면 그 앱 (68-6)
+  noteSource?: string | null;
   links: SourceLink[];
   // 팔로잉 지도 — 이 곳을 평가한 팔로잉 (등급 높은 순). 내 지도에서는 없음
   raters?: Rater[];
@@ -62,6 +64,7 @@ export async function getFollowingMapPlaces(supabase: SupabaseClient): Promise<M
       available: r.available,
       tier: raters[0]?.tier ?? "unrated",
       note: "",
+      noteSource: null,
       links: [],
       raters,
       myTier: r.my_tier ? tierFromDb(r.my_tier) : null,
@@ -84,6 +87,7 @@ const SOURCE_URL: Record<PlaceSourceName, (id: string) => string> = {
 type Row = {
   tier: string;
   note: string;
+  note_source: string | null;
   places: {
     id: string;
     name: string;
@@ -103,7 +107,7 @@ export async function getMyMapPlaces(supabase: SupabaseClient, userId: string): 
   const { data, error } = await fetchAll<Row>((from, to) =>
     supabase
       .from("user_places")
-      .select("tier, note, places(id, name, lat, lng, address, cuisine, food_kind, category_name, available, place_sources(source, source_place_id))")
+      .select("tier, note, note_source, places(id, name, lat, lng, address, cuisine, food_kind, category_name, available, place_sources(source, source_place_id))")
       .eq("user_id", userId)
       .order("saved_at", { ascending: false })
       .order("place_id")
@@ -132,6 +136,7 @@ function toMapPlace(row: Row, p: NonNullable<Row["places"]>): MapPlace {
     available: p.available,
     tier: tierFromDb(row.tier),
     note: row.note,
+    noteSource: row.note_source,
     links,
   };
 }
