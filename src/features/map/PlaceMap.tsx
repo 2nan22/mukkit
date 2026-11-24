@@ -33,6 +33,12 @@ type KakaoMaps = {
     fillOpacity: number;
     map?: KakaoMapInstance;
   }) => KakaoCircle;
+  // 좌표 → 행정 구역 이름 (libraries=services)
+  services?: {
+    Geocoder: new () => {
+      coord2RegionCode(lng: number, lat: number, cb: (res: { region_type: string; region_2depth_name: string; region_3depth_name: string }[], status: string) => void): void;
+    };
+  };
   MarkerClusterer?: new (opts: {
     map: KakaoMapInstance;
     averageCenter: boolean;
@@ -75,6 +81,18 @@ declare global {
 // color: 리스트로 보기 — 리스트 색 핀(등급 숫자는 그대로) · text 는 그 색 위 글자색 · null 은 어느 리스트에도 없음(흰 빈 핀)
 export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found"; color?: { bg: string; text: string } | null };
 export type MyLocation = { lat: number; lng: number; accuracy: number };
+// 이 좌표의 '구 동' (행정동) — SDK 가 아직 없거나 못 찾으면 null
+export function regionName(lat: number, lng: number): Promise<string | null> {
+  const services = window.kakao?.maps.services;
+  if (!services) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    new services.Geocoder().coord2RegionCode(lng, lat, (res, status) => {
+      const h = status === "OK" ? (res.find((r) => r.region_type === "H") ?? res[0]) : undefined;
+      resolve(h ? [h.region_2depth_name, h.region_3depth_name].filter(Boolean).join(" ") || null : null);
+    });
+  });
+}
+
 export type MapViewport = { south: number; west: number; north: number; east: number; center: { lat: number; lng: number }; height: number };
 
 const APP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
@@ -433,7 +451,7 @@ export function PlaceMap({
   return (
     <>
       <Script
-        src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${APP_KEY}&autoload=false&libraries=clusterer`}
+        src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${APP_KEY}&autoload=false&libraries=clusterer,services`}
         strategy="afterInteractive"
         onReady={() => {
           if (!window.kakao?.maps) return setFailed(true);
