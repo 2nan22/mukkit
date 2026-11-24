@@ -10,6 +10,7 @@ import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { notifyVisitTag } from "@/features/visit/notify";
 import { MAX_COMPANIONS, syncMyVisit } from "@/features/visit/visit";
 import {
+  RATING_VISIBILITIES,
   countUnrated,
   nextUnrated,
   RatingSchema,
@@ -23,6 +24,7 @@ export type RatingFormState = { error?: string; saved?: boolean };
 
 const SAVE_FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
 const VISITED_TIERS: Tier[] = ["three", "two", "one", "notRecommended"];
+const RATED_DB_TIERS = ["three", "two", "one", "not_recommended"];
 
 const CompanionsField = z.object({
   userIds: z.array(z.uuid()).max(MAX_COMPANIONS),
@@ -140,4 +142,21 @@ export async function clearRating(placeId: string): Promise<{ error?: string }> 
   }
   revalidatePath("/", "layout");
   return {};
+}
+
+// 내 평가 공개 범위 한 번에 바꾸기 (68) — 다녀온 등급(3 · 2 · 1숟가락 · 추천 안 함)만. 메모는 언제나 나만
+export async function setAllRatingVisibility(visibility: string): Promise<{ error?: string; changed?: number }> {
+  const parsed = z.enum(RATING_VISIBILITIES).safeParse(visibility);
+  if (!parsed.success) return { error: SAVE_FAILED };
+  const { supabase, userId } = await requireUser();
+  const { data, error } = await supabase
+    .from("user_places")
+    .update({ visibility: parsed.data, updated_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .in("tier", RATED_DB_TIERS)
+    .neq("visibility", parsed.data)
+    .select("place_id");
+  if (error) return { error: SAVE_FAILED };
+  revalidatePath("/", "layout");
+  return { changed: data.length };
 }

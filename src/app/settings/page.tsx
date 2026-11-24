@@ -18,6 +18,9 @@ export default function SettingsPage() {
       <Group title="계정">
         <Row href="/settings/accounts" label="로그인 연결" />
       </Group>
+      <Group title="평가">
+        <Row href="/settings/visibility" label="평가 공개 범위" />
+      </Group>
       <Group title="알림">
         <Row href="/settings/notifications" label="알림 받기" />
       </Group>

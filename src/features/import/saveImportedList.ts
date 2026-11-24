@@ -4,6 +4,10 @@ import type { ImportedList, ImportedPlace } from "@/domain/importedPlace";
 import { isSamePlace } from "@/domain/samePlace";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { ImportMode } from "./importMode";
+import type { RatingVisibility } from "@/features/rating/rating";
+
+const RATED_DB: string[] = ["three", "two", "one", "not_recommended"];
+
 
 const NOTE_MAX = 300;
 const LIST_NAME_MAX = 40;
@@ -33,11 +37,13 @@ export async function saveImportedList(
   userId: string,
   list: ImportedList,
   mode: ImportMode,
+  // 등급 리스트로 가져온 등급의 공개 범위 — 가져올 때 묻는다 (68). 없으면 DB 기본(나만)
+  visibility?: RatingVisibility,
 ): Promise<ImportResult> {
   const places = dedupeBySourceId(list.places);
   const placeIds = await upsertPlaces(places);
   await saveImportedItems(supabase, userId, list, places, placeIds);
-  const alreadySaved = await saveUserPlaces(supabase, userId, places, placeIds, mode);
+  const alreadySaved = await saveUserPlaces(supabase, userId, places, placeIds, mode, visibility);
   const listId = mode.kind === "plain" ? await saveList(supabase, userId, list, [...new Set(placeIds.values())]) : null;
 
   return {
@@ -187,8 +193,11 @@ async function saveUserPlaces(
   places: ImportedPlace[],
   placeIds: Map<string, string>,
   mode: ImportMode,
+  visibility?: RatingVisibility,
 ): Promise<number> {
   const tier = mode.kind === "tier" ? mode.tier : "unrated";
+  // 공개 범위는 다녀온 등급(3 · 2 · 1숟가락 · 추천 안 함)일 때만 뜻이 있다
+  const vis = visibility && mode.kind === "tier" && RATED_DB.includes(mode.tier) ? { visibility } : {};
   let alreadySaved = 0;
 
   for (const part of chunks(places)) {
@@ -206,6 +215,7 @@ async function saveUserPlaces(
         tier,
         note: p.memo.slice(0, NOTE_MAX),
         saved_at: p.savedAt.toISOString(),
+        ...vis,
       }));
     if (rows.length > 0) {
       const insert = await supabase
@@ -214,7 +224,7 @@ async function saveUserPlaces(
       if (insert.error) throw new ImportSaveError("user_places", insert.error.code);
     }
 
-    if (saved.size > 0) await applyToSavedPlaces(supabase, userId, part, placeIds, saved, mode);
+    if (saved.size > 0) await applyToSavedPlaces(supabase, userId, part, placeIds, saved, mode, false, vis.visibility);
   }
   return alreadySaved;
 }
@@ -230,13 +240,15 @@ export async function applyToSavedPlaces(
   mode: ImportMode,
   // 새로 고침에서 원본에 그대로 있는 곳은 빈 메모만 — 바뀐 원본 메모는 새로 고침의 메모 단계가 맡는다
   emptyOnly = false,
+  // 평가 전 · 가고 싶은 곳이 이 등급이 될 때 함께 정할 공개 범위 (68)
+  visibility?: RatingVisibility,
 ): Promise<void> {
   if (saved.size === 0) return;
   if (mode.kind === "tier") {
     for (const part of chunks([...saved])) {
       const update = await supabase
         .from("user_places")
-        .update({ tier: mode.tier, updated_at: new Date().toISOString() })
+        .update({ tier: mode.tier, updated_at: new Date().toISOString(), ...(visibility ? { visibility } : {}) })
         .eq("user_id", userId)
         .in("tier", ["unrated", "want_to_go"])
         .neq("tier", mode.tier)
