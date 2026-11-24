@@ -8,7 +8,8 @@ export function Memo({ text, source, caption, tone = "surface", clamp }: { text:
   const mark = source === "naver" || source === "kakao" || source === "google" ? source : null;
   return (
     <div className={`flex gap-2.5 rounded-btn-s px-3 py-2.5 ${tone === "white" ? "bg-white" : "bg-surface"}`}>
-      <span className="mt-px flex shrink-0">{mark ? <SourceMark source={mark} size={16} /> : <MemoIcon />}</span>
+      {/* 아이콘을 첫 줄 높이(1lh)에 맞춰 가운데 — 글 첫 줄과 나란히 */}
+      <span className="flex h-[1lh] shrink-0 items-center text-meta leading-normal">{mark ? <SourceMark source={mark} size={16} /> : <MemoIcon />}</span>
       <span className="sr-only">{mark ? SOURCE_NAME[mark] : "메모"}</span>
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className={`text-meta leading-normal whitespace-pre-line text-ink-2 ${clamp ? "line-clamp-3" : ""}`}>{text}</p>
