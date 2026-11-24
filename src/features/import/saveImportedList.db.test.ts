@@ -118,11 +118,11 @@ describe.skipIf(!hasLocalDb)("가져오기 저장 (로컬 DB)", () => {
     expect(by.get(`test-${run}-20`)).toEqual(["three", "followers"]);
     expect(by.get(`test-${run}-21`)).toEqual(["three", "followers"]);
     expect(by.get(`test-${run}-22`)).toEqual(["want_to_go", "private"]);
-    // 등급 리스트의 메모는 한 줄 평가로도 (68-2) · 가고 싶은 곳은 아님
-    const reviews = await supabase.from("user_places").select("review, places(source_place_id)").eq("user_id", userId);
-    const rv = new Map((reviews.data ?? []).map((r) => [(r.places as unknown as { source_place_id: string }).source_place_id, r.review]));
-    expect(rv.get(`test-${run}-20`)).toBe("한마디 20");
-    expect(rv.get(`test-${run}-21`)).toBe("한마디 21");
-    expect(rv.get(`test-${run}-22`)).toBe("");
+    // 고르면 등급 리스트의 메모를 공개 (68-4) · 한 줄 평가는 그대로 · 가고 싶은 곳은 아님
+    const notes = await supabase.from("user_places").select("review, note_public, places(source_place_id)").eq("user_id", userId);
+    const np = new Map((notes.data ?? []).map((r) => [(r.places as unknown as { source_place_id: string }).source_place_id, [r.note_public, r.review]]));
+    expect(np.get(`test-${run}-20`)).toEqual([true, ""]);
+    expect(np.get(`test-${run}-21`)).toEqual([true, ""]);
+    expect(np.get(`test-${run}-22`)).toEqual([false, ""]);
   }, 20_000);
 });

@@ -5,7 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { RATED_DB_TIERS, type RatingVisibility } from "@/features/rating/rating";
 import { VisibilityAll } from "@/features/rating/VisibilityAll";
-import { MemoToReview } from "@/features/rating/MemoToReview";
+import { PublishMemos } from "@/features/rating/PublishMemos";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "평가 공개 범위" };
@@ -34,12 +34,12 @@ async function Counts() {
     count("private"),
     count("followers"),
     count("public"),
-    supabase.rpc("count_notes_to_review", { p_user: me }).then((r) => (r.data as number | null) ?? 0),
+    supabase.rpc("count_unpublished_imported_notes", { p_user: me }).then((r) => (r.data as number | null) ?? 0),
   ]);
   return (
     <>
       <VisibilityAll counts={{ private: priv, followers, public: pub }} />
-      <MemoToReview count={memos} />
+      <PublishMemos count={memos} />
     </>
   );
 }

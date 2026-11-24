@@ -70,6 +70,11 @@ export function RatingCard({
         </span>
       </div>
       {rating.review && <p className="text-body leading-normal text-ink-2">{rating.review}</p>}
+      {rating.note && (
+        <p className="text-meta leading-normal text-muted">
+          <span className="font-semibold">메모</span> · {rating.note}
+        </p>
+      )}
       <AteMenus menus={rating.menus} />
       <Companions people={rating.companions} />
       {reaction && <ReactionBar ownerId={rating.ownerId} placeId={rating.placeId} reaction={reaction} mine={viewerId === rating.ownerId} showComments={showComments} />}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reducedMemo } from "./refreshImport";
+import { reducedMemo } from "./saveImportedList";
 
 describe("reducedMemo (68-3)", () => {
   it("지우거나 비우면 줄어든 것", () => {
