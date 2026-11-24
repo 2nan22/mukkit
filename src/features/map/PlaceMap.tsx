@@ -81,6 +81,11 @@ declare global {
 // color: 리스트로 보기 — 리스트 색 핀(등급 숫자는 그대로) · text 는 그 색 위 글자색 · null 은 어느 리스트에도 없음(흰 빈 핀)
 export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found"; color?: { bg: string; text: string } | null };
 export type MyLocation = { lat: number; lng: number; accuracy: number };
+// 배열의 칸이 모두 같은 값(같은 참조)인지
+function same(a: unknown[] | undefined, b: unknown[]): boolean {
+  return Boolean(a) && a!.length === b.length && a!.every((v, i) => v === b[i]);
+}
+
 // 이 좌표의 '구 동' (행정동) — SDK 가 아직 없거나 못 찾으면 null
 export function regionName(lat: number, lng: number): Promise<string | null> {
   const services = window.kakao?.maps.services;
@@ -241,6 +246,9 @@ export function PlaceMap({
   const clusterer = useRef<KakaoClusterer | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  // 마지막으로 지도에 반영한 값 — 다른 화면에 갔다 뒤로 돌아오면(화면이 숨었다 다시 보임) 효과가 다시 돌아도
+  // 같은 값이면 지도를 옮기거나 핀을 다시 만들지 않는다 → 떠날 때의 위치 · 확대 그대로 (65)
+  const applied = useRef<{ pins?: Pin[]; cluster?: boolean; fit?: unknown[]; focus?: unknown; pick?: unknown[] }>({});
   // 첫 타일이 다 깔렸는지 — 그 전엔 빈 땅색 위에 로딩 (65)
   const [drawn, setDrawn] = useState(false);
   const onSelectRef = useRef(onSelect);
@@ -273,6 +281,9 @@ export function PlaceMap({
       });
     }
     const m = map.current;
+    if (applied.current.pins === pins && applied.current.cluster === cluster) return;
+    applied.current.pins = pins;
+    applied.current.cluster = cluster;
     clusterer.current?.clear();
     overlays.current.forEach(({ overlay }) => overlay.setMap(null));
     const useCluster = cluster && Boolean(maps.MarkerClusterer);
@@ -350,6 +361,8 @@ export function PlaceMap({
     const maps = window.kakao?.maps;
     const pin = pins.find((p) => p.id === selectedId);
     if (!ready || !maps || !map.current || !pin) return;
+    if (same(applied.current.pick, [pin, selectedId])) return;
+    applied.current.pick = [pin, selectedId];
     if (map.current.getLevel() > NEIGHBORHOOD_LEVEL) map.current.setLevel(NEIGHBORHOOD_LEVEL);
     panToVisible(pin.lat, pin.lng);
   }, [ready, pins, selectedId, panToVisible]);
@@ -368,6 +381,9 @@ export function PlaceMap({
     const maps = window.kakao?.maps;
     if (!ready || !maps || !map.current || pins.length === 0) return;
     const m = map.current;
+    const key = [pins, top, right, bottom, left, refit];
+    if (same(applied.current.fit, key)) return;
+    applied.current.fit = key;
     requestAnimationFrame(() => {
       m.relayout();
       if (refit === "hidden" && fitted.current) {
@@ -395,6 +411,8 @@ export function PlaceMap({
   useEffect(() => {
     const maps = window.kakao?.maps;
     if (!ready || !maps || !map.current || !focus) return;
+    if (applied.current.focus === focus) return;
+    applied.current.focus = focus;
     const m = map.current;
     requestAnimationFrame(() => {
       fitted.current = true;

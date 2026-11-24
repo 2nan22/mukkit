@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type PointerEvent } from "react";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { honor } from "@/domain/honor";
@@ -696,11 +696,9 @@ const PULL = 56;
 function PullCard({ placeId, onClose, children }: { placeId: string; onClose: () => void; children: React.ReactNode }) {
   const router = useRouter();
   const card = useRef<HTMLDivElement>(null);
-  const [opening, setOpening] = useState(false);
-  const open = useCallback(() => {
-    setOpening(true);
-    router.push(`/p/${placeId}`);
-  }, [router, placeId]);
+  // 이동이 끝나면 저절로 꺼진다 — 뒤로 돌아와 화면 상태가 그대로 살아나도 로딩이 남지 않게
+  const [opening, startOpening] = useTransition();
+  const open = useCallback(() => startOpening(() => router.push(`/p/${placeId}`)), [router, placeId]);
 
   function onDown(e: PointerEvent<HTMLDivElement>) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
