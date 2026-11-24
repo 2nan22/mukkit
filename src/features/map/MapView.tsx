@@ -539,7 +539,7 @@ export function MapView({
             role="dialog"
             aria-label="음식 종류"
             onClick={(e) => e.stopPropagation()}
-            className="flex w-full max-w-[480px] flex-col gap-4 rounded-t-[20px] bg-white px-5 pt-3 pb-6"
+            className="flex w-full max-w-[480px] flex-col gap-4 rounded-t-[20px] bg-white px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
           >
             <span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-line-strong" />
             <div className="flex items-center justify-between">

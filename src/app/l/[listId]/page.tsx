@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: PageProps<"/l/[listId]">): Pr
 
 export default function PublicListPage({ params }: PageProps<"/l/[listId]">) {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col pb-28">
+    <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <Suspense fallback={<PageLoader />}>
         <PublicListLoader params={params} />
       </Suspense>
@@ -89,7 +89,7 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
         save={saveable && meta ? { saved: meta.saved, savedPlaceIds, seenAt } : null}
       />
       {!signedIn && (
-        <div className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-[480px] bg-white px-5 pt-3 pb-5 shadow-sheet">
+        <div className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-[480px] bg-white px-5 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-sheet">
           <Link href={`/?next=${encodeURIComponent(`/l/${listId}`)}`} className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
             먹킷에서 내 리스트 만들기
           </Link>

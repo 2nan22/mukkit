@@ -24,7 +24,7 @@ export function PlaceBottomBar({ placeId, saved, rated, lists, inLists }: Props)
   }
 
   return (
-    <div className="sticky bottom-0 flex flex-col gap-2 border-t border-line bg-white px-5 pt-3 pb-5">
+    <div className="sticky bottom-0 flex flex-col gap-2 border-t border-line bg-white px-5 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
       {message && (
         <p role="status" className="text-center text-meta text-ink-2">
           {message}

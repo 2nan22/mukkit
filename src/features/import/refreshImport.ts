@@ -26,8 +26,13 @@ export function hashList(list: ImportedList): string {
   return createHash("sha256").update(JSON.stringify([list.name, list.memo, places])).digest("hex");
 }
 
+// 원본 메모가 줄었는지 — 새 메모가 옛 메모 안에 들어 있으면(지우거나 비움) 공개해도 새 정보가 아니다 (68-3)
+export function reducedMemo(oldMemo: string, newMemo: string): boolean {
+  return oldMemo.trim().includes(newMemo.trim());
+}
+
 // 가져올 때 · 새로 고칠 때 기록 남기기
-export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode, visibility?: RatingVisibility): Promise<void> {
+export async function recordImportSource(client: SupabaseClient, userId: string, list: ImportedList, mode: ImportMode, visibility?: RatingVisibility, memoToReview?: boolean): Promise<void> {
   await client.from("import_sources").upsert(
     {
       user_id: userId,
@@ -42,6 +47,7 @@ export async function recordImportSource(client: SupabaseClient, userId: string,
       fail_count: 0,
       // 고르지 않았으면(새로 고침 등) 그 전 값을 그대로 둔다
       ...(visibility ? { visibility } : {}),
+      ...(memoToReview !== undefined ? { memo_to_review: memoToReview } : {}),
     },
     { onConflict: "user_id,source,source_list_id" },
   );
@@ -110,6 +116,8 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
 
   // 원본 메모가 바뀌었고 내 메모가 예전 원본 그대로면 새 메모로 · 원본 기록의 메모도 갱신
   let memos = 0;
+  const flags = await client.from("import_sources").select("memo_to_review").match(where).maybeSingle();
+  const memoToReview = flags.data?.memo_to_review === true;
   for (const old of oldItems) {
     const now = fresh.get(old.source_place_id);
     if (!now || now.memo === old.memo) continue;
@@ -122,7 +130,8 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
       .select("place_id");
     memos += res.data?.length ?? 0;
     // 옛 메모를 옮긴 한 줄 평가가 손대지 않은 채면 새 메모로 — 원본에서 지운 개인정보가 피드에 남지 않게 (68-2)
-    if (old.memo.trim()) {
+    // 단 '메모도 한 줄 평가로'를 켠 원본이거나 원본에서 내용을 줄였을 때만 — 별명 추가처럼 새 정보가 묻지 않고 공개되지 않게 (68-3)
+    if (old.memo.trim() && (memoToReview || reducedMemo(old.memo, now.memo))) {
       await client
         .from("user_places")
         .update({ review: now.memo.trim().slice(0, REVIEW_MAX) })
@@ -136,8 +145,11 @@ export async function refreshImport(client: SupabaseClient, userId: string, key:
   // 새 곳만 가져오기 규칙으로
   const added = list.places.filter((p) => !known.has(p.sourcePlaceId));
   // 새로 들어온 곳도 가져올 때 고른 공개 범위로 (68)
-  const vis = added.length > 0 && key.mode.kind === "tier" ? await client.from("import_sources").select("visibility").match(where).maybeSingle() : null;
-  const saved = added.length > 0 ? await saveImportedList(client, userId, { ...list, places: added }, key.mode, (vis?.data?.visibility as RatingVisibility | null) ?? undefined) : null;
+  const vis = added.length > 0 && key.mode.kind === "tier" ? await client.from("import_sources").select("visibility, memo_to_review").match(where).maybeSingle() : null;
+  const saved =
+    added.length > 0
+      ? await saveImportedList(client, userId, { ...list, places: added }, key.mode, (vis?.data?.visibility as RatingVisibility | null) ?? undefined, vis?.data?.memo_to_review === true)
+      : null;
 
   // 빠진 곳 — 원본 기록 · 먹킷 리스트에서만
   if (gone.length > 0) {

@@ -209,7 +209,7 @@ export function RatingForm({ place, next, userId, visits, menuOptions }: { place
           </div>
 
           <div className="flex-1" />
-          <div className="sticky bottom-0 mt-6 flex flex-col gap-1 border-t border-line bg-white px-5 pt-2 pb-5">
+          <div className="sticky bottom-0 mt-6 flex flex-col gap-1 border-t border-line bg-white px-5 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
             {state.error && (
               <p role="alert" className="text-meta text-danger">
                 {state.error}

@@ -138,8 +138,8 @@ describe.skipIf(!hasLocalDb)("가져온 리스트 새로 고침 (로컬 DB)", ()
     const { supabase, userId } = await signUp();
     const mode = { kind: "tier" as const, tier: "two" as const };
     const two = { source: "naver" as const, sourceListId: `memo-${run}`, name: "2스타", memo: "", places: [place(41, { memo: "010-1234 사장님 번호" }), place(42, { memo: "옛 메모" })], expectedCount: 2, skipped: [] };
-    await saveImportedList(supabase, userId, two, mode, "followers");
-    await recordImportSource(supabase, userId, two, mode, "followers");
+    await saveImportedList(supabase, userId, two, mode, "followers", true);
+    await recordImportSource(supabase, userId, two, mode, "followers", true);
     const before = await supabase.from("user_places").select("review").eq("user_id", userId).order("review");
     expect(before.data?.map((r) => r.review)).toEqual(["010-1234 사장님 번호", "옛 메모"]);
     // 42 는 한 줄 평가를 직접 고침
@@ -153,5 +153,18 @@ describe.skipIf(!hasLocalDb)("가져온 리스트 새로 고침 (로컬 DB)", ()
     const rv = new Map((after.data ?? []).map((r) => [r.place_id as string, r.review]));
     expect(rv.get(idOf.get(`rf-${run}-41`)!)).toBe("맛있음");
     expect(rv.get(idOf.get(`rf-${run}-42`)!)).toBe("직접 쓴 평가");
+  });
+
+  it("별명 추가처럼 새 내용은 켜지 않은 한 줄 평가로 공개하지 않음 · 메모는 새로 (68-3)", async () => {
+    const { supabase, userId } = await signUp();
+    const mode = { kind: "tier" as const, tier: "one" as const };
+    const one = { source: "naver" as const, sourceListId: `alias-${run}`, name: "1스타", memo: "", places: [place(51, { memo: "맛있음" })], expectedCount: 1, skipped: [] };
+    await saveImportedList(supabase, userId, one, mode, "public", true);
+    await recordImportSource(supabase, userId, one, mode, "public", false);
+    await supabase.from("import_sources").update({ last_synced_at: new Date(0).toISOString() }).eq("user_id", userId);
+    const changed = { ...one, places: [place(51, { memo: "엄마 회사 앞 · 맛있음" })] };
+    await refreshImport(supabase, userId, { source: "naver", sourceListId: one.sourceListId, mode }, { placeSource: sourceOf(changed) });
+    const row = await supabase.from("user_places").select("note, review").eq("user_id", userId).single();
+    expect(row.data).toEqual({ note: "엄마 회사 앞 · 맛있음", review: "맛있음" });
   });
 });
