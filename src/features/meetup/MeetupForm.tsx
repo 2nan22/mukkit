@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { PURPOSE_LABEL, PURPOSES, type Purpose } from "@/domain/meetup";
 import { createMeetup } from "./actions";
 import { DateCalendar, offsetToDate } from "./DateCalendar";
+import { PurposeIcon } from "./PurposeIcon";
 
 const DAY_NAMES = ["오늘", "내일", "모레"];
 const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
@@ -40,6 +41,26 @@ export function endFor(startAt: number, end: number, touched: boolean, last: num
   return Math.min(Math.max(end, startAt + DEFAULT_LENGTH), last);
 }
 
+// 시간대 — 막차 계산에는 대략의 시간이면 충분해 시간대부터 고르고, 정확한 시각은 '시각 바꾸기' (67, 에어비앤비 · 캐치테이블)
+export const BANDS = [
+  { key: "lunch", label: "점심", start: 12 * 60, end: 13 * 60 + 30 },
+  { key: "dinner", label: "저녁", start: 19 * 60, end: 21 * 60 + 30 },
+  { key: "late", label: "늦은 밤", start: 21 * 60 + 30, end: 24 * 60 },
+] as const;
+type Band = (typeof BANDS)[number];
+
+// 이 날 이 시간대를 아직 고를 수 있나 — 오늘은 시작이 지나지 않은 것만
+export function bandOpen(day: number, band: Band, now: number): boolean {
+  return day > 0 || band.start > now;
+}
+
+// 처음 골라 둘 날 · 시간대 — 오늘 저녁이 남았으면 오늘 저녁, 아니면 내일 저녁 (캐치테이블 '흔한 저녁' 기본값)
+export function defaultWhen(now: number): { day: number; start: number; end: number } {
+  const dinner = BANDS[1];
+  const day = bandOpen(0, dinner, now) ? 0 : 1;
+  return { day, start: dinner.start, end: dinner.end };
+}
+
 // 한국 시간 기준 날짜 + 분 → ISO (분이 24시를 넘으면 다음 날 새벽)
 function toIso(dayOffset: number, minutes: number): string {
   const now = new Date(Date.now() + 9 * 3600_000);
@@ -47,20 +68,59 @@ function toIso(dayOffset: number, minutes: number): string {
   return new Date(base + minutes * 60_000).toISOString();
 }
 
+type Step = "what" | "when" | "confirm";
+
+// 새 약속 (67) — 한 화면에서 질문이 차례로: 답하면 위로 한 줄 요약으로 접히고 다음 질문이 올라온다 (토스 송금처럼)
 export function MeetupForm() {
+  const [now] = useState(nowMinutesKst);
+  const init = defaultWhen(now);
+  const [step, setStep] = useState<Step>("what");
   const [purpose, setPurpose] = useState<Purpose>("meal");
-  const [day, setDay] = useState(0);
+  const [day, setDay] = useState(init.day);
   const [calendar, setCalendar] = useState(false);
-  const [start, setStart] = useState(19 * 60);
-  const [end, setEnd] = useState(21 * 60 + 30);
-  const [endTouched, setEndTouched] = useState(false);
+  const [start, setStart] = useState(init.start);
+  const [end, setEnd] = useState(init.end);
+  const [exact, setExact] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const heading = useRef<HTMLHeadingElement>(null);
+  const advance = useRef<number>(0);
+
+  // 새 질문이 올라오면 그 제목으로 포커스 — 화면 읽기 · 키보드도 다음 질문으로
+  useEffect(() => {
+    heading.current?.focus({ preventScroll: true });
+    heading.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [step]);
+  useEffect(() => () => window.clearTimeout(advance.current), []);
+
+  const todayOpen = BANDS.some((b) => bandOpen(0, b, now));
   // 오늘이면 이미 지난 시각은 빼고 고른다
-  const startOptions = TIMES.slice(0, -2).filter((t) => day > 0 || t > nowMinutesKst());
-  // 고른 시각이 목록에 없으면(오늘 이미 지남) 첫 시각으로 — 화면과 값이 어긋나지 않게
+  const startOptions = TIMES.slice(0, -2).filter((t) => day > 0 || t > now);
   const startAt = startOptions.includes(start) ? start : (startOptions[0] ?? start);
-  const endAt = endFor(startAt, end, endTouched, TIMES.at(-1)!);
+  const endAt = endFor(startAt, end, true, TIMES.at(-1)!);
+  const band = BANDS.find((b) => b.start === startAt && b.end === endAt) ?? null;
+
+  function pickPurpose(p: Purpose) {
+    setPurpose(p);
+    // 고른 칸이 잠깐 보인 뒤 다음 질문으로
+    window.clearTimeout(advance.current);
+    advance.current = window.setTimeout(() => setStep("when"), 250);
+  }
+  function pickDay(d: number) {
+    setDay(d);
+    setCalendar(false);
+    // 오늘로 바꿨는데 고른 시간대가 지났으면 남은 첫 시간대로
+    const open = BANDS.filter((b) => bandOpen(d, b, now));
+    if (d === 0 && !exact && band && !bandOpen(0, band, now) && open[0]) {
+      setStart(open[0].start);
+      setEnd(open[0].end);
+    }
+  }
+  function pickBand(b: Band) {
+    setStart(b.start);
+    setEnd(b.end);
+    setExact(false);
+  }
 
   function submit() {
     if (endAt <= startAt) return setError("헤어지는 시간을 만나는 시간보다 늦게 골라 주세요");
@@ -70,87 +130,108 @@ export function MeetupForm() {
     });
   }
 
-  const chip = (on: boolean) => `h-9 rounded-full px-3.5 text-meta font-medium ${on ? "bg-ink text-white" : "bg-surface text-ink-2"}`;
+  const cell = (on: boolean) =>
+    `flex flex-col items-center justify-center rounded-[12px] text-body font-bold leading-tight disabled:opacity-40 ${on ? "bg-ink text-white" : "bg-surface text-ink"}`;
   const select = "h-12 w-full rounded-[12px] border border-transparent bg-surface px-3 text-body outline-none focus:border-ink";
 
   return (
-    <div className="flex flex-1 flex-col gap-7 px-5 pb-5">
-      <section className="flex flex-col gap-2">
-        <h2 className="text-body font-semibold">어떤 약속인가요</h2>
-        <div className="flex flex-wrap gap-1.5">
-          {PURPOSES.map((p) => (
-            <button key={p} type="button" aria-pressed={purpose === p} onClick={() => setPurpose(p)} className={chip(purpose === p)}>
-              {PURPOSE_LABEL[p]}
-            </button>
-          ))}
-        </div>
-      </section>
+    <div className="flex flex-1 flex-col gap-4 px-5 pb-5">
+      {step !== "what" && <Answered label="약속" value={PURPOSE_LABEL[purpose]} onChange={() => setStep("what")} />}
+      {step === "confirm" && <Answered label="언제" value={`${dayLabel(day)} ${band && !exact ? band.label : timeLabel(startAt)}`} onChange={() => setStep("when")} />}
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-body font-semibold">언제 만나나요</h2>
-        <div className="flex flex-wrap gap-1.5">
-          {[0, 1, 2].map((d) => (
-            <button key={d} type="button" aria-pressed={!calendar && day === d} onClick={() => { setDay(d); setCalendar(false); }} className={chip(!calendar && day === d)}>
-              {dayLabel(d)}
+      {step === "what" && (
+        <section key="what" className="meet-rise flex flex-col gap-4 pt-2">
+          <h2 ref={heading} tabIndex={-1} className="text-[22px] font-bold tracking-tight outline-none">
+            어떤 약속이에요?
+          </h2>
+          <div className="grid grid-cols-5 gap-1.5">
+            {PURPOSES.map((p) => (
+              <button key={p} type="button" aria-pressed={purpose === p} onClick={() => pickPurpose(p)} className={`h-[76px] gap-1.5 px-0.5 text-meta ${cell(purpose === p)}`}>
+                <PurposeIcon purpose={p} />
+                <span className="font-medium">{PURPOSE_SHORT[p]}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {step === "when" && (
+        <section key="when" className="meet-rise flex flex-col gap-3 pt-2">
+          <h2 ref={heading} tabIndex={-1} className="text-[22px] font-bold tracking-tight outline-none">
+            언제 만나요?
+          </h2>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[0, 1, 2].map((d) => (
+              <button key={d} type="button" disabled={d === 0 && !todayOpen} aria-pressed={!calendar && day === d} onClick={() => pickDay(d)} className={`h-[56px] ${cell(!calendar && day === d)}`}>
+                {DAY_NAMES[d]}
+                <span className={`text-caption font-normal ${!calendar && day === d ? "text-white/75" : "text-muted"}`}>{d === 0 && !todayOpen ? "지난 시간" : dayLabel(d).replace(/^\S+ /, "").replace("일(", " ").replace(")", "")}</span>
+              </button>
+            ))}
+            <button type="button" aria-pressed={calendar || day > 2} aria-expanded={calendar} onClick={() => setCalendar((v) => !v)} className={`h-[56px] ${cell(calendar || day > 2)}`}>
+              {day > 2 ? `${offsetToDate(day).getUTCMonth() + 1}/${offsetToDate(day).getUTCDate()}` : "다른 날"}
+              <span className={`text-caption font-normal ${calendar || day > 2 ? "text-white/75" : "text-muted"}`}>달력</span>
             </button>
-          ))}
-          <button type="button" aria-pressed={calendar || day > 2} aria-expanded={calendar} onClick={() => setCalendar((v) => !v)} className={`flex items-center gap-1 ${chip(calendar || day > 2)}`}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="16" rx="2" />
-              <path d="M3 10h18M8 3v4M16 3v4" />
-            </svg>
-            {day > 2 ? dayLabel(day) : "다른 날"}
-          </button>
-        </div>
-        {calendar && (
-          <DateCalendar
-            value={day}
-            onChange={(d) => {
-              setDay(d);
-              setCalendar(false);
-            }}
-          />
-        )}
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <label className="flex flex-col gap-1">
-            <span className="text-meta text-muted">만나는 시간</span>
-            <select
-              value={startAt}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                setStart(v);
-                // 헤어지는 시간이 앞서게 되면 2시간 반 뒤로 맞춘다
-                if (endAt <= v) setEnd(Math.min(v + 150, TIMES.at(-1)!));
-              }}
-              className={select}
-            >
-              {startOptions.map((t) => (
-                <option key={t} value={t}>
-                  {timeLabel(t)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-meta text-muted">헤어지는 시간</span>
-            <select
-              value={endAt}
-              onChange={(e) => {
-                setEnd(Number(e.target.value));
-                setEndTouched(true);
-              }}
-              className={select}
-            >
-              {TIMES.filter((t) => t > startAt).map((t) => (
-                <option key={t} value={t}>
-                  {timeLabel(t)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <p className="text-meta text-muted">정확하지 않아도 돼요. 헤어지는 시간에 맞춰 막차 걱정 없는 지역을 먼저 추천해요.</p>
-      </section>
+          </div>
+          {calendar && <DateCalendar value={day} onChange={pickDay} />}
+          <div className="grid grid-cols-3 gap-1.5">
+            {BANDS.map((b) => (
+              <button key={b.key} type="button" disabled={!bandOpen(day, b, now)} aria-pressed={!exact && band?.key === b.key} onClick={() => pickBand(b)} className={`h-11 text-body ${cell(!exact && band?.key === b.key)}`}>
+                {b.label}
+              </button>
+            ))}
+          </div>
+          {exact ? (
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1">
+                <span className="text-meta text-muted">만나는 시간</span>
+                <select
+                  value={startAt}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setStart(v);
+                    // 헤어지는 시간이 앞서게 되면 2시간 반 뒤로 맞춘다
+                    if (endAt <= v) setEnd(Math.min(v + DEFAULT_LENGTH, TIMES.at(-1)!));
+                  }}
+                  className={select}
+                >
+                  {startOptions.map((t) => (
+                    <option key={t} value={t}>
+                      {timeLabel(t)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-meta text-muted">헤어지는 시간</span>
+                <select value={endAt} onChange={(e) => setEnd(Number(e.target.value))} className={select}>
+                  {TIMES.filter((t) => t > startAt).map((t) => (
+                    <option key={t} value={t}>
+                      {timeLabel(t)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setExact(true)} className="flex h-12 items-center justify-between rounded-[12px] bg-surface px-4 text-body">
+              <span>
+                {timeLabel(startAt)} ~ {timeLabel(endAt)}
+              </span>
+              <span className="text-meta font-semibold text-ink-2 underline underline-offset-[3px]">시각 바꾸기</span>
+            </button>
+          )}
+          <p className="text-meta text-muted">헤어지는 시간에 맞춰 막차 걱정 없는 지역을 먼저 골라요</p>
+        </section>
+      )}
+
+      {step === "confirm" && (
+        <section key="confirm" className="meet-rise flex flex-col gap-2 pt-4">
+          <h2 ref={heading} tabIndex={-1} className="text-[22px] font-bold tracking-tight outline-none">
+            이대로 만들까요?
+          </h2>
+          <p className="text-meta leading-normal text-pretty text-muted">만든 뒤 친구를 초대하고, 각자 출발지를 넣으면 지역을 골라 드려요</p>
+        </section>
+      )}
 
       <div className="flex-1" />
       {/* 버튼은 화면 아래에 붙여 둠 — 홈 화면 앱에서 화면 높이가 실제보다 크게 잡혀도 가려지지 않게 (55) */}
@@ -160,10 +241,35 @@ export function MeetupForm() {
             {error}
           </p>
         )}
-        <button type="button" onClick={submit} disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
-          {pending ? "만드는 중" : "약속 만들기"}
-        </button>
+        {step === "confirm" ? (
+          <button type="button" onClick={submit} disabled={pending} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand">
+            {pending ? "만드는 중" : "약속 만들기"}
+          </button>
+        ) : (
+          <button type="button" onClick={() => setStep(step === "what" ? "when" : "confirm")} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+            다음
+          </button>
+        )}
       </div>
+      <span className="sr-only" aria-live="polite">
+        {step === "confirm" ? `${PURPOSE_LABEL[purpose]} · ${dayLabel(day)} ${timeLabel(startAt)}` : ""}
+      </span>
     </div>
+  );
+}
+
+// 칸에 들어가는 짧은 이름 — '회식 · 모임'은 줄이 꺾여 '모임'으로 (67)
+const PURPOSE_SHORT: Record<Purpose, string> = { meal: "식사", team: "모임", date: "데이트", drinks: "술 한잔", cafe: "카페" };
+
+// 답한 질문 — 한 줄 요약 · 바꾸기
+function Answered({ label, value, onChange }: { label: string; value: string; onChange: () => void }) {
+  return (
+    <button type="button" onClick={onChange} className="flex min-h-12 items-center justify-between gap-3 rounded-[12px] bg-surface px-4 text-left">
+      <span className="min-w-0 truncate text-body">
+        <span className="text-muted">{label} · </span>
+        <b>{value}</b>
+      </span>
+      <span className="shrink-0 text-meta font-semibold text-ink-2 underline underline-offset-[3px]">바꾸기</span>
+    </button>
   );
 }
