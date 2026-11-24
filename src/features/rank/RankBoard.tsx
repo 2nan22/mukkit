@@ -9,8 +9,9 @@ import { loadRanking, placeInThree, saveThreeOrder } from "./actions";
 import { RankedList } from "./RankedList";
 import { CompareSheet } from "./CompareSheet";
 import type { RankPlace } from "./rank";
+import { MetaLine } from "@/components/ui/MetaLine";
 
-const meta = (p: RankPlace) => [CUISINE_LABEL[p.cuisine], regionOf(p.address)].filter(Boolean).join(" · ");
+const meta = (p: RankPlace) => [CUISINE_LABEL[p.cuisine], regionOf(p.address)];
 
 // 내 3숟가락 순위 — 정한 곳은 순서대로, 안 정한 곳은 비교해서 넣기 · 정한 곳도 다시 비교 가능
 export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: { ranked: RankPlace[]; unranked: RankPlace[] }) {
@@ -136,7 +137,7 @@ export function RankBoard({ ranked: initialRanked, unranked: initialUnranked }: 
               <li key={p.placeId} className="flex min-h-16 items-center gap-3 border-b border-line">
                 <Link href={`/p/${p.placeId}`} className="flex min-w-0 flex-1 flex-col gap-0.5 py-2">
                   <span className="truncate text-body font-semibold">{p.name}</span>
-                  <span className="truncate text-meta text-muted">{meta(p)}</span>
+                  <MetaLine items={meta(p)} />
                 </Link>
                 <button type="button" disabled={pending} onClick={() => begin(p)} aria-label={`${p.name} 순위 정하기`} className="h-11 min-w-11 shrink-0 px-2 text-meta text-ink-2">
                   정하기

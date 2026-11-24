@@ -5,6 +5,7 @@ import { CUISINE_LABEL } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
 import { placeInThree } from "./actions";
 import { compareSteps, type RankPlace } from "./rank";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 function dot(d: string | null): string | null {
   return d ? `${d.replaceAll("-", ".")} 방문` : null;
@@ -88,7 +89,7 @@ export function CompareSheet({
     >
       <span className="text-caption font-bold text-muted">{tag}</span>
       <span className="text-[17px] leading-snug font-bold">{p.name}</span>
-      <span className="text-meta text-muted">{[CUISINE_LABEL[p.cuisine], regionOf(p.address)].filter(Boolean).join(" · ")}</span>
+      <MetaLine items={[CUISINE_LABEL[p.cuisine], regionOf(p.address)]} />
       {dot(p.visitedOn) && <span className="mt-auto text-meta text-muted">{dot(p.visitedOn)}</span>}
     </button>
   );
@@ -109,8 +110,7 @@ export function CompareSheet({
         <span aria-hidden="true" className="mx-auto mt-2 block h-1 w-9 rounded-full bg-line-strong" />
         <div className="flex items-center justify-between pt-2 pr-2 pl-5">
           <span className="text-meta text-muted" aria-live="polite">
-            {result === null ? `최대 ${total}번 중 ${step}번` : ""}
-            {remaining > 0 ? `${result === null ? " · " : ""}남은 ${remaining}곳` : ""}
+            <MetaLine className="" items={[result === null && `최대 ${total}번 중 ${step}번`, remaining > 0 && `남은 ${remaining}곳`]} />
           </span>
           <button type="button" onClick={close} aria-label="닫기" className="flex size-11 items-center justify-center text-ink">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
@@ -145,11 +145,11 @@ export function CompareSheet({
                 <br />
                 어디가 더 좋았나요?
               </h2>
-              <p className="text-meta text-muted">{scope ? `${scope} · 순위는 나만 봐요` : "더 좋았던 곳을 눌러 주세요."}</p>
+              <p className="text-meta text-muted">{scope ? `${scope}. 순위는 나만 봐요` : "더 좋았던 곳을 눌러 주세요."}</p>
             </div>
             <div className="grid grid-cols-2 gap-2.5 px-5 pt-6">
               {card(target, label, picked === "target", () => pick("target"))}
-              {card(other, `3숟가락 · ${(other.rank ?? mid) + 1}위`, picked === "other", () => pick("other"))}
+              {card(other, `3숟가락 ${(other.rank ?? mid) + 1}위`, picked === "other", () => pick("other"))}
             </div>
             {error && (
               <p role="alert" className="px-5 pt-3 text-meta text-danger">

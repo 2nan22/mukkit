@@ -12,6 +12,7 @@ import { ListThumb } from "@/components/ui/ListThumb";
 import { countMyTiers, getImportedLists, getMyListThumbs, getMyLists, VISIBILITY_LABEL } from "@/features/lists/lists";
 import { getMySavedLists } from "@/features/share/savedLists";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 export const metadata = { title: "리스트" };
 
@@ -132,10 +133,7 @@ async function ListsContent({ searchParams }: { searchParams: PageProps<"/lists"
               )}
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate text-body font-semibold">{l.name}</span>
-                <span className="text-meta text-muted">
-                  {l.count}곳 · {VISIBILITY_LABEL[l.visibility]}
-                  {l.source && ` · ${SOURCE_LABEL[l.source]}`}
-                </span>
+                <MetaLine items={[`${l.count}곳`, VISIBILITY_LABEL[l.visibility], l.source && SOURCE_LABEL[l.source]]} />
               </span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-subtle" aria-hidden="true">
                 <path d="M9 5l7 7-7 7" />
@@ -145,13 +143,13 @@ async function ListsContent({ searchParams }: { searchParams: PageProps<"/lists"
           {/* 저장한 리스트가 있으면 빈 안내는 한 줄로 — 아래 칸을 밀어내지 않게 */}
           {lists.length === 0 && saved.length > 0 && (
             <Link href="/lists/new" className="flex h-11 items-center text-meta text-muted">
-              아직 만든 리스트가 없어요 · <span className="ml-1 font-semibold text-ink">새 리스트 만들기</span>
+              아직 만든 리스트가 없어요<span className="ml-2 font-semibold text-ink">새 리스트 만들기</span>
             </Link>
           )}
           {lists.length === 0 && saved.length === 0 && (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <span className="text-body font-semibold">아직 만든 리스트가 없어요</span>
-              <span className="text-meta text-muted">지역 · 음식 종류 · 테마로 저장한 곳을 묶어 보세요</span>
+              <span className="text-meta text-muted">지역, 음식 종류, 테마로 저장한 곳을 묶어 보세요</span>
               <div className="flex gap-2">
                 <Link href="/lists/new" className="flex h-11 items-center rounded-btn-m bg-brand-soft px-4 text-body font-bold text-brand">
                   새 리스트 만들기
@@ -172,9 +170,7 @@ async function ListsContent({ searchParams }: { searchParams: PageProps<"/lists"
               <ListThumb photos={[]} cuisines={l.cuisines} />
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate text-body font-semibold">{l.name}</span>
-                <span className="truncate text-meta text-muted">
-                  {l.ownerNickname} · {l.count}곳 · {updatedLabel(l.updatedAt)}
-                </span>
+                <MetaLine items={[l.ownerNickname, `${l.count}곳`, updatedLabel(l.updatedAt)]} />
                 {l.newCount > 0 && (
                   <span className="flex items-center gap-1 text-meta font-bold text-ink">
                     <span aria-hidden="true" className="size-1.5 rounded-full bg-brand" />

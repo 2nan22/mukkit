@@ -85,7 +85,7 @@ export function PlaceBottomBar({ placeId, saved, rated, lists, inLists }: Props)
       </div>
       {!saved && (
         <button type="button" disabled={pending} onClick={() => run(() => rateNewPlace(placeId), "")} className="h-11 text-meta font-semibold text-ink-2 disabled:opacity-60">
-          다녀왔어요 · 바로 평가하기
+          다녀왔어요, 바로 평가하기
         </button>
       )}
     </div>

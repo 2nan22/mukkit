@@ -18,7 +18,8 @@ export type NewPlaceHit = {
   lat: number;
   lng: number;
   cuisine: Cuisine;
-  meta: string;
+  // 거리 · 업종 · 주소 — 화면에서 세로선으로 나눈다
+  meta: string[];
   // 이미 먹킷에 있는 장소면 바로 상세로
   placeId: string | null;
   tier: Tier | null;
@@ -62,7 +63,7 @@ export async function searchAll(query: string, near: { lat: number; lng: number 
         lat: h.lat,
         lng: h.lng,
         cuisine: h.cuisine,
-        meta: [h.distance !== null && at ? km(h.distance) : null, h.categoryName, h.address].filter(Boolean).join(" · "),
+        meta: [h.distance !== null && at ? km(h.distance) : null, h.categoryName, h.address].filter((v): v is string => Boolean(v)),
         placeId: k?.placeId ?? null,
         tier: k?.tier ?? null,
       };

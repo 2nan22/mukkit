@@ -133,7 +133,7 @@ export function DeviceModelOption({ onChange, busy }: { onChange: (enabled: bool
         )}
         {state.kind === "absent" && (
           <button ref={getRef} type="button" onClick={download} className="h-11 shrink-0 rounded-full bg-surface px-4 text-meta font-semibold text-ink">
-            받기 · {gb(MODEL_BYTES)}
+            받기<span className="ml-1.5 font-normal text-muted">{gb(MODEL_BYTES)}</span>
           </button>
         )}
       </div>
@@ -155,8 +155,11 @@ export function DeviceModelOption({ onChange, busy }: { onChange: (enabled: bool
             <div className="h-full bg-ink" style={{ width: `${Math.min(100, (state.received / MODEL_BYTES) * 100)}%` }} />
           </div>
           <div className="flex items-center justify-between gap-2">
-            <span className="text-caption text-muted">
-              {gb(state.received)} / {gb(MODEL_BYTES)} · 다 받을 때까지 이 화면에 있어 주세요
+            <span className="flex flex-col text-caption text-muted">
+              <span>
+                {gb(state.received)} / {gb(MODEL_BYTES)}
+              </span>
+              <span>다 받을 때까지 이 화면에 있어 주세요</span>
             </span>
             <button ref={cancelRef} type="button" onClick={() => abort.current?.abort()} className="h-11 shrink-0 px-1 text-meta font-semibold text-ink">
               취소

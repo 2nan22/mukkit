@@ -80,7 +80,7 @@ export function HomeMapCard({ points, total }: { points: HomePoint[]; total: Vie
     [me, focus],
   );
 
-  const label = `내 지도 열기${place ? ` · ${place}` : ""} · ${view ? "지도에" : "저장"} ${counts.saved}곳 · 3숟가락 ${counts.three}곳 · 가고 싶은 곳 ${counts.want}곳`;
+  const label = `내 지도 열기${place ? `, ${place}` : ""}, ${view ? "지도에" : "저장"} ${counts.saved}곳, 3숟가락 ${counts.three}곳, 가고 싶은 곳 ${counts.want}곳`;
   return (
     <div className="relative mx-5 flex flex-col overflow-hidden rounded-[16px] border border-line">
       <div ref={box} inert aria-hidden="true" className="relative isolate h-[132px] w-full bg-map-land">

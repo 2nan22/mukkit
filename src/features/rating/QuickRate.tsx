@@ -12,6 +12,7 @@ import { loadNextUnrated, setTier } from "./actions";
 import type { NoteVisibility, RatingVisibility, SavedPlace, UnratedCursor } from "./rating";
 import { VISIBILITY, VisibilitySheet } from "./VisibilitySheet";
 import { NoteVisibilityPicker } from "./NoteVisibilityPicker";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 // 평가 화면 ① 과 같은 줄 — 숟가락 아이콘 배지 + 뜻 (68-4, 색 카드 넷 대신)
 const RATED: Tier[] = ["three", "two", "one", "notRecommended"];
@@ -116,7 +117,7 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
         <>
           {/* 장소가 바뀔 때마다 아래에서 올라오게 — 약속 · 평가 화면과 같은 움직임 */}
           <section key={place.placeId} className={`meet-rise flex flex-1 flex-col px-5 pt-6 ${pending ? "opacity-60" : ""}`}>
-            <span className="text-meta text-muted">{placeMeta(place)}</span>
+            <MetaLine items={placeMeta(place)} />
             <h2 className="pt-0.5 text-[22px] leading-snug font-bold tracking-tight">{place.name}</h2>
             {place.note && (
               <div className="mt-3 flex flex-col gap-2.5 rounded-[12px] bg-surface px-3.5 py-3">
@@ -164,7 +165,7 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
                 <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
-              공개 범위 · <b className="font-semibold text-ink">{VISIBILITY[shownVisibility].label}</b>
+              공개 범위 <b className="font-semibold text-ink">{VISIBILITY[shownVisibility].label}</b>
               <span className="text-muted underline underline-offset-[3px]">바꾸기</span>
             </button>
             <div className="grid grid-cols-2 gap-2">
@@ -246,8 +247,8 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
   );
 }
 
-function placeMeta(place: SavedPlace): string {
+function placeMeta(place: SavedPlace): string[] {
   const region = place.address.split(" ").slice(0, 2).join(" ");
   const cuisine = CUISINE_LABEL[place.cuisine as Cuisine];
-  return [...new Set([cuisine, place.categoryName, region])].filter(Boolean).join(" · ");
+  return [...new Set([cuisine, place.categoryName, region])].filter(Boolean);
 }

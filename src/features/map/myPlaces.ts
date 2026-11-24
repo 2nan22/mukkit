@@ -72,11 +72,11 @@ export async function getFollowingMapPlaces(supabase: SupabaseClient): Promise<M
   });
 }
 
-// '민지 3숟가락 · 외 2명' — 등급은 사람에 붙인다 (가게 점수처럼 읽히지 않게)
+// '민지 3숟가락 외 2명' — 등급은 사람에 붙인다 (가게 점수처럼 읽히지 않게)
 export function ratersLine(raters: Rater[]): string {
   if (raters.length === 0) return "";
   const first = `${raters[0].nickname} ${TIER_LABEL[raters[0].tier]}`;
-  return raters.length === 1 ? first : `${first} · 외 ${raters.length - 1}명`;
+  return raters.length === 1 ? first : `${first} 외 ${raters.length - 1}명`;
 }
 
 const SOURCE_URL: Record<PlaceSourceName, (id: string) => string> = {

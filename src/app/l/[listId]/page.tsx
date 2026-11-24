@@ -9,6 +9,7 @@ import { getPublicList } from "@/features/share/publicList";
 import { PublicListView } from "@/features/share/PublicListView";
 import { getListMeta, getMySavedPlaceIds } from "@/features/share/savedLists";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 // 머리말(metadata)과 본문이 같은 요청 안에서 한 번만 부르게
 const loadPublicList = cache(async (listId: string) => getPublicList(await createSupabaseServerClient(), listId));
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: PageProps<"/l/[listId]">): Pr
   const { listId } = await params;
   const list = await loadPublicList(listId);
   if (!list) return { title: "볼 수 없는 리스트", robots: { index: false } };
-  const description = `${list.ownerNickname}님의 리스트 · ${list.places.length}곳${list.description ? ` · ${list.description}` : ""}`;
+  const description = `${list.ownerNickname}님의 리스트, ${list.places.length}곳${list.description ? `, ${list.description}` : ""}`;
   return {
     title: list.name,
     description,
@@ -77,10 +78,8 @@ async function PublicListLoader({ params }: { params: Promise<{ listId: string }
           <span className="text-meta font-semibold text-muted">{list.ownerNickname}님의 리스트</span>
         )}
         <h1 className="text-title font-bold tracking-tight">{list.name}</h1>
-        <span className="text-meta text-muted">
-          {list.places.length}곳{meta && meta.saves > 0 ? ` · ${meta.saves}명 저장` : ""}
-          {list.description && ` · ${list.description}`}
-        </span>
+        <MetaLine items={[`${list.places.length}곳`, meta && meta.saves > 0 ? `${meta.saves}명 저장` : null]} />
+        {list.description && <p className="text-meta text-muted">{list.description}</p>}
       </header>
       <PublicListView
         list={list}

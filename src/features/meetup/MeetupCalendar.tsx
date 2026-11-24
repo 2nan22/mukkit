@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PURPOSE_LABEL } from "@/domain/meetup";
 import type { MeetupListItem } from "./meetup";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -24,8 +25,9 @@ function fmt(iso: string, o: Intl.DateTimeFormatOptions): string {
 function title(m: MeetupListItem): string {
   const purpose = PURPOSE_LABEL[m.purpose];
   if (m.invited) return `${m.hostNickname}님의 ${purpose} 초대`;
-  const who = m.others.length === 0 ? "함께할 분을 기다리는 중" : m.others.length === 1 ? `${m.others[0]}님과` : `${m.others[0]}님 외 ${m.others.length - 1}명`;
-  return `${purpose} · ${who}`;
+  if (m.others.length === 0) return `${purpose}, 함께할 분을 기다리는 중`;
+  const who = m.others.length === 1 ? `${m.others[0]}님과` : `${m.others[0]}님 외 ${m.others.length - 1}명과`;
+  return `${who} ${purpose}`;
 }
 
 function Row({ m, timeOnly }: { m: MeetupListItem; timeOnly: boolean }) {
@@ -39,11 +41,7 @@ function Row({ m, timeOnly }: { m: MeetupListItem; timeOnly: boolean }) {
       <Link href={`/meet/${m.id}`} className="flex min-h-16 items-center gap-3 border-b border-line py-2.5">
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="row-title truncate text-body font-semibold">{title(m)}</span>
-          <span className="text-meta text-muted">
-            {when}
-            {m.status !== "open" && ` · ${m.status === "done" ? "끝남" : "취소"}`}
-            {m.invited && " · 수락 기다리는 중"}
-          </span>
+          <MetaLine items={[when, m.status !== "open" && (m.status === "done" ? "끝남" : "취소"), m.invited && "수락 기다리는 중"]} />
         </span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-subtle" aria-hidden="true">
           <path d="M9 5l7 7-7 7" />

@@ -7,6 +7,7 @@ import { CUISINE_LABEL } from "@/domain/cuisine";
 import { areaReason, nightClock } from "@/domain/meetup";
 import { PlaceMap } from "@/features/map/PlaceMap";
 import type { AreaPlan } from "./meetup";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 function km(m: number): string {
   return m < 1000 ? `${Math.round(m / 10) * 10}m` : `${(m / 1000).toFixed(1)}km`;
@@ -25,10 +26,16 @@ function lateWarning(plan: AreaPlan): string | null {
   const late = plan.people.filter((p) => p.late);
   if (late.length === 0) return null;
   if (late.length === plan.people.length) return "헤어지는 시간이 모두의 막차보다 늦어요";
-  return `헤어지는 시간이 ${late.map(who).join(" · ")} 막차보다 늦어요`;
+  return `헤어지는 시간이 ${late.map(who).join(", ")} 막차보다 늦어요`;
 }
 
 // 두 사람 모두 가기 편한 지역 3곳 · 지역마다 가게 — 고른 지역을 상대에게 보내기
+// 추천 이유 — 내 등급은 배지로 이미 보이니 남의 평가만
+function reasonLine(reasons: string[]) {
+  const others = reasons.filter((r) => !r.startsWith("내 ") && !r.startsWith("내가 "));
+  return others.length > 0 ? <MetaLine className="text-ink-2" items={others} /> : undefined;
+}
+
 export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaPlan[]; meetupUrl: string; waitingCount: number }) {
   const [active, setActive] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -79,7 +86,7 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
             className={`h-9 shrink-0 rounded-full px-3.5 text-meta font-medium ${i === active ? "bg-ink text-white" : "bg-surface text-ink-2"}`}
           >
             {p.name}
-            {p.shops.length > 0 && <span className="opacity-60"> · {p.shops.length}곳</span>}
+            {p.shops.length > 0 && <span className="ml-1.5 opacity-60">{p.shops.length}곳</span>}
           </button>
         ))}
       </div>
@@ -90,8 +97,10 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
         <ul className="flex flex-col gap-0.5 text-meta text-ink-2">
           {plan.people.map((p) => (
             <li key={p.id} className={p.late ? "font-medium text-danger" : ""}>
-              {who(p)} {Math.round(p.minutes / 5) * 5}분쯤
-              {p.last ? ` · 막차 늦어도 ${nightClock(p.last)}쯤 출발` : p.isMe ? " · 귀가지를 넣으면 막차도 알려 드려요" : ""}
+              <MetaLine
+                className=""
+                items={[`${who(p)} ${Math.round(p.minutes / 5) * 5}분쯤`, p.last ? `막차 늦어도 ${nightClock(p.last)}쯤 출발` : p.isMe ? "귀가지를 넣으면 막차도 알려 드려요" : null]}
+              />
             </li>
           ))}
         </ul>
@@ -132,8 +141,8 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
               name={s.name}
               cuisine={s.cuisine}
               tier={s.myTier}
-              meta={[CUISINE_LABEL[s.cuisine], km(s.distance)].join(" · ")}
-              note={s.reasons.filter((r) => !r.startsWith("내 ") && !r.startsWith("내가 ")).join(" · ") || undefined}
+              meta={[CUISINE_LABEL[s.cuisine], km(s.distance)]}
+              note={reasonLine(s.reasons)}
             />
           ))}
         </div>

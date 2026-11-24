@@ -26,13 +26,13 @@ export default function GrowthPage() {
 
 // 받은 점수 내역 · 점수 받는 법 — 숫자는 domain/growth 의 규칙 그대로
 const HOW: [string, string][] = [
-  ["평가", `${POINTS.rating}점 · ${POINTS.ratingCap}곳이 넘으면 ${POINTS.ratingAfterCap}점`],
+  ["평가", `${POINTS.rating}점, ${POINTS.ratingCap}곳이 넘으면 ${POINTS.ratingAfterCap}점`],
   ["한 줄 평가 10자 이상", `+${POINTS.review}점`],
-  ["직접 찍은 사진 · 영상", `+${POINTS.media}점`],
+  ["직접 찍은 사진, 영상", `+${POINTS.media}점`],
   ["처음 평가한 동네", `+${POINTS.area}점`],
   ["처음 먹어 본 메뉴 종류", `+${POINTS.kind}점`],
-  ["나만의 맛집 순위 정하기", `+${POINTS.ranked}점 · 10위까지`],
-  ["받은 좋아요", "+2점 · 평가 하나에 20점까지"],
+  ["나만의 맛집 순위 정하기", `+${POINTS.ranked}점, 10위까지`],
+  ["받은 좋아요", "+2점, 평가 하나에 20점까지"],
   ["남이 내 리스트를 저장", `+${POINTS.listSave}점`],
   ["함께 간 사람이 수락", `+${POINTS.visit}점`],
 ];

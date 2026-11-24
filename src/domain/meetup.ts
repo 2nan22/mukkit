@@ -49,7 +49,7 @@ export function planAreaShops(
       const byCompanions = c.raters.filter((r) => names.has(r.userId));
       const reasons = byCompanions.length
         ? [
-            `같이 가는 ${byCompanions.map((r) => `${r.nickname}님 ${r.tier === "three" ? "3숟가락" : "2숟가락"}`).join(" · ")}`,
+            `같이 가는 ${byCompanions.map((r) => `${r.nickname}님 ${r.tier === "three" ? "3숟가락" : "2숟가락"}`).join(", ")}`,
             ...s.reasons.filter((r) => !byCompanions.some((x) => r.startsWith(`${x.nickname} `))),
           ]
         : s.reasons;
@@ -72,10 +72,10 @@ export function areaReason(people: AreaPerson[]): string {
   const name = (p: AreaPerson) => (p.isMe ? "나" : `${p.nickname}님`);
   if (people.length === 2) {
     const [a, b] = [...people].sort((x, y) => Number(y.isMe) - Number(x.isMe));
-    return `${name(a)} ${r5(a.minutes)}분쯤 · ${name(b)} ${r5(b.minutes)}분쯤`;
+    return `${name(a)} ${r5(a.minutes)}분쯤, ${name(b)} ${r5(b.minutes)}분쯤`;
   }
   const far = people.find((p) => p.minutes === max)!;
-  return `가장 먼 ${name(far)} ${r5(max)}분쯤 · 평균 ${r5(avg)}분`;
+  return `가장 먼 ${name(far)} ${r5(max)}분쯤, 평균 ${r5(avg)}분`;
 }
 
 // '23:50' → '밤 11:50' · '00:20' → '밤 12:20'

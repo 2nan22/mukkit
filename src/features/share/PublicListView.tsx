@@ -82,7 +82,7 @@ export function PublicListView({ list, signedIn = false, covers = {}, save = nul
               name={p.name}
               cuisine={p.cuisine}
               tier={p.tier}
-              meta={[distanceOf(p), CUISINE_LABEL[p.cuisine], p.categoryName, regionOf(p.address)].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i).join(" · ")}
+              meta={[distanceOf(p), CUISINE_LABEL[p.cuisine], p.categoryName, regionOf(p.address)].filter((v, i, a) => v && v !== "음식점" && a.indexOf(v) === i)}
               note={save?.seenAt && p.addedAt && new Date(p.addedAt) > new Date(save.seenAt) ? <span className="font-bold text-ink">새로 추가</span> : undefined}
               action={
                 save &&

@@ -2,13 +2,15 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Cuisine } from "@/domain/cuisine";
 import type { Tier } from "@/domain/tier";
+import { MetaLine } from "./MetaLine";
 import { PlaceThumb } from "./PlaceThumb";
 import { TierBadge } from "./TierBadge";
 
 type Props = {
   name: string;
   cuisine: Cuisine;
-  meta: string;
+  // 업종 · 동네처럼 짧은 정보 — 빈 값은 건너뛰고 세로선으로 나눈다
+  meta: ReactNode[];
   tier?: Tier | null;
   // 셋째 줄 — 추천 이유 등
   note?: ReactNode;
@@ -30,7 +32,7 @@ export function PlaceRow({ name, cuisine, meta, tier, note, index, action, href,
       <PlaceThumb src={thumb} cuisine={cuisine} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-body font-semibold">{name}</span>
-        <span className="truncate text-meta text-muted">{meta}</span>
+        <MetaLine items={meta} />
         {note && <span className="text-meta leading-normal text-ink-2">{note}</span>}
       </span>
       {tier && <TierBadge tier={tier} />}

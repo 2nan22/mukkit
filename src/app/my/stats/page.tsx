@@ -37,7 +37,7 @@ async function Stats() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 px-8 pb-24 text-center">
         <span className="text-body font-semibold">아직 저장한 곳이 없어요</span>
-        <span className="text-meta text-muted">네이버 · 카카오 리스트를 가져오면 바로 채워져요</span>
+        <span className="text-meta text-muted">네이버나 카카오 리스트를 가져오면 바로 채워져요</span>
         <Link href="/import" className="mt-2 flex h-11 items-center rounded-btn-m bg-surface px-4 text-body font-semibold text-ink">
           저장한 장소 가져오기
         </Link>
@@ -75,7 +75,7 @@ async function Stats() {
         </Section>
       ) : (
         <p className="rounded-[12px] bg-surface px-4 py-3.5 text-meta leading-normal text-ink-2">
-          {MIN_RATED}곳을 평가하면 내 등급 · 동네를 볼 수 있어요 · 지금 {s.rated}곳
+          {MIN_RATED}곳을 평가하면 내 등급과 동네를 볼 수 있어요. 지금 {s.rated}곳이에요.
         </p>
       )}
 

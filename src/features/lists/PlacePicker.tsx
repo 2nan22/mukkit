@@ -9,6 +9,7 @@ import { TIER_LABEL, TIERS, type Tier } from "@/domain/tier";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { countBy, EMPTY_CRITERIA, hasCriteria, matchPlaces, type Criteria } from "./criteria";
 import type { PickablePlace } from "./pickablePlaces";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 type Props = {
   places: PickablePlace[];
@@ -87,7 +88,7 @@ export function PlacePicker({ places, selected, onChange, initialLabels = [], ex
         </Group>
 
         {labels.length > 0 && (
-          <Group title="가져온 리스트" hint="네이버 · 카카오에서 가져온 리스트로 고를 수 있어요.">
+          <Group title="가져온 리스트" hint="네이버나 카카오에서 가져온 리스트로 고를 수 있어요.">
             {labels.map((l) => (
               <Chip key={l.key} pressed={criteria.labels.includes(l.key)} onClick={() => toggleIn("labels", l.key)}>
                 <SourceMark source={l.source} size={14} />
@@ -120,9 +121,10 @@ export function PlacePicker({ places, selected, onChange, initialLabels = [], ex
       </div>
 
       <div className="sticky top-0 z-10 flex items-center justify-between border-y border-line bg-white px-5 py-2 text-meta">
-        <span className="text-muted">
-          {active ? "조건에 맞는 곳" : "저장한 곳 전체"} {shown.length}곳 · <b className="text-ink">{selected.size}곳 선택</b>
-        </span>
+        <MetaLine
+          className="text-muted"
+          items={[`${active ? "조건에 맞는 곳" : "저장한 곳 전체"} ${shown.length}곳`, <b key="selected" className="text-ink">{selected.size}곳 선택</b>]}
+        />
         <span className="flex items-center gap-3">
           {active && (
             <button type="button" onClick={() => setCriteria(EMPTY_CRITERIA)} className="h-9 text-muted">
@@ -151,9 +153,7 @@ export function PlacePicker({ places, selected, onChange, initialLabels = [], ex
                     {[...new Set(p.origins.map((o) => o.source))].map((s) => (
                       <SourceMark key={s} source={s} size={12} />
                     ))}
-                    <span className="truncate">
-                      {[CUISINE_LABEL[p.cuisine], regionOf(p.address), ...new Set(p.origins.map((o) => o.listName))].filter(Boolean).join(" · ")}
-                    </span>
+                    <MetaLine className="" items={[CUISINE_LABEL[p.cuisine], regionOf(p.address), ...new Set(p.origins.map((o) => o.listName))]} />
                   </span>
                   {memo && <span className="truncate text-meta text-ink-2">{memo}</span>}
                 </span>

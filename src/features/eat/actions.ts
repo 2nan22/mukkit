@@ -26,7 +26,7 @@ export async function findEats(lat: number, lng: number, radius: number): Promis
   }
 }
 
-export type Spot = { id: string; name: string; meta: string; lat: number; lng: number };
+export type Spot = { id: string; name: string; meta: string[]; lat: number; lng: number };
 
 // 기준 위치로 쓸 곳 찾기 — 역 · 동네 · 가게 무엇이든 (가게만 거르지 않는다)
 export async function findSpots(query: string): Promise<{ spots?: Spot[]; error?: string }> {
@@ -39,5 +39,5 @@ export async function findSpots(query: string): Promise<{ spots?: Spot[]; error?
   if (!allowCall(`spots:${me}`, 30, 60_000)) return { error: "잠깐만요. 조금 뒤에 다시 찾아 주세요." };
   const hits = await searchKakaoKeyword(q, undefined, 6);
   if (hits === null) return { error: "지금은 위치를 찾을 수 없어요." };
-  return { spots: hits.map((h) => ({ id: h.id, name: h.name, meta: [h.categoryName, h.address].filter(Boolean).join(" · "), lat: h.lat, lng: h.lng })) };
+  return { spots: hits.map((h) => ({ id: h.id, name: h.name, meta: [h.categoryName, h.address].filter(Boolean), lat: h.lat, lng: h.lng })) };
 }

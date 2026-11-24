@@ -273,7 +273,7 @@ export function MeetupForm() {
         )}
       </div>
       <span className="sr-only" aria-live="polite">
-        {step === "confirm" ? `${PURPOSE_LABEL[purpose]} · ${dayLabel(day)} ${timeRange(startAt, endAt)}` : ""}
+        {step === "confirm" ? `${PURPOSE_LABEL[purpose]}, ${dayLabel(day)} ${timeRange(startAt, endAt)}` : ""}
       </span>
     </div>
   );
@@ -284,7 +284,7 @@ function Answered({ label, value, onChange }: { label: string; value: string; on
   return (
     <button type="button" onClick={onChange} className="flex min-h-12 items-center justify-between gap-3 rounded-[12px] bg-surface px-4 text-left">
       <span className="min-w-0 truncate text-body">
-        <span className="text-muted">{label} · </span>
+        <span className="mr-2 text-muted">{label}</span>
         <b>{value}</b>
       </span>
       <span className="shrink-0 text-meta font-semibold text-ink-2 underline underline-offset-[3px]">바꾸기</span>

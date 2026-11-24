@@ -8,6 +8,7 @@ import { regionOf } from "@/domain/region";
 import { FollowButton } from "@/features/social/FollowButton";
 import { InviteButton } from "./InviteButton";
 import type { RecentList, SharedRating, TasteMatch } from "@/features/social/social";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 function timeAgo(iso: string): string {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -74,15 +75,13 @@ export function FollowingNew({ ratings, followingCount, me }: { ratings: SharedR
                 <span className="flex flex-1 flex-col gap-1.5 p-3.5">
                   <span className="flex items-center gap-1.5 text-meta text-muted">
                     <Avatar name={r.ownerNickname} size={24} />
-                    <span className="truncate">
-                      {r.ownerNickname} · {timeAgo(r.updatedAt)}
-                    </span>
+                    <MetaLine className="" items={[r.ownerNickname, timeAgo(r.updatedAt)]} />
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[16px] font-semibold">{r.placeName}</span>
                     <TierBadge tier={r.tier} />
                   </span>
-                  <span className="truncate text-meta text-muted">{[CUISINE_LABEL[r.cuisine], regionOf(r.address)].filter(Boolean).join(" · ")}</span>
+                  <MetaLine items={[CUISINE_LABEL[r.cuisine], regionOf(r.address)]} />
                   {(r.review || r.note) && <span className="line-clamp-2 text-meta leading-normal text-ink-2">{r.review || r.note}</span>}
                 </span>
               </Link>
@@ -109,9 +108,7 @@ export function SimilarPeople({ matches: all }: { matches: TasteMatch[] }) {
               <Avatar name={m.nickname} size={40} />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate text-body font-bold">{m.nickname}</span>
-                <span className="truncate text-meta text-muted">
-                  {m.bothThree > 0 ? `둘 다 3숟가락 ${m.bothThree}곳` : `같이 평가한 곳 ${m.overlap}곳`} · 취향 일치 {Math.round(m.similarity * 100)}%
-                </span>
+                <MetaLine items={[m.bothThree > 0 ? `둘 다 3숟가락 ${m.bothThree}곳` : `같이 평가한 곳 ${m.overlap}곳`, `취향 일치 ${Math.round(m.similarity * 100)}%`]} />
               </span>
             </Link>
             <FollowButton targetId={m.userId} following={false} compact />
@@ -146,10 +143,7 @@ export function RecentLists({ lists, covers = {} }: { lists: RecentList[]; cover
               cuisines={topCuisines(l.points)}
             />
             <span className="truncate text-body font-bold">{l.name}</span>
-            <span className="truncate text-meta text-muted">
-              {l.ownerNickname}
-              {l.saves ? ` · ${l.saves}명 저장` : ""}
-            </span>
+            <MetaLine items={[l.ownerNickname, l.saves ? `${l.saves}명 저장` : null]} />
           </Link>
         ))}
       </div>

@@ -5,9 +5,9 @@ import { setAllRatingVisibility } from "./actions";
 import type { RatingVisibility } from "./rating";
 
 const OPTIONS: { v: RatingVisibility; label: string; desc: string }[] = [
-  { v: "private", label: "나만", desc: "등급 · 한 줄 평가 · 사진 모두 나만" },
+  { v: "private", label: "나만", desc: "등급, 한 줄 평가, 사진 모두 나만" },
   { v: "followers", label: "팔로워", desc: "나를 팔로우하는 사람 피드에" },
-  { v: "public", label: "전체 공개", desc: "프로필 · 공유 리스트에서 누구나" },
+  { v: "public", label: "전체 공개", desc: "프로필과 공유 리스트에서 누구나" },
 ];
 
 // 설정 › 평가 공개 범위 (68) — 지금까지 평가한 곳을 한 번에. 고르고 '모두 바꾸기'를 눌러야 바뀐다

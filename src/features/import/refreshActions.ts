@@ -72,7 +72,7 @@ async function refreshSource(
       return { done: "원본과 같아요. 바뀐 곳이 없어요." };
     case "updated": {
       const parts = [res.added && `새로 담은 곳 ${res.added}`, res.removed && `뺀 곳 ${res.removed}`, res.memos && `바뀐 메모 ${res.memos}`].filter(Boolean);
-      return { done: parts.length ? `원본을 반영했어요 · ${parts.join(" · ")}` : "원본과 같아요. 바뀐 곳이 없어요." };
+      return { done: parts.length ? `원본을 반영했어요. ${parts.join(", ")}` : "원본과 같아요. 바뀐 곳이 없어요." };
     }
     case "unavailable":
       return { error: "원본 리스트를 볼 수 없어요. 공개 범위를 확인해 주세요." };

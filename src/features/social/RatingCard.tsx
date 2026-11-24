@@ -10,6 +10,7 @@ import { ReactionBar } from "@/features/reactions/ReactionBar";
 import type { Reaction } from "@/features/reactions/reactions";
 import { SafetyMenu } from "@/features/safety/SafetyMenu";
 import type { SharedRating } from "./social";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 function dateLabel(iso: string): string {
   const d = new Date(iso);
@@ -61,9 +62,7 @@ export function RatingCard({
           <Link href={`/p/${rating.placeId}`} className="truncate text-body font-bold">
             {rating.placeName}
           </Link>
-          <span className="truncate text-meta text-muted">
-            {[CUISINE_LABEL[rating.cuisine], regionOf(rating.address), dateLabel(rating.updatedAt)].filter(Boolean).join(" · ")}
-          </span>
+          <MetaLine items={[CUISINE_LABEL[rating.cuisine], regionOf(rating.address), dateLabel(rating.updatedAt)]} />
         </div>
         <span className="flex items-center gap-1">
           <TierBadge tier={rating.tier} />

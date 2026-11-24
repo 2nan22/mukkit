@@ -108,7 +108,7 @@ export function ListDetail({ list, places, origin, covers = {}, saves = 0, impor
         )}
         <div className="flex items-center gap-2 text-meta text-muted">
           <span>{list.count}곳</span>
-          <span aria-hidden="true">·</span>
+          <span aria-hidden="true" className="h-2.5 w-px bg-line-strong" />
           <button
             type="button"
             onClick={() => (setVisibilityOpen((v) => !v), setColorOpen(false))}
@@ -228,7 +228,7 @@ export function ListDetail({ list, places, origin, covers = {}, saves = 0, impor
                 name={p.name}
                 cuisine={p.cuisine}
                 tier={p.tier}
-                meta={[distanceOf(p), CUISINE_LABEL[p.cuisine], p.address.split(" ").slice(0, 2).join(" ")].filter(Boolean).join(" · ")}
+                meta={[distanceOf(p), CUISINE_LABEL[p.cuisine], p.address.split(" ").slice(0, 2).join(" ")]}
                 action={
                   removing && (
                 <button

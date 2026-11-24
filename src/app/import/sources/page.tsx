@@ -38,7 +38,7 @@ async function Sources() {
     return (
       <div className="flex flex-col items-center gap-1.5 px-5 py-16 text-center">
         <span className="text-body font-semibold">가져온 원본이 없어요</span>
-        <span className="text-meta text-muted">네이버 지도 · 카카오맵 리스트를 가져오면 여기에 모여요</span>
+        <span className="text-meta text-muted">네이버 지도나 카카오맵 리스트를 가져오면 여기에 모여요</span>
       </div>
     );
   }

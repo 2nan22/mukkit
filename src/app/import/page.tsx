@@ -17,7 +17,7 @@ export default function ImportPage({ searchParams }: PageProps<"/import">) {
       {TEXT_IMPORT_ENABLED && (
         <Link href="/import/text" className="mx-5 mb-8 flex min-h-14 items-center justify-between gap-3 rounded-[14px] bg-surface px-4">
           <span className="flex flex-col gap-0.5">
-            <span className="text-body font-semibold text-ink">인스타그램 · 블로그 글에서 찾기</span>
+            <span className="text-body font-semibold text-ink">인스타그램이나 블로그 글에서 찾기</span>
             <span className="text-meta text-muted">글을 붙여 넣으면 가게를 찾아 드려요</span>
           </span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-subtle" aria-hidden="true">

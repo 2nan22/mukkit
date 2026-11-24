@@ -9,6 +9,7 @@ import { IMPORT_TIER_LABEL, IMPORT_TIERS, type ImportTier } from "./importMode";
 import { syncLine, type ImportSourceRow } from "./importSources";
 import { refreshImportSource } from "./refreshActions";
 import { countDeletable, disconnectSource } from "./sourceActions";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 function nameOf(r: ImportSourceRow): string {
   return r.name || "이름 없는 리스트";
@@ -60,9 +61,9 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
       setProgress(null);
       // 개수 제한은 없다 — 1시간 안에 확인한 곳 · 등급을 정해야 하는 옛 원본만 건너뛴다
       const skipped = rows.length - ready.length;
-      const head = `원본 ${rows.length}개 중 ${ready.length - recent}개 확인 · ${changed ? `${changed}개 바뀜` : "바뀐 곳 없음"}${failed ? ` · ${failed}개 실패` : ""}`;
+      const head = `원본 ${rows.length}개 중 ${ready.length - recent}개 확인, ${changed ? `${changed}개 바뀜` : "바뀐 곳 없음"}${failed ? `, ${failed}개 실패` : ""}`;
       const notes = [recent ? `${recent}개는 1시간 안에 확인해서 건너뜀` : "", skipped ? `${skipped}개는 등급을 정해야 해서 빠짐` : ""].filter(Boolean);
-      setToast(notes.length ? `${head}\n${notes.join(" · ")}` : head);
+      setToast(notes.length ? `${head}\n${notes.join("\n")}` : head);
       router.refresh();
     });
   return (
@@ -87,9 +88,7 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
                 <SourceMark source={r.source} size={16} />
                 <span className="truncate text-body font-semibold">{nameOf(r)}</span>
               </span>
-              <span className={`text-meta ${line.warn ? "font-semibold text-ink" : "text-muted"}`}>
-                {r.count}곳 · {line.text}
-              </span>
+              <MetaLine className={`text-meta ${line.warn ? "font-semibold text-ink" : "text-muted"}`} items={[`${r.count}곳`, line.text]} />
             </>
           );
           return (
@@ -225,9 +224,7 @@ function SourceSheet({ row, initialStep, onClose, onDone }: { row: ImportSourceR
           <>
             <div className="flex flex-col gap-1 pt-1">
               <h2 className="text-[18px] leading-snug font-bold">{name}</h2>
-              <p className="text-meta text-muted">
-                {row.count}곳 · {syncLine(row.sync).text}
-              </p>
+              <MetaLine items={[`${row.count}곳`, syncLine(row.sync).text]} />
             </div>
             <div className="flex flex-col">
               <button type="button" disabled={pending} onClick={() => (row.sync ? refresh() : setStep("setup"))} className="flex h-12 items-center text-body text-ink disabled:opacity-50">
@@ -284,7 +281,7 @@ function SourceSheet({ row, initialStep, onClose, onDone }: { row: ImportSourceR
             </div>
             <fieldset className="flex flex-col gap-2">
               <legend className="sr-only">끊는 방법</legend>
-              <Option checked={!wipe} onPick={() => setWipe(false)} title="연결만 끊기" desc="저장한 곳 · 등급 · 메모는 그대로예요" />
+              <Option checked={!wipe} onPick={() => setWipe(false)} title="연결만 끊기" desc="저장한 곳, 등급, 메모는 그대로예요" />
               <Option
                 checked={wipe}
                 disabled={!canWipe}
@@ -297,7 +294,7 @@ function SourceSheet({ row, initialStep, onClose, onDone }: { row: ImportSourceR
                       ? "지울 곳을 세지 못했어요. 잠시 뒤 다시 열어 주세요"
                       : count === 0
                         ? "지울 곳이 없어요. 모두 다른 리스트나 원본에도 있어요"
-                        : `${count}곳의 등급 · 메모 · 사진을 지워요. 다른 리스트 · 원본에도 있는 곳은 남아요`
+                        : `${count}곳의 등급, 메모, 사진을 지워요. 다른 리스트나 원본에도 있는 곳은 남아요`
                 }
               />
             </fieldset>
@@ -325,7 +322,7 @@ function SourceSheet({ row, initialStep, onClose, onDone }: { row: ImportSourceR
                 &lsquo;{name}&rsquo;에서 온 {deletable}곳을 지울까요?
               </h2>
               <p className="text-meta leading-relaxed text-muted">
-                등급 · 메모 · 사진, 받은 좋아요 · 댓글까지 지워져요. 되돌릴 수 없어요.
+                등급, 메모, 사진, 받은 좋아요와 댓글까지 지워져요. 되돌릴 수 없어요.
                 {row.listId && " 이 원본으로 만든 리스트도 함께 지워져요."}
               </p>
             </div>

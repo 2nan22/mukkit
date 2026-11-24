@@ -15,7 +15,7 @@ export default async function Image({ params }: { params: Promise<{ listId: stri
   const { listId } = await params;
   const [font, list] = await Promise.all([readFile(fontPath), getPublicList(createSupabaseAnonClient(), listId)]);
   const title = list?.name ?? "볼 수 없는 리스트";
-  const sub = list ? `${list.ownerNickname}님의 리스트 · ${list.places.length}곳` : "먹킷";
+  const sub = list ? `${list.ownerNickname}님의 리스트, ${list.places.length}곳` : "먹킷";
 
   return new ImageResponse(
     (

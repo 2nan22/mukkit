@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import type { RankPlace } from "./rank";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 type Drag = { from: number; to: number; dy: number; h: number };
 const EDGE = 96; // 화면 위 · 아래 이만큼 안에서 끌면 목록이 따라 스크롤
@@ -20,7 +21,7 @@ export function RankedList({
 }: {
   ranked: RankPlace[];
   editing: boolean;
-  meta: (p: RankPlace) => string;
+  meta: (p: RankPlace) => (string | null)[];
   onMove: (next: RankPlace[], moved: RankPlace, to: number) => void;
   onRedo: (p: RankPlace) => void;
   busy: boolean;
@@ -176,12 +177,12 @@ export function RankedList({
               {editing ? (
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-2">
                   <span className="truncate text-body font-semibold">{p.name}</span>
-                  <span className="truncate text-meta text-muted">{meta(p)}</span>
+                  <MetaLine items={meta(p)} />
                 </span>
               ) : (
                 <Link href={`/p/${p.placeId}`} className="flex min-w-0 flex-1 flex-col gap-0.5 py-2">
                   <span className="truncate text-body font-semibold">{p.name}</span>
-                  <span className="truncate text-meta text-muted">{meta(p)}</span>
+                  <MetaLine items={meta(p)} />
                 </Link>
               )}
               {editing ? (

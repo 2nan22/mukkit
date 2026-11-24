@@ -5,9 +5,9 @@ import { createPortal } from "react-dom";
 import { RATING_VISIBILITIES, type NoteVisibility, type RatingVisibility } from "./rating";
 
 export const VISIBILITY: Record<RatingVisibility, { label: string; desc: string }> = {
-  private: { label: "나만", desc: "등급 · 한 줄 평가 · 사진 · 메모 모두 나만" },
+  private: { label: "나만", desc: "등급, 한 줄 평가, 사진, 메모 모두 나만" },
   followers: { label: "팔로워", desc: "나를 팔로우하는 사람 피드에" },
-  public: { label: "전체 공개", desc: "프로필 · 공유 리스트에서 누구나" },
+  public: { label: "전체 공개", desc: "프로필과 공유 리스트에서 누구나" },
 };
 
 // 누가 볼 수 있어요? — 저장 버튼 위 한 줄에서 여는 시트 · noteVis: 메모가 있으면 메모 공개 범위
@@ -30,7 +30,7 @@ export function VisibilitySheet({ value, onPick, onClose, noteVis }: { value: Ra
         <h2 id="vis-title" className="pt-2 text-section font-bold">
           누가 볼 수 있어요?
         </h2>
-        {noteVis !== undefined && <p className="text-meta text-muted">{noteVis === "same" ? "메모도 이 범위대로 보여요" : `메모는 따로 정했어요 · ${VISIBILITY[noteVis].label}`}</p>}
+        {noteVis !== undefined && <p className="text-meta text-muted">{noteVis === "same" ? "메모도 이 범위대로 보여요" : <>메모는 따로 정했어요 <b className="font-semibold text-ink">{VISIBILITY[noteVis].label}</b></>}</p>}
         <div role="radiogroup" aria-labelledby="vis-title" className="flex flex-col gap-1.5 pt-1">
           {RATING_VISIBILITIES.map((v) => (
             <button

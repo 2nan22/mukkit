@@ -7,6 +7,7 @@ import { extractPlaceCandidates, mergeCandidates } from "@/domain/textPlaces";
 import { findCandidatePlaces, saveFoundPlace, type CandidateResult, type FoundHit } from "./actions";
 import { DeviceModelOption } from "./DeviceModelOption";
 import { readPlaceNames } from "./deviceReader";
+import { MetaLine } from "@/components/ui/MetaLine";
 
 const TEXT_MAX = 5000;
 
@@ -86,13 +87,13 @@ export function TextImportFlow() {
       setBusy(null);
       if (res.error) return setMessage({ text: res.error, error: true });
       setSaved((s) => ({ ...s, [h.kakaoId]: res.placeId! }));
-      setMessage({ text: `가고 싶은 곳으로 저장했어요 · ${h.name}` });
+      setMessage({ text: `${h.name}, 가고 싶은 곳으로 저장했어요` });
     });
   }
 
   return (
     <div className="flex flex-col gap-4 px-5 pb-10">
-      <p className="text-body leading-relaxed text-ink-2">인스타그램 · 블로그 · 유튜브 설명 글을 그대로 붙여 넣어 주세요.</p>
+      <p className="text-body leading-relaxed text-ink-2">인스타그램, 블로그, 유튜브 설명 글을 그대로 붙여 넣어 주세요.</p>
       <label className="flex flex-col gap-1.5">
         <span className="text-meta font-semibold text-ink">글</span>
         <textarea
@@ -103,7 +104,7 @@ export function TextImportFlow() {
           className="w-full resize-none rounded-[12px] bg-surface px-3.5 py-3 text-body leading-normal outline-none focus:bg-white focus:ring-1 focus:ring-ink"
         />
         <span className="text-caption text-muted">
-          글은 이 기기에서만 읽고, 찾은 가게 이름 · 주소만 검색에 써요.{text.length >= TEXT_MAX && ` ${TEXT_MAX}자까지만 읽어요.`}
+          글은 이 기기에서만 읽고, 찾은 가게 이름과 주소만 검색에 써요.{text.length >= TEXT_MAX && ` ${TEXT_MAX}자까지만 읽어요.`}
         </span>
       </label>
       <label className="flex flex-col gap-1.5">
@@ -144,9 +145,9 @@ export function TextImportFlow() {
         <div className="flex flex-col gap-5 pt-2">
           {results.map(({ candidate, hits, failed }) => (
             <section key={candidate.name} aria-label={`${candidate.name} 후보`} className="flex flex-col">
-              <h2 className="text-meta text-muted">
-                글에서 찾은 이름 · <b className="font-semibold text-ink">{candidate.name}</b>
-                {candidate.address && ` · ${candidate.address}`}
+              <h2 className="flex flex-col gap-0.5 text-meta text-muted">
+                <span>글에서 찾은 이름</span>
+                <MetaLine className="" items={[<b key="name" className="font-semibold text-ink">{candidate.name}</b>, candidate.address]} />
               </h2>
               {failed ? (
                 <p className="flex min-h-12 items-center gap-2 text-meta text-muted">
