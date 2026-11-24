@@ -8,6 +8,7 @@ const KINDS = [
   { kind: "meetup", label: "약속", desc: "초대 · 새 참여자 · 추천 지역 변경" },
   { kind: "comment", label: "댓글", desc: "내 평가와 내가 댓글 단 평가의 새 댓글" },
   { kind: "visit", label: "함께 방문", desc: "누가 나와 함께 갔다고 남겼을 때" },
+  { kind: "follow", label: "팔로우", desc: "누가 나를 팔로우했을 때" },
 ] as const;
 
 // 설정 › 알림 — 이 기기 알림 켜기 + 종류별로 끄기. 기기 알림이 꺼져 있으면 종류 목록은 흐리게

@@ -47,7 +47,7 @@ describe.skipIf(!admin)("notifyVisitTag", () => {
     const { notifyVisitTag } = await import("./notify");
     await notifyVisitTag(users[0].id, [users[1].id, users[2].id]);
     expect(sent().map((s) => s.to).sort()).toEqual([users[1].endpoint, users[2].endpoint].sort());
-    expect(sent()[0]).toMatchObject({ title: "함께 방문 요청", body: `${users[0].name}님이 함께 갔다고 남겼어요`, url: "/visits" });
+    expect(sent()[0]).toMatchObject({ title: "함께 방문", body: `${users[0].name}님이 함께 갔다고 남겼어요`, url: "/visits" });
   });
 
   it("함께 방문 알림을 끈 사람은 빼고", async () => {

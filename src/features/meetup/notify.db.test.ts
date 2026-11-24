@@ -50,7 +50,7 @@ describe.skipIf(!admin)("notifyMeetup", () => {
   it("초대받은 사람에게만 · 위치는 싣지 않음", async () => {
     const { notifyMeetup } = await import("./notify");
     await notifyMeetup(meetupId, users[0].id, { kind: "invited", to: users[1].id });
-    expect(sent()).toEqual([{ to: users[1].endpoint, title: "약속 초대", body: `${users[0].name}님이 약속에 초대했어요`, url: `/meet/${meetupId}`, tag: `invite-${meetupId}` }]);
+    expect(sent()).toEqual([{ to: users[1].endpoint, title: "약속 초대", body: `${users[0].name}님이 초대했어요`, url: `/meet/${meetupId}`, tag: `invite-${meetupId}` }]);
   });
 
   it("닉네임이 '님'으로 끝나면 '님'을 겹쳐 붙이지 않음 (66)", async () => {
@@ -59,7 +59,7 @@ describe.skipIf(!admin)("notifyMeetup", () => {
     await admin!.from("profiles").update({ nickname: nick }).eq("id", users[0].id);
     try {
       await notifyMeetup(meetupId, users[0].id, { kind: "invited", to: users[1].id });
-      expect(sent()[0].body).toBe(`${nick}이 약속에 초대했어요`);
+      expect(sent()[0].body).toBe(`${nick}이 초대했어요`);
     } finally {
       await admin!.from("profiles").update({ nickname: users[0].name }).eq("id", users[0].id);
     }
@@ -70,7 +70,7 @@ describe.skipIf(!admin)("notifyMeetup", () => {
     await admin!.from("meetup_members").insert({ meetup_id: meetupId, user_id: users[1].id });
     await notifyMeetup(meetupId, users[1].id, { kind: "joined" });
     expect(sent().map((s) => s.to)).toEqual([users[0].endpoint]);
-    expect(sent()[0].body).toBe(`${users[1].name}님이 참여했어요`);
+    expect(sent()[0]).toMatchObject({ title: "약속 참여", body: `${users[1].name}님이 참여했어요` });
 
     sendNotification.mockClear();
     await admin!.from("meetup_members").update({ joined_at: new Date(Date.now() - 600_000).toISOString() }).eq("meetup_id", meetupId).eq("user_id", users[1].id);
@@ -82,13 +82,13 @@ describe.skipIf(!admin)("notifyMeetup", () => {
     const { notifyMeetup } = await import("./notify");
     await admin!.from("meetup_members").insert({ meetup_id: meetupId, user_id: users[2].id });
     await admin!.from("meetup_points").insert({ meetup_id: meetupId, user_id: users[0].id, kind: "return", label: "망원동", lat: 37.55, lng: 126.9 });
-    await notifyMeetup(meetupId, users[0].id, { kind: "located" });
+    await notifyMeetup(meetupId, users[0].id, { kind: "located", point: "return" });
     expect(sent()).toHaveLength(0);
 
     await admin!.from("meetup_points").insert({ meetup_id: meetupId, user_id: users[1].id, kind: "origin", label: "잠실", lat: 37.51, lng: 127.1 });
-    await notifyMeetup(meetupId, users[1].id, { kind: "located" });
+    await notifyMeetup(meetupId, users[1].id, { kind: "located", point: "origin" });
     expect(sent().map((s) => s.to)).toEqual([users[0].endpoint]);
-    expect(sent()[0].body).toBe(`${users[1].name}님이 위치를 넣어 추천 지역이 나왔어요`);
+    expect(sent()[0]).toMatchObject({ title: "추천 지역이 나왔어요", body: `${users[1].name}님이 출발지를 넣었어요` });
     expect(JSON.stringify(sent())).not.toContain("잠실");
     expect(JSON.stringify(sent())).not.toContain("술");
   });

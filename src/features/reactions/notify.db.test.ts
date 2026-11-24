@@ -74,7 +74,7 @@ describe.skipIf(!admin)("notifyComment", () => {
     const { notifyComment } = await import("./notify");
     await notifyComment(users[0].id, users[0].id, placeId);
     expect(sent().map((s) => s.to).sort()).toEqual([users[1].endpoint, users[2].endpoint].sort());
-    expect(sent()[0].body).toBe(`${users[0].name}님이 댓글을 남겼어요`);
+    expect(sent()[0].body).toBe(`${users[0].name}님이 자기 평가에 댓글을 남겼어요`);
   });
 
   it("댓글 알림을 끈 사람은 빼고", async () => {

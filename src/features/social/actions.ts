@@ -1,9 +1,11 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { notifyFollow } from "./notify";
 import { follow, unfollow } from "./social";
 
 export async function setFollow(targetId: string, on: boolean): Promise<{ error?: string }> {
@@ -18,6 +20,7 @@ export async function setFollow(targetId: string, on: boolean): Promise<{ error?
   } catch {
     return { error: "처리하지 못했어요. 다시 시도해 주세요." };
   }
+  if (on) after(() => notifyFollow(me, targetId).catch(() => console.warn("[push] 팔로우 알림 실패")));
   revalidatePath(`/u/${targetId}`);
   revalidatePath("/home");
   return {};

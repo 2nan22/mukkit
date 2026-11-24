@@ -69,7 +69,7 @@ export async function setMeetupPoint(input: z.input<typeof PointInput>): Promise
     .upsert({ meetup_id: p.meetupId, user_id: me, kind: p.kind, label: p.label, lat: p.lat, lng: p.lng }, { onConflict: "meetup_id,user_id,kind" });
   if (error) return { error: FAILED };
   // 처음 위치를 넣을 때만 알림 — 고칠 때마다 울리지 않게
-  if (!before) after(() => notifyMeetup(p.meetupId, me, { kind: "located" }));
+  if (!before) after(() => notifyMeetup(p.meetupId, me, { kind: "located", point: p.kind }));
   revalidatePath(`/meet/${p.meetupId}`);
   return {};
 }
