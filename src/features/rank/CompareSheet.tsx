@@ -19,8 +19,14 @@ export function CompareSheet({
   label = "방금 평가",
   cancelLabel = "나중에 할게요",
   remaining = 0,
+  afterOf,
+  scope,
   onDone,
 }: {
+  // ranked 가 전체 순위의 일부(같은 업종)일 때 — 그 안의 자리 pos 를 전체 순위에서 '누구 바로 아래'로 바꿔 준다 (67-2)
+  afterOf?: (pos: number) => string | null;
+  // 비교 범위 안내 — '일식 3숟가락끼리 비교해요'
+  scope?: string;
   target: RankPlace;
   ranked: RankPlace[];
   label?: string;
@@ -46,7 +52,8 @@ export function CompareSheet({
 
   function save(pos: number) {
     start(async () => {
-      const res = await placeInThree(target.placeId, pos === 0 ? null : ranked[pos - 1].placeId);
+      const after = afterOf ? afterOf(pos) : pos === 0 ? null : ranked[pos - 1].placeId;
+      const res = await placeInThree(target.placeId, after);
       if (res.error) {
         setPicked(null);
         return setError(res.error);
@@ -138,11 +145,11 @@ export function CompareSheet({
                 <br />
                 어디가 더 좋았나요?
               </h2>
-              <p className="text-meta text-muted">더 좋았던 곳을 눌러 주세요.</p>
+              <p className="text-meta text-muted">{scope ? `${scope} · 순위는 나만 봐요` : "더 좋았던 곳을 눌러 주세요."}</p>
             </div>
             <div className="grid grid-cols-2 gap-2.5 px-5 pt-6">
               {card(target, label, picked === "target", () => pick("target"))}
-              {card(other, `3숟가락 · ${mid + 1}위`, picked === "other", () => pick("other"))}
+              {card(other, `3숟가락 · ${(other.rank ?? mid) + 1}위`, picked === "other", () => pick("other"))}
             </div>
             {error && (
               <p role="alert" className="px-5 pt-3 text-meta text-danger">

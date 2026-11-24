@@ -88,7 +88,7 @@ export function MenuPicker({ initial, options }: { initial: string[]; options: P
             aria-label="먹은 메뉴 직접 적기"
             className="h-11 min-w-0 flex-1 rounded-[12px] bg-surface px-3.5 text-body outline-none focus:bg-white focus:ring-1 focus:ring-ink"
           />
-          <button type="button" onClick={addTyped} disabled={!text.trim()} className="h-11 shrink-0 rounded-[12px] bg-surface px-4 text-meta font-semibold text-ink disabled:opacity-40">
+          <button type="button" onClick={addTyped} disabled={!text.trim()} className="h-11 shrink-0 rounded-[12px] bg-ink px-4 text-meta font-semibold text-white disabled:bg-surface disabled:text-muted">
             추가
           </button>
         </div>
