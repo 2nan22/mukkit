@@ -21,5 +21,5 @@ export function noteAudience(rating: RatingVisibility, note: NoteVisibility): st
 export function noteLabel(rating: RatingVisibility, note: NoteVisibility): string {
   const eff = effectiveNote(rating, note);
   if (eff === "private") return "나만 보는 메모";
-  return eff === "followers" ? "메모 · 팔로워에게 보임" : "메모 · 전체 공개";
+  return eff === "followers" ? "팔로워에게 보이는 메모" : "누구나 보는 메모";
 }
