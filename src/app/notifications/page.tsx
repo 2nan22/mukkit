@@ -26,13 +26,19 @@ export default function NotificationsPage() {
   );
 }
 
+// 아래 회색 줄 — 장소 이름 또는 추천 지역 소식
+function sub(n: GroupedNotification): string {
+  if (n.kind === "meetup_ready") return n.firstReady ? "추천 지역이 나왔어요" : "추천 지역이 바뀌었어요";
+  return n.placeName ?? "";
+}
+
 // 한 줄 문구 — 장소 이름은 문장에 넣지 않고 아래 회색 줄로 (66 디자인 검토: 길면 어색)
 function message(n: GroupedNotification): string {
   const who = n.otherActors > 0 ? `${honor(n.actorNickname)} 외 ${n.otherActors}명` : honor(n.actorNickname);
   switch (n.kind) {
     case "comment":
       return n.ownerId === n.actorId
-        ? `${who}이 자기 평가에 댓글을 남겼어요`
+        ? `${who}이 댓글을 남겼어요`
         : n.count > 1
           ? `${who}이 내 평가에 댓글 ${n.count}개를 남겼어요`
           : `${who}이 내 평가에 댓글을 남겼어요`;
@@ -45,7 +51,7 @@ function message(n: GroupedNotification): string {
     case "meetup_join":
       return `${who}이 약속에 참여했어요`;
     case "meetup_ready":
-      return `${who}이 ${n.pointKind === "return" ? "귀가지" : "출발지"}를 넣어 추천 지역이 ${n.firstReady ? "나왔어요" : "바뀌었어요"}`;
+      return `${who}이 ${n.pointKind === "return" ? "귀가지" : "출발지"}를 넣었어요`;
     case "visit_tag":
       return `${who}이 함께 갔다고 남겼어요`;
   }
@@ -76,7 +82,7 @@ async function List() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 px-8 pb-24 text-center">
         <span className="text-body font-semibold">아직 알림이 없어요</span>
-        <span className="text-meta text-muted">댓글 · 좋아요 · 팔로우 · 약속 · 함께 방문 소식이 여기에 모여요.</span>
+        <span className="text-meta text-muted">댓글 · 좋아요 · 팔로우 · 약속 · 함께 방문 소식이 여기에 모여요</span>
         <MarkRead />
       </div>
     );
@@ -117,19 +123,20 @@ function Row({ n, followBack }: { n: GroupedNotification; followBack: boolean })
           <Link href={notificationHref(n)} className="flex min-h-16 min-w-0 flex-1 items-center gap-3 py-3 pr-3 pl-5">
             <Avatar name={n.actorNickname} size={40} />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="text-body leading-snug text-ink">{message(n)}</span>
+              <span className="text-body leading-snug text-pretty text-ink">{message(n)}</span>
               <span className="truncate text-meta text-muted" suppressHydrationWarning>
-                {n.placeName ? `${n.placeName} · ` : ""}
+                {sub(n) ? `${sub(n)} · ` : ""}
                 {timeLabel(n.createdAt)}
               </span>
             </span>
-            {!n.read && (
-              <span className="size-2 shrink-0 rounded-full bg-ink">
-                <span className="sr-only">안 읽음</span>
-              </span>
-            )}
           </Link>
           {followBack && <FollowButton targetId={n.actorId} following={false} compact />}
+          {/* 안 읽음 점은 모든 줄에서 오른쪽 끝 — 맞팔로우 버튼이 있어도 같은 자리 */}
+          {!n.read && (
+            <span className={`size-2 shrink-0 rounded-full bg-ink ${followBack ? "ml-3" : ""}`}>
+              <span className="sr-only">안 읽음</span>
+            </span>
+          )}
         </li>
   );
 }
