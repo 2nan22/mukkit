@@ -21,6 +21,7 @@ import { MapSearch } from "./MapSearch";
 import { openKakaoPlace, type NewPlaceHit } from "@/features/search/actions";
 import { ratersLine, type MapPlace } from "./myPlaces";
 import { Avatar } from "@/components/ui/Avatar";
+import { LoaderBubble } from "@/components/ui/EatingLoader";
 
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
 // 팔로잉 지도는 평가한 곳만이라 평가 등급만
@@ -616,9 +617,9 @@ export function MapView({
             </Link>
           </div>
         ) : selected ? (
-          <div className="pt-4">
+          <PullCard placeId={selected.placeId} onClose={() => setSelectedId(null)}>
             {isFollowing ? <FollowingCard place={selected} onClose={() => setSelectedId(null)} /> : <PlaceCard place={selected} onClose={() => setSelectedId(null)} />}
-          </div>
+          </PullCard>
         ) : found ? (
           <div className="pt-4">
             <FoundCard hit={found} onClose={() => setFound(null)} />
@@ -685,6 +686,67 @@ export function MapView({
           </>
         )}
       </section>
+    </div>
+  );
+}
+
+// 지도에서 고른 가게 카드 — 위로 끌면 장소 상세, 아래로 끌면 닫기 (65, 지도 앱 관례)
+// 손잡이를 누르면 상세. 끌다 놓은 자리의 클릭(평가하기 등)은 한 번 무시
+const PULL = 56;
+function PullCard({ placeId, onClose, children }: { placeId: string; onClose: () => void; children: React.ReactNode }) {
+  const router = useRouter();
+  const card = useRef<HTMLDivElement>(null);
+  const [opening, setOpening] = useState(false);
+  const open = useCallback(() => {
+    setOpening(true);
+    router.push(`/p/${placeId}`);
+  }, [router, placeId]);
+
+  function onDown(e: PointerEvent<HTMLDivElement>) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const el = card.current;
+    if (!el) return;
+    const start = { y: e.clientY, t: e.timeStamp };
+    let moved = false;
+    const move = (ev: globalThis.PointerEvent) => {
+      const dy = ev.clientY - start.y;
+      if (!moved && Math.abs(dy) < TAP_SLOP) return;
+      moved = true;
+      // 위로는 따라오다 점점 무겁게, 아래로는 그대로
+      el.style.transition = "none";
+      el.style.transform = `translateY(${dy < 0 ? -Math.sqrt(-dy) * 6 : dy}px)`;
+    };
+    const up = (ev: globalThis.PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      el.style.transition = "";
+      el.style.transform = "";
+      if (!moved) return;
+      const swallow = (c: MouseEvent) => (c.preventDefault(), c.stopPropagation());
+      window.addEventListener("click", swallow, { capture: true, once: true });
+      setTimeout(() => window.removeEventListener("click", swallow, true), 300);
+      const dy = ev.clientY - start.y;
+      const speed = dy / Math.max(1, ev.timeStamp - start.t);
+      if (dy < -PULL || speed < -0.5) open();
+      else if (dy > PULL || speed > 0.5) onClose();
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
+
+  return (
+    <div ref={card} onPointerDown={onDown} className="touch-none transition-transform duration-200 ease-out select-none [-webkit-touch-callout:none]">
+      <button type="button" onClick={open} aria-label="장소 상세 보기" className="mx-auto flex h-6 w-16 items-center justify-center">
+        <span aria-hidden="true" className="h-1 w-9 rounded-full bg-line-strong" />
+      </button>
+      {children}
+      {opening && (
+        <div className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center">
+          <LoaderBubble label="장소 상세를 불러오는 중" />
+        </div>
+      )}
     </div>
   );
 }

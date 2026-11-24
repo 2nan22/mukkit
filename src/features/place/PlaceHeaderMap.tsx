@@ -22,7 +22,7 @@ export function PlaceHeaderMap({ id, name, lat, lng, tier, cover = null }: { id:
         </>
       ) : (
         <div className="absolute inset-0">
-          <PlaceMap pins={[{ id, lat, lng, tier }]} selectedId={id} onSelect={() => undefined} />
+          <PlaceMap pins={[{ id, lat, lng, tier }]} selectedId={id} onSelect={() => undefined} quiet />
         </div>
       )}
       <button

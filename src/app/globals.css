@@ -90,7 +90,7 @@ body {
 }
 
 /* 실행 애니메이션 — html[data-splash] 일 때만 (layout 의 스크립트가 그리기 전에 붙인다)
-   0 ~ 0.84초 가운데에 수저가 놓임 → 0.84 ~ 1.6초 심볼이 비켜서고 글자가 펼쳐짐 → 1.62초 태그라인 → 2.3 ~ 2.7초 사라짐 */
+   0 ~ 0.84초 가운데에 수저가 놓임 → 0.84 ~ 1.6초 심볼이 비켜서고 글자가 펼쳐짐 → 1.62초 태그라인 → 2.3초부터(화면 준비 뒤) 0.4초 사라짐 */
 .launch-splash {
   display: none;
 }
@@ -102,7 +102,10 @@ html[data-splash] .launch-splash {
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  animation: launch-out 400ms ease-in 2300ms forwards;
+}
+/* 사라지기는 스크립트가 정한다(LaunchSplash SPLASH_SCRIPT) — 화면이 다 그려진 뒤 */
+html[data-splash="out"] .launch-splash {
+  animation: launch-out 400ms ease-in forwards;
 }
 .launch-lockup {
   display: flex;

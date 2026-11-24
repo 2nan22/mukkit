@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { FoodArt } from "@/components/ui/CuisineIcon";
-import { TierIcon, TierSpoons } from "@/components/ui/TierIcon";
+import { TierIcon } from "@/components/ui/TierIcon";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { TIER_LABEL, type Tier } from "@/domain/tier";
 import type { RankPlace } from "@/features/rank/rank";
 import { SectionHead } from "./HomeSections";
-import { HomeMiniMap } from "./HomeMiniMap";
+import { HomeMapCard } from "./HomeMiniMap";
 import type { MyHome } from "./myHome";
 
 // 등급 집계 (DB 값 기준 키) — countMyTiers
@@ -47,24 +47,7 @@ export function MyMap({ home, tiers }: { home: MyHome; tiers: TierCounts }) {
   return (
     <section className="flex flex-col gap-2">
       <SectionHead title="내 지도" />
-      <div className="relative mx-5 flex flex-col overflow-hidden rounded-[16px] border border-line">
-        <HomeMiniMap points={home.points} />
-        <div className="grid grid-cols-3 divide-x divide-line py-2.5 text-meta text-ink-2">
-          <span className="flex items-center justify-center gap-1">
-            저장 <b className="text-ink">{saved}</b>곳
-          </span>
-          <span className="flex items-center justify-center gap-1">
-            <TierSpoons tier="three" height={11} />
-            <b className="text-ink">{three}</b>곳
-          </span>
-          <span className="flex items-center justify-center gap-1">
-            <TierIcon tier="wantToGo" height={12} />
-            <b className="text-ink">{want}</b>곳
-          </span>
-        </div>
-        {/* 지도 · 숫자 위를 덮는 링크 — 지도 안 핀 버튼과 겹치지 않게 형제로 */}
-        <Link href="/map" aria-label={`내 지도 열기 · 저장 ${saved}곳 · 3숟가락 ${three}곳 · 가고 싶은 곳 ${want}곳`} className="absolute inset-0" />
-      </div>
+      <HomeMapCard points={home.points} total={{ saved, three, want }} />
     </section>
   );
 }
