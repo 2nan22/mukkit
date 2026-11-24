@@ -22,6 +22,7 @@ import { PlaceHeaderMap } from "@/features/place/PlaceHeaderMap";
 import { getMenu } from "@/features/place/menu";
 import { MenuSection } from "@/features/place/MenuSection";
 import { getSavedPlace } from "@/features/rating/rating";
+import { noteLabel } from "@/features/rating/noteAudience";
 import type { MediaRef } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -75,6 +76,11 @@ function OtherRow({ r, placeId, reaction }: { r: OtherRating; placeId: string; r
         <SafetyMenu userId={r.userId} nickname={r.nickname} placeId={placeId} />
       </div>
       {r.review && <p className="text-body leading-normal text-ink-2">{r.review}</p>}
+      {r.note && (
+        <p className="text-meta leading-normal text-muted">
+          <span className="font-semibold">메모</span> · {r.note}
+        </p>
+      )}
       <AteMenus menus={r.menus} />
       <Companions people={r.companions} />
       <MediaStrip media={r.media} />
@@ -183,7 +189,8 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <MediaStrip media={myMedia} />
             {mine.note && (
               <p className="rounded-btn-s bg-white px-3 py-2.5 text-meta leading-normal text-ink-2">
-                <span className="text-muted">나만 보는 메모</span> · {mine.note}
+                <span className="block text-caption text-muted">{noteLabel(mine.visibility, mine.notePublic)}</span>
+                {mine.note}
               </p>
             )}
             {reactionOf(me) && <ReactionBar ownerId={me} placeId={place.id} reaction={reactionOf(me)!} mine />}

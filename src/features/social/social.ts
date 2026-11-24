@@ -18,6 +18,8 @@ export type SharedRating = {
   cuisine: Cuisine;
   tier: Tier;
   review: string;
+  // 공개로 켠 메모만 (68-4) — 끈 메모는 빈 값
+  note: string;
   media: MediaRef[];
   updatedAt: string;
   // 함께 간 사람 — 평가를 볼 수 있는 사람만 (피드는 둘 다 '피드에 보이기'를 허용했을 때만)
@@ -83,6 +85,7 @@ type RatingRow = {
   cuisine: string;
   tier: string;
   review: string;
+  note?: string | null;
   media: { path: string; kind: "image" | "video" }[];
   updated_at: string;
   companions?: (Person & { isMe?: boolean })[];
@@ -103,6 +106,7 @@ async function withMedia(supabase: SupabaseClient, rows: RatingRow[], owner?: Pe
     cuisine: r.cuisine as Cuisine,
     tier: tierFromDb(r.tier),
     review: r.review,
+    note: r.note ?? "",
     media: r.media.flatMap((m) => (urlOf.get(m.path) ? [{ kind: m.kind, url: urlOf.get(m.path)! }] : [])),
     updatedAt: r.updated_at,
     companions: r.companions ?? [],

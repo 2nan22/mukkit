@@ -83,7 +83,7 @@ export function FollowingNew({ ratings, followingCount, me }: { ratings: SharedR
                     <TierBadge tier={r.tier} />
                   </span>
                   <span className="truncate text-meta text-muted">{[CUISINE_LABEL[r.cuisine], regionOf(r.address)].filter(Boolean).join(" · ")}</span>
-                  {r.review && <span className="line-clamp-2 text-meta leading-normal text-ink-2">{r.review}</span>}
+                  {(r.review || r.note) && <span className="line-clamp-2 text-meta leading-normal text-ink-2">{r.review || r.note}</span>}
                 </span>
               </Link>
             </li>

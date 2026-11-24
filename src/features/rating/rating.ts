@@ -15,6 +15,8 @@ export const RatingSchema = z.object({
   placeId: z.uuid(),
   tier: z.enum(TIERS),
   note: z.string().trim().max(NOTE_MAX, `메모는 ${NOTE_MAX}자까지 쓸 수 있어요`),
+  // 스위치를 건드렸을 때만 — 안 건드리면 정하지 않음 그대로 (한 번에 공개 대상으로 남게)
+  notePublic: z.boolean().optional(),
   visitedOn: z.iso.date().nullable(),
   sponsored: z.boolean(),
   review: z.string().trim().max(REVIEW_MAX, `한 줄 평가는 ${REVIEW_MAX}자까지 쓸 수 있어요`),
@@ -40,6 +42,7 @@ export class RatingSaveError extends Error {
 type Patch = {
   tier?: Tier;
   note?: string;
+  notePublic?: boolean;
   visitedOn?: string | null;
   sponsored?: boolean;
   review?: string;
@@ -57,6 +60,8 @@ export async function updateUserPlace(
   const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (patch.tier) row.tier = tierToDb(patch.tier);
   if (patch.note !== undefined) row.note = patch.note;
+  // 직접 켜고 끈 것만 적는다 — 빈 메모는 DB 트리거가 공개에서 뺀다 (68-4)
+  if (patch.notePublic !== undefined) row.note_public = patch.notePublic;
   if (patch.visitedOn !== undefined) row.visited_on = patch.visitedOn;
   if (patch.sponsored !== undefined) row.sponsored = patch.sponsored;
   if (patch.review !== undefined) row.review = patch.review;
@@ -81,6 +86,8 @@ export type SavedPlace = {
   cuisine: string;
   tier: Tier;
   note: string;
+  // 메모를 평가 공개 범위대로 보여 줄지 (68-4) — 기본 나만
+  notePublic: boolean;
   visitedOn: string | null;
   sponsored: boolean;
   review: string;
@@ -90,12 +97,14 @@ export type SavedPlace = {
   rank?: number | null;
 };
 
-const SAVED_PLACE_COLUMNS = "place_id, tier, note, visited_on, sponsored, review, visibility, menus, tier_rank, places(name, address, category_name, cuisine)";
+const SAVED_PLACE_COLUMNS = "place_id, tier, note, note_public, visited_on, sponsored, review, visibility, menus, tier_rank, places(name, address, category_name, cuisine)";
 
 type SavedPlaceRow = {
   place_id: string;
   tier: string;
   note: string;
+  // null 정하지 않음 · false 직접 끔 (68-4)
+  note_public: boolean | null;
   visited_on: string | null;
   sponsored: boolean;
   review: string;
@@ -114,6 +123,7 @@ function toSavedPlace(row: SavedPlaceRow): SavedPlace {
     cuisine: row.places?.cuisine ?? "other",
     tier: tierFromDb(row.tier),
     note: row.note,
+    notePublic: row.note_public === true,
     visitedOn: row.visited_on,
     sponsored: row.sponsored,
     review: row.review,
