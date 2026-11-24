@@ -19,7 +19,7 @@ export function JoinButton({ token }: { token: string }) {
         onClick={() => start(async () => { const res = await joinMeetup(token); if (res?.error) setError(res.error); })}
         className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white disabled:opacity-60 raised-brand"
       >
-        {pending ? "참여하는 중" : "약속 참여하기"}
+        {pending ? "참여하는 중" : "참여하기"}
       </button>
     </>
   );

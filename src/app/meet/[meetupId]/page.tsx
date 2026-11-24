@@ -9,8 +9,6 @@ import { PURPOSE_LABEL } from "@/domain/meetup";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { CloseMeetup } from "@/features/meetup/CloseMeetup";
 import { InviteAnswer } from "@/features/meetup/InviteAnswer";
-import { InvitePicker } from "@/features/meetup/InvitePicker";
-import { InviteShare } from "@/features/meetup/InviteShare";
 import { getMeetupStatus, getMyPoints, planMeetup, type MeetupMember } from "@/features/meetup/meetup";
 import { MeetupRefresher } from "@/features/meetup/MeetupRefresher";
 import { MeetupResults } from "@/features/meetup/MeetupResults";
@@ -29,41 +27,30 @@ function range(startsAt: string | null, endsAt: string | null): string {
   return `${day} ${t(startsAt)}${end}쯤`;
 }
 
-function Step({ n, title, hint, children }: { n: number; title: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-caption font-bold text-white">{n}</span>
-        <span className="flex flex-col gap-0.5">
-          <h3 className="text-[16px] font-bold">{title}</h3>
-          {hint && <span className="text-meta text-muted">{hint}</span>}
-        </span>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-// 참여자 · 위치 입력 현황 (위치 값은 보이지 않음)
-function Members({ members, max }: { members: MeetupMember[]; max: number }) {
+// 사람마다 상태 (67) — 출발지 넣음 · 출발지 전 · 수락 기다리는 중 (위치 값은 보이지 않음)
+function Members({ members, invitees }: { members: MeetupMember[]; invitees: { id: string; nickname: string }[] }) {
   const ready = members.filter((m) => m.ready).length;
   return (
-    <section className="flex flex-col gap-2">
+    <section className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between">
-        <h3 className="text-[16px] font-bold">참여 {members.length}명</h3>
+        <h3 className="text-[16px] font-bold">함께하는 사람</h3>
         <span className="text-meta text-muted">
-          {ready}명 위치 입력 · 최대 {max}명
+          출발지 {ready} / {members.length}명
         </span>
       </div>
-      <ul className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+      <ul className="flex flex-col">
         {members.map((m) => (
-          <li key={m.id} className="flex w-14 shrink-0 flex-col items-center gap-1">
-            <span className="relative">
-              <Avatar name={m.nickname} size={40} />
-              <span aria-hidden="true" className={`absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full border-2 border-white ${m.ready ? "bg-[#1f9d55]" : "bg-line-strong"}`} />
-            </span>
-            <span className="w-full truncate text-center text-caption text-ink-2">{m.isMe ? "나" : m.nickname}</span>
-            <span className="sr-only">{m.ready ? "위치 입력함" : "위치 입력 전"}</span>
+          <li key={m.id} className="flex min-h-12 items-center gap-3 border-b border-line last:border-b-0">
+            <Avatar name={m.nickname} size={32} />
+            <span className="flex-1 truncate text-body">{m.isMe ? `${m.nickname} (나)` : m.nickname}</span>
+            <span className={`shrink-0 text-meta ${m.ready ? "font-semibold text-[#1f7a4d]" : "text-muted"}`}>{m.ready ? "출발지 넣음" : "출발지 전"}</span>
+          </li>
+        ))}
+        {invitees.map((i) => (
+          <li key={i.id} className="flex min-h-12 items-center gap-3 border-b border-line last:border-b-0">
+            <Avatar name={i.nickname} size={32} />
+            <span className="flex-1 truncate text-body text-ink-2">{i.nickname}</span>
+            <span className="shrink-0 text-meta text-muted">수락 기다리는 중</span>
           </li>
         ))}
       </ul>
@@ -118,11 +105,14 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
       <PointEditor meetupId={status.id} kind="return" current={label("return")} />
     </>
   );
-  const invite = canInvite && status.inviteToken && (
-    <>
-      <InvitePicker meetupId={status.id} invited={status.invitees} memberIds={status.members.map((m) => m.id)} />
-      <InviteShare url={`${origin}/m/${status.inviteToken}`} title={`${purpose} 약속`} />
-    </>
+  // 친구 초대는 따로 화면 — 만든 직후와 같은 화면 (67)
+  const invite = canInvite && (
+    <Link href={`/meet/${status.id}/invite`} className="flex min-h-12 items-center justify-between rounded-[12px] border border-line px-4 text-body">
+      친구 더 초대하기
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </Link>
   );
 
   return (
@@ -132,7 +122,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
         <h2 className="text-title font-bold tracking-tight">{title}</h2>
         <span className="text-meta text-muted">
           {range(status.startsAt, status.endsAt)}
-          {others.length === 0 && " · 함께할 분을 기다리는 중이에요"}
+          {others.length === 0 && status.invitees.length === 0 && " · 함께할 분을 기다리는 중이에요"}
         </span>
       </section>
 
@@ -148,7 +138,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
         </Link>
       )}
 
-      {status.members.length > 1 && <Members members={status.members} max={status.maxMembers} />}
+      {(status.members.length > 1 || status.invitees.length > 0) && <Members members={status.members} invitees={status.invitees} />}
 
       {ready ? (
         <>
@@ -162,32 +152,37 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
             </summary>
             <div className="flex flex-col gap-2 px-2 pb-2">{editors}</div>
           </details>
-          {invite && (
-            <details className="rounded-[16px] border border-line">
-              <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-meta">
-                <span className="text-ink-2">더 초대하기</span>
-                <span className="font-semibold text-ink">열기</span>
-              </summary>
-              <div className="flex flex-col gap-2 px-2 pb-2">{invite}</div>
-            </details>
-          )}
+          {invite}
         </>
       ) : (
         <>
-          {invite && (
-            <Step n={1} title="같이 갈 분 초대" hint={`최대 ${status.maxMembers}명까지 함께할 수 있어요`}>
-              {invite}
-            </Step>
+          {status.meReady ? (
+            <details className="group rounded-[16px] bg-surface">
+              <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-meta">
+                <span className="truncate text-ink-2">
+                  내 위치 · 출발 {label("origin") ?? "없음"} · 귀가 {label("return") ?? "없음"}
+                </span>
+                <span className="shrink-0 font-semibold text-ink group-open:hidden">바꾸기</span>
+              </summary>
+              <div className="flex flex-col gap-2 px-2 pb-2">{editors}</div>
+            </details>
+          ) : (
+            // 출발지는 각자 넣는다 (67, 위밋플레이스) — 내 할 일을 가장 눈에 띄게
+            <section className="flex flex-col gap-2 rounded-[16px] bg-brand-soft p-4">
+              <span className="flex flex-col gap-0.5">
+                <h3 className="text-[16px] font-bold">내 출발지 넣기</h3>
+                <span className="text-meta text-ink-2">동네 정도로만 저장하고, 다른 분에게는 보이지 않아요</span>
+              </span>
+              {editors}
+            </section>
           )}
-          <Step n={invite ? 2 : 1} title="내 위치 넣기" hint="하나만 넣어도 돼요. 동네 정도로만 저장하고, 다른 분에게는 보이지 않아요.">
-            {editors}
-          </Step>
-          {others.length > 0 && status.meReady && readyCount < 2 && (
-            <p className="rounded-[16px] bg-surface p-4 text-meta leading-normal text-ink-2">다른 분이 위치를 넣으면 바로 추천이 나와요.</p>
-          )}
-          {others.length > 0 && !status.meReady && readyCount >= 1 && (
-            <p className="rounded-[16px] bg-brand-soft p-4 text-meta leading-normal text-ink-2">{readyCount}명이 위치를 넣었어요. 내 위치만 넣으면 추천이 나와요.</p>
-          )}
+          <section className="flex flex-col gap-0.5 rounded-[16px] border border-line p-4">
+            <h3 className="text-body font-bold">추천 지역</h3>
+            <span className="text-meta leading-normal text-muted">
+              {status.meReady ? (readyCount < 2 ? "다른 분이 출발지를 넣으면 모두 오가기 편한 곳 3곳이 나와요" : "") : readyCount >= 1 ? `${readyCount}명이 출발지를 넣었어요. 내 출발지만 넣으면 나와요` : "2명 이상 출발지를 넣으면 모두 오가기 편한 곳 3곳이 나와요"}
+            </span>
+          </section>
+          {invite}
         </>
       )}
 
