@@ -119,9 +119,10 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
             <h2 className="pt-0.5 text-[22px] leading-snug font-bold tracking-tight">{place.name}</h2>
             {place.note && (
               <div className="mt-3 flex flex-col gap-2.5 rounded-[12px] bg-surface px-3.5 py-3">
-                <p className="line-clamp-3 text-meta leading-normal text-ink-2">
-                  <span className="text-muted">메모</span> · {place.note}
-                </p>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-caption font-semibold text-muted">메모</span>
+                  <p className="line-clamp-3 text-meta leading-normal whitespace-pre-line text-ink-2">{place.note}</p>
+                </div>
                 <NoteVisibilityPicker onSurface value={noteVis} onChange={(v) => setNoteChoice({ placeId: place.placeId, vis: v })} rating={shownVisibility} />
               </div>
             )}
