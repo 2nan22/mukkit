@@ -1,17 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
 import { Suspense } from "react";
 import { NavTracker } from "@/lib/nav/NavTracker";
 import { NavLoading } from "@/lib/nav/NavLoading";
 import { LaunchSplash, SPLASH_SCRIPT } from "@/components/brand/LaunchSplash";
-
-const pretendard = localFont({
-  src: "../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
-  variable: "--font-pretendard",
-  weight: "45 920",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "먹킷",
@@ -31,7 +23,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // data-splash 는 그리기 전 스크립트가 붙인다 — 서버 그림과 달라도 경고하지 않게
-    <html lang="ko" className={`${pretendard.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="ko" className="h-full antialiased" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
       </head>
