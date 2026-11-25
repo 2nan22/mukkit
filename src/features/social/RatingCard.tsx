@@ -12,9 +12,11 @@ import { SafetyMenu } from "@/features/safety/SafetyMenu";
 import type { SharedRating } from "./social";
 import { MetaLine } from "@/components/ui/MetaLine";
 
-function dateLabel(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+// 올해가 아니면 연도까지 — 가져온 평가는 지도에 저장한 날이라 몇 해 전일 수 있다 (68-9)
+export function dateLabel(iso: string, now = new Date()): string {
+  const [y, m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(iso)).split("-").map(Number);
+  const thisYear = Number(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric" }).format(now));
+  return y === thisYear ? `${m}월 ${d}일` : `${y}년 ${m}월 ${d}일`;
 }
 
 // 피드 · 프로필 공용 — 공개 한마디 · 사진 · 등급만 (메모는 이 데이터에 없다)
