@@ -22,7 +22,7 @@ import { ImportModeSheet, isRatedMode, type RowChoice } from "./ImportModeSheet"
 import { NoteVisibilityPicker } from "@/features/rating/NoteVisibilityPicker";
 import { MetaLine } from "@/components/ui/MetaLine";
 
-const VISIBILITY_LABEL: Record<RatingVisibility, string> = { private: "나만", followers: "팔로워", public: "전체 공개" };
+const VISIBILITY_LABEL: Record<RatingVisibility, string> = { private: "비공개", followers: "팔로워 공개", public: "전체 공개" };
 
 // visibility · noteVisibility: 다녀온 등급으로 가져올 때 이 리스트만의 공개 범위 · 지도 앱 메모 공개 범위 (68-4 · 68-5)
 type Row = ListPreview & { link: string; mode: ImportMode; visibility?: RatingVisibility; noteVisibility?: NoteVisibility };
@@ -168,7 +168,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
                   </label>
                 ))}
               </div>
-              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요. 리스트마다 바꾸려면 등급을 누르세요</span>
+              <span className="text-caption text-muted">팔로워 공개나 전체 공개면 팔로우하는 사람 피드에 보여요. 리스트마다 바꾸려면 등급을 누르세요</span>
               <div className="pt-2">
                 <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={sameNote ?? "same"} onChange={(v) => setAllRated({ noteVisibility: v })} rating={sameVis} warn />
               </div>

@@ -7,7 +7,8 @@ import { ListSkeleton } from "@/components/ui/Skeleton";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getReactions, reactionKey } from "@/features/reactions/reactions";
 import { RatingCard } from "@/features/social/RatingCard";
-import { getFeed, getFollowCounts } from "@/features/social/social";
+import { FeedMore } from "@/features/social/FeedMore";
+import { FEED_PAGE, getFeed, getFollowCounts } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "피드" };
@@ -49,6 +50,7 @@ async function Feed() {
     );
   }
   const reactions = await getReactions(supabase, feed);
+  const last = feed[feed.length - 1];
   return (
     <div className="px-5 pb-6">
       {/* 내 평가만 있을 때 — 빈 화면 안내 대신 맨 위 한 줄 (68-9) */}
@@ -63,6 +65,10 @@ async function Feed() {
       {feed.map((r) => (
         <RatingCard key={`${r.ownerId}:${r.placeId}`} rating={r} showOwner viewerId={me} reaction={reactions.get(reactionKey(r.ownerId, r.placeId)) ?? null} />
       ))}
+      <FeedMore
+        key={last ? `${last.updatedAt}:${last.ownerId}:${last.placeId}` : "none"}
+        shown={feed.map((r) => `${r.ownerId}:${r.placeId}`)}
+        first={feed.length < FEED_PAGE ? null : { updatedAt: last.updatedAt, ownerId: last.ownerId, placeId: last.placeId }} viewerId={me} pageSize={FEED_PAGE} />
     </div>
   );
 }
