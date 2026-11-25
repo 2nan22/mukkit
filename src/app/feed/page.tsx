@@ -9,7 +9,7 @@ import { getReactions, reactionKey } from "@/features/reactions/reactions";
 import { RatingCard } from "@/features/social/RatingCard";
 import { FeedDivider } from "@/features/social/FeedDivider";
 import { FeedMore } from "@/features/social/FeedMore";
-import { dividerIndex } from "@/features/social/feedSeen";
+import { dividerIndex, nothingNew } from "@/features/social/feedSeen";
 import { FEED_PAGE, getFeed, getFollowCounts } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -69,7 +69,7 @@ async function Feed() {
       )}
       {feed.map((r, i) => (
         <Fragment key={`${r.ownerId}:${r.placeId}`}>
-          {i === divider && <FeedDivider none={i === 0} />}
+          {i === divider && <FeedDivider none={nothingNew(feed, i, me)} />}
           <RatingCard rating={r} showOwner viewerId={me} reaction={reactions.get(reactionKey(r.ownerId, r.placeId)) ?? null} />
         </Fragment>
       ))}
