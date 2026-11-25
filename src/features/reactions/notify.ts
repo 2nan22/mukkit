@@ -1,6 +1,5 @@
 import "server-only";
 import { honor } from "@/domain/honor";
-import { claimFreshNotifications } from "@/features/push/claim";
 import { sendPush } from "@/features/push/send";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { commentsHref } from "./reactions";
@@ -31,31 +30,25 @@ export async function notifyComment(authorId: string, ownerId: string, placeId: 
   await sendPush(viewers, { title: "새 댓글", body: `${who}이 자기 평가에 댓글을 남겼어요`, url, tag }, "comment");
 }
 
-// 새 좋아요 (71) — 평가 주인에게. 같은 사람이 같은 평가에 다시 눌러도 처음 한 번만(알림함 줄이 하나라서)
+// 새 좋아요 (71) — 평가 주인에게. 같은 사람이 같은 평가에 다시 눌러도 알림함 줄이 남아 있는 동안은 한 번만
+// (받은 사람이 알림을 지웠거나 90일이 지나 줄이 없어지면 다시 갈 수 있음)
 // 한 사람이 여러 평가를 잇달아 누르면 30분에 한 번만 푸시, 나머지는 알림함에만
 // 같은 평가의 푸시는 tag 가 같아 기기에서 앞 알림을 바꿔 끼운다 — '○○님 외 N명'
-const LIKE_PUSH_GAP_MS = 30 * 60_000;
-
 export async function notifyLike(likerId: string, ownerId: string, placeId: string): Promise<void> {
   if (likerId === ownerId) return;
   const admin = createSupabaseAdminClient();
   if (!admin) return;
-  const since = new Date(Date.now() - LIKE_PUSH_GAP_MS).toISOString();
-  const { count: recent } = await admin
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("kind", "like")
-    .eq("actor_id", likerId)
-    .eq("user_id", ownerId)
-    .gt("pushed_at", since);
-  if ((recent ?? 0) > 0) return;
+  // 30분 간격 확인과 보냄 표시를 DB 에서 한 번에 — 잇달아 누를 때 두 번 나가지 않게
   // 줄이 없으면 차단한 사이 · 이미 알린 좋아요 등으로 트리거가 건너뛴 것
-  const claimed = await claimFreshNotifications(admin, "like", likerId, { user_id: ownerId, place_id: placeId });
-  if (claimed.length === 0) return;
-  const [{ data: actor }, { count: likes }] = await Promise.all([
+  const { data: claimed } = await admin.rpc("claim_like_push", { p_actor: likerId, p_owner: ownerId, p_place: placeId });
+  if (claimed !== true) return;
+  const [{ data: actor }, { count: likes }, { count: still }] = await Promise.all([
     admin.from("profiles").select("nickname").eq("id", likerId).maybeSingle(),
     admin.from("rating_likes").select("user_id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("place_id", placeId),
+    // 누르자마자 풀었으면 보내지 않는다 (알림함도 이 줄을 숨김)
+    admin.from("rating_likes").select("user_id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("place_id", placeId).eq("user_id", likerId),
   ]);
+  if (!still) return;
   if (!actor) return;
   const who = honor(actor.nickname as string);
   const others = Math.max(0, (likes ?? 1) - 1);
