@@ -11,7 +11,9 @@ type Item = { rating: SharedRating; reaction: Reaction | null };
 const cursorOf = (r: SharedRating): FeedCursor => ({ updatedAt: r.updatedAt, ownerId: r.ownerId, placeId: r.placeId });
 
 // 피드 더 보기 (70) — 맨 아래에 닿으면 20개씩 이어 받는다. 서버가 그린 첫 쪽 뒤에 붙는다
-export function FeedMore({ first, viewerId, pageSize }: { first: FeedCursor | null; viewerId: string; pageSize: number }) {
+// shown: 서버가 그린 첫 쪽 카드 — 새로 고침(차단 · 댓글)으로 첫 쪽이 당겨 올라와도 두 번 그리지 않는다
+// 첫 쪽이 바뀌면 부르는 쪽이 key 로 이 목록을 처음부터 다시 받게 한다
+export function FeedMore({ first, shown, viewerId, pageSize }: { first: FeedCursor | null; shown: string[]; viewerId: string; pageSize: number }) {
   const [items, setItems] = useState<Item[]>([]);
   const [cursor, setCursor] = useState<FeedCursor | null>(first);
   const [error, setError] = useState<string | null>(null);
@@ -48,16 +50,22 @@ export function FeedMore({ first, viewerId, pageSize }: { first: FeedCursor | nu
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 다 받은 뒤 다시 지켜본다(아직 보이면 곧바로 다음 쪽)
   }, [cursor, error, pending]);
 
+  const seen = new Set(shown);
   return (
     <>
-      {items.map(({ rating, reaction }) => (
+      {items.filter(({ rating }) => !seen.has(`${rating.ownerId}:${rating.placeId}`)).map(({ rating, reaction }) => (
         <RatingCard key={`${rating.ownerId}:${rating.placeId}`} rating={rating} showOwner viewerId={viewerId} reaction={reaction} />
       ))}
       <div ref={sentinel} aria-live="polite" className="flex min-h-14 items-center justify-center text-meta text-muted">
         {error ? (
-          <button type="button" onClick={() => void load()} className="h-10 rounded-full bg-surface px-4 font-semibold text-ink">
-            {error} 다시 불러오기
-          </button>
+          <span className="flex flex-col items-center gap-2">
+            {error}
+            {!error.includes("로그인") && (
+              <button type="button" onClick={() => void load()} className="h-10 rounded-full bg-surface px-4 font-semibold text-ink">
+                다시 불러오기
+              </button>
+            )}
+          </span>
         ) : cursor ? (
           pending && "불러오는 중"
         ) : (

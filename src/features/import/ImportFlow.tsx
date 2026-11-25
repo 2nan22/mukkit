@@ -168,7 +168,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink
                   </label>
                 ))}
               </div>
-              <span className="text-caption text-muted">팔로워 이상이면 팔로우하는 사람 피드에 보여요. 리스트마다 바꾸려면 등급을 누르세요</span>
+              <span className="text-caption text-muted">팔로워 공개나 전체 공개면 팔로우하는 사람 피드에 보여요. 리스트마다 바꾸려면 등급을 누르세요</span>
               <div className="pt-2">
                 <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={sameNote ?? "same"} onChange={(v) => setAllRated({ noteVisibility: v })} rating={sameVis} warn />
               </div>

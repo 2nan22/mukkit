@@ -65,7 +65,10 @@ async function Feed() {
       {feed.map((r) => (
         <RatingCard key={`${r.ownerId}:${r.placeId}`} rating={r} showOwner viewerId={me} reaction={reactions.get(reactionKey(r.ownerId, r.placeId)) ?? null} />
       ))}
-      <FeedMore first={feed.length < FEED_PAGE ? null : { updatedAt: last.updatedAt, ownerId: last.ownerId, placeId: last.placeId }} viewerId={me} pageSize={FEED_PAGE} />
+      <FeedMore
+        key={last ? `${last.updatedAt}:${last.ownerId}:${last.placeId}` : "none"}
+        shown={feed.map((r) => `${r.ownerId}:${r.placeId}`)}
+        first={feed.length < FEED_PAGE ? null : { updatedAt: last.updatedAt, ownerId: last.ownerId, placeId: last.placeId }} viewerId={me} pageSize={FEED_PAGE} />
     </div>
   );
 }

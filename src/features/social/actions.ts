@@ -41,6 +41,6 @@ export async function loadMoreFeed(cursor: FeedCursor): Promise<{ items?: { rati
     const reactions = await getReactions(supabase, feed);
     return { items: feed.map((rating) => ({ rating, reaction: reactions.get(reactionKey(rating.ownerId, rating.placeId)) ?? null })) };
   } catch {
-    return { error: "불러오지 못했어요. 다시 시도해 주세요." };
+    return { error: "불러오지 못했어요." };
   }
 }
