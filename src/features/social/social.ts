@@ -134,8 +134,9 @@ export async function getRatingDetail(supabase: SupabaseClient, ownerId: string,
   return rows.length ? (await withMedia(supabase, rows))[0] : null;
 }
 
-export async function getFeed(supabase: SupabaseClient, before?: string): Promise<SharedRating[]> {
-  const { data, error } = await supabase.rpc("feed", { p_before: before ?? null, p_limit: 20 });
+// mine: 내 평가(전체 · 팔로워 공개)도 섞기 — 피드 탭만. 홈 '팔로잉 새 평가'는 팔로잉 것만 (68-9)
+export async function getFeed(supabase: SupabaseClient, { before, mine = false }: { before?: string; mine?: boolean } = {}): Promise<SharedRating[]> {
+  const { data, error } = await supabase.rpc("feed", { p_before: before ?? null, p_limit: 20, p_mine: mine });
   if (error) throw new SocialError("feed", error.code);
   return withMedia(supabase, data as RatingRow[]);
 }
