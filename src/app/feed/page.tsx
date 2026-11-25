@@ -51,6 +51,15 @@ async function Feed() {
   const reactions = await getReactions(supabase, feed);
   return (
     <div className="px-5 pb-6">
+      {/* 내 평가만 있을 때 — 빈 화면 안내 대신 맨 위 한 줄 (68-9) */}
+      {counts.following === 0 && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-btn-s bg-surface px-3.5 py-3">
+          <span className="text-meta leading-normal text-ink-2">사람을 팔로우하면 그 사람 평가도 여기 모여요</span>
+          <Link href="/people" className="shrink-0 text-meta font-bold text-brand">
+            사람 찾기
+          </Link>
+        </div>
+      )}
       {feed.map((r) => (
         <RatingCard key={`${r.ownerId}:${r.placeId}`} rating={r} showOwner viewerId={me} reaction={reactions.get(reactionKey(r.ownerId, r.placeId)) ?? null} />
       ))}
