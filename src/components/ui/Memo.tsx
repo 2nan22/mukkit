@@ -4,7 +4,7 @@ const SOURCE_NAME: Record<MemoSource, string> = { naver: "네이버 지도 메�
 
 // 메모 한 칸 — 왼쪽 아이콘(지도 앱에서 가져온 메모면 그 앱 로고, 아니면 메모 아이콘) · 오른쪽 내용 (68-6)
 // 가운데 점으로 이름표와 내용을 한 줄에 잇지 않는다. caption: 내 메모를 누가 보는지 (내 화면에서만)
-// alias: 지도 앱 별명 — 메모와 따로 '별명' 배지 줄 (68-7) · 별명이 있으면 메모 줄에도 '메모' 배지 (68-8)
+// alias: 지도 앱 별명 — 메모와 따로 '별명' 배지 줄 (68-7) · 메모 줄은 늘 '메모' 배지 (68-8 · 68-10)
 export function Memo({ text, alias, source, caption, tone = "surface", clamp }: { text: string; alias?: string; source?: string | null; caption?: string; tone?: "surface" | "white"; clamp?: 3 }) {
   // 별명만 있으면 별명이 온 네이버 로고 (별명은 네이버에만 있음)
   const mark = source === "naver" || source === "kakao" || source === "google" ? source : alias && !text ? "naver" : null;
@@ -14,21 +14,21 @@ export function Memo({ text, alias, source, caption, tone = "surface", clamp }: 
       <span className="flex h-[1lh] shrink-0 items-center text-meta leading-normal">{mark ? <SourceMark source={mark} size={16} /> : <MemoIcon />}</span>
       <span className="sr-only">{mark ? (text ? SOURCE_NAME[mark] : SOURCE_NAME[mark].replace("메모", "별명")) : "메모"}</span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {alias ? (
-          // 별명이 있으면 별명 · 메모 줄마다 배지 — 배지 칸과 글 칸을 나눠 긴 글은 글 칸 안에서 줄바꿈 (68-8)
-          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-meta leading-normal">
-            <Badge>별명</Badge>
-            <span className={`font-semibold break-words text-ink ${clamp ? "line-clamp-2" : ""}`}>{alias}</span>
-            {text && (
-              <>
-                <Badge>메모</Badge>
-                <p className={`break-words whitespace-pre-line text-ink-2 ${clamp ? "line-clamp-3" : ""}`}>{text}</p>
-              </>
-            )}
-          </div>
-        ) : (
-          text && <p className={`text-meta leading-normal break-words whitespace-pre-line text-ink-2 ${clamp ? "line-clamp-3" : ""}`}>{text}</p>
-        )}
+        {/* 별명 · 메모 줄마다 배지 — 메모는 별명이 없어도 늘 (68-10). 배지 칸과 글 칸을 나눠 긴 글은 글 칸 안에서 줄바꿈 */}
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-meta leading-normal">
+          {alias && (
+            <>
+              <Badge>별명</Badge>
+              <span className={`font-semibold break-words text-ink ${clamp ? "line-clamp-2" : ""}`}>{alias}</span>
+            </>
+          )}
+          {text && (
+            <>
+              <Badge>메모</Badge>
+              <p className={`break-words whitespace-pre-line text-ink-2 ${clamp ? "line-clamp-3" : ""}`}>{text}</p>
+            </>
+          )}
+        </div>
         {caption && <span className="text-caption text-muted">{caption}</span>}
       </div>
     </div>
