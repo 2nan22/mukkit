@@ -3,12 +3,12 @@
 import { redirect, RedirectType } from "next/navigation";
 import { safeNextPath, SESSION_ENDED, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { TERMS_VERSION } from "./legal";
+import { agreedAll, TERMS_VERSION } from "./legal";
 
 export type AgreeState = { error?: string };
 
 export async function agreeToTerms(_prev: AgreeState, formData: FormData): Promise<AgreeState> {
-  if (formData.get("agree") !== "on") return { error: "동의해야 계속 쓸 수 있어요" };
+  if (!agreedAll(formData)) return { error: "필수 항목에 모두 동의해 주세요." };
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
