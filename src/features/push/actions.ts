@@ -28,7 +28,7 @@ export async function deletePushSubscription(endpoint: string): Promise<void> {
   await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
 }
 
-const PUSH_KINDS = ["meetup", "comment", "visit", "follow"] as const;
+const PUSH_KINDS = ["meetup", "comment", "like", "visit", "follow"] as const;
 
 // 알림 종류별 끄기 — 끈 종류 목록을 통째로 저장
 export async function setPushOff(off: string[]): Promise<{ error?: string }> {

@@ -7,6 +7,7 @@ import { PushToggle } from "./PushToggle";
 const KINDS = [
   { kind: "meetup", label: "약속", desc: "초대, 새 참여자, 추천 지역" },
   { kind: "comment", label: "댓글", desc: "내 평가, 내가 댓글 단 평가" },
+  { kind: "like", label: "좋아요", desc: "누가 내 평가를 좋아했을 때" },
   { kind: "visit", label: "함께 방문", desc: "누가 나와 함께 갔다고 남겼을 때" },
   { kind: "follow", label: "팔로우", desc: "누가 나를 팔로우했을 때" },
 ] as const;

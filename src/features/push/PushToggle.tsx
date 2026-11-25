@@ -178,7 +178,7 @@ export function PushToggle({ variant, text, onState }: { variant: "strip" | "row
           ? "Safari 공유 버튼 › 홈 화면에 추가한 뒤 켤 수 있어요"
           : state === "unsupported"
             ? "이 브라우저에서는 알림을 받을 수 없어요"
-            : "약속, 댓글, 함께 방문 소식을 알려 드려요";
+            : "약속, 댓글, 좋아요 소식을 알려 드려요";
   const canToggle = state === "on" || state === "off";
   return (
     <div className="flex flex-col gap-1">

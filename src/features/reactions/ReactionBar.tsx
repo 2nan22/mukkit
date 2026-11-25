@@ -49,11 +49,18 @@ export function ReactionBar({
     if (count !== reaction.comments) router.refresh();
   }
 
-  const heart = (filled: boolean) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
-    </svg>
-  );
+  // 좋아요 아이콘은 포크와 나이프 (71, 사용자 결정 2026-11-25) — 안 누르면 선, 누르면 속이 찬 모양
+  const forkKnife = (filled: boolean) =>
+    filled ? (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M4.5 3h1.6v5h1.6V3h1.6v5h1.6V3h1.6v5.2a4 4 0 0 1-3 3.87V20.2a1 1 0 0 1-2 0v-8.13a4 4 0 0 1-3-3.87z" />
+        <path d="M18.2 3c-2.2.9-3.4 3.7-3.4 8v1h2.2v8.2a1 1 0 0 0 2 0V3.6c0-.4-.4-.7-.8-.6z" />
+      </svg>
+    ) : (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M5.5 3v5.5a3 3 0 0 0 6 0V3M8.5 3v6M8.5 11.5V21M18 3c-2 1-3 4-3 8h3M18 3v18" />
+      </svg>
+    );
   const preview = showComments ? reaction.preview : [];
 
   return (
@@ -67,7 +74,7 @@ export function ReactionBar({
             aria-label={liked ? "좋아요 취소" : "좋아요"}
             className={`flex size-11 items-center justify-center transition-transform active:scale-90 ${liked ? "text-ink" : "text-ink-2"}`}
           >
-            {heart(liked)}
+            {forkKnife(liked)}
           </button>
         )}
         {showComments && (
@@ -80,7 +87,7 @@ export function ReactionBar({
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
               <path d="M4 5h16v11H9l-5 4z" />
             </svg>
-            {/* 내 평가는 하트가 없어 아이콘만 뜨면 뭔지 모른다 — 글자를 붙인다 */}
+            {/* 내 평가는 좋아요 버튼이 없어 아이콘만 뜨면 뭔지 모른다 — 글자를 붙인다 */}
             {mine && <span>{count > 0 ? `댓글 ${count}개` : "댓글 쓰기"}</span>}
           </button>
         )}

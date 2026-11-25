@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { notifyComment } from "./notify";
+import { notifyComment, notifyLike } from "./notify";
 import { getComments, type RatingComment } from "./reactions";
 
 type Result = { error?: string };
@@ -29,7 +29,9 @@ export async function setLike(input: { ownerId: string; placeId: string; on: boo
   const { error } = input.on
     ? await supabase.from("rating_likes").upsert({ user_id: me, owner_id: ownerId, place_id: placeId }, { onConflict: "user_id,owner_id,place_id", ignoreDuplicates: true })
     : await supabase.from("rating_likes").delete().eq("user_id", me).eq("owner_id", ownerId).eq("place_id", placeId);
-  return error ? { error: "좋아요를 반영하지 못했어요. 다시 시도해 주세요." } : {};
+  if (error) return { error: "좋아요를 반영하지 못했어요. 다시 시도해 주세요." };
+  if (input.on) after(() => notifyLike(me, ownerId, placeId).catch(() => console.warn("[push] 좋아요 알림 실패")));
+  return {};
 }
 
 const CommentInput = Target.extend({ body: z.string().trim().min(1).max(300) });

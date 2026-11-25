@@ -91,3 +91,90 @@ describe.skipIf(!admin)("notifyComment", () => {
     expect(sent()).toHaveLength(0);
   });
 });
+
+describe.skipIf(!admin)("notifyLike", () => {
+  // 0: 평가 주인 · 1, 2: 좋아요 누른 사람 · 3: 좋아요 알림을 끈 주인
+  const users: { id: string; name: string; endpoint: string }[] = [];
+  const places: string[] = [];
+
+  beforeAll(async () => {
+    Object.assign(process.env, {
+      NEXT_PUBLIC_SUPABASE_URL: url,
+      SUPABASE_SECRET_KEY: secret,
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: "test-public",
+      VAPID_PRIVATE_KEY: "test-private",
+      VAPID_SUBJECT: "mailto:test@test.local",
+    });
+    for (let i = 0; i < 4; i++) {
+      const { userId } = await signUpTestUser();
+      const { data } = await admin!.from("profiles").select("nickname").eq("id", userId).single();
+      const endpoint = `https://push.example/${userId}`;
+      await admin!.from("push_subscriptions").insert({ user_id: userId, endpoint, p256dh: "k", auth: "a" });
+      users.push({ id: userId, name: data!.nickname as string, endpoint });
+    }
+    for (let i = 0; i < 3; i++) {
+      const { data: place } = await admin!
+        .from("places")
+        .insert({ name: `시험가게-${Math.random().toString(36).slice(2, 6)}`, lat: 37.5, lng: 127, source: "kakao", source_place_id: `t-${Math.random()}`, cuisine: "korean" })
+        .select("id")
+        .single();
+      places.push(place!.id as string);
+    }
+    await admin!.from("user_places").insert([
+      { user_id: users[0].id, place_id: places[0], tier: "two", visibility: "public" },
+      { user_id: users[0].id, place_id: places[1], tier: "one", visibility: "public" },
+      { user_id: users[3].id, place_id: places[2], tier: "two", visibility: "public" },
+    ]);
+    await admin!.from("profiles").update({ push_off: ["like"] }).eq("id", users[3].id);
+  });
+
+  afterAll(async () => {
+    for (const u of users) await admin!.auth.admin.deleteUser(u.id);
+    if (places.length) await admin!.from("places").delete().in("id", places);
+  });
+
+  beforeEach(() => sendNotification.mockClear());
+
+  const like = (who: number, owner: number, place: number) =>
+    admin!.from("rating_likes").insert({ user_id: users[who].id, owner_id: users[owner].id, place_id: places[place] });
+
+  it("처음 누르면 평가 주인에게 · 장소 이름은 싣지 않음", async () => {
+    const { notifyLike } = await import("./notify");
+    await like(1, 0, 0);
+    await notifyLike(users[1].id, users[0].id, places[0]);
+    expect(sent()).toHaveLength(1);
+    expect(sent()[0]).toMatchObject({ to: users[0].endpoint, title: "새 좋아요", body: `${users[1].name}님이 내 평가를 좋아해요`, tag: `likes-${users[0].id}-${places[0]}` });
+    expect(JSON.stringify(sent())).not.toContain("시험가게");
+  });
+
+  it("다른 사람이 같은 평가에 누르면 '외 N명' · 같은 tag", async () => {
+    const { notifyLike } = await import("./notify");
+    await like(2, 0, 0);
+    await notifyLike(users[2].id, users[0].id, places[0]);
+    expect(sent()[0]).toMatchObject({ body: `${users[2].name}님 외 1명이 내 평가를 좋아해요`, tag: `likes-${users[0].id}-${places[0]}` });
+  });
+
+  it("풀었다 다시 누르면 다시 안 보냄", async () => {
+    const { notifyLike } = await import("./notify");
+    await admin!.from("rating_likes").delete().eq("user_id", users[1].id).eq("place_id", places[0]);
+    await like(1, 0, 0);
+    await notifyLike(users[1].id, users[0].id, places[0]);
+    expect(sent()).toHaveLength(0);
+  });
+
+  it("같은 사람이 30분 안에 다른 평가를 누르면 알림함에만", async () => {
+    const { notifyLike } = await import("./notify");
+    await like(1, 0, 1);
+    await notifyLike(users[1].id, users[0].id, places[1]);
+    expect(sent()).toHaveLength(0);
+    const { count } = await admin!.from("notifications").select("id", { count: "exact", head: true }).eq("kind", "like").eq("user_id", users[0].id).eq("place_id", places[1]);
+    expect(count).toBe(1);
+  });
+
+  it("좋아요 알림을 끈 사람은 안 보냄", async () => {
+    const { notifyLike } = await import("./notify");
+    await like(1, 3, 2);
+    await notifyLike(users[1].id, users[3].id, places[2]);
+    expect(sent()).toHaveLength(0);
+  });
+});

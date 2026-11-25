@@ -10,9 +10,9 @@ type Claimed = { user_id: string; first_ready: boolean | null; point_kind: strin
 
 export async function claimFreshNotifications(
   admin: SupabaseClient,
-  kind: "follow" | "meetup_join" | "meetup_ready",
+  kind: "follow" | "like" | "meetup_join" | "meetup_ready",
   actorId: string,
-  match: { user_id?: string; meetup_id?: string },
+  match: { user_id?: string; meetup_id?: string; place_id?: string },
 ): Promise<Claimed[]> {
   let q = admin
     .from("notifications")
@@ -23,6 +23,7 @@ export async function claimFreshNotifications(
     .gt("created_at", new Date(Date.now() - FRESH_MS).toISOString());
   if (match.user_id) q = q.eq("user_id", match.user_id);
   if (match.meetup_id) q = q.eq("meetup_id", match.meetup_id);
+  if (match.place_id) q = q.eq("place_id", match.place_id);
   const { data } = await q.select("user_id, first_ready, point_kind");
   return (data ?? []) as Claimed[];
 }
