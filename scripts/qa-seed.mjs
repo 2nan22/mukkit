@@ -14,7 +14,7 @@ if (!URL_ || !SECRET || !PUBLISHABLE || !OUT) throw new Error("SUPABASE_URL · S
 if (!/^http:\/\/(127\.0\.0\.1|localhost):/.test(URL_)) throw new Error("로컬 Supabase 에서만 실행한다");
 
 const db = createClient(URL_, SECRET, { auth: { persistSession: false } });
-const TERMS_VERSION = "2026-11-26";
+const TERMS_VERSION = "2026-11-27";
 const ACCOUNTS = {
   a: { email: "qa-a@example.test", nickname: "큐에이많이", bio: "성수 · 을지로 위주로 다녀요", onboarded: true },
   b: { email: "qa-b@example.test", nickname: null, onboarded: false },
