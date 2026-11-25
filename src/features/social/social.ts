@@ -135,8 +135,17 @@ export async function getRatingDetail(supabase: SupabaseClient, ownerId: string,
 }
 
 // mine: 내 평가(전체 · 팔로워 공개)도 섞기 — 피드 탭만. 홈 '팔로잉 새 평가'는 팔로잉 것만 (68-9)
-export async function getFeed(supabase: SupabaseClient, { before, mine = false }: { before?: string; mine?: boolean } = {}): Promise<SharedRating[]> {
-  const { data, error } = await supabase.rpc("feed", { p_before: before ?? null, p_limit: 20, p_mine: mine });
+// after: 앞 쪽 마지막 카드 — 이어 받는 자리(시각 + 사람 + 장소, 70)
+export type FeedCursor = { updatedAt: string; ownerId: string; placeId: string };
+export const FEED_PAGE = 20;
+export async function getFeed(supabase: SupabaseClient, { after, mine = false }: { after?: FeedCursor; mine?: boolean } = {}): Promise<SharedRating[]> {
+  const { data, error } = await supabase.rpc("feed", {
+    p_before: after?.updatedAt ?? null,
+    p_limit: FEED_PAGE,
+    p_mine: mine,
+    p_before_owner: after?.ownerId ?? null,
+    p_before_place: after?.placeId ?? null,
+  });
   if (error) throw new SocialError("feed", error.code);
   return withMedia(supabase, data as RatingRow[]);
 }
