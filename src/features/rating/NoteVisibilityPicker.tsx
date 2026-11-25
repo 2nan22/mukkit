@@ -27,7 +27,7 @@ export function NoteVisibilityPicker({ value, onChange, rating, title = "메모�
         ))}
       </div>
       <span className="text-caption text-muted">{rating ? noteAudience(rating, value) : "공개 범위를 먼저 골라 주세요"}</span>
-      {warn && <span className="text-caption text-muted">전화번호처럼 남에게 보이면 안 되는 메모가 있으면 ‘나만’을 골라 주세요</span>}
+      {warn && <span className="text-caption text-muted">전화번호처럼 남에게 보이면 안 되는 메모가 있으면 ‘비공개’를 골라 주세요</span>}
     </fieldset>
   );
 }

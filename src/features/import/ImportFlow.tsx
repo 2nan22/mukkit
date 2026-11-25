@@ -22,7 +22,7 @@ import { ImportModeSheet, isRatedMode, type RowChoice } from "./ImportModeSheet"
 import { NoteVisibilityPicker } from "@/features/rating/NoteVisibilityPicker";
 import { MetaLine } from "@/components/ui/MetaLine";
 
-const VISIBILITY_LABEL: Record<RatingVisibility, string> = { private: "나만", followers: "팔로워", public: "전체 공개" };
+const VISIBILITY_LABEL: Record<RatingVisibility, string> = { private: "비공개", followers: "팔로워 공개", public: "전체 공개" };
 
 // visibility · noteVisibility: 다녀온 등급으로 가져올 때 이 리스트만의 공개 범위 · 지도 앱 메모 공개 범위 (68-4 · 68-5)
 type Row = ListPreview & { link: string; mode: ImportMode; visibility?: RatingVisibility; noteVisibility?: NoteVisibility };

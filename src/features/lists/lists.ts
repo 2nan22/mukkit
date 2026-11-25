@@ -15,7 +15,7 @@ export type Visibility = (typeof VISIBILITIES)[number];
 export const VISIBILITY_LABEL: Record<Visibility, string> = {
   private: "비공개",
   link: "링크가 있는 사람만",
-  public: "공개",
+  public: "전체 공개",
 };
 
 export const ListInputSchema = z.object({
