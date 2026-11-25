@@ -178,3 +178,49 @@ describe.skipIf(!admin)("notifyLike", () => {
     expect(sent()).toHaveLength(0);
   });
 });
+
+describe.skipIf(!admin)("notifyLike 겹침", () => {
+  // 0: 평가 주인 · 1: 잇달아 누르는 사람 · 2: 누르자마자 푸는 사람
+  const users: { id: string; endpoint: string }[] = [];
+  const places: string[] = [];
+
+  beforeAll(async () => {
+    for (let i = 0; i < 3; i++) {
+      const { userId } = await signUpTestUser();
+      const endpoint = `https://push.example/${userId}`;
+      await admin!.from("push_subscriptions").insert({ user_id: userId, endpoint, p256dh: "k", auth: "a" });
+      users.push({ id: userId, endpoint });
+    }
+    for (let i = 0; i < 3; i++) {
+      const { data: place } = await admin!
+        .from("places")
+        .insert({ name: `시험가게-${Math.random().toString(36).slice(2, 6)}`, lat: 37.5, lng: 127, source: "kakao", source_place_id: `t-${Math.random()}`, cuisine: "korean" })
+        .select("id")
+        .single();
+      places.push(place!.id as string);
+      await admin!.from("user_places").insert({ user_id: users[0].id, place_id: place!.id, tier: "two", visibility: "public" });
+    }
+  });
+
+  afterAll(async () => {
+    for (const u of users) await admin!.auth.admin.deleteUser(u.id);
+    if (places.length) await admin!.from("places").delete().in("id", places);
+  });
+
+  beforeEach(() => sendNotification.mockClear());
+
+  it("두 평가를 동시에 눌러도 푸시는 하나", async () => {
+    const { notifyLike } = await import("./notify");
+    await admin!.from("rating_likes").insert([0, 1].map((i) => ({ user_id: users[1].id, owner_id: users[0].id, place_id: places[i] })));
+    await Promise.all([0, 1].map((i) => notifyLike(users[1].id, users[0].id, places[i])));
+    expect(sent()).toHaveLength(1);
+  });
+
+  it("보내기 전에 풀었으면 안 보냄", async () => {
+    const { notifyLike } = await import("./notify");
+    await admin!.from("rating_likes").insert({ user_id: users[2].id, owner_id: users[0].id, place_id: places[2] });
+    await admin!.from("rating_likes").delete().eq("user_id", users[2].id).eq("place_id", places[2]);
+    await notifyLike(users[2].id, users[0].id, places[2]);
+    expect(sent()).toHaveLength(0);
+  });
+});
