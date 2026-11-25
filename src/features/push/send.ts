@@ -4,7 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type PushMessage = { title: string; body: string; url: string; tag?: string };
 // 설정 › 알림에서 종류별로 끌 수 있다 (profiles.push_off)
-export type PushKind = "meetup" | "comment" | "visit" | "follow";
+export type PushKind = "meetup" | "comment" | "like" | "visit" | "follow";
 
 let configured: boolean | null = null;
 function configure(): boolean {
