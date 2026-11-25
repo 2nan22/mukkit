@@ -1,26 +1,65 @@
-import Link from "next/link";
-import { MetaLine } from "@/components/ui/MetaLine";
+"use client";
 
-// 필수 동의 체크 — 약관 · 처리방침을 새 창 없이 바로 열어 볼 수 있게
-export function AgreeCheck() {
+import Link from "next/link";
+import { useState } from "react";
+
+// 필수 동의 항목 — 전체 동의 + 항목마다 [필수] · 보기 (국내 앱 가입 화면 형식, 70-6)
+// 항목마다 agree_<항목> 이름으로 보내고, 받을 항목 목록은 agree_items 로 — 서버가 항목마다 확인 (JS 없이도 정확)
+const ITEMS = {
+  age: { label: "[필수] 만 14세 이상입니다" },
+  terms: { label: "[필수] 서비스 이용약관 동의", href: "/terms", name: "서비스 이용약관" },
+  privacy: { label: "[필수] 개인정보 수집 및 이용 동의", href: "/privacy", name: "개인정보 수집 및 이용" },
+} as const;
+
+export type AgreeItem = keyof typeof ITEMS;
+type Item = AgreeItem;
+
+export function AgreeCheck({ items = ["age", "terms", "privacy"] }: { items?: Item[] }) {
+  const [checked, setChecked] = useState<Set<Item>>(new Set());
+  const all = items.every((i) => checked.has(i));
+  const toggle = (i: Item) =>
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
   return (
-    <label className="flex items-start gap-2.5 rounded-[14px] bg-surface p-4">
-      <input type="checkbox" name="agree" required className="mt-0.5 size-5 shrink-0 accent-brand" />
-      <span className="flex flex-col gap-1">
-        <span className="text-body font-semibold">[필수] 이용약관 및 개인정보 처리방침 동의</span>
-        <MetaLine
-          wrap
-          items={[
-            "만 14세 이상이에요",
-            <Link key="terms" href="/terms" className="underline underline-offset-2">
-              이용약관
-            </Link>,
-            <Link key="privacy" href="/privacy" className="underline underline-offset-2">
-              개인정보 처리방침
-            </Link>,
-          ]}
+    <div className="flex flex-col rounded-[14px] bg-surface px-4 py-1">
+      <input type="hidden" name="agree_items" value={items.join(",")} />
+      <label className="flex items-center gap-2.5 border-b border-line py-3.5">
+        <input
+          type="checkbox"
+          checked={all}
+          onChange={() => setChecked(all ? new Set() : new Set(items))}
+          className="size-5 shrink-0 accent-ink"
         />
-      </span>
-    </label>
+        <span className="text-body font-bold">전체 동의</span>
+      </label>
+      <ul className="flex flex-col py-1.5">
+        {items.map((i) => {
+          const item: { label: string; href?: string; name?: string } = ITEMS[i];
+          return (
+            <li key={i} className="flex items-center gap-2.5 py-2">
+              <label className="flex min-w-0 flex-1 items-center gap-2.5">
+                <input type="checkbox" name={`agree_${i}`} required checked={checked.has(i)} onChange={() => toggle(i)} className="size-5 shrink-0 accent-ink" />
+                <span className="text-meta text-ink-2">{item.label}</span>
+              </label>
+              {item.href && (
+                // 새 탭으로 — 돌아왔을 때 체크 · 입력한 닉네임이 풀리지 않게
+                <Link
+                  href={item.href}
+                  target="_blank"
+                  aria-label={`${item.name} 보기`}
+                  className="-my-2 shrink-0 px-2 py-3 text-caption text-muted underline underline-offset-2"
+                >
+                  보기
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

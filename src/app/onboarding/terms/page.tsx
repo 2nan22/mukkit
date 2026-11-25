@@ -39,15 +39,22 @@ async function Loader({ searchParams }: { searchParams: Promise<{ next?: string 
           {revised ? (
             "서비스 이용약관 개정 안내"
           ) : (
-            <>
-              이용약관과
-              <br />
-              개인정보 처리방침을 확인해 주세요
-            </>
+"약관 동의"
           )}
         </h1>
-        <p className="text-body text-ink-2">
-          {revised ? "이용약관이 바뀌었어요. 주요 변경 사항을 확인하고 동의해 주세요." : "내 기록을 어떻게 보관하고 보여주는지 정리했어요. 동의하면 그대로 계속 쓸 수 있어요."}
+        {/* 개정 안내 첫 문장은 위버스 · 토스 공지 형식 (70-6) */}
+        <p className="text-body text-ink-2 break-keep">
+          {revised ? (
+            <>
+              안녕하세요, 먹킷입니다.
+              <br />
+              서비스 개선에 따라 이용약관을
+              <br />
+              개정하게 되어 안내드립니다.
+            </>
+          ) : (
+            "서비스 이용을 위해 아래 약관에 동의해 주세요."
+          )}
         </p>
       </div>
       <AgreeForm next={nextPath} revised={revised} effectiveDate={EFFECTIVE_DATE} />

@@ -10,3 +10,13 @@ export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "";
 export function needsAgreement(profile: { terms_version: string | null } | null): boolean {
   return !profile || profile.terms_version !== TERMS_VERSION;
 }
+
+// 동의 화면에서 보낸 항목을 모두 체크했는지 — agree_items 에 적힌 항목마다 agree_<항목>=on (70-6)
+// 항목 목록이 비었거나 모르는 항목이면 동의 안 한 것으로 본다
+const AGREE_ITEMS = new Set(["age", "terms", "privacy"]);
+export function agreedAll(formData: FormData, required: string[] = ["terms"]): boolean {
+  const items = String(formData.get("agree_items") ?? "").split(",").filter(Boolean);
+  if (!items.length || items.some((i) => !AGREE_ITEMS.has(i))) return false;
+  if (required.some((r) => !items.includes(r))) return false;
+  return items.every((i) => formData.get(`agree_${i}`) === "on");
+}
