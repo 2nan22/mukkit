@@ -1,8 +1,10 @@
 @import "tailwindcss";
+/* 글꼴은 글자 묶음별로 나눈 파일 — 화면에 쓰인 글자 묶음만 받는다 (통파일 2MB 를 매 화면 먼저 받던 것, 69) */
+@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 
 /* 디자인 토큰 한 층 — 값의 출처는 디자인 시안(CLAUDE.md 결정 기록 링크) */
 @theme {
-  --font-sans: var(--font-pretendard), system-ui, sans-serif;
+  --font-sans: "Pretendard Variable", system-ui, sans-serif;
 
   --color-brand: #c8410b;
   /* 내 위치 — 지도 앱 관례의 파랑, 장소 핀 색과 겹치지 않게 (PlaceMap ME_COLOR 와 같은 값) */
