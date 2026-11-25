@@ -30,6 +30,32 @@ export async function notifyComment(authorId: string, ownerId: string, placeId: 
   await sendPush(viewers, { title: "새 댓글", body: `${who}이 자기 평가에 댓글을 남겼어요`, url, tag }, "comment");
 }
 
+// 새 좋아요 (71) — 평가 주인에게. 같은 사람이 같은 평가에 다시 눌러도 알림함 줄이 남아 있는 동안은 한 번만
+// (받은 사람이 알림을 지웠거나 90일이 지나 줄이 없어지면 다시 갈 수 있음)
+// 한 사람이 여러 평가를 잇달아 누르면 30분에 한 번만 푸시, 나머지는 알림함에만
+// 같은 평가의 푸시는 tag 가 같아 기기에서 앞 알림을 바꿔 끼운다 — '○○님 외 N명'
+export async function notifyLike(likerId: string, ownerId: string, placeId: string): Promise<void> {
+  if (likerId === ownerId) return;
+  const admin = createSupabaseAdminClient();
+  if (!admin) return;
+  // 30분 간격 확인과 보냄 표시를 DB 에서 한 번에 — 잇달아 누를 때 두 번 나가지 않게
+  // 줄이 없으면 차단한 사이 · 이미 알린 좋아요 등으로 트리거가 건너뛴 것
+  const { data: claimed } = await admin.rpc("claim_like_push", { p_actor: likerId, p_owner: ownerId, p_place: placeId });
+  if (claimed !== true) return;
+  const [{ data: actor }, { count: likes }, { count: still }] = await Promise.all([
+    admin.from("profiles").select("nickname").eq("id", likerId).maybeSingle(),
+    admin.from("rating_likes").select("user_id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("place_id", placeId),
+    // 누르자마자 풀었으면 보내지 않는다 (알림함도 이 줄을 숨김)
+    admin.from("rating_likes").select("user_id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("place_id", placeId).eq("user_id", likerId),
+  ]);
+  if (!still) return;
+  if (!actor) return;
+  const who = honor(actor.nickname as string);
+  const others = Math.max(0, (likes ?? 1) - 1);
+  const body = others > 0 ? `${who} 외 ${others}명이 내 평가를 좋아해요` : `${who}이 내 평가를 좋아해요`;
+  await sendPush([ownerId], { title: "새 좋아요", body, url: commentsHref(ownerId, placeId), tag: `likes-${ownerId}-${placeId}` }, "like");
+}
+
 // 평가를 지금도 볼 수 있는 사람만 — 비공개로 바꿨거나 팔로우를 끊었거나 신고로 숨겨졌으면 뺀다 (can_view_rating 과 같은 기준)
 async function stillViewing(admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, ownerId: string, placeId: string, ids: string[]): Promise<string[]> {
   if (ids.length === 0) return [];

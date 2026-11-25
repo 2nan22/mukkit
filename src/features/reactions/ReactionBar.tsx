@@ -49,6 +49,7 @@ export function ReactionBar({
     if (count !== reaction.comments) router.refresh();
   }
 
+  // 좋아요 아이콘은 하트 그대로 (포크와 나이프는 누른 것 · 안 누른 것 차이가 약해 되돌림, 사용자 결정 2026-11-26)
   const heart = (filled: boolean) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
@@ -80,7 +81,7 @@ export function ReactionBar({
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
               <path d="M4 5h16v11H9l-5 4z" />
             </svg>
-            {/* 내 평가는 하트가 없어 아이콘만 뜨면 뭔지 모른다 — 글자를 붙인다 */}
+            {/* 내 평가는 좋아요 버튼이 없어 아이콘만 뜨면 뭔지 모른다 — 글자를 붙인다 */}
             {mine && <span>{count > 0 ? `댓글 ${count}개` : "댓글 쓰기"}</span>}
           </button>
         )}
