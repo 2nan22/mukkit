@@ -12,13 +12,13 @@ export function Memo({ text, alias, source, caption, tone = "surface", clamp }: 
     <div className={`flex gap-2.5 rounded-btn-s px-3 py-2.5 ${tone === "white" ? "bg-white" : "bg-surface"}`}>
       {/* 아이콘을 첫 줄 높이(1lh)에 맞춰 가운데 — 글 첫 줄과 나란히 */}
       <span className="flex h-[1lh] shrink-0 items-center text-meta leading-normal">{mark ? <SourceMark source={mark} size={16} /> : <MemoIcon />}</span>
-      <span className="sr-only">{mark ? SOURCE_NAME[mark] : "메모"}</span>
+      <span className="sr-only">{mark ? (text ? SOURCE_NAME[mark] : SOURCE_NAME[mark].replace("메모", "별명")) : "메모"}</span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {alias ? (
           // 별명이 있으면 별명 · 메모 줄마다 배지 — 배지 칸과 글 칸을 나눠 긴 글은 글 칸 안에서 줄바꿈 (68-8)
           <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-meta leading-normal">
             <Badge>별명</Badge>
-            <span className="font-semibold break-words text-ink">{alias}</span>
+            <span className={`font-semibold break-words text-ink ${clamp ? "line-clamp-2" : ""}`}>{alias}</span>
             {text && (
               <>
                 <Badge>메모</Badge>
