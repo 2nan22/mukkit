@@ -23,7 +23,7 @@ import { PlaceHeaderMap } from "@/features/place/PlaceHeaderMap";
 import { getMenu } from "@/features/place/menu";
 import { MenuSection } from "@/features/place/MenuSection";
 import { getSavedPlace } from "@/features/rating/rating";
-import { noteAudience } from "@/features/rating/noteAudience";
+import { effectiveNote } from "@/features/rating/noteAudience";
 import type { MediaRef } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MetaLine } from "@/components/ui/MetaLine";
@@ -183,7 +183,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <AteMenus menus={mine.menus} />
             <Companions people={myCompanions} />
             <MediaStrip media={myMedia} />
-            {(mine.note || mine.alias) && <Memo tone="white" text={mine.note} alias={mine.alias} source={mine.noteSource} caption={noteAudience(mine.visibility, mine.noteVisibility)} />}
+            {(mine.note || mine.alias) && <Memo tone="white" text={mine.note} alias={mine.alias} source={mine.noteSource} audience={effectiveNote(mine.visibility, mine.noteVisibility)} />}
             {reactionOf(me) && <ReactionBar ownerId={me} placeId={place.id} reaction={reactionOf(me)!} mine />}
           </div>
         ) : mine ? (
@@ -191,7 +191,7 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
             <div className="flex items-center gap-2">
               <TierBadge tier={mine.tier} />
             </div>
-            {(mine.note || mine.alias) && <Memo text={mine.note} alias={mine.alias} source={mine.noteSource} caption="나만 봐요" />}
+            {(mine.note || mine.alias) && <Memo text={mine.note} alias={mine.alias} source={mine.noteSource} audience="private" />}
           </div>
         ) : (
           <p className="text-meta text-muted">아직 저장하지 않은 곳이에요</p>

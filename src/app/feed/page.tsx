@@ -12,7 +12,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "피드" };
 
-// 하단 탭 — 팔로우한 사람의 공개 · 팔로워 공개 평가
+// 하단 탭 — 팔로우한 사람과 내 공개 · 팔로워 공개 평가 (내 것은 68-9)
 export default function FeedPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
@@ -34,7 +34,7 @@ async function Feed() {
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
-  const [feed, counts] = await Promise.all([getFeed(supabase), getFollowCounts(supabase, me)]);
+  const [feed, counts] = await Promise.all([getFeed(supabase, { mine: true }), getFollowCounts(supabase, me)]);
   if (feed.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 pb-16 text-center">
@@ -51,6 +51,15 @@ async function Feed() {
   const reactions = await getReactions(supabase, feed);
   return (
     <div className="px-5 pb-6">
+      {/* 내 평가만 있을 때 — 빈 화면 안내 대신 맨 위 한 줄 (68-9) */}
+      {counts.following === 0 && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-btn-s bg-surface px-3.5 py-3">
+          <span className="text-meta leading-normal text-ink-2">사람을 팔로우하면 그 사람 평가도 여기 모여요</span>
+          <Link href="/people" className="shrink-0 text-meta font-bold text-brand">
+            사람 찾기
+          </Link>
+        </div>
+      )}
       {feed.map((r) => (
         <RatingCard key={`${r.ownerId}:${r.placeId}`} rating={r} showOwner viewerId={me} reaction={reactions.get(reactionKey(r.ownerId, r.placeId)) ?? null} />
       ))}
