@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getReactions, reactionKey } from "@/features/reactions/reactions";
 import { RatingCard } from "@/features/social/RatingCard";
+import { FeedDivider } from "@/features/social/FeedDivider";
 import { FeedMore } from "@/features/social/FeedMore";
+import { dividerIndex } from "@/features/social/feedSeen";
 import { FEED_PAGE, getFeed, getFollowCounts } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -35,7 +37,9 @@ async function Feed() {
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
-  const [feed, counts] = await Promise.all([getFeed(supabase, { mine: true }), getFollowCounts(supabase, me)]);
+  // 피드를 연 때를 기억하고 지난번 연 때를 받는다 — '여기까지 새 평가' 구분선 기준 (70-3)
+  const [feed, counts, seen] = await Promise.all([getFeed(supabase, { mine: true }), getFollowCounts(supabase, me), supabase.rpc("open_feed")]);
+  const seenAt = (seen.data as string | null) ?? null;
   if (feed.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 pb-16 text-center">
@@ -51,6 +55,7 @@ async function Feed() {
   }
   const reactions = await getReactions(supabase, feed);
   const last = feed[feed.length - 1];
+  const divider = dividerIndex(feed, seenAt);
   return (
     <div className="px-5 pb-6">
       {/* 내 평가만 있을 때 — 빈 화면 안내 대신 맨 위 한 줄 (68-9) */}
@@ -62,12 +67,16 @@ async function Feed() {
           </Link>
         </div>
       )}
-      {feed.map((r) => (
-        <RatingCard key={`${r.ownerId}:${r.placeId}`} rating={r} showOwner viewerId={me} reaction={reactions.get(reactionKey(r.ownerId, r.placeId)) ?? null} />
+      {feed.map((r, i) => (
+        <Fragment key={`${r.ownerId}:${r.placeId}`}>
+          {i === divider && <FeedDivider none={i === 0} />}
+          <RatingCard rating={r} showOwner viewerId={me} reaction={reactions.get(reactionKey(r.ownerId, r.placeId)) ?? null} />
+        </Fragment>
       ))}
       <FeedMore
         key={last ? `${last.updatedAt}:${last.ownerId}:${last.placeId}` : "none"}
         shown={feed.map((r) => `${r.ownerId}:${r.placeId}`)}
+        seenAt={divider === -1 ? seenAt : null}
         first={feed.length < FEED_PAGE ? null : { updatedAt: last.updatedAt, ownerId: last.ownerId, placeId: last.placeId }} viewerId={me} pageSize={FEED_PAGE} />
     </div>
   );
