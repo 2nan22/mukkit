@@ -351,7 +351,8 @@ export function MapView({
       .map((p) => ({ ...p, meters: me ? meters(p, me) : null }));
   }, [shown, viewport, me]);
   // 펼친 목록도 화면 안 · 가까운 순 (지도가 아직 안 떴으면 전체)
-  const listed: MapPlace[] = viewport ? inView : shown;
+  // 접힌 채로 지도가 뜨기 전엔 그리지 않는다 — 안 보이는 전체 줄(1000곳 넘으면 1000줄)을 서버 그림 · 첫 실행에서 빼서 지도가 일찍 뜨게 (69)
+  const listed: MapPlace[] = viewport ? inView : listOpen ? shown : [];
   const filtered = tiers.length > 0 || cuisines.length > 0 || people.length > 0 || pickedLists.length > 0;
   const resetFilters = () => (setTiers([]), setCuisines([]), setPeople([]), setPickedLists([]));
   const coverKey = listed.slice(0, 20).map((p) => p.placeId).join(",");
@@ -663,7 +664,7 @@ export function MapView({
               inert={!listOpen}
               className={`overflow-y-auto overscroll-contain transition-[height] duration-200 ease-out ${SNAP_CLASS[snap]}`}
             >
-              {listed.length === 0 && (
+              {listed.length === 0 && (viewport || listOpen) && (
                 <li>
                   <EmptyHere filtered={filtered} onReset={resetFilters} none={!isFollowing && places.length === 0} />
                 </li>
