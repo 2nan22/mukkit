@@ -7,7 +7,7 @@ export function AgreeCheck() {
     <label className="flex items-start gap-2.5 rounded-[14px] bg-surface p-4">
       <input type="checkbox" name="agree" required className="mt-0.5 size-5 shrink-0 accent-brand" />
       <span className="flex flex-col gap-1">
-        <span className="text-body font-semibold">이용약관과 개인정보 처리방침에 동의해요 (필수)</span>
+        <span className="text-body font-semibold">[필수] 이용약관 및 개인정보 처리방침 동의</span>
         <MetaLine
           wrap
           items={[
