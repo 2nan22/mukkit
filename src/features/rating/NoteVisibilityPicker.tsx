@@ -6,7 +6,7 @@ import { VISIBILITY } from "./VisibilitySheet";
 import { noteAudience } from "./noteAudience";
 
 
-// 메모는 누가 볼까요? — 나만 · 팔로워 · 전체 세 칸, 따로 정하지 않았으면 평가 공개 범위 칸이 골라져 있다 (68-5)
+// 메모는 누가 볼까요? — 비공개 · 팔로워 공개 · 전체 공개 세 칸, 따로 정하지 않았으면 평가 공개 범위 칸이 골라져 있다 (68-5)
 // 평가와 같은 칸을 고르면 '평가와 같게'(평가 범위를 바꾸면 따라감), 다른 칸이면 그 범위로 고정 · 나만은 언제나 나만으로 고정
 // warn: 가져오기 — 지도 앱 메모엔 전화번호 같은 내용이 있을 수 있어 한 줄 더
 export function NoteVisibilityPicker({ value, onChange, rating, title = "메모는 누가 볼까요?", onSurface = false, warn = false }: { value: NoteVisibility; onChange: (v: NoteVisibility) => void; rating: RatingVisibility | null; title?: string; onSurface?: boolean; warn?: boolean }) {
