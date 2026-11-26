@@ -25,6 +25,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { LoaderBubble } from "@/components/ui/EatingLoader";
 import { MetaLine } from "@/components/ui/MetaLine";
 import { MapAppLink } from "@/components/ui/MapAppLink";
+import { navStart } from "@/lib/nav/navStart";
 
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
 // 팔로잉 지도는 평가한 곳만이라 평가 등급만
@@ -705,7 +706,10 @@ function PullCard({ placeId, onClose, children }: { placeId: string; onClose: ()
   const card = useRef<HTMLDivElement>(null);
   // 이동이 끝나면 저절로 꺼진다 — 뒤로 돌아와 화면 상태가 그대로 살아나도 로딩이 남지 않게
   const [opening, startOpening] = useTransition();
-  const open = useCallback(() => startOpening(() => router.push(`/p/${placeId}`)), [router, placeId]);
+  const open = useCallback(() => {
+    navStart(`/p/${placeId}`);
+    startOpening(() => router.push(`/p/${placeId}`));
+  }, [router, placeId]);
 
   function onDown(e: PointerEvent<HTMLDivElement>) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -790,11 +794,17 @@ function FoundCard({ hit, onClose }: { hit: NewPlaceHit; onClose: () => void }) 
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   async function open() {
-    if (hit.placeId) return router.push(`/p/${hit.placeId}`);
+    if (hit.placeId) {
+      navStart(`/p/${hit.placeId}`);
+      return router.push(`/p/${hit.placeId}`);
+    }
     setOpening(true);
     const res = await openKakaoPlace({ kakaoId: hit.kakaoId, name: hit.name, lat: hit.lat, lng: hit.lng });
     setOpening(false);
-    if (res.placeId) router.push(`/p/${res.placeId}`);
+    if (res.placeId) {
+      navStart(`/p/${res.placeId}`);
+      router.push(`/p/${res.placeId}`);
+    }
     else setError(res.error ?? "장소를 열지 못했어요");
   }
   return (

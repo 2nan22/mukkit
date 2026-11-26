@@ -10,19 +10,21 @@ type Media = { url: string; kind: "image" | "video" };
 export function MediaStrip({ media }: { media: Media[] }) {
   const [openAt, setOpenAt] = useState<number | null>(null);
   const images = media.filter((m) => m.kind === "image");
+  // 한 장이면 꽉 채운 정사각형, 여러 장이면 다음 장이 살짝 보이게 78% · 4:5 (80 디자인 검토 — 한 장일 때 오른쪽이 비어 보임)
+  const size = media.length === 1 ? "aspect-square w-full" : "aspect-[4/5] w-[78%]";
   return (
     <>
       <div className="relative -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-1.5 overflow-x-auto px-5">
         {media.map((m, i) =>
           m.kind === "image" ? (
-            <button key={i} type="button" aria-label="사진 크게 보기" onClick={() => setOpenAt(images.indexOf(m))} className="relative aspect-[4/5] w-[78%] shrink-0 snap-start">
+            <button key={i} type="button" aria-label="사진 크게 보기" onClick={() => setOpenAt(images.indexOf(m))} className={`relative shrink-0 snap-start ${size}`}>
               {/* eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다 */}
               <img src={m.url} alt="" className="size-full rounded-btn-l object-cover" />
               {/* 여러 장이면 몇 번째인지 — 인스타그램처럼 오른쪽 위 (77) */}
               {media.length > 1 && <Count n={i + 1} total={media.length} />}
             </button>
           ) : (
-            <div key={i} className="relative aspect-[4/5] w-[78%] shrink-0 snap-start">
+            <div key={i} className={`relative shrink-0 snap-start ${size}`}>
               <video src={m.url} controls playsInline preload="metadata" className="size-full rounded-btn-l bg-black object-cover" />
               {media.length > 1 && <Count n={i + 1} total={media.length} />}
             </div>

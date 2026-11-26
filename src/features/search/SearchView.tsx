@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { PlaceRow } from "@/components/ui/PlaceRow";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { openKakaoPlace, searchAll, type SearchResult } from "./actions";
+import { navStart } from "@/lib/nav/navStart";
 
 const DEBOUNCE_MS = 300;
 
@@ -48,7 +49,10 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
     setError(null);
     const res = await openKakaoPlace({ kakaoId: p.kakaoId, name: p.name, lat: p.lat, lng: p.lng });
     setOpening(null);
-    if (res.placeId) router.push(`/p/${res.placeId}`);
+    if (res.placeId) {
+      navStart(`/p/${res.placeId}`);
+      router.push(`/p/${res.placeId}`);
+    }
     else setError(res.error ?? "장소를 열지 못했어요");
   }
 

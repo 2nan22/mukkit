@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { MouseEvent, ReactNode } from "react";
+import { navStart } from "@/lib/nav/navStart";
 
 // 평가 카드 빈 곳을 누르면 장소 상세 (73) — 피드 앱 관례. 버튼 · 링크 · 사진 · 영상과 글 고르기는 그대로
 // 키보드 · 화면 읽기는 카드 안 가게 이름 링크로 간다 (같은 곳)
@@ -19,6 +20,7 @@ export function TapToPlace({ placeId, className, children }: { placeId: string; 
       if (getComputedStyle(el).position === "fixed") return;
     }
     if (window.getSelection()?.toString()) return;
+    navStart(`/p/${placeId}`);
     router.push(`/p/${placeId}`);
   }
   return (
