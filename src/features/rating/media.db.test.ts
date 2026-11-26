@@ -48,8 +48,17 @@ describe.skipIf(!hasLocalDb)("평가 사진 저장소 정책 (로컬)", () => {
     const order = async () =>
       (await owner.supabase.from("rating_media").select("path").eq("place_id", placeId).order("created_at")).data!.map((r) => (r.path as string).slice(-5, -4));
 
+    const latestBefore = (await owner.supabase.from("rating_media").select("created_at").eq("place_id", placeId).order("created_at", { ascending: false }).limit(1)).data![0].created_at;
     expect((await owner.supabase.rpc("reorder_my_media", { p_place: placeId, p_ids: [id("c"), id("a"), id("b")] })).error).toBeNull();
     expect(await order()).toEqual(["c", "a", "b"]);
+    // 시각 묶음은 그대로(가장 최근 시각 유지) · 장소 대표 사진은 첫 사진
+    const latestAfter = (await owner.supabase.from("rating_media").select("created_at").eq("place_id", placeId).order("created_at", { ascending: false }).limit(1)).data![0].created_at;
+    // 같은 시각에 함께 올린 사진이라 순서를 세우려 몇 마이크로초만 늘어난다
+    expect(new Date(latestAfter as string).getTime() - new Date(latestBefore as string).getTime()).toBeLessThan(1);
+    const cover = await owner.supabase.rpc("place_covers", { p_places: [placeId] });
+    expect((cover.data as { path: string }[])[0].path.slice(-5, -4)).toBe("c");
+    // 겹친 목록도 거절
+    expect((await owner.supabase.rpc("reorder_my_media", { p_place: placeId, p_ids: [id("a"), id("a"), id("b")] })).error).not.toBeNull();
     // 하나 빠짐 · 남이 부름 — 거절, 순서 그대로
     expect((await owner.supabase.rpc("reorder_my_media", { p_place: placeId, p_ids: [id("a"), id("b")] })).error).not.toBeNull();
     expect((await other.supabase.rpc("reorder_my_media", { p_place: placeId, p_ids: [id("a"), id("b"), id("c")] })).error).not.toBeNull();

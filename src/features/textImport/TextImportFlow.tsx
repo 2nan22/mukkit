@@ -137,7 +137,7 @@ export function TextImportFlow() {
         {message?.error ? message.text : ""}
       </p>
       {/* 저장 알림 — 아래쪽 줄에서 눌러도 보이게 화면 아래 */}
-      <p role="status" className={message && !message.error ? "fixed inset-x-0 bottom-6 z-30 mx-auto w-fit max-w-[90%] rounded-full bg-ink px-4 py-2.5 text-meta text-white shadow-float" : "sr-only"}>
+      <p role="status" className={message && !message.error ? "fixed inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-30 mx-auto w-fit max-w-[90%] rounded-full bg-ink px-4 py-2.5 text-meta text-white shadow-float" : "sr-only"}>
         {message && !message.error ? message.text : ""}
       </p>
 

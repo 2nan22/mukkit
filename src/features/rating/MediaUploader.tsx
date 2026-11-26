@@ -101,7 +101,10 @@ export function MediaUploader({ userId, placeId }: { userId: string; placeId: st
     setBusy(true);
     const res = await supabase.rpc("reorder_my_media", { p_place: placeId, p_ids: next.map((m) => m.id) });
     if (res.error) setError("순서를 바꾸지 못했어요.");
-    else setItems(next);
+    else {
+      setError(null);
+      setItems(next);
+    }
     setBusy(false);
   }
 
@@ -199,12 +202,13 @@ export function MediaUploader({ userId, placeId }: { userId: string; placeId: st
               <p className="pb-2 text-meta text-muted">지우면 되돌릴 수 없어요</p>
               <button
                 type="button"
+                disabled={busy}
                 onClick={() => {
                   const m = confirm;
                   setConfirm(null);
                   void remove(m);
                 }}
-                className="flex h-12 items-center text-body font-semibold text-danger"
+                className="flex h-12 items-center text-body font-semibold text-danger disabled:opacity-50"
               >
                 지우기
               </button>

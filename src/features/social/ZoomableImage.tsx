@@ -91,6 +91,8 @@ export function ZoomableImage({
     // 손가락 하나일 때만 누르기 후보 — 두 손가락 누르기는 두 번 누르기로 세지 않는다
     moved.current = pointers.current.size > 1;
     if (pointers.current.size === 2) pinch.current = { ...pair(), start: view.current };
+    // 끌어 내리던 중 두 번째 손가락이 닿으면 끌기를 거두고 바탕을 되돌린다 (77 검토)
+    if (pull.current?.vertical && pointers.current.size > 1) onDrag(0);
     pull.current = pointers.current.size === 1 && view.current.scale === 1 ? { x: e.clientX, y: e.clientY, vertical: null } : null;
   }
 
