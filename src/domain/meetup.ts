@@ -60,7 +60,8 @@ export function planAreaShops(
 }
 
 // 지역 이유 — 참여자 예상 이동 시간 (5분 단위)
-export type AreaPerson = { id: string; nickname: string; isMe: boolean; minutes: number; return: number | null };
+// exact: 모든 구간을 대중교통(또는 가까워 걸어서)으로 잼 — 아니면 직선 어림 (86)
+export type AreaPerson = { id: string; nickname: string; isMe: boolean; minutes: number; return: number | null; exact?: boolean };
 const r5 = (m: number) => Math.round(m / 5) * 5;
 
 // 고르게 걸리는지 — 차이 10분 이하. 제목 · 공유 문구 · 막대를 이 한 곳 기준으로 (83, 기준이 갈라졌던 일)
@@ -131,7 +132,7 @@ export function endMinutesKst(endsAt: Date): number {
   return m < 4 * 60 ? m + 24 * 60 : m;
 }
 
-export type AreaScore = { name: string; lat: number; lng: number; people: AreaPerson[]; maxMinutes: number; avgMinutes: number; recent: number };
+export type AreaScore = { name: string; lat: number; lng: number; people: AreaPerson[]; maxMinutes: number; avgMinutes: number; recent: number; station?: string | null };
 export type RankedPerson = AreaPerson & { last: string | null; late: boolean };
 export type RankedArea = Omit<AreaScore, "people"> & { people: RankedPerson[]; lateCount: number };
 

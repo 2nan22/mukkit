@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useMemo, useState, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { PlaceRow } from "@/components/ui/PlaceRow";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { areaReason, isEven, lastTrainLine, timeHeadline, type RankedPerson } from "@/domain/meetup";
 import { PlaceMap } from "@/features/map/PlaceMap";
-import type { AreaPlan } from "./meetup";
+import type { AreaPlan, MeetPoint } from "./meetup";
+import { MeetPointCard, type MeetOption } from "./MeetPointCard";
 import { COURSE_MAX } from "@/domain/course";
 import { useCourseDraft } from "./useCourseDraft";
 import type { Course } from "./course";
@@ -48,6 +50,7 @@ export function MeetupResults({
   endsAt = null,
   meetupId,
   course,
+  meet = null,
 }: {
   plans: AreaPlan[];
   meetupUrl: string;
@@ -55,12 +58,25 @@ export function MeetupResults({
   endsAt?: string | null;
   meetupId: string;
   course: Course;
+  meet?: MeetPoint | null;
 }) {
   const [active, setActive] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const canShare = useSyncExternalStore(noSubscribe, () => typeof navigator.share === "function", () => false);
   const plan = plans[active];
+  const router = useRouter();
+  // 대중교통 시간은 화면을 그린 뒤 서버가 잰다 — 아직 어림인 사람이 있으면 6 · 15 · 30초에 다시 불러온다(최대 3번, 86)
+  const allExact = plan ? plan.people.every((p) => p.exact) : true;
+  const [tries, setTries] = useState(0);
+  useEffect(() => {
+    if (allExact || tries >= 3) return;
+    const t = setTimeout(() => {
+      setTries((n) => n + 1);
+      router.refresh();
+    }, [6000, 15000, 30000][tries]);
+    return () => clearTimeout(t);
+  }, [allExact, tries, router]);
   // 코스 (84) — 담은 순서 그대로. 누르면 바로 바꿔 보이고 모아서 저장
   const draft = useCourseDraft(meetupId, course.stops.map((s) => s.placeId));
   const courseIds = draft.ids;
@@ -88,7 +104,8 @@ export function MeetupResults({
   }
 
   async function sendArea() {
-    const text = courseIds.length > 0 ? courseShareText(courseNames) : `${plan.name} 어때요? ${areaReason(plan.people)}`;
+    const where = meet ? `${meet.label}에서 만나요` : null;
+    const text = [where, courseIds.length > 0 ? courseShareText(courseNames) : where ? null : `${plan.name} 어때요? ${areaReason(plan.people)}`].filter(Boolean).join("\n");
     if (canShare) return navigator.share({ title: "약속 장소", text, url: meetupUrl }).catch(() => undefined);
     try {
       await navigator.clipboard.writeText(`${text}\n${meetupUrl}`);
@@ -105,6 +122,14 @@ export function MeetupResults({
 
   const areaName = (name: string) => name.replace(/\//g, ", ");
   const head = areaName(plan.name).split(",")[0];
+
+  // 만날 곳 고르기 — 추천 지역 대표 역들 · 코스 1차 가게 (86)
+  const stationOf = (p: AreaPlan): MeetOption => ({ key: `a${p.name}`, label: p.station ?? areaName(p.name), sub: `추천 지역 ${areaName(p.name)}`, lat: p.lat, lng: p.lng, area: p.name });
+  const firstStop = course.stops[0];
+  const meetOptions: MeetOption[] = [
+    ...plans.map(stationOf),
+    ...(firstStop ? [{ key: `c${firstStop.placeId}`, label: firstStop.name, sub: "코스 1차 가게에서 바로", lat: firstStop.lat, lng: firstStop.lng, area: null }] : []),
+  ];
 
   return (
     <section className="flex flex-col gap-4">
@@ -140,12 +165,27 @@ export function MeetupResults({
         </div>
       </div>
 
+      <MeetPointCard
+        meetupId={meetupId}
+        meet={meet}
+        viewing={meet?.area && meet.area !== plan.name ? stationOf(plan) : null}
+        suggested={stationOf(plan)}
+        options={meetOptions}
+        onPickArea={(area) => {
+          const i = plans.findIndex((p) => p.name === area);
+          if (i >= 0) {
+            setActive(i);
+            setSelected(null);
+          }
+        }}
+      />
+
       {/* 시간 카드 — 제목은 결론, 숫자는 막대, 빨강은 막차가 끊길 때 한 줄만 (83 디자인 검토) */}
       <div className="flex flex-col gap-3 rounded-[16px] bg-surface p-4">
         <span className="text-[16px] font-bold tracking-[-0.015em] text-ink">{timeHeadline(plan.people)}</span>
         {!even && <TimeBars people={plan.people} />}
         <LastTrain people={plan.people} endsAt={endsAt} />
-        <span className="text-caption text-subtle">직선거리로 어림한 시간이라 실제와 다를 수 있어요</span>
+        <span className="text-caption text-subtle">{allExact ? "지하철, 버스 기준이에요. 막차는 어림이에요" : "일부는 거리로 어림한 시간이라 실제와 다를 수 있어요"}</span>
       </div>
 
       {plan.shops.length === 0 ? (
@@ -195,7 +235,7 @@ export function MeetupResults({
           </p>
         )}
         <button type="button" onClick={sendArea} className="h-btn-m w-full rounded-btn-m bg-brand text-body font-bold text-white raised-brand">
-          {courseIds.length > 0 ? "이 코스로 제안하기" : `${head}${ro(head)} 제안하기`}
+          {courseIds.length > 0 ? "이 코스로 제안하기" : meet ? "만날 곳으로 제안하기" : `${head}${ro(head)} 제안하기`}
         </button>
       </div>
     </section>

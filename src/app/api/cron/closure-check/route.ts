@@ -14,6 +14,10 @@ export async function GET(request: Request): Promise<Response> {
   const cleaned = await admin.rpc("cleanup_meetup_points");
   // 90일 지난 알림 정리
   const oldNotes = await admin.rpc("cleanup_notifications");
+  // 30일 지난 대중교통 구간 · 90일 지난 호출 수 정리 (86, 처리방침 제11조)
+  const oldLegs = await admin.from("transit_legs").delete({ count: "exact" }).lt("fetched_at", new Date(Date.now() - 30 * 86_400_000).toISOString());
+  await admin.from("api_usage").delete().lt("day", new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10));
+  console.info("[cron transit-cleanup]", JSON.stringify({ deleted: oldLegs.count ?? null, error: oldLegs.error?.code ?? null }));
   console.info("[cron notifications-cleanup]", JSON.stringify({ deleted: oldNotes.data ?? null, error: oldNotes.error?.code ?? null }));
   console.info("[cron meetup-cleanup]", JSON.stringify({ deleted: cleaned.data ?? null, error: cleaned.error?.code ?? null }));
   console.info("[cron closure-check]", JSON.stringify({ ok: result.ok, checked: result.checked, closed: result.closed, reopened: result.reopened, detail: result.detail, error: result.error }));
