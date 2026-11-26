@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { dividerIndex, nothingNew, parseTime } from "./feedSeen";
 
-const at = (...d: string[]) => d.map((updatedAt) => ({ updatedAt }));
+const at = (...d: string[]) => d.map((ratedAt) => ({ ratedAt }));
 
 describe("dividerIndex", () => {
   it("기준이 없으면 구분선 없음", () => expect(dividerIndex(at("2026-11-25T10:00:00Z"), null)).toBe(-1));

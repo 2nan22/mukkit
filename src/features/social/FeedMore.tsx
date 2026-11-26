@@ -10,7 +10,7 @@ import type { FeedCursor, SharedRating } from "./social";
 
 type Item = { rating: SharedRating; reaction: Reaction | null };
 
-const cursorOf = (r: SharedRating): FeedCursor => ({ updatedAt: r.updatedAt, ownerId: r.ownerId, placeId: r.placeId });
+const cursorOf = (r: SharedRating): FeedCursor => ({ ratedAt: r.ratedAt, ownerId: r.ownerId, placeId: r.placeId });
 
 // 피드 더 보기 (70) — 맨 아래에 닿으면 20개씩 이어 받는다. 서버가 그린 첫 쪽 뒤에 붙는다
 // shown: 서버가 그린 첫 쪽 카드 — 새로 고침(차단 · 댓글)으로 첫 쪽이 당겨 올라와도 두 번 그리지 않는다

@@ -27,7 +27,7 @@ export async function setFollow(targetId: string, on: boolean): Promise<{ error?
   return {};
 }
 
-const FeedCursorSchema = z.object({ updatedAt: z.string().min(1).max(40), ownerId: z.uuid(), placeId: z.uuid() });
+const FeedCursorSchema = z.object({ ratedAt: z.string().min(1).max(40), ownerId: z.uuid(), placeId: z.uuid() });
 
 // 피드 더 보기 (70) — 앞 쪽 마지막 카드 다음 20개와 그 좋아요 · 댓글
 export async function loadMoreFeed(cursor: FeedCursor): Promise<{ items?: { rating: SharedRating; reaction: Reaction | null }[]; error?: string }> {

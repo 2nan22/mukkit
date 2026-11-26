@@ -74,10 +74,10 @@ async function Feed() {
         </Fragment>
       ))}
       <FeedMore
-        key={last ? `${last.updatedAt}:${last.ownerId}:${last.placeId}` : "none"}
+        key={last ? `${last.ratedAt}:${last.ownerId}:${last.placeId}` : "none"}
         shown={feed.map((r) => `${r.ownerId}:${r.placeId}`)}
         seenAt={divider === -1 ? seenAt : null}
-        first={feed.length < FEED_PAGE ? null : { updatedAt: last.updatedAt, ownerId: last.ownerId, placeId: last.placeId }} viewerId={me} pageSize={FEED_PAGE} />
+        first={feed.length < FEED_PAGE ? null : { ratedAt: last.ratedAt, ownerId: last.ownerId, placeId: last.placeId }} viewerId={me} pageSize={FEED_PAGE} />
     </div>
   );
 }

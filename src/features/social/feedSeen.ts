@@ -4,10 +4,10 @@ export function parseTime(s: string): number {
   return Date.parse(s.replace(" ", "T").replace(/(\.\d{3})\d+/, "$1").replace(/([+-]\d{2})$/, "$1:00"));
 }
 
-export function dividerIndex(items: { updatedAt: string }[], seenAt: string | null): number {
+export function dividerIndex(items: { ratedAt: string }[], seenAt: string | null): number {
   if (!seenAt) return -1;
   const seen = parseTime(seenAt);
-  return items.findIndex((r) => parseTime(r.updatedAt) <= seen);
+  return items.findIndex((r) => parseTime(r.ratedAt) <= seen);
 }
 
 // 구분선 위가 모두 내 평가면 '새 평가는 다 봤어요' — 내가 매긴 평가는 새 평가로 치지 않는다

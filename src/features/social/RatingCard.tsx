@@ -54,7 +54,7 @@ export function RatingCard({
             <span className="truncate text-[14px] font-semibold tracking-[-0.01em]">{rating.ownerNickname}</span>
           </Link>
         )}
-        <span className="shrink-0 text-meta text-muted">{dateLabel(rating.updatedAt)}</span>
+        <span className="shrink-0 text-meta text-muted">{rating.visitedOn ? `${dateLabel(rating.visitedOn)} 방문` : dateLabel(rating.ratedAt)}</span>
         <span className="ml-auto">{menu}</span>
       </div>
       {onPhoto ? (
