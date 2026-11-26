@@ -12,15 +12,20 @@ export function MediaStrip({ media }: { media: Media[] }) {
   const images = media.filter((m) => m.kind === "image");
   return (
     <>
-      <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-1.5 overflow-x-auto px-5">
+      <div className="relative -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-1.5 overflow-x-auto px-5">
         {media.map((m, i) =>
           m.kind === "image" ? (
-            <button key={i} type="button" aria-label="사진 크게 보기" onClick={() => setOpenAt(images.indexOf(m))} className="aspect-[4/5] w-[78%] shrink-0 snap-start">
+            <button key={i} type="button" aria-label="사진 크게 보기" onClick={() => setOpenAt(images.indexOf(m))} className="relative aspect-[4/5] w-[78%] shrink-0 snap-start">
               {/* eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다 */}
               <img src={m.url} alt="" className="size-full rounded-btn-l object-cover" />
+              {/* 여러 장이면 몇 번째인지 — 인스타그램처럼 오른쪽 위 (77) */}
+              {media.length > 1 && <Count n={i + 1} total={media.length} />}
             </button>
           ) : (
-            <video key={i} src={m.url} controls playsInline preload="metadata" className="aspect-[4/5] w-[78%] shrink-0 snap-start rounded-btn-l bg-black object-cover" />
+            <div key={i} className="relative aspect-[4/5] w-[78%] shrink-0 snap-start">
+              <video src={m.url} controls playsInline preload="metadata" className="size-full rounded-btn-l bg-black object-cover" />
+              {media.length > 1 && <Count n={i + 1} total={media.length} />}
+            </div>
           ),
         )}
       </div>
@@ -29,11 +34,21 @@ export function MediaStrip({ media }: { media: Media[] }) {
   );
 }
 
+function Count({ n, total }: { n: number; total: number }) {
+  return (
+    <span aria-hidden="true" className="pointer-events-none absolute top-2.5 right-2.5 rounded-full bg-black/55 px-2 py-0.5 text-caption font-semibold text-white tabular-nums">
+      {n}/{total}
+    </span>
+  );
+}
+
 function PhotoViewer({ urls, start, onClose }: { urls: string[]; start: number; onClose: () => void }) {
   const strip = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(start);
   // 확대 중엔 옆으로 넘기기를 막는다 — 한 손가락 끌기는 사진 옮기기 (75-3)
   const [zoomed, setZoomed] = useState(false);
+  // 아래로 끄는 만큼 바탕을 옅게 (0 ~ 1) — 놓으면 닫히거나 제자리
+  const [fade, setFade] = useState(0);
   const dialog = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
   useEffect(() => {
@@ -73,9 +88,11 @@ function PhotoViewer({ urls, start, onClose }: { urls: string[]; start: number; 
       tabIndex={-1}
       ref={dialog}
       onKeyDown={(e) => e.key === "Escape" && close()}
-      className="fixed inset-0 z-[60] flex flex-col bg-black outline-none"
+      style={{ backgroundColor: `rgba(0,0,0,${1 - fade * 0.6})` }}
+      className="fixed inset-0 z-[60] flex flex-col overscroll-contain outline-none"
     >
-      <div className="flex shrink-0 items-center justify-between px-2 pt-[env(safe-area-inset-top)] text-white [&>*]:my-1.5">
+      {/* 머리줄을 끌어도 뒤 화면이 따라 움직이지 않게 (77) */}
+      <div style={{ touchAction: "none" }} className="flex shrink-0 items-center justify-between px-2 pt-[env(safe-area-inset-top)] text-white [&>*]:my-1.5">
         <button type="button" onClick={close} aria-label="닫기" className="flex size-11 items-center justify-center">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
@@ -90,11 +107,11 @@ function PhotoViewer({ urls, start, onClose }: { urls: string[]; start: number; 
       <div
         ref={strip}
         onScroll={(e) => setIndex(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
-        className={`flex min-h-0 flex-1 snap-x snap-mandatory overscroll-contain ${zoomed ? "overflow-hidden" : "overflow-x-auto"}`}
+        className={`relative flex min-h-0 flex-1 snap-x snap-mandatory overscroll-contain ${zoomed ? "overflow-hidden" : "overflow-x-auto"}`}
       >
         {urls.map((u, i) => (
           <div key={i} className="h-full w-full shrink-0 snap-center pb-[env(safe-area-inset-bottom)]">
-            <ZoomableImage src={u} alt={`사진 ${i + 1}`} active={i === index} onZoomed={setZoomed} />
+            <ZoomableImage src={u} alt={`사진 ${i + 1}`} active={i === index} onZoomed={setZoomed} onDismiss={close} onDrag={setFade} />
           </div>
         ))}
       </div>

@@ -49,7 +49,7 @@ function dot(d: string | null): string {
 function MediaStrip({ media }: { media: MediaRef[] }) {
   if (media.length === 0) return null;
   return (
-    <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5">
+    <div className="relative -mx-5 flex gap-1.5 overflow-x-auto px-5">
       {media.map((m, i) =>
         m.kind === "image" ? (
           // eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다

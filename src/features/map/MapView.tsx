@@ -914,7 +914,7 @@ function FollowingCard({ place, onClose }: { place: MapPlace; onClose: () => voi
 
 function ChipRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div role="group" aria-label={label} className="pointer-events-auto flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_calc(100%-40px),transparent)] after:shrink-0 after:basis-6 after:content-['']">
+    <div role="group" aria-label={label} className="pointer-events-auto relative flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_calc(100%-40px),transparent)] after:shrink-0 after:basis-6 after:content-['']">
       {children}
     </div>
   );

@@ -60,7 +60,7 @@ export function RecentSaved({ home, covers }: { home: MyHome; covers: Record<str
   return (
     <section className="flex flex-col gap-2">
       <SectionHead title="최근 저장한 곳" />
-      <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+      <ul className="relative flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
         {home.recent.map((p) => (
           <li key={p.placeId} className="shrink-0">
             <Link href={`/p/${p.placeId}`} className="flex w-[112px] flex-col gap-1.5">

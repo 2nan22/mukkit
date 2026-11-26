@@ -29,4 +29,30 @@ describe.skipIf(!hasLocalDb)("평가 사진 저장소 정책 (로컬)", () => {
     expect((await other.supabase.storage.from(BUCKET).remove([path])).data).toEqual([]);
     expect((await owner.supabase.storage.from(BUCKET).remove([path])).data).toHaveLength(1);
   }, 30_000);
+
+  it("사진 순서 바꾸기 — 내 평가 사진 전부를 고른 순서로, 빠지거나 남의 것이면 거절 (77)", async () => {
+    const owner = await signUpTestUser();
+    const other = await signUpTestUser();
+    const place = await testAdminClient()
+      .from("places")
+      .insert({ source: "naver", source_place_id: `order-${runId}-${Date.now()}`, name: "순서 가게", lat: 37.5, lng: 127, cuisine: "korean" })
+      .select("id")
+      .single();
+    const placeId = place.data!.id as string;
+    await owner.supabase.from("user_places").insert({ user_id: owner.userId, place_id: placeId, tier: "three" });
+    const rows = await owner.supabase
+      .from("rating_media")
+      .insert(["a", "b", "c"].map((n) => ({ user_id: owner.userId, place_id: placeId, path: `${owner.userId}/${placeId}/${runId}-${n}.jpg`, kind: "image" })))
+      .select("id, path");
+    const id = (n: string) => rows.data!.find((r) => (r.path as string).endsWith(`-${n}.jpg`))!.id as string;
+    const order = async () =>
+      (await owner.supabase.from("rating_media").select("path").eq("place_id", placeId).order("created_at")).data!.map((r) => (r.path as string).slice(-5, -4));
+
+    expect((await owner.supabase.rpc("reorder_my_media", { p_place: placeId, p_ids: [id("c"), id("a"), id("b")] })).error).toBeNull();
+    expect(await order()).toEqual(["c", "a", "b"]);
+    // 하나 빠짐 · 남이 부름 — 거절, 순서 그대로
+    expect((await owner.supabase.rpc("reorder_my_media", { p_place: placeId, p_ids: [id("a"), id("b")] })).error).not.toBeNull();
+    expect((await other.supabase.rpc("reorder_my_media", { p_place: placeId, p_ids: [id("a"), id("b"), id("c")] })).error).not.toBeNull();
+    expect(await order()).toEqual(["c", "a", "b"]);
+  }, 30_000);
 });

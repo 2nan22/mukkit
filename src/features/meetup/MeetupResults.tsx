@@ -71,7 +71,7 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
         <h2 className="text-section font-bold">{plan.people.length === 2 ? "두 사람 모두" : "모두"} 가기 편한 곳</h2>
         {waitingCount > 0 && <span className="text-meta text-muted">아직 위치를 안 넣은 {waitingCount}명은 빼고 계산했어요</span>}
       </div>
-      <div role="tablist" aria-label="추천 지역" className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
+      <div role="tablist" aria-label="추천 지역" className="relative -mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
         {plans.map((p, i) => (
           <button
             key={p.name}
