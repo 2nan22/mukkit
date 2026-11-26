@@ -39,6 +39,24 @@ describe.skipIf(!hasLocalDb)("평가 저장 (로컬 DB)", () => {
     });
   }, 20_000);
 
+  it("등급을 바꿀 때만 평가한 날이 바뀌고, 글 · 메뉴만 고치면 그대로 (82)", async () => {
+    const { supabase, userId } = await signUpTestUser();
+    const [id] = await savePlaces(supabase, userId, ["바다초밥"]);
+    const ratedAt = async () => (await supabase.from("user_places").select("rated_at").eq("place_id", id).single()).data!.rated_at as string;
+
+    await updateUserPlace(supabase, userId, id, { tier: "two" });
+    const first = await ratedAt();
+    await new Promise((r) => setTimeout(r, 20));
+    await updateUserPlace(supabase, userId, id, { review: "국물이 진해요", menus: ["우동"] });
+    expect(await ratedAt()).toBe(first);
+    // 직접 바꾸려 해도 그대로
+    await supabase.from("user_places").update({ rated_at: "2030-01-01T00:00:00Z" }).eq("place_id", id);
+    expect(await ratedAt()).toBe(first);
+
+    await updateUserPlace(supabase, userId, id, { tier: "three" });
+    expect(Date.parse(await ratedAt())).toBeGreaterThan(Date.parse(first));
+  }, 20_000);
+
   it("평가 전은 최근 저장 순으로 하나씩, 건너뛴 곳은 빼고", async () => {
     const { supabase, userId } = await signUpTestUser();
     const [a, b, c] = await savePlaces(supabase, userId, ["가", "나", "다"]);

@@ -75,7 +75,7 @@ export function FollowingNew({ ratings, followingCount, me }: { ratings: SharedR
                 <span className="flex flex-1 flex-col gap-1.5 p-3.5">
                   <span className="flex items-center gap-1.5 text-meta text-muted">
                     <Avatar name={r.ownerNickname} size={24} />
-                    <MetaLine className="" items={[r.ownerNickname, timeAgo(r.updatedAt)]} />
+                    <MetaLine className="" items={[r.ownerNickname, timeAgo(r.ratedAt)]} />
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[16px] font-semibold">{r.placeName}</span>
