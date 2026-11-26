@@ -300,7 +300,7 @@ async function fillImportedMemos(
     const note = noteOf.get(id) ?? "";
     const memo = p.memo.slice(0, NOTE_MAX);
     if (note === memo) continue;
-    if (note !== "" && (emptyOnly || !importedMemos.get(`${id}:${p.source}`)?.has(note))) continue;
+    if (note !== "" && (emptyOnly || !importedMemos.get(`${id}:${p.origin ?? p.source}`)?.has(note))) continue;
     const res = await supabase.from("user_places").update({ note: memo }).eq("user_id", userId).eq("place_id", id).eq("note", note);
     if (res.error) throw new ImportSaveError("user_places_note_update", res.error.code);
   }

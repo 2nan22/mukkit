@@ -48,9 +48,17 @@ export function readTakeoutFiles(files: TakeoutFile[]): GoogleList[] {
   return [...byKey.values()].filter((l) => l.items.length > 0);
 }
 
+// 구글 기본 리스트는 영어 계정이면 영어 이름 — 우리말로 보여 준다 (76 디자인 검토)
+const DEFAULT_NAMES: [RegExp, string][] = [
+  [/^want\s*to\s*go$/i, "가고 싶은 곳"],
+  [/^favou?rite(s|\s*places)?$/i, "즐겨찾는 곳"],
+  [/^starred\s*places$/i, STARRED_NAME],
+];
+
 function toList(name: string, items: GoogleItem[]): GoogleList {
-  const clean = name.trim() || "구글 지도";
-  return { key: clean.toLowerCase(), name: clean, wantToGo: WANT_TO_GO.test(clean), items: dedupe(items).slice(0, MAX_ITEMS) };
+  const raw = name.trim().slice(0, 120) || "구글 지도";
+  const shown = DEFAULT_NAMES.find(([re]) => re.test(raw))?.[1] ?? raw;
+  return { key: shown.toLowerCase(), name: shown, wantToGo: WANT_TO_GO.test(raw) || WANT_TO_GO.test(shown), items: dedupe(items).slice(0, MAX_ITEMS) };
 }
 
 function baseName(path: string): string {
@@ -79,7 +87,7 @@ export function readSavedCsv(text: string): GoogleItem[] | null {
     if (!name) return [];
     const url = at(r, "url");
     const note = [at(r, "note"), at(r, "comment")].filter(Boolean).join("\n");
-    return [{ name, note, url, ...coordsFromUrl(url) }];
+    return [{ name: name.slice(0, 120), note: note.slice(0, 1000), url: url.slice(0, 1000), ...coordsFromUrl(url) }];
   });
 }
 
@@ -103,13 +111,14 @@ export function readSavedPlacesJson(text: string): GoogleItem[] | null {
     const [lng, lat] = coords.map(Number);
     const known = Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
     const address = str(loc.address) || str(loc.Address);
-    return [{ name, note: str(p.Comment), url, ...(known ? { lat, lng } : coordsFromUrl(url)), ...(address ? { address } : {}) }];
+    return [{ name: name.slice(0, 120), note: str(p.Comment).slice(0, 1000), url: url.slice(0, 1000), ...(known ? { lat, lng } : coordsFromUrl(url)), ...(address ? { address: address.slice(0, 200) } : {}) }];
   });
 }
 
-// 구글 지도 주소에 좌표가 실린 경우만 — /search/37.5,127.0 · @37.5,127.0 · !3d37.5!4d127.0
+// 구글 지도 주소에 좌표가 실린 경우만 — !3d37.5!4d127.0 · /search/37.5,127.0 · @37.5,127.0
 export function coordsFromUrl(url: string): { lat: number; lng: number } | Record<string, never> {
-  const m = url.match(/search\/(-?\d+\.\d+),\+?\s*(-?\d+\.\d+)/) ?? url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ?? url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  // !3d!4d(장소 좌표)를 먼저 — @ 는 지도 화면 가운데라 장소와 다를 수 있다 (76 검토)
+  const m = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) ?? url.match(/search\/(-?\d+\.\d+),\+?\s*(-?\d+\.\d+)/) ?? url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (!m) return {};
   const lat = Number(m[1]);
   const lng = Number(m[2]);

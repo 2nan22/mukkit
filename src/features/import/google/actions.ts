@@ -36,6 +36,7 @@ export type MissReason = "not_found" | "ambiguous" | "not_food" | "failed";
 // 한 번에 카카오에 묻는 수 · 리스트 가져오기는 사용자당 1분에 10번
 const CONCURRENCY = 4;
 const LISTS_PER_MINUTE = 10;
+const LISTS_PER_DAY = 40;
 
 export async function importGoogleList(input: z.input<typeof ListSchema>): Promise<GoogleImportResult> {
   const parsed = ListSchema.safeParse(input);
@@ -45,6 +46,8 @@ export async function importGoogleList(input: z.input<typeof ListSchema>): Promi
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
   if (!allowCall(`google-import:${me}`, LISTS_PER_MINUTE, 60_000)) return { ok: false, error: "잠깐만요. 1분쯤 뒤에 다시 시도해 주세요." };
+  // 카카오 검색 한도 보호 — 하루 리스트 수 (한 리스트 최대 500곳)
+  if (!allowCall(`google-import-day:${me}`, LISTS_PER_DAY, 86_400_000)) return { ok: false, error: "오늘은 더 가져올 수 없어요. 내일 다시 시도해 주세요." };
 
   const list = parsed.data;
   const searched = await mapLimit(list.items, CONCURRENCY, (item) =>
@@ -63,7 +66,7 @@ export async function importGoogleList(input: z.input<typeof ListSchema>): Promi
     if (!Array.isArray(hits)) return missed.push({ name: item.name, reason: "failed" });
     const pick = pickHit(item, hits as KakaoHit[], mine);
     if ("reason" in pick) return missed.push({ name: item.name, reason: pick.reason });
-    places.push({ ...hitToImportedPlace(pick.hit), memo: item.note.slice(0, 1000), raw: { google: { name: item.name, url: item.url } } });
+    places.push({ ...hitToImportedPlace(pick.hit), origin: "google", memo: item.note.slice(0, 1000), raw: { google: { name: item.name, url: item.url } } });
   });
 
   const imported: ImportedList = {

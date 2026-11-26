@@ -2,6 +2,8 @@ import { AppHeader } from "@/components/AppHeader";
 import { GoogleImport } from "@/features/import/google/GoogleImport";
 
 export const metadata = { title: "구글 지도에서 가져오기" };
+// 리스트 하나(최대 500곳)를 카카오에 묻는 시간 — 느릴 때도 끝나게
+export const maxDuration = 60;
 
 // 구글 지도 저장 리스트 — 테이크아웃 파일로 (76)
 export default function GoogleImportPage() {

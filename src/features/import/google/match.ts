@@ -45,6 +45,7 @@ export function pickHit(item: GoogleItem, hits: KakaoHit[], mine: ReadonlySet<st
 
 // 좌표가 없을 때 검색어 — 주소가 있으면 앞 두 마디(시 · 구)를 붙여 좁힌다
 export function searchQuery(item: GoogleItem): string {
-  const region = item.address ? item.address.replace(/^대한민국\s*/, "").split(/\s+/).slice(0, 2).join(" ") : "";
+  // 한글 주소일 때만 — 영어 주소 앞 마디는 검색어를 흐린다
+  const region = item.address && /[가-힣]/.test(item.address) ? item.address.replace(/^대한민국\s*/, "").split(/\s+/).slice(0, 2).join(" ") : "";
   return item.lat === undefined && region ? `${region} ${item.name}` : item.name;
 }

@@ -21,6 +21,8 @@ export type ImportedPlace = {
   available: boolean;
   // 출처가 준 항목 그대로 — 나중에 분류 · 리스트 만들 때 쓰는 원천 데이터
   raw: unknown;
+  // 원본 앱이 장소 출처와 다를 때(구글 테이크아웃 → 카카오 가게) — 원본 메모를 견줄 때 이 앱으로 (76)
+  origin?: "google";
 };
 
 export type ImportedList = {

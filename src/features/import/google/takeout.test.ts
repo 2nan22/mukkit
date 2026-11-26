@@ -57,7 +57,7 @@ describe("파일 묶음", () => {
       { name: "Takeout/archive_browser.html", text: "<html>" },
     ]);
     expect(lists.map((l) => [l.name, l.wantToGo, l.items.length])).toEqual([
-      ["Want to go", true, 1],
+      ["가고 싶은 곳", true, 1],
       ["가고 싶은 장소", true, 1],
       ["성수", false, 1],
     ]);
