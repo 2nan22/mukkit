@@ -44,7 +44,7 @@ export function PointEditor({ meetupId, kind, current }: { meetupId: string; kin
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-[16px] bg-surface p-4">
+    <div id={`point-${kind}`} className="flex scroll-mt-20 flex-col gap-2 rounded-[16px] bg-surface p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="flex flex-col gap-0.5">
           <span className="text-body font-semibold">{KIND_LABEL[kind]}</span>
@@ -62,7 +62,7 @@ export function PointEditor({ meetupId, kind, current }: { meetupId: string; kin
                 지우기
               </button>
             )}
-            <button type="button" onClick={() => setEditing(true)} className="h-8 rounded-full bg-white px-3.5 text-meta font-semibold text-ink raised-soft">
+            <button type="button" data-edit onClick={() => setEditing(true)} className="h-8 rounded-full bg-white px-3.5 text-meta font-semibold text-ink raised-soft">
               {current ? "바꾸기" : "넣기"}
             </button>
           </span>

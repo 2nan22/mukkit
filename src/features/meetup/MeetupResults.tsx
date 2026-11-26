@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { Fragment, useMemo, useState, useSyncExternalStore } from "react";
 import { PlaceRow } from "@/components/ui/PlaceRow";
 import { CUISINE_LABEL } from "@/domain/cuisine";
-import { areaReason, nightClock } from "@/domain/meetup";
+import { areaReason, isEven, lastTrainLine, timeHeadline, type RankedPerson } from "@/domain/meetup";
 import { PlaceMap } from "@/features/map/PlaceMap";
 import type { AreaPlan } from "./meetup";
 import { MetaLine } from "@/components/ui/MetaLine";
@@ -30,13 +30,6 @@ function who(p: { isMe: boolean; nickname: string }): string {
   return p.isMe ? "나" : `${p.nickname}님`;
 }
 
-function lateWarning(plan: AreaPlan): string | null {
-  const late = plan.people.filter((p) => p.late);
-  if (late.length === 0) return null;
-  if (late.length === plan.people.length) return "헤어지는 시간이 모두의 막차보다 늦어요";
-  return `헤어지는 시간이 ${late.map(who).join(", ")} 막차보다 늦어요`;
-}
-
 // 두 사람 모두 가기 편한 지역 3곳 · 지역마다 가게 — 고른 지역을 상대에게 보내기
 // 추천 이유 — 내 등급은 배지로 이미 보이니 남의 평가만
 function reasonLine(reasons: string[]) {
@@ -44,7 +37,7 @@ function reasonLine(reasons: string[]) {
   return others.length > 0 ? <MetaLine wrap className="text-meta text-ink-2" items={others} /> : undefined;
 }
 
-export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaPlan[]; meetupUrl: string; waitingCount: number }) {
+export function MeetupResults({ plans, meetupUrl, waitingCount, endsAt = null }: { plans: AreaPlan[]; meetupUrl: string; waitingCount: number; endsAt?: string | null }) {
   const [active, setActive] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -71,15 +64,11 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
     }
   }
 
-  const warning = lateWarning(plan);
-
-  // 시간 차이가 거의 없으면(5분 이하) 사람별 줄을 숨긴다 — 요약 한 줄과 같은 말이 되풀이되지 않게 (79 디자인 검토)
-  const mins = plan.people.map((p) => Math.round(p.minutes / 5) * 5);
-  const even = Math.max(...mins) - Math.min(...mins) <= 5;
-  const showMins = !even && plan.people.length > 2;
-  const rows = plan.people.map((p, i) => ({ p, i })).filter(({ p }) => showMins || p.last);
-  const meNoReturn = plan.people.some((p) => p.isMe && !p.last);
+  const even = isEven(plan.people);
   const areaName = (name: string) => name.replace(/\//g, ", ");
+  const head = areaName(plan.name).split(",")[0];
+  // 가게가 없을 때 이끌 다른 지역 — 가게가 가장 많은 곳 하나
+  const alt = plans.reduce<number | null>((b, p, i) => (i !== active && p.shops.length > 0 && (b === null || p.shops.length > plans[b].shops.length) ? i : b), null);
 
   return (
     <section className="flex flex-col gap-4">
@@ -92,6 +81,7 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
         {plans.map((p, i) => (
           <button
             key={p.name}
+            id={`meet-area-${i}`}
             type="button"
             role="tab"
             aria-selected={i === active}
@@ -100,7 +90,7 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
               setSelected(null);
               setMessage(null);
             }}
-            className={`flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-meta font-semibold tracking-[-0.01em] ${i === active ? "bg-ink text-white" : "bg-surface text-ink-2"}`}
+            className={`flex h-10 shrink-0 scroll-mt-24 items-center gap-1.5 rounded-full px-4 text-meta font-semibold tracking-[-0.01em] ${i === active ? "bg-ink text-white" : "bg-surface text-ink-2"}`}
           >
             {i === 0 && <span className={`text-caption font-bold ${i === active ? "text-[#ffb38a]" : "text-brand"}`}>추천</span>}
             {areaName(p.name)}
@@ -109,48 +99,62 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
         ))}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <div className="relative -mx-5 h-[28dvh] min-h-48 overflow-hidden">
-          <div className="absolute inset-0">
-            <PlaceMap pins={pins} selectedId={selected} onSelect={(id) => setSelected(id === "area" ? null : id)} padding={[36, 36, 36, 36]} />
-          </div>
+      <div className="relative -mx-5 h-[28dvh] min-h-48 overflow-hidden">
+        <div className="absolute inset-0">
+          <PlaceMap pins={pins} selectedId={selected} onSelect={(id) => setSelected(id === "area" ? null : id)} padding={[36, 36, 36, 36]} />
         </div>
-        <span className="text-right text-caption text-subtle">거리로 계산한 예상 시간이에요</span>
       </div>
 
-      <div className="flex flex-col gap-1.5 rounded-[16px] bg-surface px-4 py-3.5">
-        <span className="text-[16px] font-bold tracking-[-0.015em]">{even ? `모두 ${mins[0]}분쯤 걸려요` : areaReason(plan.people)}</span>
-        {/* 제목이 이미 두 사람 시간을 말하니 줄마다 되풀이하지 않는다 — 사람별 줄은 막차 · 3명 이상 시간만 (83, 사용자 '가운데 그대로') */}
-        {rows.length > 0 && (
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-meta text-ink-2">
-            {rows.map(({ p, i }) => (
-              <div key={p.id} className="contents">
-                <dt className="text-muted">{who(p)}</dt>
-                <dd>{[showMins ? `${mins[i]}분쯤` : null, p.last ? `막차 늦어도 ${nightClock(p.last)}쯤 출발` : null].filter(Boolean).join(", ")}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-        {warning && <span className="text-meta font-medium text-danger">{warning}</span>}
-        {plan.recent >= 20 && <span className="text-meta text-muted">요즘 평가가 많은 동네예요</span>}
-        {meNoReturn && <span className="text-meta text-muted">귀가지를 넣으면 막차도 알려 드려요</span>}
+      {/* 시간 카드 — 제목은 결론, 숫자는 막대, 빨강은 막차가 끊길 때 한 줄만 (83 디자인 검토) */}
+      <div className="flex flex-col gap-3 rounded-[16px] bg-surface p-4">
+        <span className="text-[16px] font-bold tracking-[-0.015em] text-ink">{timeHeadline(plan.people)}</span>
+        {!even && <TimeBars people={plan.people} />}
+        <LastTrain people={plan.people} endsAt={endsAt} />
+        <span className="text-caption text-subtle">직선거리로 어림한 시간이라 실제와 다를 수 있어요</span>
       </div>
 
       {plan.shops.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-[16px] bg-surface p-5 text-center">
-          <span className="text-meta leading-normal text-muted">아직 평가된 가게가 없어요</span>
-          <Link href={`/search?q=${encodeURIComponent(areaName(plan.name).split(",")[0])}`} className="flex h-10 items-center rounded-[12px] bg-white px-4 text-meta font-semibold text-ink raised-soft">
-            {areaName(plan.name).split(",")[0]} 가게 찾기
-          </Link>
+        // 빈 상태는 상자 없이 목록 자리에 — 가게가 있는 다른 지역으로 이끈다 (83)
+        <div className="mt-2 flex flex-col gap-1">
+          <h3 className="text-body font-bold tracking-[-0.01em]">{head} 가게</h3>
+          <p className="text-meta text-muted">같이 가는 분들이 평가한 곳이 아직 없어요</p>
+          <div className="flex flex-wrap gap-x-4 text-meta font-semibold text-ink">
+            <Link href={`/search?q=${encodeURIComponent(head)}`} className="flex h-11 items-center gap-0.5">
+              {head}에서 찾아보기
+              <Chevron />
+            </Link>
+            {alt !== null && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActive(alt);
+                  setSelected(null);
+                  setMessage(null);
+                  // 칩 · 지도가 바뀐 것이 보이게 위로 — 누른 버튼이 사라지니 포커스도 그 칩으로
+                  requestAnimationFrame(() => {
+                    const chip = document.getElementById(`meet-area-${alt}`);
+                    chip?.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+                    chip?.focus({ preventScroll: true });
+                  });
+                }}
+                className="flex h-11 items-center gap-0.5"
+              >
+                {areaName(plans[alt].name).split(",")[0]} 가게 {plans[alt].shops.length}곳 보기
+                <Chevron />
+              </button>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="flex flex-col">
-          <div className="flex items-baseline justify-between gap-2 pb-1">
+        <div className="mt-2 flex flex-col">
+          <div className="flex items-baseline justify-between gap-2">
             <h3 className="text-body font-bold tracking-[-0.01em]">
               {areaName(plan.name)} 가게 {plan.shops.length}곳
             </h3>
             <span className="text-meta text-muted">같이 가는 분들 평가 순</span>
           </div>
+          {plan.recent >= 20 && <span className="text-meta text-muted">요즘 평가가 많은 동네예요</span>}
+          <span className="pb-1" />
           {plan.shops.map((s) => (
             <PlaceRow
               key={s.placeId}
@@ -175,10 +179,84 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
           </p>
         )}
         <button type="button" onClick={sendArea} className="h-btn-m w-full rounded-btn-m bg-brand text-body font-bold text-white raised-brand">
-          {areaName(plan.name).split(",")[0]}
-          {ro(areaName(plan.name).split(",")[0])} 제안하기
+          {head}
+          {ro(head)} 제안하기
         </button>
       </div>
     </section>
   );
+}
+
+function Chevron() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted" aria-hidden="true">
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+// 사람별 막대 — 나 먼저, 그다음 오래 걸리는 순. 상대는 분만(동네 이름 없음)
+function TimeBars({ people }: { people: RankedPerson[] }) {
+  const max = Math.max(...people.map((p) => p.minutes));
+  const sorted = [...people].sort((a, b) => Number(b.isMe) - Number(a.isMe) || b.minutes - a.minutes);
+  return (
+    // 한 격자에 모든 줄 — 이름 칸 너비를 가장 긴 이름에 맞춰 막대 시작이 같게 (긴 별명은 7rem 에서 말줄임)
+    <div className="grid grid-cols-[minmax(0,max-content)_1fr_auto] items-center gap-x-3 gap-y-2">
+      {sorted.map((p) => (
+        <Fragment key={p.id}>
+          <span className={`max-w-[7rem] truncate text-meta ${p.isMe ? "font-semibold text-ink" : "text-ink-2"}`}>{who(p)}</span>
+          <span className="h-2 overflow-hidden rounded-full bg-white">
+            <span className={`block h-full rounded-full ${p.isMe ? "bg-me" : "bg-subtle"}`} style={{ width: `${Math.max(8, (p.minutes / max) * 100)}%` }} />
+          </span>
+          <span className="text-right text-meta font-semibold text-ink tabular-nums">{Math.round(p.minutes / 5) * 5}분</span>
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
+// 막차 줄 — 문구는 domain/meetup lastTrainLine 이 고른다 (끊기면 빨강 한 줄 + 근거, 낮 약속엔 없음)
+function LastTrain({ people, endsAt }: { people: RankedPerson[]; endsAt: string | null }) {
+  const line = lastTrainLine(people, endsAt ? new Date(endsAt) : null);
+  if (!line) return null;
+  return (
+    <>
+      <span aria-hidden="true" className="h-px bg-line-strong" />
+      <div className="grid grid-cols-[3.5rem_1fr] gap-x-3 gap-y-1 text-meta">
+        <span className="text-muted">막차</span>
+        {line.title && line.late ? (
+          <span className="flex flex-col gap-0.5">
+            <span className="font-semibold text-danger">{line.title}</span>
+            <span className="text-ink-2">{line.detail}</span>
+          </span>
+        ) : line.title ? (
+          <span className="text-ink-2">
+            {line.title} <span className="text-muted">{line.detail}</span>
+          </span>
+        ) : null}
+        {line.askMine && (
+          <>
+            {line.title && <span />}
+            <span className="flex items-center justify-between gap-3">
+              <span className="text-muted">{line.title ? "귀가지를 넣으면 내 막차도 알려 드려요" : "귀가지를 넣으면 알려 드려요"}</span>
+              <button type="button" onClick={openReturnPoint} className="-my-3 h-11 shrink-0 font-semibold text-ink">
+                귀가지 넣기
+              </button>
+            </span>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+// 아래 '내 위치'를 펼치고 귀가지 칸으로 — 고정 버튼에 가리지 않게 위쪽에 맞추고 넣기 버튼에 포커스
+function openReturnPoint() {
+  const box = document.getElementById("my-points");
+  if (box instanceof HTMLDetailsElement) box.open = true;
+  requestAnimationFrame(() => {
+    const point = document.getElementById("point-return");
+    point?.scrollIntoView({ behavior: "smooth", block: "start" });
+    point?.querySelector<HTMLButtonElement>("button[data-edit]")?.focus({ preventScroll: true });
+  });
 }
