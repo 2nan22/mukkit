@@ -13,6 +13,9 @@ import { searchKakaoKeyword } from "@/features/search/kakaoLocal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getBlockedIds } from "@/features/safety/safety";
 import { notifyMeetup } from "./notify";
+import { fetchWalkRoute } from "./walkRoute";
+import { COURSE_MAX, courseKey } from "@/domain/course";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type Result = { error?: string };
 const FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
@@ -168,4 +171,39 @@ async function requireUser() {
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
   return { supabase, me };
+}
+
+const CourseInput = z.object({ meetupId: z.uuid(), placeIds: z.array(z.uuid()).max(COURSE_MAX) });
+
+// 코스를 통째로 바꾼다 (84) — 담기 · 빼기 · 순서 바꾸기 모두. 바뀌면 걷는 길을 한 번 받아 저장
+export async function setMeetupCourse(input: z.input<typeof CourseInput>): Promise<Result> {
+  const parsed = CourseInput.safeParse(input);
+  if (!parsed.success) return { error: FAILED };
+  const { supabase } = await requireUser();
+  const { meetupId, placeIds } = parsed.data;
+  const { error } = await supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: placeIds });
+  if (error) {
+    if (error.code === "P0001") return { error: `코스는 ${COURSE_MAX}곳까지 담을 수 있어요` };
+    if (error.code === "P0002") return { error: "끝난 약속이에요" };
+    return { error: FAILED };
+  }
+  if (placeIds.length >= 2) await saveWalkRoute(meetupId);
+  revalidatePath(`/meet/${meetupId}`);
+  revalidatePath(`/meet/${meetupId}/course`);
+  return {};
+}
+
+// 길은 서비스 키로만 저장한다(참여자가 길을 꾸며 넣지 못하게) — 받기 실패면 저장 안 함(화면은 직선 어림)
+async function saveWalkRoute(meetupId: string): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  if (!admin) return;
+  const { data } = await admin.from("meetup_course").select("place_id, places(lat, lng)").eq("meetup_id", meetupId).order("position");
+  const rows = (data ?? []) as unknown as { place_id: string; places: { lat: number; lng: number } | null }[];
+  const stops = rows.flatMap((r) => (r.places ? [{ id: r.place_id, lat: r.places.lat, lng: r.places.lng }] : []));
+  if (stops.length < 2) return;
+  const route = await fetchWalkRoute(stops);
+  if (!route) return;
+  await admin
+    .from("meetup_course_route")
+    .upsert({ meetup_id: meetupId, course_key: courseKey(stops.map((s) => s.id)), legs: route.legs, path: route.path, fetched_at: new Date().toISOString() });
 }
