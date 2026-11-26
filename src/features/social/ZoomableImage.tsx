@@ -29,6 +29,26 @@ export function ZoomableImage({ src, alt, active, onZoomed }: { src: string; alt
     onZoomed(next.scale > 1);
   };
 
+  // 두 손가락이 닿으면 브라우저가 사진 줄 넘기기로 가져가지 못하게 — touch-action 은 첫 손가락 때 정해져 중간에 못 바꾼다 (75-4 검토)
+  // 사진을 다 받거나 화면을 돌리면 옮길 수 있는 범위를 다시 맞춘다
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const stopMulti = (e: TouchEvent) => {
+      if (e.touches.length >= 2 && e.cancelable) e.preventDefault();
+    };
+    const refit = () => view.current.scale > 1 && apply(view.current);
+    el.addEventListener("touchstart", stopMulti, { passive: false });
+    el.addEventListener("touchmove", stopMulti, { passive: false });
+    addEventListener("resize", refit);
+    return () => {
+      el.removeEventListener("touchstart", stopMulti);
+      el.removeEventListener("touchmove", stopMulti);
+      removeEventListener("resize", refit);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- apply 는 ref 만 쓴다
+  }, []);
+
   // 다른 사진으로 넘기면 원래 크기로
   useEffect(() => {
     if (!active && view.current.scale !== 1) apply(FIT);
@@ -49,7 +69,8 @@ export function ZoomableImage({ src, alt, active, onZoomed }: { src: string; alt
     if (e.pointerType === "mouse") return;
     e.currentTarget.setPointerCapture(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    moved.current = false;
+    // 손가락 하나일 때만 누르기 후보 — 두 손가락 누르기는 두 번 누르기로 세지 않는다
+    moved.current = pointers.current.size > 1;
     if (pointers.current.size === 2) pinch.current = { ...pair(), start: view.current };
   }
 
@@ -66,6 +87,13 @@ export function ZoomableImage({ src, alt, active, onZoomed }: { src: string; alt
     } else if (pointers.current.size === 1 && view.current.scale > 1) {
       apply({ ...view.current, x: view.current.x + e.clientX - prev.x, y: view.current.y + e.clientY - prev.y });
     }
+  }
+
+  // 브라우저가 가져간 손가락(넘기기 등)은 누르기로 세지 않는다 (75-4 검토)
+  function onCancel(e: PointerEvent<HTMLDivElement>) {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2) pinch.current = null;
+    lastTap.current = null;
   }
 
   function onUp(e: PointerEvent<HTMLDivElement>) {
@@ -90,12 +118,12 @@ export function ZoomableImage({ src, alt, active, onZoomed }: { src: string; alt
       onPointerDown={onDown}
       onPointerMove={onMove}
       onPointerUp={onUp}
-      onPointerCancel={onUp}
+      onPointerCancel={onCancel}
       style={{ touchAction: "pan-x" }}
       className="flex h-full w-full items-center justify-center overflow-hidden"
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다 */}
-      <img ref={img} src={src} alt={alt} draggable={false} className="size-full object-contain will-change-transform select-none" />
+      <img ref={img} src={src} alt={alt} draggable={false} onLoad={() => view.current.scale > 1 && apply(view.current)} className="size-full object-contain will-change-transform select-none" />
     </div>
   );
 }
