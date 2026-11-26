@@ -24,6 +24,7 @@ import { ratersLine, type MapPlace } from "./myPlaces";
 import { Avatar } from "@/components/ui/Avatar";
 import { LoaderBubble } from "@/components/ui/EatingLoader";
 import { MetaLine } from "@/components/ui/MetaLine";
+import { MapAppLink } from "@/components/ui/MapAppLink";
 
 const TIER_FILTERS: Tier[] = ["three", "two", "one", "notRecommended", "wantToGo", "unrated"];
 // 팔로잉 지도는 평가한 곳만이라 평가 등급만
@@ -844,15 +845,10 @@ function PlaceCard({ place, onClose }: { place: MapPlace; onClose: () => void })
       {(place.note || place.alias) && <Memo text={place.note} alias={place.alias} source={place.noteSource} />}
       <div className="grid grid-cols-2 gap-2 pt-2">
         {place.links[0] ? (
-          <a
-            href={place.links[0].url}
-            target="_blank"
-            rel="noreferrer"
-            className="flex h-btn-m items-center justify-center gap-2 rounded-btn-m border border-line-strong text-body text-ink"
-          >
+          <MapAppLink link={place.links[0].url} className="flex h-btn-m items-center justify-center gap-2 rounded-btn-m border border-line-strong text-body text-ink">
             <SourceMark source={place.links[0].source} />
             {SOURCE_LABEL[place.links[0].source]}에서 보기
-          </a>
+          </MapAppLink>
         ) : (
           <span />
         )}
