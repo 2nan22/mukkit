@@ -67,8 +67,6 @@ export function MeetupResults({ plans, meetupUrl, waitingCount, endsAt = null }:
   const even = isEven(plan.people);
   const areaName = (name: string) => name.replace(/\//g, ", ");
   const head = areaName(plan.name).split(",")[0];
-  // 가게가 없을 때 이끌 다른 지역 — 가게가 가장 많은 곳 하나
-  const alt = plans.reduce<number | null>((b, p, i) => (i !== active && p.shops.length > 0 && (b === null || p.shops.length > plans[b].shops.length) ? i : b), null);
 
   return (
     <section className="flex flex-col gap-4">
@@ -81,7 +79,6 @@ export function MeetupResults({ plans, meetupUrl, waitingCount, endsAt = null }:
         {plans.map((p, i) => (
           <button
             key={p.name}
-            id={`meet-area-${i}`}
             type="button"
             role="tab"
             aria-selected={i === active}
@@ -90,7 +87,7 @@ export function MeetupResults({ plans, meetupUrl, waitingCount, endsAt = null }:
               setSelected(null);
               setMessage(null);
             }}
-            className={`flex h-10 shrink-0 scroll-mt-24 items-center gap-1.5 rounded-full px-4 text-meta font-semibold tracking-[-0.01em] ${i === active ? "bg-ink text-white" : "bg-surface text-ink-2"}`}
+            className={`flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-meta font-semibold tracking-[-0.01em] ${i === active ? "bg-ink text-white" : "bg-surface text-ink-2"}`}
           >
             {i === 0 && <span className={`text-caption font-bold ${i === active ? "text-[#ffb38a]" : "text-brand"}`}>추천</span>}
             {areaName(p.name)}
@@ -114,7 +111,7 @@ export function MeetupResults({ plans, meetupUrl, waitingCount, endsAt = null }:
       </div>
 
       {plan.shops.length === 0 ? (
-        // 빈 상태는 상자 없이 목록 자리에 — 가게가 있는 다른 지역으로 이끈다 (83)
+        // 빈 상태는 상자 없이 목록 자리에 (83) · 다른 지역 가게 링크는 뺌 — 만나는 곳이 바뀌는 줄 몰라 헷갈림 (83-2, 사용자), 지역은 위 칩에서
         <div className="mt-2 flex flex-col gap-1">
           <h3 className="text-body font-bold tracking-[-0.01em]">{head} 가게</h3>
           <p className="text-meta text-muted">같이 가는 분들이 평가한 곳이 아직 없어요</p>
@@ -123,26 +120,6 @@ export function MeetupResults({ plans, meetupUrl, waitingCount, endsAt = null }:
               {head}에서 찾아보기
               <Chevron />
             </Link>
-            {alt !== null && (
-              <button
-                type="button"
-                onClick={() => {
-                  setActive(alt);
-                  setSelected(null);
-                  setMessage(null);
-                  // 칩 · 지도가 바뀐 것이 보이게 위로 — 누른 버튼이 사라지니 포커스도 그 칩으로
-                  requestAnimationFrame(() => {
-                    const chip = document.getElementById(`meet-area-${alt}`);
-                    chip?.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
-                    chip?.focus({ preventScroll: true });
-                  });
-                }}
-                className="flex h-11 items-center gap-0.5"
-              >
-                {areaName(plans[alt].name).split(",")[0]} 가게 {plans[alt].shops.length}곳 보기
-                <Chevron />
-              </button>
-            )}
           </div>
         </div>
       ) : (
