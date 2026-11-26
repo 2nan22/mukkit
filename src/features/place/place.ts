@@ -3,6 +3,7 @@ import type { Cuisine } from "@/domain/cuisine";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { tierFromDb, type Tier } from "@/domain/tier";
 import type { MediaRef } from "@/features/social/social";
+import { googleRouteLink, googleSearchLink, kakaoPlaceLink, kakaoRouteLink, kakaoSearchLink, naverPlaceLink, naverRouteLink, naverSearchLink, type MapLink, type RouteApp } from "@/domain/mapLinks";
 
 const MEDIA_BUCKET = "rating-media";
 
@@ -61,15 +62,16 @@ export async function getPlace(supabase: SupabaseClient, id: string): Promise<Pl
   };
 }
 
-// 원문 링크 — 출처 ID 가 있으면 그 장소로, 없으면 이름으로 검색
-export function sourceLinks(p: PlaceInfo): { naver: string; kakao: string; directions: string } {
+// 원문 링크 — 출처 ID 가 있으면 그 장소로, 없으면 이름으로 검색 · 폰에선 지도 앱으로 (72)
+export function sourceLinks(p: PlaceInfo): { naver: MapLink; kakao: MapLink; google: MapLink; directions: Record<RouteApp, MapLink> } {
   const naver = p.sources.find((s) => s.source === "naver");
   const kakao = p.sources.find((s) => s.source === "kakao" && !s.sourcePlaceId.startsWith("N"));
-  const q = encodeURIComponent(p.name);
   return {
-    naver: naver ? `https://map.naver.com/p/entry/place/${naver.sourcePlaceId}` : `https://map.naver.com/p/search/${q}`,
-    kakao: kakao ? `https://place.map.kakao.com/${kakao.sourcePlaceId}` : `https://map.kakao.com/?q=${q}`,
-    directions: `https://map.kakao.com/link/to/${q},${p.lat},${p.lng}`,
+    naver: naver ? naverPlaceLink(naver.sourcePlaceId, p.name, p.lat, p.lng) : naverSearchLink(p.name),
+    kakao: kakao ? kakaoPlaceLink(kakao.sourcePlaceId) : kakaoSearchLink(p.name),
+    google: googleSearchLink(p.name, p.address),
+    // 길찾기는 앱을 고른다 (75)
+    directions: { kakao: kakaoRouteLink(p.name, p.lat, p.lng), naver: naverRouteLink(p.name, p.lat, p.lng), google: googleRouteLink(p.lat, p.lng) },
   };
 }
 

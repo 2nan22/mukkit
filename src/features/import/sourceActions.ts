@@ -7,7 +7,7 @@ import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const BUCKET = "rating-media";
-const Target = z.object({ source: z.enum(["naver", "kakao"]), sourceListId: z.string().min(1).max(200) });
+const Target = z.object({ source: z.enum(["naver", "kakao", "google"]), sourceListId: z.string().min(1).max(200) });
 
 async function signedIn() {
   const supabase = await createSupabaseServerClient();

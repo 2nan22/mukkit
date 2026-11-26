@@ -5,6 +5,9 @@ import { NavTracker } from "@/lib/nav/NavTracker";
 import { NavLoading } from "@/lib/nav/NavLoading";
 import { LaunchSplash, SPLASH_SCRIPT } from "@/components/brand/LaunchSplash";
 
+// 아이패드 사파리는 맥처럼 알리므로 터치 수로 가른다
+const IOS_SCRIPT = `try{var n=navigator;if(/iP(hone|ad|od)/.test(n.userAgent)||(/Macintosh/.test(n.userAgent)&&n.maxTouchPoints>1))document.documentElement.dataset.ios=""}catch(e){}`;
+
 export const metadata: Metadata = {
   title: "먹킷",
   description: "광고도 별점 평균도 없는, 아는 사람들의 맛집 지도",
@@ -26,6 +29,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ko" className="h-full antialiased" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
+        {/* 아이폰 · 아이패드 표시 — 입력칸 확대 막기(globals.css html[data-ios]) */}
+        <script dangerouslySetInnerHTML={{ __html: IOS_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col font-sans">
         <LaunchSplash />

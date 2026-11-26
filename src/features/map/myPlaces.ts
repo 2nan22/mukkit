@@ -3,8 +3,9 @@ import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { TIER_LABEL, tierFromDb, type Tier } from "@/domain/tier";
 import type { Cuisine } from "@/domain/cuisine";
+import { kakaoPlaceLink, naverPlaceLink, type MapLink } from "@/domain/mapLinks";
 
-export type SourceLink = { source: PlaceSourceName; url: string };
+export type SourceLink = { source: PlaceSourceName; url: MapLink };
 
 export type MapPlace = {
   placeId: string;
@@ -80,9 +81,10 @@ export function ratersLine(raters: Rater[]): string {
   return raters.length === 1 ? first : `${first} 외 ${raters.length - 1}명`;
 }
 
-const SOURCE_URL: Record<PlaceSourceName, (id: string) => string> = {
-  naver: (id) => `https://map.naver.com/p/entry/place/${id}`,
-  kakao: (id) => `https://place.map.kakao.com/${id}`,
+// 폰에선 지도 앱으로 (72)
+const SOURCE_URL: Record<PlaceSourceName, (id: string, p: { name: string; lat: number; lng: number }) => MapLink> = {
+  naver: (id, p) => naverPlaceLink(id, p.name, p.lat, p.lng),
+  kakao: (id) => kakaoPlaceLink(id),
 };
 
 type Row = {
@@ -124,7 +126,7 @@ function toMapPlace(row: Row, p: NonNullable<Row["places"]>): MapPlace {
   const links = p.place_sources.flatMap((s) => {
     const source = s.source as PlaceSourceName;
     if (!(source in SOURCE_URL) || /^N/.test(s.source_place_id)) return [];
-    return [{ source, url: SOURCE_URL[source](s.source_place_id) }];
+    return [{ source, url: SOURCE_URL[source](s.source_place_id, p) }];
   });
   return {
     placeId: p.id,

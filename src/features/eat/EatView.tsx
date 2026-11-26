@@ -151,7 +151,7 @@ export function EatView({ regions, initial = null }: { regions: Region[]; initia
         {regions.length > 0 && (
           <div className="flex flex-col gap-1.5">
             <span className="text-meta text-muted">자주 저장한 지역</span>
-            <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
+            <div className="relative -mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
               {regions.map((r) => (
                 <button
                   key={r.name}

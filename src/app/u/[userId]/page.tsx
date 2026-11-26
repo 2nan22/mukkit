@@ -96,7 +96,18 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
               <span className="truncate text-section font-bold">{person.nickname}</span>
               {me && me !== person.id && <SafetyMenu userId={person.id} nickname={person.nickname} />}
             </span>
-            <MetaLine items={[`평가 ${ratedTotal}곳`, `팔로워 ${counts.followers}`, `팔로잉 ${counts.following}`]} />
+            {/* 숫자를 누르면 팔로워 · 팔로잉 목록 (74) */}
+            <MetaLine
+              items={[
+              `평가 ${ratedTotal}곳`,
+              <Link key="followers" href={`/u/${person.id}/follows`} className="inline-flex min-h-11 items-center">
+                팔로워 <b className="font-semibold text-ink">{counts.followers}</b>
+              </Link>,
+              <Link key="following" href={`/u/${person.id}/follows?tab=following`} className="inline-flex min-h-11 items-center">
+                팔로잉 <b className="font-semibold text-ink">{counts.following}</b>
+              </Link>,
+              ]}
+            />
           </div>
         </div>
         {bio && <p className="text-body leading-normal text-ink-2">{bio}</p>}
@@ -143,7 +154,7 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
           </div>
         )}
 
-        {me && me !== person.id && <FollowButton targetId={person.id} following={following} primary />}
+        {me && me !== person.id && <FollowButton targetId={person.id} following={following} nickname={person.nickname} primary />}
         {!me && (
           <Link href={`/?next=${encodeURIComponent(`/u/${person.id}`)}`} className="flex h-btn-l items-center justify-center rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
             먹킷 시작하고 팔로우하기

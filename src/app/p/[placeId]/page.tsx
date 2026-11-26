@@ -11,7 +11,7 @@ import { getMyVisits } from "@/features/visit/visit";
 import { Avatar } from "@/components/ui/Avatar";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { SourceMark } from "@/components/brand/BrandLogo";
+import { GoogleG, KakaoSymbol, NaverN } from "@/components/brand/BrandLogo";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
@@ -27,6 +27,8 @@ import { effectiveNote } from "@/features/rating/noteAudience";
 import type { MediaRef } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MetaLine } from "@/components/ui/MetaLine";
+import { MapAppLink } from "@/components/ui/MapAppLink";
+import { RouteButton } from "@/features/place/RouteButton";
 
 export const metadata = { title: "장소" };
 
@@ -47,7 +49,7 @@ function dot(d: string | null): string {
 function MediaStrip({ media }: { media: MediaRef[] }) {
   if (media.length === 0) return null;
   return (
-    <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5">
+    <div className="relative -mx-5 flex gap-1.5 overflow-x-auto px-5">
       {media.map((m, i) =>
         m.kind === "image" ? (
           // eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다
@@ -134,26 +136,39 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         <h1 className="text-title font-bold tracking-tight">{place.name}</h1>
         <span className="text-body text-ink-2">{place.address}</span>
         {!place.available && <span className="text-meta text-danger">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
-        <div className="grid grid-cols-3 gap-2 pt-3">
-          <a href={links.directions} target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 11l18-8-8 18-2-8z" />
+        {/* 지도 앱은 동그란 마크만 오른쪽에 — 왼쪽은 근처 추천 (78, 사용자 제안) · 폰에선 앱, 없으면 웹 · 길찾기는 앱 고르기 */}
+        <div className="flex items-center justify-between gap-3 pt-3">
+          {/* 이 가게를 기준으로 근처 추천(1차 뒤 2차 · 이 동네 다른 곳) — 지도 앱들이 쓰는 '주변 맛집'으로, 버튼 모양 (78-2, 사용자 '뭔지 모르겠다') */}
+          <Link
+            href={`/eat?at=${place.lat.toFixed(5)},${place.lng.toFixed(5)}&label=${encodeURIComponent(place.name)}`}
+            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-surface px-4 text-meta font-semibold whitespace-nowrap text-ink min-[360px]:pl-3"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="hidden shrink-0 min-[360px]:block" aria-hidden="true">
+              <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
+              <circle cx="12" cy="10" r="2.3" />
             </svg>
-            길찾기
-          </a>
-          <a href={links.naver} target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
-            <SourceMark source="naver" size={14} />
-            네이버
-          </a>
-          <a href={links.kakao} target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
-            <SourceMark source="kakao" size={14} />
-            카카오
-          </a>
+            주변 맛집
+          </Link>
+          <div className="flex shrink-0 items-center gap-1.5 min-[360px]:gap-2">
+            {/* 원 자체를 앱 색으로 — 원 안에 네모 타일이 또 들어가지 않게 (78 디자인 검토) */}
+            <MapAppLink link={links.naver} label="네이버 지도에서 보기" className="flex size-10 min-[360px]:size-11 items-center justify-center rounded-full bg-[#03C75A]">
+              <NaverN size={15} />
+            </MapAppLink>
+            <MapAppLink link={links.kakao} label="카카오맵에서 보기" className="flex size-10 min-[360px]:size-11 items-center justify-center rounded-full bg-[#FEE500]">
+              <KakaoSymbol size={20} />
+            </MapAppLink>
+            <MapAppLink link={links.google} label="구글 지도에서 보기" className="flex size-10 min-[360px]:size-11 items-center justify-center rounded-full border border-line bg-white">
+              <GoogleG size={20} />
+            </MapAppLink>
+            {/* 길찾기 표준 마크 — 마름모 안 꺾인 화살표(종이비행기는 '보내기'로 읽힘) */}
+            <RouteButton links={links.directions} label="길찾기" className="flex size-10 min-[360px]:size-11 items-center justify-center rounded-full bg-ink text-white">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" />
+                <path d="M9 15v-2.5a1.5 1.5 0 0 1 1.5-1.5H15M13 9l2 2-2 2" />
+              </svg>
+            </RouteButton>
+          </div>
         </div>
-        {/* 이 가게를 기준으로 근처 추천 — 1차 뒤 2차 · 이 동네에서 다른 곳 찾기 */}
-        <Link href={`/eat?at=${place.lat.toFixed(5)},${place.lng.toFixed(5)}&label=${encodeURIComponent(place.name)}`} className="flex h-11 items-center gap-1.5 self-start text-meta font-semibold text-ink underline underline-offset-[3px]">
-          이 근처에서 뭐 먹지
-        </Link>
       </section>
 
       {/* 메뉴는 카카오(없으면 네이버)에 묻느라 늦을 수 있어 따로 — 나머지 화면을 막지 않는다 */}

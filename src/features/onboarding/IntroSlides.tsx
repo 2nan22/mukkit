@@ -65,7 +65,7 @@ export function IntroSlides() {
       <div
         ref={track}
         tabIndex={0}
-        className="flex min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain outline-none [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-inset [&::-webkit-scrollbar]:hidden"
+        className="relative flex min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain outline-none [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-inset [&::-webkit-scrollbar]:hidden"
       >
         {SLIDES.map((s, i) => (
           <div
