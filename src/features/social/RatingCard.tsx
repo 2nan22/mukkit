@@ -12,6 +12,7 @@ import { SafetyMenu } from "@/features/safety/SafetyMenu";
 import type { SharedRating } from "./social";
 import { MetaLine } from "@/components/ui/MetaLine";
 import { TapToPlace } from "./TapToPlace";
+import { MediaStrip } from "./MediaStrip";
 
 // 올해가 아니면 연도까지 — 가져온 평가는 지도에 저장한 날이라 몇 해 전일 수 있다 (68-9)
 export function dateLabel(iso: string, now = new Date()): string {
@@ -48,18 +49,7 @@ export function RatingCard({
           {menu}
         </div>
       )}
-      {rating.media.length > 0 && (
-        <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-1.5 overflow-x-auto px-5">
-          {rating.media.map((m, i) =>
-            m.kind === "image" ? (
-              // eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다
-              <img key={i} src={m.url} alt="" className="aspect-[4/5] w-[78%] shrink-0 snap-start rounded-btn-l object-cover" />
-            ) : (
-              <video key={i} src={m.url} controls playsInline preload="metadata" className="aspect-[4/5] w-[78%] shrink-0 snap-start rounded-btn-l bg-black object-cover" />
-            ),
-          )}
-        </div>
-      )}
+      {rating.media.length > 0 && <MediaStrip media={rating.media} />}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
           <Link href={`/p/${rating.placeId}`} className="truncate text-body font-bold">
