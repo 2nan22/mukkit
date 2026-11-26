@@ -64,6 +64,8 @@ export function ImportFlow({ initialLink = "", helpOpen = false, defaultVisibili
   const noteOf = (r: Row): NoteVisibility => r.noteVisibility ?? "same";
   const sameNote = ratedRows.every((r) => noteOf(r) === noteOf(ratedRows[0])) ? (ratedRows[0] ? noteOf(ratedRows[0]) : "same") : null;
   const missing = ratedRows.some((r) => !r.visibility);
+  // 아무 줄도 직접 고르지 않아 기본값으로 채워진 상태 (87)
+  const prefilled = !!defaultVisibility && rating && (ran ?? draft).every((r) => !isRatedMode(r.mode) || !r.visibility);
   const setAllRated = (patch: Partial<Row>) => setRows((rs) => rs.map((r) => (isRatedMode(r.mode) ? { ...r, ...patch } : r)));
 
   async function runImport() {
@@ -160,6 +162,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false, defaultVisibili
           {rating && (
             <fieldset className="flex flex-col gap-2">
               <legend className="pb-2 text-body font-semibold">가져온 등급을 누구에게 보여 줄까요?</legend>
+              {prefilled && <span className="-mt-1 pb-1 text-caption text-muted">기본 공개 범위로 골라 뒀어요. 바꿀 수 있어요</span>}
               {mixedVis && <span className="-mt-1 pb-1 text-caption text-muted">리스트마다 다르게 정했어요. 고르면 모두 같게 바뀌어요</span>}
               <div className="grid grid-cols-3 gap-1.5">
                 {RATING_VISIBILITIES.map((v) => (
@@ -169,7 +172,7 @@ export function ImportFlow({ initialLink = "", helpOpen = false, defaultVisibili
                   </label>
                 ))}
               </div>
-              <span className="text-caption text-muted">팔로워 공개나 전체 공개면 팔로우하는 사람 피드에 보여요. 리스트마다 바꾸려면 등급을 누르세요</span>
+              <span className="text-caption text-muted">팔로워 공개나 전체 공개면 팔로우하는 사람 피드에 보여요</span>
               <div className="pt-2">
                 <NoteVisibilityPicker title="지도 앱 메모는 누가 볼까요?" value={sameNote ?? "same"} onChange={(v) => setAllRated({ noteVisibility: v })} rating={sameVis} warn />
               </div>
