@@ -22,10 +22,10 @@ describe("지도 앱 주소", () => {
     expect(naverSearchLink("국밥").web).toBe(`https://map.naver.com/p/search/${encodeURIComponent("국밥")}`);
   });
 
-  it("네이버 장소 — appname 포함", () => {
-    const l = naverPlaceLink("999");
+  it("네이버 장소 — 앱은 좌표 · 이름 · appname, 웹은 장소 ID", () => {
+    const l = naverPlaceLink("999", "국밥", 37.5, 127.1);
     expect(l.web).toBe("https://map.naver.com/p/entry/place/999");
-    expect(l.ios).toMatch(/^nmap:\/\/place\?id=999&appname=https%3A%2F%2F/);
+    expect(l.ios).toMatch(new RegExp(`^nmap://place\\?lat=37.5&lng=127.1&name=${encodeURIComponent("국밥")}&appname=https%3A%2F%2F`));
     expect(l.android).toContain("package=com.nhn.android.nmap");
   });
 

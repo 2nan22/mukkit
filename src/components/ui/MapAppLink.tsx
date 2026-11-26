@@ -12,11 +12,14 @@ export function MapAppLink({ link, className, children }: { link: MapLink; class
     if (!appUrl) return;
     e.preventDefault();
     if (platform === "ios") {
+      // 사파리는 '앱에서 열까요?'를 먼저 묻는다 — 답할 시간을 두고, 앱이 열려 화면이 가려지면 웹으로 넘기지 않는다
       const timer = window.setTimeout(() => {
         if (document.visibilityState === "visible") window.location.href = link.web;
-      }, 1200);
-      // 앱이 열려 화면이 가려지면 웹으로 넘기지 않는다
-      document.addEventListener("visibilitychange", () => window.clearTimeout(timer), { once: true });
+      }, 2500);
+      const stop = () => window.clearTimeout(timer);
+      document.addEventListener("visibilitychange", stop, { once: true });
+      window.addEventListener("pagehide", stop, { once: true });
+      window.addEventListener("blur", stop, { once: true });
     }
     window.location.href = appUrl;
   }

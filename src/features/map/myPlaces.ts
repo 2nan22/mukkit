@@ -82,9 +82,9 @@ export function ratersLine(raters: Rater[]): string {
 }
 
 // 폰에선 지도 앱으로 (72)
-const SOURCE_URL: Record<PlaceSourceName, (id: string) => MapLink> = {
-  naver: naverPlaceLink,
-  kakao: kakaoPlaceLink,
+const SOURCE_URL: Record<PlaceSourceName, (id: string, p: { name: string; lat: number; lng: number }) => MapLink> = {
+  naver: (id, p) => naverPlaceLink(id, p.name, p.lat, p.lng),
+  kakao: (id) => kakaoPlaceLink(id),
 };
 
 type Row = {
@@ -126,7 +126,7 @@ function toMapPlace(row: Row, p: NonNullable<Row["places"]>): MapPlace {
   const links = p.place_sources.flatMap((s) => {
     const source = s.source as PlaceSourceName;
     if (!(source in SOURCE_URL) || /^N/.test(s.source_place_id)) return [];
-    return [{ source, url: SOURCE_URL[source](s.source_place_id) }];
+    return [{ source, url: SOURCE_URL[source](s.source_place_id, p) }];
   });
   return {
     placeId: p.id,

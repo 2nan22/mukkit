@@ -14,11 +14,15 @@ export function TapToPlace({ placeId, className, children }: { placeId: string; 
     if ((e.target as Element).closest(OWN_TAP)) return;
     // 시트 · 메뉴처럼 카드 밖으로 그려진 것(포털)은 카드 누르기가 아니다
     if (!e.currentTarget.contains(e.target as Node)) return;
+    // 카드 안에서 화면 위로 띄운 것(⋯ 메뉴 · 댓글 시트의 어두운 배경)을 눌러 닫을 때도 이동하지 않는다 (74-2 검토)
+    for (let el = e.target as HTMLElement | null; el && el !== e.currentTarget; el = el.parentElement) {
+      if (getComputedStyle(el).position === "fixed") return;
+    }
     if (window.getSelection()?.toString()) return;
     router.push(`/p/${placeId}`);
   }
   return (
-    <article onClick={onClick} className={`cursor-pointer transition-colors active:bg-surface ${className ?? ""}`}>
+    <article onClick={onClick} className={`cursor-pointer active:bg-surface ${className ?? ""}`}>
       {children}
     </article>
   );

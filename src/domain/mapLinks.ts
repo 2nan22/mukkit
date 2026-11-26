@@ -29,9 +29,10 @@ export function kakaoRouteLink(name: string, lat: number, lng: number): MapLink 
   return app("kakaomap", `route?ep=${lat},${lng}&by=PUBLICTRANSIT`, KAKAO_PACKAGE, `https://map.kakao.com/link/to/${encodeURIComponent(name)},${lat},${lng}`);
 }
 
-export function naverPlaceLink(id: string): MapLink {
-  const i = encodeURIComponent(id);
-  return app("nmap", `place?id=${i}&appname=${encodeURIComponent(NAVER_APPNAME)}`, NAVER_PACKAGE, `https://map.naver.com/p/entry/place/${i}`);
+// 앱 장소 주소는 좌표 · 이름(네이버 지도 URL Scheme 안내), 웹은 장소 ID 페이지
+export function naverPlaceLink(id: string, name: string, lat: number, lng: number): MapLink {
+  const path = `place?lat=${lat}&lng=${lng}&name=${encodeURIComponent(name)}&appname=${encodeURIComponent(NAVER_APPNAME)}`;
+  return app("nmap", path, NAVER_PACKAGE, `https://map.naver.com/p/entry/place/${encodeURIComponent(id)}`);
 }
 
 export function naverSearchLink(query: string): MapLink {

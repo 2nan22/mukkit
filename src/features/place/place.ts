@@ -67,7 +67,7 @@ export function sourceLinks(p: PlaceInfo): { naver: MapLink; kakao: MapLink; goo
   const naver = p.sources.find((s) => s.source === "naver");
   const kakao = p.sources.find((s) => s.source === "kakao" && !s.sourcePlaceId.startsWith("N"));
   return {
-    naver: naver ? naverPlaceLink(naver.sourcePlaceId) : naverSearchLink(p.name),
+    naver: naver ? naverPlaceLink(naver.sourcePlaceId, p.name, p.lat, p.lng) : naverSearchLink(p.name),
     kakao: kakao ? kakaoPlaceLink(kakao.sourcePlaceId) : kakaoSearchLink(p.name),
     google: googleSearchLink(p.name, p.address),
     directions: kakaoRouteLink(p.name, p.lat, p.lng),

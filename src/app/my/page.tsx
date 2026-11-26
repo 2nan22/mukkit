@@ -66,10 +66,10 @@ async function MyContent() {
             {/* 숫자를 누르면 팔로워 · 팔로잉 목록 (74) */}
             <MetaLine
               items={[
-              <Link key="followers" href={`/u/${me}/follows`} className="py-2">
+              <Link key="followers" href={`/u/${me}/follows`} className="inline-flex min-h-11 items-center">
                 팔로워 <b className="font-semibold text-ink">{counts.followers}</b>
               </Link>,
-              <Link key="following" href={`/u/${me}/follows?tab=following`} className="py-2">
+              <Link key="following" href={`/u/${me}/follows?tab=following`} className="inline-flex min-h-11 items-center">
                 팔로잉 <b className="font-semibold text-ink">{counts.following}</b>
               </Link>,
               ]}
