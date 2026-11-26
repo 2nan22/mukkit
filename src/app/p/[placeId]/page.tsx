@@ -137,21 +137,21 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         {!place.available && <span className="text-meta text-danger">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
         {/* 폰에선 지도 앱으로, 없으면 웹 (72) — 구글은 구글 지도 앱이 주소를 직접 받는다 */}
         <div className="grid grid-cols-4 gap-2 pt-3">
-          <MapAppLink link={links.directions} className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
+          <MapAppLink link={links.directions} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
               <path d="M3 11l18-8-8 18-2-8z" />
             </svg>
             길찾기
           </MapAppLink>
-          <MapAppLink link={links.naver} className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
+          <MapAppLink link={links.naver} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <SourceMark source="naver" size={14} />
             네이버
           </MapAppLink>
-          <MapAppLink link={links.kakao} className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
+          <MapAppLink link={links.kakao} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <SourceMark source="kakao" size={14} />
             카카오
           </MapAppLink>
-          <MapAppLink link={links.google} className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
+          <MapAppLink link={links.google} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <SourceMark source="google" size={14} />
             구글
           </MapAppLink>

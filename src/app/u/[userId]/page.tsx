@@ -100,10 +100,10 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
             <MetaLine
               items={[
               `평가 ${ratedTotal}곳`,
-              <Link key="followers" href={`/u/${person.id}/follows`} className="py-2">
+              <Link key="followers" href={`/u/${person.id}/follows`} className="inline-flex min-h-11 items-center">
                 팔로워 <b className="font-semibold text-ink">{counts.followers}</b>
               </Link>,
-              <Link key="following" href={`/u/${person.id}/follows?tab=following`} className="py-2">
+              <Link key="following" href={`/u/${person.id}/follows?tab=following`} className="inline-flex min-h-11 items-center">
                 팔로잉 <b className="font-semibold text-ink">{counts.following}</b>
               </Link>,
               ]}

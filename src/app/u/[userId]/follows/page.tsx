@@ -12,6 +12,7 @@ import {
 } from "@/features/social/follows";
 import { getFollowCounts, getPerson } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getBlockedIds } from "@/features/safety/safety";
 
 export const metadata = { title: "팔로우" };
 
@@ -57,13 +58,15 @@ async function Follows({
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub ?? null;
-  const [person, counts, people, myFollowing] = await Promise.all([
+  const [person, counts, people, myFollowing, blockedIds] = await Promise.all([
     getPerson(supabase, userId),
     getFollowCounts(supabase, userId),
     getFollowList(supabase, userId, kind),
     me ? getMyFollowingIds(supabase, me) : Promise.resolve(new Set<string>()),
+    me && me !== userId ? getBlockedIds(supabase) : Promise.resolve(new Set<string>()),
   ]);
-  if (!person) notFound();
+  // 차단한 사이면 없는 계정과 같은 화면 — 프로필과 같게 (74-2 검토)
+  if (!person || blockedIds.has(userId)) notFound();
   const own = me === userId;
   const empty =
     kind === "following"
@@ -132,6 +135,7 @@ async function Follows({
                 <FollowButton
                   targetId={p.id}
                   following={myFollowing.has(p.id)}
+                  followLabel={own && kind === "followers" ? "맞팔로우" : "팔로우"}
                   compact
                 />
               )}

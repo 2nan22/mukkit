@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { setFollow } from "./actions";
 
-export function FollowButton({ targetId, following, compact = false, primary = false }: { targetId: string; following: boolean; compact?: boolean; primary?: boolean }) {
+// followLabel: 내 팔로워 목록에서 아직 안 팔로우한 사람은 '맞팔로우' (74-2, 스레드 · 인스타그램 말)
+export function FollowButton({ targetId, following, compact = false, primary = false, followLabel = "팔로우" }: { targetId: string; following: boolean; compact?: boolean; primary?: boolean; followLabel?: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export function FollowButton({ targetId, following, compact = false, primary = f
           following ? "bg-surface text-ink" : primary ? "bg-brand text-white" : "bg-brand-soft font-semibold text-brand"
         }`}
       >
-        {following ? "팔로잉" : "팔로우"}
+        {following ? "팔로잉" : followLabel}
       </button>
       {error && (
         <p role="alert" className="text-caption text-danger">
