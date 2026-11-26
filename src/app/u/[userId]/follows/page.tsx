@@ -109,7 +109,7 @@ async function Follows({
           )}
         </div>
       ) : (
-        <ul className="flex flex-col px-5">
+        <ul className="flex flex-col px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {people.map((p) => (
             <li
               key={p.id}
