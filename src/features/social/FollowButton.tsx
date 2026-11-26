@@ -40,7 +40,7 @@ export function FollowButton({
         disabled={pending}
         onClick={() => (following ? setConfirming(true) : apply(true))}
         className={`${compact ? "h-8 rounded-btn-s px-3.5 text-meta" : "h-btn-m rounded-btn-m px-5 text-body"} font-bold disabled:opacity-60 ${
-          following ? "bg-surface text-ink" : primary ? "bg-brand text-white" : "bg-brand-soft font-semibold text-brand"
+          following ? "bg-surface text-ink ring-1 ring-line-strong ring-inset" : primary ? "bg-brand text-white" : "bg-brand-soft font-semibold text-brand"
         }`}
       >
         {following ? "팔로잉" : followLabel}

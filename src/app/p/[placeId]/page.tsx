@@ -136,25 +136,25 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         <h1 className="text-title font-bold tracking-tight">{place.name}</h1>
         <span className="text-body text-ink-2">{place.address}</span>
         {!place.available && <span className="text-meta text-danger">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
-        {/* 폰에선 지도 앱으로, 없으면 웹 (72) — 구글은 구글 지도 앱이 주소를 직접 받는다 */}
-        <div className="grid grid-cols-4 gap-2 pt-3">
-          <RouteButton links={links.directions} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 11l18-8-8 18-2-8z" />
-            </svg>
-            길찾기
-          </RouteButton>
+        {/* 길찾기는 앱을 고르는 버튼 하나로 따로, 아래 셋은 지도 앱에서 이 장소 보기 (72 · 75 디자인 검토) — 폰에선 앱, 없으면 웹 */}
+        <RouteButton links={links.directions} className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-semibold text-ink">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 11l18-8-8 18-2-8z" />
+          </svg>
+          길찾기
+        </RouteButton>
+        <div className="grid grid-cols-3 gap-2 pt-2">
           <MapAppLink link={links.naver} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <SourceMark source="naver" size={14} />
-            네이버
+            네이버 지도
           </MapAppLink>
           <MapAppLink link={links.kakao} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <SourceMark source="kakao" size={14} />
-            카카오
+            카카오맵
           </MapAppLink>
           <MapAppLink link={links.google} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <SourceMark source="google" size={14} />
-            구글
+            구글 지도
           </MapAppLink>
         </div>
         {/* 이 가게를 기준으로 근처 추천 — 1차 뒤 2차 · 이 동네에서 다른 곳 찾기 */}

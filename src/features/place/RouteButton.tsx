@@ -75,6 +75,9 @@ export function RouteButton({ links, className, children }: { links: Record<Rout
                   </MapAppLink>
                 </div>
               ))}
+              <button type="button" onClick={() => setOpen(false)} className="flex h-12 items-center text-body text-muted">
+                닫기
+              </button>
             </section>
           </div>,
           document.body,
