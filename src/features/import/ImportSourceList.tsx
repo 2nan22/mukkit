@@ -107,6 +107,8 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
               ) : (
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-3">{body}</span>
               )}
+              {/* 구글은 파일로 가져와 새로 고칠 원본이 없다 (76) */}
+              {(r.source as string) !== "google" && (
               <button
                 type="button"
                 disabled={busy !== null}
@@ -119,6 +121,7 @@ export function ImportSourceList({ rows }: { rows: ImportSourceRow[] }) {
                 </svg>
                 {busy === `${r.source}:${r.sourceListId}` ? "확인 중" : "새로 고침"}
               </button>
+              )}
               <button
                 type="button"
                 aria-label={`${nameOf(r)} 관리`}
@@ -235,9 +238,11 @@ function SourceSheet({ row, initialStep, onClose, onDone }: { row: ImportSourceR
               <span className={`text-meta ${syncLine(row.sync).warn ? "font-semibold text-ink" : "text-muted"}`}>{syncLine(row.sync).text}</span>
             </div>
             <div className="flex flex-col">
-              <button type="button" disabled={pending} onClick={() => (row.sync ? refresh() : setStep("setup"))} className="flex h-12 items-center text-body text-ink disabled:opacity-50">
-                {pending ? "원본을 확인하는 중…" : "지금 새로 고치기"}
-              </button>
+              {(row.source as string) !== "google" && (
+                <button type="button" disabled={pending} onClick={() => (row.sync ? refresh() : setStep("setup"))} className="flex h-12 items-center text-body text-ink disabled:opacity-50">
+                  {pending ? "원본을 확인하는 중…" : "지금 새로 고치기"}
+                </button>
+              )}
               {/* 등급을 매겨 가져와 먹킷 리스트가 없는 원본 — 원하면 리스트로 */}
               {!row.listId && (
                 <Link href={`/lists/new?from=${row.source}:${encodeURIComponent(row.sourceListId)}`} className="flex h-12 items-center text-body text-ink">
