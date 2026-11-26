@@ -135,6 +135,7 @@ async function Follows({
                 <FollowButton
                   targetId={p.id}
                   following={myFollowing.has(p.id)}
+                  nickname={p.nickname}
                   followLabel={own && kind === "followers" ? "맞팔로우" : "팔로우"}
                   compact
                 />

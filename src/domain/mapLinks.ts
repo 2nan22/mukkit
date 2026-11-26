@@ -1,6 +1,7 @@
 // 외부 지도 앱 주소 (72) — 폰에선 앱이 있으면 앱, 없으면 web. 컴퓨터는 web 그대로
 // 안드로이드는 intent:// (앱이 없으면 브라우저가 browser_fallback_url 로), 아이폰은 앱 주소 뒤 안 열리면 web (MapAppLink)
 export type MapLink = { web: string; android?: string; ios?: string };
+export type RouteApp = "kakao" | "naver" | "google";
 
 const KAKAO_PACKAGE = "net.daum.android.map";
 const NAVER_PACKAGE = "com.nhn.android.nmap";
@@ -38,6 +39,17 @@ export function naverPlaceLink(id: string, name: string, lat: number, lng: numbe
 export function naverSearchLink(query: string): MapLink {
   const q = encodeURIComponent(query);
   return app("nmap", `search?query=${q}&appname=${encodeURIComponent(NAVER_APPNAME)}`, NAVER_PACKAGE, `https://map.naver.com/p/search/${q}`);
+}
+
+// 도착지만 — 출발지는 앱이 현재 위치로. 웹은 길찾기 주소가 좌표 변환이 필요해 검색으로 (75)
+export function naverRouteLink(name: string, lat: number, lng: number): MapLink {
+  const path = `route/public?dlat=${lat}&dlng=${lng}&dname=${encodeURIComponent(name)}&appname=${encodeURIComponent(NAVER_APPNAME)}`;
+  return app("nmap", path, NAVER_PACKAGE, `https://map.naver.com/p/search/${encodeURIComponent(name)}`);
+}
+
+// 구글 길찾기 — Google Maps URLs dir, 폰에선 구글 지도 앱이 받는다 (75)
+export function googleRouteLink(lat: number, lng: number): MapLink {
+  return { web: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=transit` };
 }
 
 // 구글은 Google Maps URLs — 폰에선 구글 지도 앱이 이 주소를 직접 받는다 (앱 주소 따로 없음)

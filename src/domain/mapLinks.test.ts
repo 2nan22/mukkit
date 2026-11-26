@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { googleSearchLink, kakaoPlaceLink, kakaoRouteLink, kakaoSearchLink, naverPlaceLink, naverSearchLink, platformOf } from "./mapLinks";
+import { googleRouteLink, googleSearchLink, naverRouteLink, kakaoPlaceLink, kakaoRouteLink, kakaoSearchLink, naverPlaceLink, naverSearchLink, platformOf } from "./mapLinks";
 
 describe("지도 앱 주소", () => {
   it("카카오 장소 — 안드로이드 intent 에 앱이 없을 때 웹 주소", () => {
@@ -32,6 +32,11 @@ describe("지도 앱 주소", () => {
   it("구글은 웹 주소 하나", () => {
     const l = googleSearchLink("을지로 국밥", "서울 중구 을지로 1");
     expect(l).toEqual({ web: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("을지로 국밥 서울 중구 을지로 1")}` });
+  });
+
+  it("네이버 · 구글 길찾기 — 도착 좌표 · 이름", () => {
+    expect(naverRouteLink("국밥", 37.5, 127.1).ios).toMatch(new RegExp(`^nmap://route/public\\?dlat=37.5&dlng=127.1&dname=${encodeURIComponent("국밥")}&appname=`));
+    expect(googleRouteLink(37.5, 127.1)).toEqual({ web: "https://www.google.com/maps/dir/?api=1&destination=37.5,127.1&travelmode=transit" });
   });
 
   it("기기 구분", () => {
