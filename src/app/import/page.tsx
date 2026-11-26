@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { SourceMark } from "@/components/brand/BrandLogo";
 import { ImportFlow } from "@/features/import/ImportFlow";
+import { getMyDefaultVisibility } from "@/features/profile/flags";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { TEXT_IMPORT_ENABLED } from "@/features/textImport/enabled";
 
 export const metadata = { title: "가져오기" };
@@ -43,8 +45,8 @@ export default function ImportPage({ searchParams }: PageProps<"/import">) {
   );
 }
 
-// 앱 공유 시트로 들어온 링크(?link=)는 바로 확인
+// 앱 공유 시트로 들어온 링크(?link=)는 바로 확인 · 등급 공개 범위는 계정 기본값으로 미리 골라 둠 (87)
 async function SharedLink({ searchParams }: { searchParams: Promise<{ link?: string | string[] }> }) {
-  const { link } = await searchParams;
-  return <ImportFlow initialLink={typeof link === "string" ? link.slice(0, 500) : ""} />;
+  const [{ link }, defaultVisibility] = await Promise.all([searchParams, createSupabaseServerClient().then(getMyDefaultVisibility)]);
+  return <ImportFlow initialLink={typeof link === "string" ? link.slice(0, 500) : ""} defaultVisibility={defaultVisibility} />;
 }

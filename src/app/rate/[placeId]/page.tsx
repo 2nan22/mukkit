@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { safeNextPath, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { RatingForm } from "@/features/rating/RatingForm";
+import { getMyDefaultVisibility } from "@/features/profile/flags";
 import { CUISINE_LABEL, type Cuisine } from "@/domain/cuisine";
 import { regionOf } from "@/domain/region";
 import { getSavedPlace } from "@/features/rating/rating";
@@ -41,7 +42,7 @@ async function RatePlace({
 
   if (!/^[0-9a-f-]{36}$/.test(placeId)) notFound();
   // 평가 · 함께 방문 · 장소를 한 번에 — 메뉴판(외부)은 기다리지 않고 폼에 약속으로 넘긴다
-  const [place, visits, detail] = await Promise.all([getSavedPlace(supabase, userId, placeId), getMyVisits(supabase, placeId), getPlace(supabase, placeId)]);
+  const [place, visits, detail, defaultVisibility] = await Promise.all([getSavedPlace(supabase, userId, placeId), getMyVisits(supabase, placeId), getPlace(supabase, placeId), getMyDefaultVisibility(supabase)]);
   if (!place) notFound();
   const kakao = detail?.sources.find((s) => s.source === "kakao" && !s.sourcePlaceId.startsWith("N"));
   const menuOptions: Promise<string[]> = detail
@@ -61,7 +62,7 @@ async function RatePlace({
         </div>
         <BackButton fallback={back} kind="close" />
       </header>
-      <RatingForm place={place} next={back} userId={userId} visits={visits} menuOptions={menuOptions} />
+      <RatingForm place={place} next={back} userId={userId} visits={visits} menuOptions={menuOptions} defaultVisibility={defaultVisibility} />
     </>
   );
 }

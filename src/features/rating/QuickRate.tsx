@@ -19,7 +19,7 @@ const RATED: Tier[] = ["three", "two", "one", "notRecommended"];
 
 type Current = SavedPlace & { cursor: UnratedCursor };
 
-export function QuickRate({ initial, total }: { initial: Current | null; total: number }) {
+export function QuickRate({ initial, total, defaultVisibility = null }: { initial: Current | null; total: number; defaultVisibility?: RatingVisibility | null }) {
   const [place, setPlace] = useState(initial);
   const [done, setDone] = useState<Current[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
@@ -28,8 +28,8 @@ export function QuickRate({ initial, total }: { initial: Current | null; total: 
   const [remaining, setRemaining] = useState(total);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  // 이번에 고른 공개 범위 — 고르기 전엔 장소마다 저장된 값 그대로 (68-4)
-  const [visibility, setVisibility] = useState<RatingVisibility | null>(null);
+  // 이번에 고른 공개 범위 — 고르기 전엔 계정 기본값(87), 없으면 장소마다 저장된 값 그대로 (68-4)
+  const [visibility, setVisibility] = useState<RatingVisibility | null>(defaultVisibility);
   const [visOpen, setVisOpen] = useState(false);
   // 이 장소 메모 공개 범위 — 장소가 바뀌면 그 장소 값으로
   const [noteChoice, setNoteChoice] = useState<{ placeId: string; vis: NoteVisibility } | null>(null);

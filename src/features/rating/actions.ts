@@ -154,7 +154,7 @@ export async function clearRating(placeId: string): Promise<{ error?: string }> 
   return {};
 }
 
-// 내 평가 공개 범위 한 번에 바꾸기 (68) — 다녀온 등급(3 · 2 · 1숟가락 · 추천 안 함)만. 메모는 언제나 나만
+// 내 평가 공개 범위 한 번에 바꾸기 (68) — 다녀온 등급(3 · 2 · 1숟가락 · 추천 안 함)만. 메모는 따로 정하지 않았으면 평가를 따름
 export async function setAllRatingVisibility(visibility: string): Promise<{ error?: string; changed?: number }> {
   const parsed = z.enum(RATING_VISIBILITIES).safeParse(visibility);
   if (!parsed.success) return { error: SAVE_FAILED };
@@ -167,8 +167,22 @@ export async function setAllRatingVisibility(visibility: string): Promise<{ erro
     .in("tier", RATED_DB_TIERS)
     .neq("visibility", parsed.data);
   if (error) return { error: SAVE_FAILED };
+  // 지금까지를 이 범위로 바꿨으면 앞으로도 이 범위로 (87)
+  const def = await supabase.rpc("set_default_visibility", { p_vis: parsed.data });
+  if (def.error) console.warn("[rating] 기본 공개 범위 저장 실패: code=%s", def.error.code);
   revalidatePath("/", "layout");
   return { changed: count ?? 0 };
+}
+
+// 새로 저장 · 가져오는 곳의 기본 공개 범위 (87) — 이미 저장한 곳은 그대로
+export async function setDefaultVisibility(visibility: string): Promise<{ error?: string }> {
+  const parsed = z.enum(RATING_VISIBILITIES).safeParse(visibility);
+  if (!parsed.success) return { error: SAVE_FAILED };
+  const { supabase } = await requireUser();
+  const { error } = await supabase.rpc("set_default_visibility", { p_vis: parsed.data });
+  if (error) return { error: SAVE_FAILED };
+  revalidatePath("/", "layout");
+  return {};
 }
 
 // 나만으로 둔 가져온 메모를 평가 공개 범위대로 한 번에 (68-5) — 지도 앱 메모 그대로인 곳만 (DB 함수가 거름). updated_at 그대로
