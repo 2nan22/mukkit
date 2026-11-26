@@ -11,7 +11,7 @@ import { getMyVisits } from "@/features/visit/visit";
 import { Avatar } from "@/components/ui/Avatar";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { SourceMark } from "@/components/brand/BrandLogo";
+import { GoogleG, KakaoSymbol, NaverN } from "@/components/brand/BrandLogo";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
@@ -136,31 +136,32 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         <h1 className="text-title font-bold tracking-tight">{place.name}</h1>
         <span className="text-body text-ink-2">{place.address}</span>
         {!place.available && <span className="text-meta text-danger">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
-        {/* 길찾기는 앱을 고르는 버튼 하나로 따로, 아래 셋은 지도 앱에서 이 장소 보기 (72 · 75 디자인 검토) — 폰에선 앱, 없으면 웹 */}
-        <RouteButton links={links.directions} className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-body font-semibold text-ink">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
-            <path d="M3 11l18-8-8 18-2-8z" />
-          </svg>
-          길찾기
-        </RouteButton>
-        <div className="grid grid-cols-3 gap-2 pt-2">
-          <MapAppLink link={links.naver} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
-            <SourceMark source="naver" size={14} />
-            네이버 지도
-          </MapAppLink>
-          <MapAppLink link={links.kakao} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
-            <SourceMark source="kakao" size={14} />
-            카카오맵
-          </MapAppLink>
-          <MapAppLink link={links.google} className="flex h-11 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
-            <SourceMark source="google" size={14} />
-            구글 지도
-          </MapAppLink>
+        {/* 지도 앱은 동그란 마크만 오른쪽에 — 왼쪽은 근처 추천 (78, 사용자 제안) · 폰에선 앱, 없으면 웹 · 길찾기는 앱 고르기 */}
+        <div className="flex items-center justify-between gap-3 pt-3">
+          {/* 이 가게를 기준으로 근처 추천 — 1차 뒤 2차 · 이 동네에서 다른 곳 찾기 */}
+          <Link href={`/eat?at=${place.lat.toFixed(5)},${place.lng.toFixed(5)}&label=${encodeURIComponent(place.name)}`} className="flex h-11 min-w-0 items-center gap-1.5 text-meta font-semibold text-ink underline underline-offset-[3px]">
+            이 근처에서 뭐 먹지
+          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            {/* 원 자체를 앱 색으로 — 원 안에 네모 타일이 또 들어가지 않게 (78 디자인 검토) */}
+            <MapAppLink link={links.naver} label="네이버 지도에서 보기" className="flex size-11 items-center justify-center rounded-full bg-[#03C75A]">
+              <NaverN size={15} />
+            </MapAppLink>
+            <MapAppLink link={links.kakao} label="카카오맵에서 보기" className="flex size-11 items-center justify-center rounded-full bg-[#FEE500]">
+              <KakaoSymbol size={20} />
+            </MapAppLink>
+            <MapAppLink link={links.google} label="구글 지도에서 보기" className="flex size-11 items-center justify-center rounded-full border border-line bg-white">
+              <GoogleG size={20} />
+            </MapAppLink>
+            {/* 길찾기 표준 마크 — 마름모 안 꺾인 화살표(종이비행기는 '보내기'로 읽힘) */}
+            <RouteButton links={links.directions} label="길찾기" className="flex size-11 items-center justify-center rounded-full bg-ink text-white">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" />
+                <path d="M9 15v-2.5a1.5 1.5 0 0 1 1.5-1.5H15M13 9l2 2-2 2" />
+              </svg>
+            </RouteButton>
+          </div>
         </div>
-        {/* 이 가게를 기준으로 근처 추천 — 1차 뒤 2차 · 이 동네에서 다른 곳 찾기 */}
-        <Link href={`/eat?at=${place.lat.toFixed(5)},${place.lng.toFixed(5)}&label=${encodeURIComponent(place.name)}`} className="flex h-11 items-center gap-1.5 self-start text-meta font-semibold text-ink underline underline-offset-[3px]">
-          이 근처에서 뭐 먹지
-        </Link>
       </section>
 
       {/* 메뉴는 카카오(없으면 네이버)에 묻느라 늦을 수 있어 따로 — 나머지 화면을 막지 않는다 */}
