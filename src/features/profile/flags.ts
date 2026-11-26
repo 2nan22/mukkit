@@ -8,3 +8,10 @@ export async function getMyProfileFlags(supabase: SupabaseClient): Promise<Profi
   if (error) throw new Error(`프로필 상태 조회 실패: ${error.code}`);
   return data ?? null;
 }
+
+// 새로 저장 · 가져오는 곳의 기본 공개 범위 (87) — null 이면 아직 안 정함
+export async function getMyDefaultVisibility(supabase: SupabaseClient): Promise<"private" | "followers" | "public" | null> {
+  const { data, error } = await supabase.rpc("my_default_visibility");
+  if (error) throw new Error(`기본 공개 범위 조회 실패: ${error.code}`);
+  return (data as "private" | "followers" | "public" | null) ?? null;
+}

@@ -61,10 +61,17 @@ export async function importList(input: string, mode: ImportMode, visibility?: R
     const saved = await saveImportedList(supabase, userId, list, parsedMode.data, visibility, noteVisibility);
     // 자동 새로 고침을 위해 방식 · 원본 요약을 남긴다
     await recordImportSource(supabase, userId, list, parsedMode.data, visibility, noteVisibility);
+    // 기본 공개 범위를 아직 안 정했으면 처음 고른 값으로 — 다음 가져오기 · 평가부터 묻지 않는다 (87)
+    if (visibility) await rememberDefaultVisibility(supabase, visibility);
     return { ok: true, data: saved };
   } catch (error) {
     return failure(error, source);
   }
+}
+
+async function rememberDefaultVisibility(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, visibility: RatingVisibility) {
+  const { data } = await supabase.rpc("my_default_visibility");
+  if (data == null) await supabase.rpc("set_default_visibility", { p_vis: visibility });
 }
 
 async function requireUserId() {

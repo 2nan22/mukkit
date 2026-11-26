@@ -42,12 +42,13 @@ function isRow(v: unknown): v is Row {
 const ERROR_TEXT = "text-danger";
 
 // initialLink: 앱 공유 시트에서 넘어온 링크 — 바로 확인한다 · helpOpen: 링크 찾는 법을 펼친 채로 (처음 가입)
-export function ImportFlow({ initialLink = "", helpOpen = false }: { initialLink?: string; helpOpen?: boolean } = {}) {
+export function ImportFlow({ initialLink = "", helpOpen = false, defaultVisibility = null }: { initialLink?: string; helpOpen?: boolean; defaultVisibility?: RatingVisibility | null } = {}) {
   // 담은 리스트는 이 기기에 남긴다 — 앱을 오가거나 공유로 다시 들어와도 이어서 담기
   const [draft, setRows] = useImportDraft(isRow);
   // 가져오는 동안 · 끝난 뒤 보여 줄 목록 (담아 둔 목록은 가져오기를 시작하면 비운다)
   const [ran, setRan] = useState<Row[] | null>(null);
-  const rows = ran ?? draft;
+  // 공개 범위를 안 고른 등급 리스트는 계정 기본값으로 (87) — 기본값이 없으면 고를 때까지 막는다
+  const rows = (ran ?? draft).map((r) => (defaultVisibility && isRatedMode(r.mode) && !r.visibility ? { ...r, visibility: defaultVisibility } : r));
   const [phase, setPhase] = useState<Phase>("select");
   const [status, setStatus] = useState<Record<string, RowStatus>>({});
   const total = rows.reduce((sum, r) => sum + r.count, 0);

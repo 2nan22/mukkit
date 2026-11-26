@@ -39,16 +39,16 @@ type Step = "tier" | "record";
 
 // 평가 (67-2, 시안 2판) — ① 어땠어요? 등급을 누르면 바로 ② 기록. 기록은 고르기 쉬운 것부터, 모두 선택
 // 하나의 form 이라 단계와 상관없이 모든 칸을 함께 보낸다 — 단계는 보이는 것만 바꾼다
-export function RatingForm({ place, next, userId, visits, menuOptions }: { place: SavedPlace; next: string; userId: string; visits: MyVisit[]; menuOptions: Promise<string[]> }) {
+export function RatingForm({ place, next, userId, visits, menuOptions, defaultVisibility = null }: { place: SavedPlace; next: string; userId: string; visits: MyVisit[]; menuOptions: Promise<string[]>; defaultVisibility?: RatingVisibility | null }) {
   const [state, action, pending] = useActionState<RatingFormState, FormData>(saveRating, {});
   const rated = RATED.includes(place.tier);
   const [tier, setTier] = useState<Tier>(place.tier);
   // 이미 평가한 곳은 바로 기록으로
   const [step, setStep] = useState<Step>(rated ? "record" : "tier");
-  // 고르기 전에는 — 처음 평가하는 곳이면 지난번 값, 아니면 저장된 값
+  // 고르기 전에는 — 처음 평가하는 곳이면 계정 기본값(87), 없으면 지난번 값, 아니면 저장된 값
   const last = useSyncExternalStore(noSubscribe, () => readLastVisibility(userId), () => null);
   const [chosen, setVisibility] = useState<RatingVisibility | null>(null);
-  const visibility = chosen ?? (rated ? place.visibility : (last ?? place.visibility));
+  const visibility = chosen ?? (rated ? place.visibility : (defaultVisibility ?? last ?? place.visibility));
   const [visOpen, setVisOpen] = useState(false);
   // 메모 공개 범위 — 기본 평가와 같게 (68-5)
   const [noteVis, setNoteVis] = useState(place.noteVisibility);
