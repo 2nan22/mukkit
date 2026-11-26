@@ -373,8 +373,9 @@ function LinkHelp({ source, privateList }: { source: PlaceSourceName | null; pri
         <ol className="flex flex-col gap-3">
           {steps.map((step, i) => (
             <li key={i} className="flex items-start gap-3">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-caption font-bold text-white">{i + 1}</span>
-              <span className="pt-0.5 text-body leading-normal">{step}</span>
+              {/* 구글 가져오기와 같은 번호 · 글자 (79) */}
+              <span className="mt-[1px] flex size-5 shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-bold text-ink-2 ring-1 ring-line-strong">{i + 1}</span>
+              <span className="text-[15px] leading-[1.5] tracking-[-0.015em] text-ink-2">{step}</span>
             </li>
           ))}
         </ol>

@@ -37,6 +37,7 @@ async function readFiles(files: FileList): Promise<TakeoutFile[]> {
 export function GoogleImport() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [reading, setReading] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState<number | null>(null);
   // 다 가져온 리스트만 끝, 실패한 리스트는 다시 가져올 수 있게 (76 디자인 검토)
@@ -49,6 +50,7 @@ export function GoogleImport() {
     if (!files || files.length === 0) return;
     setReading(true);
     setError(null);
+    setFileName(files.length === 1 ? files[0].name : `파일 ${files.length}개`);
     try {
       const lists = readTakeoutFiles(await readFiles(files));
       if (lists.length === 0) setError("구글 지도 저장 리스트를 찾지 못했어요. 테이크아웃에서 받은 파일인지 확인해 주세요.");
@@ -80,56 +82,78 @@ export function GoogleImport() {
   const total = rows?.filter((r) => r.on && !isDone(r)).reduce((n, r) => n + r.list.items.length, 0) ?? 0;
 
   return (
-    <div className="flex flex-col gap-6 px-5 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom))]">
+    <div className="flex flex-col gap-8 px-5 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom))]">
       {/* 파일을 올린 뒤엔 받는 법을 접는다 — 결과가 아래로 밀리지 않게 */}
+      {/* 글자: 제목 -0.02em · 굵은 본문 -0.015em · 굵게는 단계마다 누를 버튼 이름 하나만 (79 디자인 검토) */}
       {!rows && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-section font-bold">구글에서 파일 받기</h2>
-          <ol className="flex flex-col gap-3">
-            {[
-              <>
-                <b>구글 테이크아웃</b>을 열어요
-              </>,
-              <>
-                <b>모두 선택 해제</b>를 누르고 <b>저장됨</b>만 체크해요
-              </>,
-              <>
-                맨 아래 <b>다음 단계 › 내보내기 생성</b>을 눌러요
-              </>,
-              <>
-                몇 분 뒤 메일이 오면 파일을 받고 여기로 돌아와요. <b>내 정보 › 가져오기 › 구글 지도</b>에 있어요
-              </>,
-            ].map((step, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-caption font-bold text-white">{i + 1}</span>
-                <span className="pt-0.5 text-body leading-normal">{step}</span>
-              </li>
-            ))}
-          </ol>
-          <a
-            href="https://takeout.google.com/"
-            target="_blank"
-            rel="noreferrer"
-            className="flex h-btn-m items-center justify-center gap-1 self-start rounded-btn-m bg-surface px-4 text-body font-semibold text-ink"
-          >
-            구글 테이크아웃 열기
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M7 17L17 7M9 7h8v8" />
-            </svg>
-          </a>
-          <p className="text-meta text-muted">별표 표시한 장소도 가져오려면 지도(내 장소)도 함께 체크해요</p>
+          <div className="flex flex-col gap-1">
+            <h2 className="text-[17px] leading-[1.35] font-bold tracking-[-0.02em] text-ink">구글에서 파일 받기</h2>
+            <p className="text-meta leading-[1.5] tracking-[-0.01em] text-muted">구글 테이크아웃에서 저장한 장소를 파일로 받아요</p>
+          </div>
+          <div className="flex flex-col gap-3.5 rounded-[14px] bg-surface px-4 py-4">
+            <ol className="flex flex-col gap-3.5">
+              {[
+                <>구글 테이크아웃을 열어요</>,
+                <>
+                  <b className="font-semibold text-ink">모두 선택 해제</b> 후 &lsquo;저장됨&rsquo;만 골라요
+                </>,
+                <>
+                  맨 아래에서 <b className="font-semibold text-ink">내보내기 생성</b>을 눌러요
+                </>,
+                <>메일로 온 파일을 받아 여기로 돌아와요</>,
+              ].map((step, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="mt-[1px] flex size-5 shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-bold text-ink-2 ring-1 ring-line-strong">
+                    {i + 1}
+                  </span>
+                  <span className="text-[15px] leading-[1.5] tracking-[-0.015em] text-ink-2">{step}</span>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-1 flex items-center justify-between gap-3 border-t border-line-strong/60 pt-3">
+              <span className="text-caption leading-[1.5] text-muted">별표한 장소도 가져오려면 &lsquo;지도(내 장소)&rsquo;도 함께 골라요</span>
+              <a
+                href="https://takeout.google.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="flex min-h-11 shrink-0 items-center gap-1 text-meta font-semibold tracking-[-0.01em] text-ink"
+              >
+                테이크아웃 열기
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M7 17L17 7M9 7h8v8" />
+                </svg>
+              </a>
+            </div>
+          </div>
         </section>
       )}
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-section font-bold">받은 파일 올리기</h2>
-        <label className={`flex min-h-14 cursor-pointer items-center justify-center rounded-[14px] border border-dashed border-line-strong px-4 text-body font-semibold text-ink ${reading ? "opacity-60" : ""}`}>
-          {reading ? "파일 읽는 중" : rows ? "다른 파일 올리기" : "zip 파일 고르기"}
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[17px] leading-[1.35] font-bold tracking-[-0.02em] text-ink">받은 파일 올리기</h2>
+          <p className="text-meta leading-[1.5] tracking-[-0.01em] text-muted">가게 이름과 메모만 읽고 파일은 올리지 않아요</p>
+        </div>
+        <label
+          className={`relative flex cursor-pointer items-center gap-3.5 rounded-[14px] border border-line-strong bg-white px-4 py-4 active:bg-surface ${reading ? "opacity-60" : ""}`}
+        >
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-[12px] bg-surface text-ink-2">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+              <path d="M14 3v5h5M12 17v-6M9.5 13.5L12 11l2.5 2.5" />
+            </svg>
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-[15px] font-semibold tracking-[-0.015em] text-ink">{reading ? "파일 읽는 중" : rows ? "다른 파일로 바꾸기" : "zip 파일 고르기"}</span>
+            <span className="truncate text-caption text-muted">{fileName ?? "메일로 받은 파일 그대로"}</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-subtle" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
           <input type="file" accept=".zip,.csv,.json,application/zip,text/csv,application/json" multiple disabled={reading || running !== null} onChange={onFiles} className="sr-only" />
         </label>
-        <p className="text-meta text-muted">메일로 받은 zip 파일을 그대로 올려요. 파일 안의 가게 이름과 메모만 읽어요</p>
         {error && (
-          <p role="alert" className="text-meta text-danger">
+          <p role="alert" className="text-meta leading-[1.5] text-danger">
             {error}
           </p>
         )}
@@ -137,10 +161,10 @@ export function GoogleImport() {
 
       {rows && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-section font-bold">가져올 리스트</h2>
+          <h2 className="text-[17px] leading-[1.35] font-bold tracking-[-0.02em] text-ink">가져올 리스트</h2>
           <ul className="flex flex-col">
             {rows.map((r, i) => (
-              <li key={r.list.key} className="flex flex-col gap-2 border-b border-line py-3">
+              <li key={r.list.key} className="flex flex-col gap-2 border-b border-line py-3.5">
                 <label className="flex items-center gap-3">
                   {isDone(r) ? (
                     <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-ink text-white" aria-label="가져왔어요">
@@ -158,7 +182,7 @@ export function GoogleImport() {
                     />
                   )}
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-body font-semibold">{r.list.name}</span>
+                    <span className="truncate text-[15px] font-semibold tracking-[-0.015em]">{r.list.name}</span>
                     <span className="text-meta text-muted">
                       {r.list.items.length}곳, {r.list.wantToGo ? "가고 싶은 곳으로 저장" : "리스트로 담기"}
                     </span>

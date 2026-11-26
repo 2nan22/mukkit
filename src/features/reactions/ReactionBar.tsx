@@ -58,7 +58,8 @@ export function ReactionBar({
   const preview = showComments ? reaction.preview : [];
 
   return (
-    <div className="flex flex-col">
+    // 44px 버튼이라 위아래가 넓어 보이던 것 — 눈에 보이는 간격을 다른 줄과 맞춘다 (80)
+    <div className="-my-1.5 flex flex-col">
       <div className="-ml-2.5 flex items-center">
         {!mine && (
           <button

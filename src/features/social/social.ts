@@ -23,7 +23,9 @@ export type SharedRating = {
   noteSource: string | null;
   alias: string;
   media: MediaRef[];
-  updatedAt: string;
+  // 등급을 매긴 때 — 사진 · 글을 고쳐도 그대로 (82) · 방문일은 평가 화면에서 고른 날
+  ratedAt: string;
+  visitedOn: string | null;
   // 함께 간 사람 — 평가를 볼 수 있는 사람만 (피드는 둘 다 '피드에 보이기'를 허용했을 때만)
   companions: (Person & { isMe?: boolean })[];
   // 먹은 메뉴 (선택)
@@ -91,7 +93,8 @@ type RatingRow = {
   note_source?: string | null;
   alias?: string | null;
   media: { path: string; kind: "image" | "video" }[];
-  updated_at: string;
+  rated_at: string;
+  visited_on?: string | null;
   companions?: (Person & { isMe?: boolean })[];
   menus?: string[] | null;
 };
@@ -114,7 +117,8 @@ async function withMedia(supabase: SupabaseClient, rows: RatingRow[], owner?: Pe
     noteSource: r.note_source ?? null,
     alias: r.alias ?? "",
     media: r.media.flatMap((m) => (urlOf.get(m.path) ? [{ kind: m.kind, url: urlOf.get(m.path)! }] : [])),
-    updatedAt: r.updated_at,
+    ratedAt: r.rated_at,
+    visitedOn: r.visited_on ?? null,
     companions: r.companions ?? [],
     menus: r.menus ?? [],
   }));
@@ -136,11 +140,11 @@ export async function getRatingDetail(supabase: SupabaseClient, ownerId: string,
 
 // mine: 내 평가(전체 · 팔로워 공개)도 섞기 — 피드 탭만. 홈 '팔로잉 새 평가'는 팔로잉 것만 (68-9)
 // after: 앞 쪽 마지막 카드 — 이어 받는 자리(시각 + 사람 + 장소, 70)
-export type FeedCursor = { updatedAt: string; ownerId: string; placeId: string };
+export type FeedCursor = { ratedAt: string; ownerId: string; placeId: string };
 export const FEED_PAGE = 20;
 export async function getFeed(supabase: SupabaseClient, { after, mine = false }: { after?: FeedCursor; mine?: boolean } = {}): Promise<SharedRating[]> {
   const { data, error } = await supabase.rpc("feed", {
-    p_before: after?.updatedAt ?? null,
+    p_before: after?.ratedAt ?? null,
     p_limit: FEED_PAGE,
     p_mine: mine,
     p_before_owner: after?.ownerId ?? null,
