@@ -141,6 +141,25 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
     </Link>
   );
 
+  // 내 위치 — 출발 · 귀가 한 줄씩(한 줄에 둘이면 귀가가 잘림, 83) · 시간 카드 '귀가지 넣기'가 id 로 펼친다
+  const myPoints = (
+    <details id="my-points" className="group scroll-mt-20 rounded-[16px] bg-surface">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-3 px-4 py-3 text-meta">
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="text-caption text-muted">내 위치</span>
+          <dl className="grid min-w-0 grid-cols-[auto_1fr] gap-x-3 gap-y-1 group-open:hidden">
+            <dt className="text-muted">출발</dt>
+            <dd className="truncate text-ink-2">{label("origin") ?? <span className="text-subtle">안 넣었어요</span>}</dd>
+            <dt className="text-muted">귀가</dt>
+            <dd className="truncate text-ink-2">{label("return") ?? <span className="text-subtle">안 넣었어요</span>}</dd>
+          </dl>
+        </span>
+        <span className="flex h-11 shrink-0 items-center font-semibold text-ink group-open:hidden">바꾸기</span>
+      </summary>
+      <div className="flex flex-col gap-2 px-2 pb-2">{editors}</div>
+    </details>
+  );
+
   return (
     // 추천이 나오면 아래에 제안하기가 고정되니 그만큼 비운다 (79)
     <div className={`flex flex-col gap-7 px-5 ${ready && plans.length > 0 ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : "pb-10"}`}>
@@ -167,30 +186,14 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
 
       {ready ? (
         <>
-          <MeetupResults plans={plans} meetupUrl={`${origin}/meet/${status.id}`} waitingCount={status.members.length - readyCount} />
-          <details className="group rounded-[16px] bg-surface">
-            <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-meta">
-              <span className="truncate text-ink-2">
-                <span className="mr-2 text-muted">내 위치</span>출발 {label("origin") ?? "없음"}, 귀가 {label("return") ?? "없음"}
-              </span>
-              <span className="shrink-0 font-semibold text-ink group-open:hidden">바꾸기</span>
-            </summary>
-            <div className="flex flex-col gap-2 px-2 pb-2">{editors}</div>
-          </details>
+          <MeetupResults plans={plans} meetupUrl={`${origin}/meet/${status.id}`} waitingCount={status.members.length - readyCount} endsAt={status.endsAt} />
+          {myPoints}
           {invite}
         </>
       ) : (
         <>
           {status.status !== "open" ? null : status.meReady ? (
-            <details className="group rounded-[16px] bg-surface">
-              <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-meta">
-                <span className="truncate text-ink-2">
-                  <span className="mr-2 text-muted">내 위치</span>출발 {label("origin") ?? "없음"}, 귀가 {label("return") ?? "없음"}
-                </span>
-                <span className="shrink-0 font-semibold text-ink group-open:hidden">바꾸기</span>
-              </summary>
-              <div className="flex flex-col gap-2 px-2 pb-2">{editors}</div>
-            </details>
+            myPoints
           ) : (
             // 출발지는 각자 넣는다 (67, 위밋플레이스) — 내 할 일을 가장 눈에 띄게
             <section className="flex flex-col gap-2 rounded-[16px] border border-line-strong p-4">
