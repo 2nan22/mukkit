@@ -32,6 +32,14 @@ describe("구글 항목 → 카카오 가게", () => {
     expect(pickHit(item, hits, new Set(["2"]))).toMatchObject({ hit: { id: "2" } });
   });
 
+  it("구글 · 카카오 표기가 달라도 낱말이 모두 들어 있으면 — 한 곳일 때만", () => {
+    const item = { name: "명동교자 본점", note: "", url: "" };
+    expect(pickHit(item, [hit("1", "명동교자 명동역점 신관 본점", 37.56, 126.98)])).toMatchObject({ hit: { id: "1" } });
+    expect(pickHit(item, [hit("1", "명동교자 본점 A", 37.56, 126.98), hit("2", "명동교자 본점 B", 37.6, 127)])).toEqual({ reason: "ambiguous" });
+    // 좌표가 있으면 근처 것
+    expect(pickHit({ ...item, lat: 37.5636, lng: 126.9849 }, [hit("1", "명동교자 명동역점 신관 본점", 37.5637, 126.985)])).toMatchObject({ hit: { id: "1" } });
+  });
+
   it("음식점 · 카페가 아니면 빼요", () => {
     expect(pickHit({ name: "서울숲", note: "", url: "" }, [hit("p", "서울숲", 37.5, 127, "AT4")])).toEqual({ reason: "not_food" });
   });

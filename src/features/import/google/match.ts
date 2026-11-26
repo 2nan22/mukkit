@@ -14,9 +14,12 @@ export function pickHit(item: GoogleItem, hits: KakaoHit[], mine: ReadonlySet<st
   const want = normalizePlaceName(item.name);
   if (want.length === 0) return { reason: "not_found" };
   const exact = hits.filter((h) => normalizePlaceName(h.name) === want);
+  // 이름 낱말이 모두 들어 있는 곳 — '명동교자 본점' ↔ '명동교자 명동역점 신관 본점' (구글 · 카카오 표기 차이)
+  const words = item.name.split(/\s+/).map(normalizePlaceName).filter((w) => w.length > 0);
   const loose = hits.filter((h) => {
     const n = normalizePlaceName(h.name);
-    return want.length >= 2 && n.length >= 2 && (n.includes(want) || want.includes(n));
+    if (want.length < 2 || n.length < 2) return false;
+    return n.includes(want) || want.includes(n) || (words.length > 1 && words.every((w) => n.includes(w)));
   });
 
   if (item.lat !== undefined && item.lng !== undefined) {
@@ -27,13 +30,17 @@ export function pickHit(item: GoogleItem, hits: KakaoHit[], mine: ReadonlySet<st
     return near.length > 0 ? { reason: "not_food" } : { reason: "not_found" };
   }
 
-  const food = exact.filter((h) => FOOD.has(h.group));
+  // 이름이 똑같은 곳이 먼저, 없으면 두 낱말 이상이 모두 든 곳 — 어느 쪽이든 한 곳으로 좁혀질 때만
+  // (좌표 없이 한 낱말 포함은 받지 않는다 — '온도'로 '온도카페'를 고르지 않게)
+  const byWords = words.length > 1 ? hits.filter((h) => words.every((w) => normalizePlaceName(h.name).includes(w))) : [];
+  const pool = exact.length > 0 ? exact : byWords;
+  const food = pool.filter((h) => FOOD.has(h.group));
   if (food.length === 1) return { hit: food[0] };
   if (food.length > 1) {
     const saved = food.filter((h) => mine.has(h.id));
     return saved.length === 1 ? { hit: saved[0] } : { reason: "ambiguous" };
   }
-  return exact.length > 0 ? { reason: "not_food" } : { reason: "not_found" };
+  return pool.length > 0 ? { reason: "not_food" } : { reason: "not_found" };
 }
 
 // 좌표가 없을 때 검색어 — 주소가 있으면 앞 두 마디(시 · 구)를 붙여 좁힌다

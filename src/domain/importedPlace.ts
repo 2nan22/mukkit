@@ -31,6 +31,8 @@ export type ImportedList = {
   places: ImportedPlace[];
   // 출처가 말한 개수 — places 와 다르면 skipped 로 설명돼야 한다
   expectedCount: number;
+  // 원본 이름이 장소 출처와 다를 때 — 구글 테이크아웃은 가게를 카카오로 맞추지만 원본 기록 · 리스트는 'google' (76)
+  origin?: "google";
   skipped: { index: number; reason: string }[];
 };
 

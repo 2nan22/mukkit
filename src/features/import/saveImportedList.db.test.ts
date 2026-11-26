@@ -56,6 +56,27 @@ describe.skipIf(!hasLocalDb)("가져오기 저장 (로컬 DB)", () => {
     expect(kept.data).toEqual([{ tier: "two", note: "고친 메모" }]);
   }, 20_000);
 
+  it("구글 테이크아웃 — 가게는 카카오로, 원본 기록 · 리스트는 google · 메모는 구글 로고 (76)", async () => {
+    const { supabase, userId } = await signUp();
+    const google: ImportedList = {
+      ...list("google", [place(31, { source: "kakao", memo: "구글 메모" })]),
+      source: "kakao",
+      origin: "google",
+      sourceListId: `takeout:${run}`,
+      name: "성수",
+    };
+    const first = await saveImportedList(supabase, userId, google, { kind: "plain" });
+    expect(first).toMatchObject({ added: 1 });
+    const lists = await supabase.from("lists").select("source, source_list_id, name").eq("owner_id", userId);
+    expect(lists.data).toEqual([{ source: "google", source_list_id: `takeout:${run}`, name: "성수" }]);
+    const items = await supabase.from("imported_items").select("source, memo").eq("user_id", userId);
+    expect(items.data).toEqual([{ source: "google", memo: "구글 메모" }]);
+    const up = await supabase.from("user_places").select("note, note_source").eq("user_id", userId);
+    expect(up.data).toEqual([{ note: "구글 메모", note_source: "google" }]);
+    const again = await saveImportedList(supabase, userId, google, { kind: "plain" });
+    expect(again).toMatchObject({ listId: first.listId, added: 0, alreadySaved: 1 });
+  }, 20_000);
+
   it("등급 리스트 — 리스트는 만들지 않고, 평가 전인 곳만 그 등급으로", async () => {
     const { supabase, userId } = await signUp();
     await saveImportedList(supabase, userId, list("a", [place(3), place(4)]), { kind: "plain" });

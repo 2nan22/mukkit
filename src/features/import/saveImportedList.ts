@@ -171,7 +171,7 @@ async function saveImportedItems(
       return placeId
         ? [{
             user_id: userId,
-            source: p.source,
+            source: list.origin ?? p.source,
             source_list_id: list.sourceListId,
             source_place_id: p.sourcePlaceId,
             place_id: placeId,
@@ -317,7 +317,7 @@ async function saveList(
     .from("lists")
     .select("id")
     .eq("owner_id", userId)
-    .eq("source", list.source)
+    .eq("source", list.origin ?? list.source)
     .eq("source_list_id", list.sourceListId)
     .maybeSingle();
   if (found.error) throw new ImportSaveError("lists_select", found.error.code);
@@ -330,7 +330,7 @@ async function saveList(
         owner_id: userId,
         name: list.name.trim().slice(0, LIST_NAME_MAX) || FALLBACK_LIST_NAME,
         description: list.memo.slice(0, LIST_DESCRIPTION_MAX),
-        source: list.source,
+        source: list.origin ?? list.source,
         source_list_id: list.sourceListId,
       })
       .select("id")
