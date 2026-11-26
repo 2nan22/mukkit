@@ -8,6 +8,7 @@ import { honor } from "@/domain/honor";
 import { tierFromDb } from "@/domain/tier";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getMeetupStatus } from "@/features/meetup/meetup";
+import { getCourse } from "@/features/meetup/course";
 import { MeetupVisitPicker } from "@/features/visit/MeetupVisitPicker";
 import { RemoveVisit } from "@/features/visit/RemoveVisit";
 import { getMeetupVisits, type MeetupVisit } from "@/features/visit/visit";
@@ -48,16 +49,22 @@ async function MeetVisit({ params, searchParams }: { params: Promise<{ meetupId:
   const status = await getMeetupStatus(supabase, meetupId);
   if (!status?.isMember) notFound();
   const others = status.members.filter((m) => !m.isMe).map((m) => ({ id: m.id, nickname: m.nickname }));
-  const recorded = await getMeetupVisits(supabase, me, meetupId);
+  const [recorded, course] = await Promise.all([getMeetupVisits(supabase, me, meetupId), getCourse(supabase, meetupId)]);
   const back = `/meet/${meetupId}/visit`;
   const adding = recorded.length === 0 || add === "1";
+  // 처음 기록할 때만 약속 코스대로 미리 채운다 (85) — 이미 기록한 곳은 빼고
+  const fromCourse = recorded.length === 0 ? course.stops.map((s) => ({ placeId: s.placeId, name: s.name })) : [];
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-5 pb-10">
       <section className="flex flex-col gap-1">
         <h2 className="text-title font-bold tracking-tight">{recorded.length ? "다녀온 곳" : "어디서 만났어요?"}</h2>
         <span className="text-meta leading-normal text-muted">
-          {recorded.length === 0 ? "1차, 2차처럼 여러 곳을 한 번에 기록할 수 있어요." : adding ? "더 간 곳을 이어서 기록해요." : "가게마다 평가와 함께한 사람을 고칠 수 있어요."}
+          {recorded.length === 0
+            ? fromCourse.length
+              ? "약속 코스대로 채워 뒀어요. 안 간 곳은 빼 주세요."
+              : "1차, 2차처럼 여러 곳을 한 번에 기록할 수 있어요."
+            : adding ? "더 간 곳을 이어서 기록해요." : "가게마다 평가와 함께한 사람을 고칠 수 있어요."}
         </span>
       </section>
 
@@ -98,7 +105,7 @@ async function MeetVisit({ params, searchParams }: { params: Promise<{ meetupId:
       )}
 
       {adding ? (
-        <MeetupVisitPicker meetupId={meetupId} people={others} startIndex={recorded.length} cancelHref={recorded.length ? back : undefined} />
+        <MeetupVisitPicker meetupId={meetupId} people={others} startIndex={recorded.length} cancelHref={recorded.length ? back : undefined} initial={fromCourse} />
       ) : (
         <Link href={`${back}?add=1`} replace className="flex h-11 w-fit items-center gap-1.5 rounded-full bg-surface px-4 text-meta font-semibold text-ink">
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
