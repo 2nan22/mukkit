@@ -60,7 +60,7 @@ export function FollowingNew({ ratings, followingCount, me }: { ratings: SharedR
           </div>
         )
       ) : (
-        <ul className="flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+        <ul className="relative flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
           {ratings.map((r) => (
             <li key={`${r.ownerId}:${r.placeId}`} className="flex shrink-0">
               <Link href={`/p/${r.placeId}`} className="flex w-[260px] flex-col overflow-hidden rounded-[16px] border border-line">

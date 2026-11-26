@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { honor } from "@/domain/honor";
+import { Avatar } from "@/components/ui/Avatar";
 import { setFollow } from "./actions";
 
 // followLabel: 내 팔로워 목록에서 아직 안 팔로우한 사람은 '맞팔로우' (74-2, 스레드 · 인스타그램 말)
@@ -50,7 +51,7 @@ export function FollowButton({
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45" onClick={() => setConfirming(false)}>
             <section
               tabIndex={-1}
-              ref={(el) => el?.focus()}
+              ref={(el) => el?.focus({ preventScroll: true })}
               role="dialog"
               aria-modal="true"
               aria-labelledby="unfollow-title"
@@ -59,7 +60,13 @@ export function FollowButton({
               className="flex w-full max-w-[480px] flex-col gap-1 rounded-t-[20px] bg-white px-5 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))] outline-none"
             >
               <span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-line-strong" />
-              <h2 id="unfollow-title" className="pt-3 pb-2 text-section font-bold">
+              {/* 누구인지 먼저 — 프로필 동그라미 · 닉네임 가운데 (인스타그램 형식, 77) */}
+              {nickname && (
+                <div className="flex justify-center pt-4">
+                  <Avatar name={nickname} size={56} />
+                </div>
+              )}
+              <h2 id="unfollow-title" className={`pt-3 pb-2 text-section font-bold ${nickname ? "text-center" : ""}`}>
                 {nickname ? `${honor(nickname)} 팔로우를 취소할까요?` : "팔로우를 취소할까요?"}
               </h2>
               <button
@@ -68,11 +75,11 @@ export function FollowButton({
                   setConfirming(false);
                   apply(false);
                 }}
-                className="flex h-12 items-center text-body font-semibold text-danger"
+                className={`flex h-12 items-center text-body font-semibold text-danger ${nickname ? "justify-center border-t border-line" : ""}`}
               >
                 팔로우 취소
               </button>
-              <button type="button" onClick={() => setConfirming(false)} className="flex h-12 items-center text-body text-ink">
+              <button type="button" onClick={() => setConfirming(false)} className={`flex h-12 items-center text-body text-ink ${nickname ? "justify-center border-t border-line" : ""}`}>
                 닫기
               </button>
             </section>

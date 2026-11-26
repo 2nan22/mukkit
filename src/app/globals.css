@@ -272,3 +272,12 @@ html[data-splash="out"] .launch-splash {
     animation: none;
   }
 }
+
+/* 아이폰 사파리는 글자 16px 보다 작은 입력칸에 포커스하면 화면을 확대하고, 벗어나도 확대가 남는다 (77, 사용자 제보)
+   아이폰 · 아이패드에서만(layout 의 그리기 전 스크립트가 html[data-ios] 를 붙임) 입력칸 글자를 16px 이상으로 — 다른 기기 디자인은 그대로
+   (@supports (-webkit-touch-callout) 는 빌드가 지워 쓰지 않는다) · 확대 자체(maximum-scale)는 막지 않는다 — 두 손가락 확대는 접근성 */
+html[data-ios] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html[data-ios] textarea,
+html[data-ios] select {
+  font-size: max(16px, 1em);
+}
