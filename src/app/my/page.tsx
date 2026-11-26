@@ -63,7 +63,17 @@ async function MyContent() {
           <Avatar name={nickname} size={56} />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate text-section font-bold">{nickname}</span>
-            <MetaLine items={[`팔로워 ${counts.followers}`, `팔로잉 ${counts.following}`]} />
+            {/* 숫자를 누르면 팔로워 · 팔로잉 목록 (74) */}
+            <MetaLine
+              items={[
+              <Link key="followers" href={`/u/${me}/follows`} className="py-2">
+                팔로워 <b className="font-semibold text-ink">{counts.followers}</b>
+              </Link>,
+              <Link key="following" href={`/u/${me}/follows?tab=following`} className="py-2">
+                팔로잉 <b className="font-semibold text-ink">{counts.following}</b>
+              </Link>,
+              ]}
+            />
           </div>
         </div>
         {bio && <p className="text-body leading-normal text-ink-2">{bio}</p>}
