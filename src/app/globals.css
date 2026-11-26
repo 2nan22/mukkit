@@ -105,6 +105,10 @@ html[data-splash] .launch-splash {
   justify-content: center;
   background: #ffffff;
 }
+/* 홈 화면 앱은 load 전까지 멈춘 채 — 시스템 실행 화면이 걷힌 뒤 처음부터 (73) */
+html[data-splash="wait"] .launch-splash * {
+  animation-play-state: paused;
+}
 /* 사라지기는 스크립트가 정한다(LaunchSplash SPLASH_SCRIPT) — 화면이 다 그려진 뒤 */
 html[data-splash="out"] .launch-splash {
   animation: launch-out 400ms ease-in forwards;
