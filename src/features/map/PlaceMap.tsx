@@ -23,6 +23,8 @@ type KakaoMaps = {
     zIndex: number;
     clickable: boolean;
   }) => KakaoOverlay;
+  // 코스 길 (84)
+  Polyline: new (opts: { path: LatLng[]; strokeWeight: number; strokeColor: string; strokeOpacity: number; strokeStyle: string; map?: KakaoMapInstance }) => KakaoPolyline;
   Circle: new (opts: {
     center: LatLng;
     radius: number;
@@ -48,6 +50,7 @@ type KakaoMaps = {
     styles: Record<string, string>[];
   }) => KakaoClusterer;
 };
+type KakaoPolyline = { setMap(m: KakaoMapInstance | null): void };
 type KakaoClusterer = { addMarkers(m: KakaoOverlay[]): void; clear(): void };
 type KakaoLatLng = { getLat(): number; getLng(): number };
 type KakaoPoint = { x: number; y: number };
@@ -79,7 +82,8 @@ declare global {
 }
 
 // color: 리스트로 보기 — 리스트 색 핀(등급 숫자는 그대로) · text 는 그 색 위 글자색 · null 은 어느 리스트에도 없음(흰 빈 핀)
-export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found"; color?: { bg: string; text: string } | null };
+// order: 코스 순서 번호(1부터) — 등급 대신 주황 번호 핀 (84)
+export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found"; color?: { bg: string; text: string } | null; order?: number };
 export type MyLocation = { lat: number; lng: number; accuracy: number };
 // 배열의 칸이 모두 같은 값(같은 참조)인지
 function same(a: unknown[] | undefined, b: unknown[]): boolean {
@@ -143,6 +147,23 @@ function foundElement(): HTMLElement {
 
 const NUMBER: Partial<Record<Tier, string>> = { three: "3", two: "2", one: "1" };
 
+// 코스 번호 핀 — 브랜드 주황 원 + 흰 번호 (84)
+const COURSE_COLOR = "#c8410b";
+function orderElement(order: number, selected: boolean, onClick: () => void): HTMLElement {
+  const size = selected ? 34 : 28;
+  const el = document.createElement("button");
+  el.type = "button";
+  el.setAttribute("aria-label", `코스 ${order}번째 가게`);
+  el.style.cssText = "padding:0;border:0;background:none;cursor:pointer";
+  el.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;box-sizing:border-box;border-radius:50%;background:${COURSE_COLOR};border:3px solid #ffffff;box-shadow:0 2px 8px rgba(0,0,0,.25);color:#ffffff;font:700 13px/1 system-ui">${order}</span>`;
+  el.addEventListener("click", onClick);
+  return el;
+}
+
+function pinContent(p: Pin, selected: boolean, onClick: () => void): HTMLElement {
+  return p.order ? orderElement(p.order, selected, onClick) : pinElement(p.tier, selected, onClick, p.color);
+}
+
 function pinElement(tier: Tier, selected: boolean, onClick: () => void, color?: Pin["color"]): HTMLElement {
   const s: { size: number; bg: string; ring: string; text: string; label: string; dot?: string; icon?: { color: string } } =
     color === null
@@ -169,6 +190,10 @@ const ME_COLOR = "#2f6fde";
 const PIN_Z: Record<Tier, number> = { three: 400, two: 300, one: 250, notRecommended: 150, wantToGo: 120, unrated: 100 };
 function zOf(tier: Tier, selected: boolean): number {
   return selected ? 1000 : PIN_Z[tier];
+}
+// 코스 번호 핀은 등급 핀 위 · 앞 번호가 위 — 고르거나 강조해도 같은 규칙 (84 검토)
+function pinZ(p: Pin, selected: boolean): number {
+  return p.order ? 600 - p.order + (selected ? 50 : 0) : zOf(p.tier, selected);
 }
 
 // 내 위치 점 — 장소 핀과 헷갈리지 않게 파란 점 · 흰 테두리
@@ -209,7 +234,10 @@ export function PlaceMap({
   highlightId = null,
   centerOn = null,
   quiet = false,
+  route = null,
 }: {
+  // 코스 길 [경도, 위도] — dashed 면 직선 어림(점선), 아니면 실제 걷는 길(실선) (84)
+  route?: { path: [number, number][]; dashed: boolean } | null;
   // 타일이 깔릴 때까지 가운데 로딩을 띄우지 않는다 — 홈 미리보기처럼 작은 지도
   quiet?: boolean;
   // 이 핀을 보이는 칸 가운데로 옮긴다(확대는 그대로) — 접힌 카드를 넘길 때. n 이 바뀌면 같은 핀도 다시
@@ -244,6 +272,7 @@ export function PlaceMap({
   const meDot = useRef<KakaoOverlay | null>(null);
   const meCircle = useRef<KakaoCircle | null>(null);
   const clusterer = useRef<KakaoClusterer | null>(null);
+  const routeLine = useRef<KakaoPolyline | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   // 마지막으로 지도에 반영한 값 — 다른 화면에 갔다 뒤로 돌아오면(화면이 숨었다 다시 보임) 효과가 다시 돌아도
@@ -304,11 +333,11 @@ export function PlaceMap({
       const selected = p.id === selectedRef.current || p.id === highlightRef.current;
       const overlay = new maps.CustomOverlay({
         position: new maps.LatLng(p.lat, p.lng),
-        content: p.kind === "found" ? foundElement() : pinElement(p.tier, selected, () => onSelectRef.current(p.id), p.color),
+        content: p.kind === "found" ? foundElement() : pinContent(p, selected, () => onSelectRef.current(p.id)),
         map: useCluster && p.kind !== "found" ? undefined : m,
         xAnchor: 0.5,
         yAnchor: 0.5,
-        zIndex: p.kind === "found" ? 1000 : zOf(p.tier, selected),
+        zIndex: p.kind === "found" ? 1000 : pinZ(p, selected),
         clickable: p.kind !== "found",
       });
       next.set(p.id, { overlay, pin: p });
@@ -316,6 +345,23 @@ export function PlaceMap({
     overlays.current = next;
     if (useCluster) clusterer.current?.addMarkers([...next.values()].filter((v) => v.pin.kind !== "found").map((v) => v.overlay));
   }, [ready, pins, cluster]);
+
+  // 코스 길 — 바뀔 때만 다시 긋는다. 핀 아래에 깔리게 (Polyline 은 오버레이보다 아래 층)
+  useEffect(() => {
+    const maps = window.kakao?.maps;
+    if (!ready || !maps || !map.current) return;
+    routeLine.current?.setMap(null);
+    routeLine.current = null;
+    if (!route || route.path.length < 2) return;
+    routeLine.current = new maps.Polyline({
+      path: route.path.map(([x, y]) => new maps.LatLng(y, x)),
+      strokeWeight: route.dashed ? 4 : 5,
+      strokeColor: COURSE_COLOR,
+      strokeOpacity: route.dashed ? 0.7 : 0.85,
+      strokeStyle: route.dashed ? "shortdash" : "solid",
+      map: map.current,
+    });
+  }, [ready, route]);
 
   // 고른 핀 표시 — 이전 · 새 핀 두 개만 바꾼다
   useEffect(() => {
@@ -326,8 +372,8 @@ export function PlaceMap({
       const hit = id ? overlays.current.get(id) : undefined;
       if (!hit || hit.pin.kind === "found") continue;
       const on = id === selectedId;
-      hit.overlay.setContent(pinElement(hit.pin.tier, on, () => onSelectRef.current(hit.pin.id), hit.pin.color));
-      hit.overlay.setZIndex(zOf(hit.pin.tier, on));
+      hit.overlay.setContent(pinContent(hit.pin, on, () => onSelectRef.current(hit.pin.id)));
+      hit.overlay.setZIndex(pinZ(hit.pin, on));
     }
   }, [ready, selectedId]);
 
@@ -340,8 +386,8 @@ export function PlaceMap({
       const hit = id ? overlays.current.get(id) : undefined;
       if (!hit || hit.pin.kind === "found" || id === selectedRef.current) continue;
       const on = id === highlightId;
-      hit.overlay.setContent(pinElement(hit.pin.tier, on, () => onSelectRef.current(hit.pin.id), hit.pin.color));
-      hit.overlay.setZIndex(zOf(hit.pin.tier, on));
+      hit.overlay.setContent(pinContent(hit.pin, on, () => onSelectRef.current(hit.pin.id)));
+      hit.overlay.setZIndex(pinZ(hit.pin, on));
     }
   }, [ready, highlightId]);
 
@@ -383,7 +429,7 @@ export function PlaceMap({
     const maps = window.kakao?.maps;
     if (!ready || !maps || !map.current || pins.length === 0) return;
     const m = map.current;
-    const key = [pins, top, right, bottom, left, refit];
+    const key = [pins, top, right, bottom, left, refit, route];
     if (same(applied.current.fit, key)) return;
     applied.current.fit = key;
     requestAnimationFrame(() => {
@@ -397,17 +443,19 @@ export function PlaceMap({
         return;
       }
       fitted.current = true;
-      if (pins.length === 1) {
+      if (pins.length === 1 && !route) {
         m.setLevel(SINGLE_LEVEL);
         m.setCenter(new maps.LatLng(pins[0].lat, pins[0].lng));
         return;
       }
       const bounds = new maps.LatLngBounds();
       pins.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
+      // 코스 길이 핀 바깥으로 돌아가도 다 보이게 (84)
+      route?.path.forEach(([x, y]) => bounds.extend(new maps.LatLng(y, x)));
       const [t, r, b, l] = fitPadding([top, right, bottom, left], el.current?.clientWidth ?? 0, el.current?.clientHeight ?? 0);
       m.setBounds(bounds, t, r, b, l);
     });
-  }, [ready, pins, top, right, bottom, left, refit]);
+  }, [ready, pins, top, right, bottom, left, refit, route]);
 
   // 핀 맞춤보다 뒤에 돌도록 아래에 둔다 — 같은 프레임이면 이 위치가 이긴다
   useEffect(() => {

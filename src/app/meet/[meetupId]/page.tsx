@@ -13,6 +13,8 @@ import { InviteAnswer } from "@/features/meetup/InviteAnswer";
 import { getMeetupStatus, getMyPoints, planMeetup, type MeetupMember } from "@/features/meetup/meetup";
 import { MeetupRefresher } from "@/features/meetup/MeetupRefresher";
 import { MeetupResults } from "@/features/meetup/MeetupResults";
+import { CourseCard } from "@/features/meetup/CourseCard";
+import { getCourse } from "@/features/meetup/course";
 import { PointEditor } from "@/features/meetup/PointEditor";
 import { PushToggle } from "@/features/push/PushToggle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -121,7 +123,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
   const readyCount = status.members.filter((m) => m.ready).length;
   const others = status.members.filter((m) => !m.isMe);
   const ready = status.meReady && readyCount >= 2;
-  const plans = ready ? await planMeetup(supabase, me, status) : [];
+  const [plans, course] = await Promise.all([ready ? planMeetup(supabase, me, status) : Promise.resolve([]), getCourse(supabase, meetupId)]);
   const title = others.length === 0 ? `${purpose} 약속` : others.length === 1 ? `${others[0].nickname}님과 ${purpose}` : `${others.length + 1}명 ${purpose}`;
   const canInvite = status.isHost && status.status === "open" && status.members.length < status.maxMembers;
 
@@ -184,9 +186,12 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
 
       {(status.members.length > 1 || status.invitees.length > 0) && <Members members={status.members} invitees={status.invitees} />}
 
+      {/* 함께 정한 코스 — 담은 곳이 있으면 맨 위 (84) */}
+      {status.isMember && <CourseCard meetupId={status.id} course={course} editable={status.status === "open"} />}
+
       {ready ? (
         <>
-          <MeetupResults plans={plans} meetupUrl={`${origin}/meet/${status.id}`} waitingCount={status.members.length - readyCount} endsAt={status.endsAt} />
+          <MeetupResults plans={plans} meetupUrl={`${origin}/meet/${status.id}`} waitingCount={status.members.length - readyCount} endsAt={status.endsAt} meetupId={status.id} course={course} />
           {myPoints}
           {invite}
         </>

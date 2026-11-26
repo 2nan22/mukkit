@@ -42,6 +42,18 @@ describe.skipIf(!hasLocalDb)("약속 코스 (로컬 DB)", () => {
     expect((await getCourse(other.supabase, meetupId)).stops).toEqual([]);
   }, 30_000);
 
+  it("보던 순서와 다르면(남이 먼저 바꿈) 거절, 같은 순서면 바뀐 것 없음", async () => {
+    const host = await signUpTestUser();
+    const { data: m } = await host.supabase.from("meetups").insert({ host_id: host.userId, purpose: "meal" }).select("id").single();
+    const meetupId = m!.id as string;
+    const [a, b, c] = await makePlaces(3);
+    expect((await host.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [a], p_expected: "" })).data).toBe(true);
+    // 'a' 를 본 사람이 b 를 담는 사이, 다른 쪽은 '' 을 보고 c 를 담으려 함 → 거절
+    expect((await host.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [a, b], p_expected: a })).data).toBe(true);
+    expect((await host.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [c], p_expected: a })).error?.code).toBe("P0003");
+    expect((await host.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [a, b], p_expected: a })).data).toBe(false);
+  }, 30_000);
+
   it("5곳 넘게 · 같은 곳 두 번은 거절, 직접 쓰기는 막힘", async () => {
     const host = await signUpTestUser();
     const { data: m } = await host.supabase.from("meetups").insert({ host_id: host.userId, purpose: "meal" }).select("id").single();
@@ -62,9 +74,13 @@ describe.skipIf(!hasLocalDb)("약속 코스 (로컬 DB)", () => {
     const meetupId = m!.id as string;
     const [a, b] = await makePlaces(2);
     await host.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [a, b] });
-    await testAdminClient()
-      .from("meetup_course_route")
-      .insert({ meetup_id: meetupId, course_key: `${a},${b}`, legs: [{ meters: 650, seconds: 540 }], path: [[126.99, 37.56], [126.99, 37.562]] });
+    const admin = testAdminClient();
+    const legs = [{ meters: 650, seconds: 540 }];
+    const path = [[126.99, 37.56], [126.99, 37.562]];
+    // 사용자는 길 저장 함수를 못 부르고, 서버도 지금 순서가 아닌 길은 못 쓴다
+    expect((await host.supabase.rpc("save_meetup_course_route", { p_meetup: meetupId, p_key: `${a},${b}`, p_legs: legs, p_path: path })).error).not.toBeNull();
+    expect((await admin.rpc("save_meetup_course_route", { p_meetup: meetupId, p_key: `${b},${a}`, p_legs: legs, p_path: path })).data).toBe(false);
+    expect((await admin.rpc("save_meetup_course_route", { p_meetup: meetupId, p_key: `${a},${b}`, p_legs: legs, p_path: path })).data).toBe(true);
     expect((await getCourse(host.supabase, meetupId)).route).toMatchObject({ estimated: false, legs: [{ meters: 650, seconds: 540 }] });
 
     await host.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [b, a] });

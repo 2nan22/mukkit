@@ -7,6 +7,10 @@ import { CUISINE_LABEL } from "@/domain/cuisine";
 import { areaReason, isEven, lastTrainLine, timeHeadline, type RankedPerson } from "@/domain/meetup";
 import { PlaceMap } from "@/features/map/PlaceMap";
 import type { AreaPlan } from "./meetup";
+import { COURSE_MAX } from "@/domain/course";
+import { useCourseDraft } from "./useCourseDraft";
+import type { Course } from "./course";
+import { courseShareText } from "./CourseMap";
 import { MetaLine } from "@/components/ui/MetaLine";
 
 function km(m: number): string {
@@ -37,24 +41,54 @@ function reasonLine(reasons: string[]) {
   return others.length > 0 ? <MetaLine wrap className="text-meta text-ink-2" items={others} /> : undefined;
 }
 
-export function MeetupResults({ plans, meetupUrl, waitingCount, endsAt = null }: { plans: AreaPlan[]; meetupUrl: string; waitingCount: number; endsAt?: string | null }) {
+export function MeetupResults({
+  plans,
+  meetupUrl,
+  waitingCount,
+  endsAt = null,
+  meetupId,
+  course,
+}: {
+  plans: AreaPlan[];
+  meetupUrl: string;
+  waitingCount: number;
+  endsAt?: string | null;
+  meetupId: string;
+  course: Course;
+}) {
   const [active, setActive] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const canShare = useSyncExternalStore(noSubscribe, () => typeof navigator.share === "function", () => false);
   const plan = plans[active];
-  // 평가 안 한 가게는 중립 핀, 가게가 없으면 지역 가운데만
+  // 코스 (84) — 담은 순서 그대로. 누르면 바로 바꿔 보이고 모아서 저장
+  const draft = useCourseDraft(meetupId, course.stops.map((s) => s.placeId));
+  const courseIds = draft.ids;
+  // 평가 안 한 가게는 중립 핀, 가게가 없으면 지역 가운데만 · 코스에 담은 곳은 번호 핀
   const pins = useMemo(
-    () => (plan?.shops.length ? plan.shops.map((s) => ({ id: s.placeId, lat: s.lat, lng: s.lng, tier: s.myTier ?? "unrated" })) : plan ? [{ id: "area", lat: plan.lat, lng: plan.lng, tier: "wantToGo" as const }] : []),
-    [plan],
+    () =>
+      plan?.shops.length
+        ? plan.shops.map((s) => ({ id: s.placeId, lat: s.lat, lng: s.lng, tier: s.myTier ?? "unrated", order: courseIds.includes(s.placeId) ? courseIds.indexOf(s.placeId) + 1 : undefined }))
+        : plan
+          ? [{ id: "area", lat: plan.lat, lng: plan.lng, tier: "wantToGo" as const }]
+          : [],
+    [plan, courseIds],
   );
+
+  function toggleCourse(placeId: string) {
+    const adding = !courseIds.includes(placeId);
+    const next = adding ? [...courseIds, placeId] : courseIds.filter((id) => id !== placeId);
+    if (next.length > COURSE_MAX) return setMessage(`코스는 ${COURSE_MAX}곳까지 담을 수 있어요`);
+    draft.change(next);
+    setMessage(adding ? `${next.length}차로 담았어요. 순서는 위 코스에서 바꿀 수 있어요` : null);
+  }
 
   if (plans.length === 0) {
     return <p className="rounded-[16px] bg-surface p-4 text-meta leading-normal text-muted">추천할 지역을 찾지 못했어요. 위치를 다른 역이나 동으로 바꿔 보세요.</p>;
   }
 
   async function sendArea() {
-    const text = `${plan.name} 어때요? ${areaReason(plan.people)}`;
+    const text = courseIds.length > 0 ? courseShareText(courseNames) : `${plan.name} 어때요? ${areaReason(plan.people)}`;
     if (canShare) return navigator.share({ title: "약속 장소", text, url: meetupUrl }).catch(() => undefined);
     try {
       await navigator.clipboard.writeText(`${text}\n${meetupUrl}`);
@@ -65,6 +99,10 @@ export function MeetupResults({ plans, meetupUrl, waitingCount, endsAt = null }:
   }
 
   const even = isEven(plan.people);
+  // 담은 곳 이름 — 지금 지역 가게 목록에 없으면(다른 지역에서 담음) 서버 코스에서
+  const nameOf = (id: string) => plans.flatMap((p) => p.shops).find((s) => s.placeId === id)?.name ?? course.stops.find((s) => s.placeId === id)?.name ?? "";
+  const courseNames = courseIds.map((id) => ({ name: nameOf(id) }));
+
   const areaName = (name: string) => name.replace(/\//g, ", ");
   const head = areaName(plan.name).split(",")[0];
 
@@ -143,6 +181,7 @@ export function MeetupResults({ plans, meetupUrl, waitingCount, endsAt = null }:
               tier={s.myTier}
               meta={[CUISINE_LABEL[s.cuisine], `${areaName(plan.name).split(",")[0]}에서 ${km(s.distance)}`]}
               note={reasonLine(s.reasons)}
+              action={<CourseToggle order={courseIds.indexOf(s.placeId)} name={s.name} onClick={() => toggleCourse(s.placeId)} />}
             />
           ))}
         </div>
@@ -150,17 +189,40 @@ export function MeetupResults({ plans, meetupUrl, waitingCount, endsAt = null }:
 
       {/* 제안하기는 아래 고정 — 목록을 보다가도 바로 (토스 정산처럼, 79) */}
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex w-full max-w-[480px] flex-col gap-1.5 border-t border-line bg-white px-5 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
-        {message && (
+        {(draft.error ?? message) && (
           <p role="status" className="text-center text-meta text-ink-2">
-            {message}
+            {draft.error ?? message}
           </p>
         )}
         <button type="button" onClick={sendArea} className="h-btn-m w-full rounded-btn-m bg-brand text-body font-bold text-white raised-brand">
-          {head}
-          {ro(head)} 제안하기
+          {courseIds.length > 0 ? "이 코스로 제안하기" : `${head}${ro(head)} 제안하기`}
         </button>
       </div>
     </section>
+  );
+}
+
+// 가게 줄 오른쪽 — 담기 전 '+' 테두리 원, 담으면 검정 원 안 번호 (주황은 주 버튼 하나만, 84 검토)
+function CourseToggle({ order, name, onClick }: { order: number; name: string; onClick: () => void }) {
+  const on = order >= 0;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      aria-label={on ? `${name} 코스 ${order + 1}차, 누르면 빼기` : `${name} 코스에 담기`}
+      className="flex size-11 shrink-0 items-center justify-center"
+    >
+      {on ? (
+        <span className="flex size-8 items-center justify-center rounded-full bg-ink text-meta font-bold text-white">{order + 1}</span>
+      ) : (
+        <span className="flex size-8 items-center justify-center rounded-full border border-line-strong text-ink">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </span>
+      )}
+    </button>
   );
 }
 
