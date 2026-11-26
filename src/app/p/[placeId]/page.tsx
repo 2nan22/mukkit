@@ -27,6 +27,7 @@ import { effectiveNote } from "@/features/rating/noteAudience";
 import type { MediaRef } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MetaLine } from "@/components/ui/MetaLine";
+import { MapAppLink } from "@/components/ui/MapAppLink";
 
 export const metadata = { title: "장소" };
 
@@ -134,21 +135,26 @@ async function PlaceDetail({ params }: { params: Promise<{ placeId: string }> })
         <h1 className="text-title font-bold tracking-tight">{place.name}</h1>
         <span className="text-body text-ink-2">{place.address}</span>
         {!place.available && <span className="text-meta text-danger">지도에 정보가 없어요. 폐업했을 수 있어요.</span>}
-        <div className="grid grid-cols-3 gap-2 pt-3">
-          <a href={links.directions} target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
+        {/* 폰에선 지도 앱으로, 없으면 웹 (72) — 구글은 구글 지도 앱이 주소를 직접 받는다 */}
+        <div className="grid grid-cols-4 gap-2 pt-3">
+          <MapAppLink link={links.directions} className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
               <path d="M3 11l18-8-8 18-2-8z" />
             </svg>
             길찾기
-          </a>
-          <a href={links.naver} target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
+          </MapAppLink>
+          <MapAppLink link={links.naver} className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <SourceMark source="naver" size={14} />
             네이버
-          </a>
-          <a href={links.kakao} target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
+          </MapAppLink>
+          <MapAppLink link={links.kakao} className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
             <SourceMark source="kakao" size={14} />
             카카오
-          </a>
+          </MapAppLink>
+          <MapAppLink link={links.google} className="flex h-10 items-center justify-center gap-1.5 rounded-btn-l bg-surface text-meta font-semibold text-ink">
+            <SourceMark source="google" size={14} />
+            구글
+          </MapAppLink>
         </div>
         {/* 이 가게를 기준으로 근처 추천 — 1차 뒤 2차 · 이 동네에서 다른 곳 찾기 */}
         <Link href={`/eat?at=${place.lat.toFixed(5)},${place.lng.toFixed(5)}&label=${encodeURIComponent(place.name)}`} className="flex h-11 items-center gap-1.5 self-start text-meta font-semibold text-ink underline underline-offset-[3px]">

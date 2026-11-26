@@ -3,8 +3,9 @@ import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { PlaceSourceName } from "@/domain/importedPlace";
 import { TIER_LABEL, tierFromDb, type Tier } from "@/domain/tier";
 import type { Cuisine } from "@/domain/cuisine";
+import { kakaoPlaceLink, naverPlaceLink, type MapLink } from "@/domain/mapLinks";
 
-export type SourceLink = { source: PlaceSourceName; url: string };
+export type SourceLink = { source: PlaceSourceName; url: MapLink };
 
 export type MapPlace = {
   placeId: string;
@@ -80,9 +81,10 @@ export function ratersLine(raters: Rater[]): string {
   return raters.length === 1 ? first : `${first} 외 ${raters.length - 1}명`;
 }
 
-const SOURCE_URL: Record<PlaceSourceName, (id: string) => string> = {
-  naver: (id) => `https://map.naver.com/p/entry/place/${id}`,
-  kakao: (id) => `https://place.map.kakao.com/${id}`,
+// 폰에선 지도 앱으로 (72)
+const SOURCE_URL: Record<PlaceSourceName, (id: string) => MapLink> = {
+  naver: naverPlaceLink,
+  kakao: kakaoPlaceLink,
 };
 
 type Row = {
