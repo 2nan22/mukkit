@@ -23,7 +23,7 @@ function readLast(): RouteApp | null {
   }
 }
 
-export function RouteButton({ links, className, children }: { links: Record<RouteApp, MapLink>; className?: string; children: React.ReactNode }) {
+export function RouteButton({ links, className, label, children }: { links: Record<RouteApp, MapLink>; className?: string; label?: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [last, setLast] = useState<RouteApp | null>(null);
   const sheet = useRef<HTMLElement>(null);
@@ -41,6 +41,7 @@ export function RouteButton({ links, className, children }: { links: Record<Rout
     <>
       <button
         type="button"
+        aria-label={label}
         onClick={() => {
           setLast(readLast());
           setOpen(true);
