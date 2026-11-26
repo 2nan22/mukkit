@@ -76,6 +76,8 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
   // 시간 차이가 거의 없으면(5분 이하) 사람별 줄을 숨긴다 — 요약 한 줄과 같은 말이 되풀이되지 않게 (79 디자인 검토)
   const mins = plan.people.map((p) => Math.round(p.minutes / 5) * 5);
   const even = Math.max(...mins) - Math.min(...mins) <= 5;
+  const showMins = !even && plan.people.length > 2;
+  const rows = plan.people.map((p, i) => ({ p, i })).filter(({ p }) => showMins || p.last);
   const meNoReturn = plan.people.some((p) => p.isMe && !p.last);
   const areaName = (name: string) => name.replace(/\//g, ", ");
 
@@ -117,25 +119,18 @@ export function MeetupResults({ plans, meetupUrl, waitingCount }: { plans: AreaP
       </div>
 
       <div className="flex flex-col gap-1.5 rounded-[16px] bg-surface px-4 py-3.5">
-        <span className="text-[16px] font-bold tracking-[-0.015em]">{even ? "모두 비슷하게 걸려요" : areaReason(plan.people)}</span>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-meta text-ink-2">
-          {plan.people.map((p, i) =>
-            even && !p.last && !p.late ? null : (
-              <div key={p.id} className={`contents ${p.late ? "font-medium text-danger" : ""}`}>
-                <dt>{who(p)}</dt>
-                <dd>
-                  {mins[i]}분쯤{p.last ? `, 막차 늦어도 ${nightClock(p.last)}쯤 출발` : ""}
-                </dd>
+        <span className="text-[16px] font-bold tracking-[-0.015em]">{even ? `모두 ${mins[0]}분쯤 걸려요` : areaReason(plan.people)}</span>
+        {/* 제목이 이미 두 사람 시간을 말하니 줄마다 되풀이하지 않는다 — 사람별 줄은 막차 · 3명 이상 시간만 (83, 사용자 '가운데 그대로') */}
+        {rows.length > 0 && (
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-meta text-ink-2">
+            {rows.map(({ p, i }) => (
+              <div key={p.id} className="contents">
+                <dt className="text-muted">{who(p)}</dt>
+                <dd>{[showMins ? `${mins[i]}분쯤` : null, p.last ? `막차 늦어도 ${nightClock(p.last)}쯤 출발` : null].filter(Boolean).join(", ")}</dd>
               </div>
-            ),
-          )}
-          {even && (
-            <>
-              <dt className="text-muted">걸리는 시간</dt>
-              <dd>{mins[0]}분쯤</dd>
-            </>
-          )}
-        </dl>
+            ))}
+          </dl>
+        )}
         {warning && <span className="text-meta font-medium text-danger">{warning}</span>}
         {plan.recent >= 20 && <span className="text-meta text-muted">요즘 평가가 많은 동네예요</span>}
         {meNoReturn && <span className="text-meta text-muted">귀가지를 넣으면 막차도 알려 드려요</span>}
