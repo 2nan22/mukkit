@@ -22,30 +22,64 @@ export const metadata = { title: "약속" };
 // 사람마다 상태 (67) — 출발지 넣음 · 출발지 전 · 수락 기다리는 중 (위치 값은 보이지 않음)
 function Members({ members, invitees }: { members: MeetupMember[]; invitees: { id: string; nickname: string }[] }) {
   const ready = members.filter((m) => m.ready).length;
+  const allReady = invitees.length === 0 && ready === members.length;
   return (
     <section className="flex flex-col gap-1">
-      <div className="flex items-baseline justify-between">
-        <h3 className="text-[16px] font-bold">함께하는 사람</h3>
-        <span className="text-meta text-muted">
-          출발지 넣은 사람 {ready}명
-        </span>
-      </div>
-      <ul className="flex flex-col">
-        {members.map((m) => (
-          <li key={m.id} className="flex min-h-12 items-center gap-3 border-b border-line last:border-b-0">
-            <Avatar name={m.nickname} size={32} />
-            <span className="flex-1 truncate text-body">{m.isMe ? `${m.nickname} (나)` : m.nickname}</span>
-            <span className={`shrink-0 text-meta ${m.ready ? "font-semibold text-[#1f7a4d]" : "text-muted"}`}>{m.ready ? "출발지 넣음" : "출발지 아직"}</span>
-          </li>
-        ))}
-        {invitees.map((i) => (
-          <li key={i.id} className="flex min-h-12 items-center gap-3 border-b border-line last:border-b-0">
-            <Avatar name={i.nickname} size={32} />
-            <span className="flex-1 truncate text-body text-ink-2">{i.nickname}</span>
-            <span className="shrink-0 text-meta text-muted">수락 기다리는 중</span>
-          </li>
-        ))}
-      </ul>
+      {!allReady && (
+        <div className="flex items-baseline justify-between">
+          <h3 className="text-[16px] font-bold tracking-[-0.01em]">함께하는 사람</h3>
+          <span className="text-meta text-muted">출발지 넣은 사람 {ready}명</span>
+        </div>
+      )}
+      {/* 모두 출발지를 넣었으면 한 줄로 접는다 — 새로 알려 줄 게 없어서 (79 디자인 검토) */}
+      {allReady ? (
+        <details className="group">
+          <summary className="flex h-11 cursor-pointer list-none items-center gap-2">
+            <span className="flex -space-x-2">
+              {members.slice(0, 4).map((m) => (
+                <span key={m.id} className="rounded-full ring-2 ring-white">
+                  <Avatar name={m.nickname} size={24} />
+                </span>
+              ))}
+            </span>
+            <span className="flex-1 text-meta text-ink-2">{members.length}명 모두 출발지를 넣었어요</span>
+            <span className="text-meta text-muted group-open:hidden">보기</span>
+          </summary>
+        <ul className="flex flex-col">
+          {members.map((m) => (
+            <li key={m.id} className="flex min-h-12 items-center gap-3 border-b border-line last:border-b-0">
+              <Avatar name={m.nickname} size={32} />
+              <span className="flex-1 truncate text-body">{m.isMe ? `${m.nickname} (나)` : m.nickname}</span>
+              <span className={`shrink-0 text-meta ${m.ready ? "font-semibold text-[#1f7a4d]" : "text-muted"}`}>{m.ready ? "출발지 넣음" : "출발지 아직"}</span>
+            </li>
+          ))}
+          {invitees.map((i) => (
+            <li key={i.id} className="flex min-h-12 items-center gap-3 border-b border-line last:border-b-0">
+              <Avatar name={i.nickname} size={32} />
+              <span className="flex-1 truncate text-body text-ink-2">{i.nickname}</span>
+              <span className="shrink-0 text-meta text-muted">수락 기다리는 중</span>
+            </li>
+          ))}
+        </ul>
+        </details>
+      ) : (
+        <ul className="flex flex-col">
+          {members.map((m) => (
+            <li key={m.id} className="flex min-h-12 items-center gap-3 border-b border-line last:border-b-0">
+              <Avatar name={m.nickname} size={32} />
+              <span className="flex-1 truncate text-body">{m.isMe ? `${m.nickname} (나)` : m.nickname}</span>
+              <span className={`shrink-0 text-meta ${m.ready ? "font-semibold text-[#1f7a4d]" : "text-muted"}`}>{m.ready ? "출발지 넣음" : "출발지 아직"}</span>
+            </li>
+          ))}
+          {invitees.map((i) => (
+            <li key={i.id} className="flex min-h-12 items-center gap-3 border-b border-line last:border-b-0">
+              <Avatar name={i.nickname} size={32} />
+              <span className="flex-1 truncate text-body text-ink-2">{i.nickname}</span>
+              <span className="shrink-0 text-meta text-muted">수락 기다리는 중</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -108,10 +142,11 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
   );
 
   return (
-    <div className="flex flex-col gap-7 px-5 pb-10">
+    // 추천이 나오면 아래에 제안하기가 고정되니 그만큼 비운다 (79)
+    <div className={`flex flex-col gap-7 px-5 ${ready && plans.length > 0 ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : "pb-10"}`}>
       <MeetupRefresher waiting={!ready && status.status === "open"} />
       <section className="flex flex-col gap-1">
-        <h2 className="text-title font-bold tracking-tight">{title}</h2>
+        <h2 className="text-title font-bold tracking-[-0.02em]">{title}</h2>
         <span className="text-meta text-muted">{meetWhen(status.startsAt, status.endsAt)}</span>
         {others.length === 0 && status.invitees.length === 0 && <span className="text-meta text-muted">함께할 분을 기다리는 중이에요</span>}
       </section>
