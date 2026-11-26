@@ -80,9 +80,10 @@ export async function saveFoundPlace(input: z.input<typeof SaveInput>): Promise<
   const { sourceUrl, ...hit } = parsed.data;
   const opened = await openKakaoPlace(hit);
   if (!opened.placeId) return { error: opened.error ?? "저장하지 못했어요." };
+  // 원문 링크는 나만 보는 메모 — 기본 공개 범위(87)를 따르지 않게 메모만 나만으로
   const { error } = await supabase
     .from("user_places")
-    .upsert({ user_id: me, place_id: opened.placeId, tier: "want_to_go", note: sourceUrl ? `출처 ${sourceUrl}` : "" }, { onConflict: "user_id,place_id", ignoreDuplicates: true });
+    .upsert({ user_id: me, place_id: opened.placeId, tier: "want_to_go", note: sourceUrl ? `출처 ${sourceUrl}` : "", note_visibility: "private" }, { onConflict: "user_id,place_id", ignoreDuplicates: true });
   if (error) return { error: "저장하지 못했어요. 다시 시도해 주세요." };
   const row = await supabase.from("user_places").select("tier").eq("user_id", me).eq("place_id", opened.placeId).maybeSingle();
   revalidatePath("/map");

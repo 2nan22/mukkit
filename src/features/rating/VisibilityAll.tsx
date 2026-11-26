@@ -32,9 +32,9 @@ export function VisibilityAll({ counts }: { counts: Record<RatingVisibility, num
   }
 
   return (
-    <div className="flex flex-col gap-4 px-5 pt-2 pb-8">
+    <div className="flex flex-col gap-4 border-t-8 border-surface px-5 pt-6 pb-8">
       <fieldset className="flex flex-col gap-1.5">
-        <legend className="pb-2 text-meta text-muted">평가한 {total}곳</legend>
+        <legend className="pb-3 text-section font-bold tracking-[-0.02em]">지금까지 평가한 {total}곳</legend>
         {OPTIONS.map((o) => (
           <label
             key={o.v}
@@ -49,7 +49,10 @@ export function VisibilityAll({ counts }: { counts: Record<RatingVisibility, num
           </label>
         ))}
       </fieldset>
-      <p className="text-caption leading-normal text-muted">곳마다 따로 정한 공개 범위도 모두 이 값으로 바뀌어요</p>
+      <p className="flex flex-col text-caption leading-normal text-muted">
+        <span>곳마다 따로 정한 공개 범위도 모두 바뀌어요</span>
+        <span>기본 공개 범위도 같이 바뀌어요</span>
+      </p>
       {message && (
         <p role="status" className="text-meta text-ink-2">
           {message}
