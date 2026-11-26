@@ -75,14 +75,14 @@ export async function getMyMeetups(supabase: SupabaseClient, me: string): Promis
   }));
 }
 
-type AreaRow = { name: string; lat: number; lng: number; people: AreaPerson[]; max_minutes: number; avg_minutes: number; recent: number };
+type AreaRow = { name: string; lat: number; lng: number; people: AreaPerson[]; max_minutes: number; avg_minutes: number; recent: number; station_name: string | null };
 
 // 위치를 넣은 참여자가 2명 이상일 때 — 지역 3곳(막차 고려) · 지역마다 가게
 export async function planMeetup(supabase: SupabaseClient, me: string, status: MeetupStatus): Promise<AreaPlan[]> {
   const { data, error } = await supabase.rpc("meetup_area_scores", { p_meetup: status.id, p_limit: 10 });
   if (error) throw new Error(`약속 지역 계산 실패: ${error.code}`);
   const areas: AreaScore[] = ((data ?? []) as AreaRow[]).map((r) => ({
-    name: r.name, lat: r.lat, lng: r.lng, people: r.people, maxMinutes: r.max_minutes, avgMinutes: r.avg_minutes, recent: r.recent,
+    name: r.name, lat: r.lat, lng: r.lng, people: r.people, maxMinutes: r.max_minutes, avgMinutes: r.avg_minutes, recent: r.recent, station: r.station_name,
   }));
   const ranked = rankAreas(areas, status.endsAt ? new Date(status.endsAt) : null, 3);
   const { pref } = await getMyTasteBasis(supabase, me);
@@ -93,4 +93,12 @@ export async function planMeetup(supabase: SupabaseClient, me: string, status: M
       return { ...a, shops: planAreaShops(candidates, a, status.purpose, pref, companions) };
     }),
   );
+}
+
+// 만날 곳 (86) — 참여자 모두에게 보임. 없으면 null (화면이 추천 지역 대표 역을 권함)
+export type MeetPoint = { label: string; lat: number; lng: number; area: string | null };
+export async function getMeetPoint(supabase: SupabaseClient, meetupId: string): Promise<MeetPoint | null> {
+  const { data } = await supabase.from("meetups").select("meet_label, meet_lat, meet_lng, meet_area").eq("id", meetupId).maybeSingle();
+  const r = data as { meet_label: string | null; meet_lat: number | null; meet_lng: number | null; meet_area: string | null } | null;
+  return r?.meet_label && r.meet_lat !== null && r.meet_lng !== null ? { label: r.meet_label, lat: r.meet_lat, lng: r.meet_lng, area: r.meet_area } : null;
 }

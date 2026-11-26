@@ -211,3 +211,28 @@ async function saveWalkRoute(meetupId: string, key: string): Promise<void> {
   if (!route) return;
   await admin.rpc("save_meetup_course_route", { p_meetup: meetupId, p_key: key, p_legs: route.legs, p_path: route.path });
 }
+
+const MeetPointInput = z.object({
+  meetupId: z.uuid(),
+  point: z
+    .object({ label: z.string().trim().min(1).max(40), lat: z.number().min(33).max(39), lng: z.number().min(124).max(132), area: z.string().max(40).nullable() })
+    .nullable(),
+});
+
+// 만날 곳 정하기 · 지우기 (86) — DB 함수가 참여자 · 진행 중 · 실제 지역 이름을 확인
+export async function setMeetPoint(input: z.input<typeof MeetPointInput>): Promise<Result> {
+  const parsed = MeetPointInput.safeParse(input);
+  if (!parsed.success) return { error: FAILED };
+  const { supabase } = await requireUser();
+  const { meetupId, point } = parsed.data;
+  const { error } = await supabase.rpc("set_meet_point", {
+    p_meetup: meetupId,
+    p_label: point?.label ?? null,
+    p_lat: point?.lat ?? null,
+    p_lng: point?.lng ?? null,
+    p_area: point?.area ?? null,
+  });
+  if (error) return { error: error.code === "P0002" ? "끝난 약속이에요" : FAILED };
+  revalidatePath(`/meet/${meetupId}`);
+  return {};
+}

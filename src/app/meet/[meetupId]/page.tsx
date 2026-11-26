@@ -10,7 +10,9 @@ import { meetWhen } from "@/domain/meetTime";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { CloseMeetup } from "@/features/meetup/CloseMeetup";
 import { InviteAnswer } from "@/features/meetup/InviteAnswer";
-import { getMeetupStatus, getMyPoints, planMeetup, type MeetupMember } from "@/features/meetup/meetup";
+import { getMeetPoint, getMeetupStatus, getMyPoints, planMeetup, type MeetupMember } from "@/features/meetup/meetup";
+import { refreshMeetupTransit } from "@/features/meetup/transit";
+import { after } from "next/server";
 import { MeetupRefresher } from "@/features/meetup/MeetupRefresher";
 import { MeetupResults } from "@/features/meetup/MeetupResults";
 import { CourseCard } from "@/features/meetup/CourseCard";
@@ -123,7 +125,9 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
   const readyCount = status.members.filter((m) => m.ready).length;
   const others = status.members.filter((m) => !m.isMe);
   const ready = status.meReady && readyCount >= 2;
-  const [plans, course] = await Promise.all([ready ? planMeetup(supabase, me, status) : Promise.resolve([]), getCourse(supabase, meetupId)]);
+  const [plans, course, meet] = await Promise.all([ready ? planMeetup(supabase, me, status) : Promise.resolve([]), getCourse(supabase, meetupId), getMeetPoint(supabase, meetupId)]);
+  // 아직 안 잰 대중교통 구간만 화면을 그린 뒤 잰다 — 하루 상한 안에서 (86)
+  if (ready && status.status === "open" && plans.some((p) => p.people.some((x) => !x.exact))) after(() => refreshMeetupTransit(meetupId, plans.map((p) => p.name)).catch(() => 0));
   const title = others.length === 0 ? `${purpose} 약속` : others.length === 1 ? `${others[0].nickname}님과 ${purpose}` : `${others.length + 1}명 ${purpose}`;
   const canInvite = status.isHost && status.status === "open" && status.members.length < status.maxMembers;
 
@@ -187,11 +191,11 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
       {(status.members.length > 1 || status.invitees.length > 0) && <Members members={status.members} invitees={status.invitees} />}
 
       {/* 함께 정한 코스 — 담은 곳이 있으면 맨 위 (84) */}
-      {status.isMember && <CourseCard meetupId={status.id} course={course} editable={status.status === "open"} />}
+      {status.isMember && <CourseCard meetupId={status.id} course={course} editable={status.status === "open"} meet={meet} />}
 
       {ready ? (
         <>
-          <MeetupResults plans={plans} meetupUrl={`${origin}/meet/${status.id}`} waitingCount={status.members.length - readyCount} endsAt={status.endsAt} meetupId={status.id} course={course} />
+          <MeetupResults plans={plans} meetupUrl={`${origin}/meet/${status.id}`} waitingCount={status.members.length - readyCount} endsAt={status.endsAt} meetupId={status.id} course={course} meet={meet} />
           {myPoints}
           {invite}
         </>
