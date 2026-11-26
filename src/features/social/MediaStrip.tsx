@@ -1,35 +1,46 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ZoomableImage } from "./ZoomableImage";
 
 type Media = { url: string; kind: "image" | "video" };
 
 // 평가 사진 줄 — 사진을 누르면 화면 가득 크게 (75). 옆으로 넘기기 · 몇 번째 · 닫기 · 뒤로가기로 닫힘
-export function MediaStrip({ media }: { media: Media[] }) {
+// 한 장씩 넘기는 4:5 (인스타그램) · overlay 는 사진 아래쪽에 얹는 가게 이름 · 등급 (81 피드 B안)
+export function MediaStrip({ media, overlay }: { media: Media[]; overlay?: ReactNode }) {
   const [openAt, setOpenAt] = useState<number | null>(null);
+  const [at, setAt] = useState(0);
   const images = media.filter((m) => m.kind === "image");
-  // 한 장이면 꽉 채운 정사각형, 여러 장이면 다음 장이 살짝 보이게 78% · 4:5 (80 디자인 검토 — 한 장일 때 오른쪽이 비어 보임)
-  const size = media.length === 1 ? "aspect-square w-full" : "aspect-[4/5] w-[78%]";
   return (
     <>
-      <div className="relative -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-1.5 overflow-x-auto px-5">
-        {media.map((m, i) =>
-          m.kind === "image" ? (
-            <button key={i} type="button" aria-label="사진 크게 보기" onClick={() => setOpenAt(images.indexOf(m))} className={`relative shrink-0 snap-start ${size}`}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다 */}
-              <img src={m.url} alt="" className="size-full rounded-btn-l object-cover" />
-              {/* 여러 장이면 몇 번째인지 — 인스타그램처럼 오른쪽 위 (77) */}
-              {media.length > 1 && <Count n={i + 1} total={media.length} />}
-            </button>
-          ) : (
-            <div key={i} className={`relative shrink-0 snap-start ${size}`}>
-              <video src={m.url} controls playsInline preload="metadata" className="size-full rounded-btn-l bg-black object-cover" />
-              {media.length > 1 && <Count n={i + 1} total={media.length} />}
-            </div>
-          ),
-        )}
+      <div className="relative isolate overflow-hidden rounded-btn-l">
+        <div
+          onScroll={(e) => setAt(Math.min(media.length - 1, Math.max(0, Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))))}
+          className="relative flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none]"
+        >
+          {media.map((m, i) =>
+            m.kind === "image" ? (
+              <button
+                key={i}
+                type="button"
+                aria-label={media.length > 1 ? `사진 ${i + 1}/${media.length} 크게 보기` : "사진 크게 보기"}
+                onClick={() => setOpenAt(images.indexOf(m))}
+                className="aspect-[4/5] w-full shrink-0 snap-center focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다 */}
+                <img src={m.url} alt="" className="size-full bg-surface object-cover" />
+              </button>
+            ) : (
+              <div key={i} className="aspect-[4/5] w-full shrink-0 snap-center">
+                <video src={m.url} controls playsInline preload="metadata" className="size-full bg-black object-cover" />
+              </div>
+            ),
+          )}
+        </div>
+        {/* 여러 장이면 몇 번째인지 — 인스타그램처럼 오른쪽 위 (77) */}
+        {media.length > 1 && <Count n={at + 1} total={media.length} />}
+        {overlay}
       </div>
       {openAt !== null && <PhotoViewer urls={images.map((m) => m.url)} start={openAt} onClose={() => setOpenAt(null)} />}
     </>
