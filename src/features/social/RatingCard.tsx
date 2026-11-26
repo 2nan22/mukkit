@@ -11,6 +11,7 @@ import type { Reaction } from "@/features/reactions/reactions";
 import { SafetyMenu } from "@/features/safety/SafetyMenu";
 import type { SharedRating } from "./social";
 import { MetaLine } from "@/components/ui/MetaLine";
+import { TapToPlace } from "./TapToPlace";
 
 // 올해가 아니면 연도까지 — 가져온 평가는 지도에 저장한 날이라 몇 해 전일 수 있다 (68-9)
 export function dateLabel(iso: string, now = new Date()): string {
@@ -37,7 +38,7 @@ export function RatingCard({
 }) {
   const menu = viewerId && viewerId !== rating.ownerId ? <SafetyMenu userId={rating.ownerId} nickname={rating.ownerNickname} placeId={rating.placeId} /> : null;
   return (
-    <article className="flex flex-col gap-2.5 border-b border-line pt-4 pb-2">
+    <TapToPlace placeId={rating.placeId} className="-mx-5 flex flex-col gap-2.5 border-b border-line px-5 pt-4 pb-2">
       {showOwner && (
         <div className="-my-2 flex items-center justify-between">
           <Link href={`/u/${rating.ownerId}`} className="flex items-center gap-2">
@@ -76,6 +77,6 @@ export function RatingCard({
       <AteMenus menus={rating.menus} />
       <Companions people={rating.companions} />
       {reaction && <ReactionBar ownerId={rating.ownerId} placeId={rating.placeId} reaction={reaction} mine={viewerId === rating.ownerId} showComments={showComments} />}
-    </article>
+    </TapToPlace>
   );
 }
