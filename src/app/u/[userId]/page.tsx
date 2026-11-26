@@ -96,7 +96,18 @@ async function Profile({ params, searchParams }: { params: Promise<{ userId: str
               <span className="truncate text-section font-bold">{person.nickname}</span>
               {me && me !== person.id && <SafetyMenu userId={person.id} nickname={person.nickname} />}
             </span>
-            <MetaLine items={[`평가 ${ratedTotal}곳`, `팔로워 ${counts.followers}`, `팔로잉 ${counts.following}`]} />
+            {/* 숫자를 누르면 팔로워 · 팔로잉 목록 (74) */}
+            <MetaLine
+              items={[
+              `평가 ${ratedTotal}곳`,
+              <Link key="followers" href={`/u/${person.id}/follows`} className="py-2">
+                팔로워 <b className="font-semibold text-ink">{counts.followers}</b>
+              </Link>,
+              <Link key="following" href={`/u/${person.id}/follows?tab=following`} className="py-2">
+                팔로잉 <b className="font-semibold text-ink">{counts.following}</b>
+              </Link>,
+              ]}
+            />
           </div>
         </div>
         {bio && <p className="text-body leading-normal text-ink-2">{bio}</p>}
