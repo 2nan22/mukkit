@@ -181,7 +181,7 @@ export async function setDefaultVisibility(visibility: string): Promise<{ error?
   const { supabase } = await requireUser();
   const { error } = await supabase.rpc("set_default_visibility", { p_vis: parsed.data });
   if (error) return { error: SAVE_FAILED };
-  revalidatePath("/", "layout");
+  // 다시 그리지 않는다 — 설정 화면 칸이 다시 만들어지며 '바꿨어요' 안내가 사라짐 (평가 · 가져오기 화면은 열 때마다 읽음)
   return {};
 }
 
