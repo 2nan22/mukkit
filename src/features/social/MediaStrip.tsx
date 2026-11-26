@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { ZoomableImage } from "./ZoomableImage";
 
 type Media = { url: string; kind: "image" | "video" };
 
@@ -31,6 +32,8 @@ export function MediaStrip({ media }: { media: Media[] }) {
 function PhotoViewer({ urls, start, onClose }: { urls: string[]; start: number; onClose: () => void }) {
   const strip = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(start);
+  // 확대 중엔 옆으로 넘기기를 막는다 — 한 손가락 끌기는 사진 옮기기 (75-3)
+  const [zoomed, setZoomed] = useState(false);
   const dialog = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
   useEffect(() => {
@@ -87,12 +90,11 @@ function PhotoViewer({ urls, start, onClose }: { urls: string[]; start: number; 
       <div
         ref={strip}
         onScroll={(e) => setIndex(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
-        className="flex min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto overscroll-contain"
+        className={`flex min-h-0 flex-1 snap-x snap-mandatory overscroll-contain ${zoomed ? "overflow-hidden" : "overflow-x-auto"}`}
       >
         {urls.map((u, i) => (
-          <div key={i} className="flex h-full w-full shrink-0 snap-center items-center justify-center pb-[env(safe-area-inset-bottom)]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- 서명 주소라 next/image 최적화를 쓰지 않는다 */}
-            <img src={u} alt={`사진 ${i + 1}`} className="max-h-full max-w-full object-contain" />
+          <div key={i} className="h-full w-full shrink-0 snap-center pb-[env(safe-area-inset-bottom)]">
+            <ZoomableImage src={u} alt={`사진 ${i + 1}`} active={i === index} onZoomed={setZoomed} />
           </div>
         ))}
       </div>
