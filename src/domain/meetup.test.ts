@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Candidate } from "./eatScore";
-import { areaReason, clock, endMinutesKst, lastDepartureMinutes, nightClock, planAreaShops, purposeFit, rankAreas, type AreaPerson, type AreaScore } from "./meetup";
+import { areaReason, clock, lastTrainLine, timeHeadline, type RankedPerson, endMinutesKst, lastDepartureMinutes, nightClock, planAreaShops, purposeFit, rankAreas, type AreaPerson, type AreaScore } from "./meetup";
 
 const area = { lat: 37.5, lng: 127.0 };
 function cand(id: string, cuisine: Candidate["cuisine"], extra: Partial<Candidate> = {}): Candidate {
@@ -52,6 +52,13 @@ describe("purposeFit · areaReason", () => {
     expect(areaReason([person("a", 28), person("b", 30), person("c", 33)])).toBe("3명 모두 30분쯤");
     expect(areaReason([person("a", 15), person("b", 20), person("c", 50)])).toBe("가장 먼 c님 50분쯤, 평균 30분");
   });
+  it("시간 카드 제목: 비슷하면 '모두', 둘이면 누가 몇 분 더, 여럿이면 가장 먼 사람 (83)", () => {
+    expect(timeHeadline([person("나", 28, null, true), person("단골", 33)])).toBe("모두 30분쯤 걸려요");
+    expect(timeHeadline([person("단골", 45), person("나", 60, null, true)])).toBe("내가 15분 더 걸려요");
+    expect(timeHeadline([person("하은", 60), person("나", 45, null, true)])).toBe("하은님이 15분 더 걸려요");
+    expect(timeHeadline([person("a", 15), person("b", 20), person("c", 50)])).toBe("가장 먼 c님도 50분쯤이에요");
+    expect(timeHeadline([person("a", 15), person("나", 50, null, true), person("c", 20)])).toBe("내가 가장 멀어요, 50분쯤");
+  });
   it("막차 시각을 밤 표기로", () => {
     expect(nightClock("23:50")).toBe("밤 11:50");
     expect(nightClock("00:20")).toBe("밤 12:20");
@@ -86,5 +93,32 @@ describe("막차 예상 · rankAreas", () => {
     const a = areaOf("a", [person("x", 40), person("y", 10)]);
     const b = areaOf("b", [person("x", 25), person("y", 25)]);
     expect(rankAreas([a, b], null)[0].name).toBe("b");
+  });
+});
+
+describe("lastTrainLine (83)", () => {
+  const rp = (id: string, last: string | null, late = false, isMe = false): RankedPerson => ({ id, nickname: id, isMe, minutes: 30, return: last ? 40 : null, last, late });
+  const night = new Date("2026-11-26T14:59:00Z"); // 밤 11:59
+  it("나만 끊기면 '내 막차' + 근거", () => {
+    expect(lastTrainLine([rp("나", "22:50", true, true), rp("하은", "00:20")], night)).toEqual({
+      late: true, title: "약속이 끝나기 전에 내 막차가 끊겨요", detail: "내 막차 밤 10:50, 약속 밤 11:59까지", askMine: false,
+    });
+  });
+  it("여럿이면 이름을 잇고 근거는 가장 이른 막차, 모두면 '모두'", () => {
+    const r = lastTrainLine([rp("나", "23:20", true, true), rp("하은", "22:50", true), rp("민수", "00:20")], night)!;
+    expect(r.title).toBe("약속이 끝나기 전에 나, 하은님 막차가 끊겨요");
+    expect(r.detail).toBe("하은님 막차 밤 10:50, 약속 밤 11:59까지");
+    expect(lastTrainLine([rp("나", "23:20", true, true), rp("하은", "22:50", true)], night)!.title).toBe("약속이 끝나기 전에 모두 막차가 끊겨요");
+  });
+  it("안 끊기면 가장 이른 막차 정보, 자정 넘긴 막차가 더 늦음", () => {
+    expect(lastTrainLine([rp("나", "00:20", false, true), rp("하은", "23:50")], night)).toEqual({ late: false, title: "밤 11:50에는 나서야 해요", detail: "하은님 기준", askMine: false });
+  });
+  it("내 귀가지가 없으면 넣기, 아무도 없으면 넣기만", () => {
+    expect(lastTrainLine([rp("나", null, false, true), rp("하은", "23:50")], null)!.askMine).toBe(true);
+    expect(lastTrainLine([rp("나", null, false, true), rp("하은", null)], null)).toEqual({ late: false, title: null, detail: null, askMine: true });
+    expect(lastTrainLine([rp("나", "23:50", false, true), rp("하은", null)], null)!.askMine).toBe(false);
+  });
+  it("낮 약속에는 막차 줄 없음", () => {
+    expect(lastTrainLine([rp("나", "23:50", false, true)], new Date("2026-11-26T05:00:00Z"))).toBeNull();
   });
 });

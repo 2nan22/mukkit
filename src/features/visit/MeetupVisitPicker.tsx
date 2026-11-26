@@ -14,11 +14,26 @@ type Person = { id: string; nickname: string };
 type Entry = MeetupVisitEntry & { key: string; name: string };
 
 // 끝낸 약속 — 간 곳을 1차 · 2차로 여러 곳, 가게마다 그 자리에 있던 사람을 골라 한 번에 기록
-export function MeetupVisitPicker({ meetupId, people, startIndex, cancelHref }: { meetupId: string; people: Person[]; startIndex: number; cancelHref?: string }) {
+// initial: 약속 코스대로 미리 채울 곳 (85) — 함께 있던 사람은 모두로 골라 둠, 빼거나 더하면 됨
+export function MeetupVisitPicker({
+  meetupId,
+  people,
+  startIndex,
+  cancelHref,
+  initial = [],
+}: {
+  meetupId: string;
+  people: Person[];
+  startIndex: number;
+  cancelHref?: string;
+  initial?: { placeId: string; name: string }[];
+}) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<SearchResult | null>(null);
   const [searching, startSearch] = useTransition();
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const [entries, setEntries] = useState<Entry[]>(() =>
+    initial.slice(0, MAX_PLACES).map((p) => ({ key: p.placeId, name: p.name, placeId: p.placeId, kakao: null, userIds: people.map((x) => x.id) })),
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -109,7 +124,7 @@ export function MeetupVisitPicker({ meetupId, people, startIndex, cancelHref }: 
         <div className="flex flex-col gap-2">
           <input
             type="search"
-            autoFocus={entries.length === 0}
+            autoFocus={entries.length === 0 && initial.length === 0}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={entries.length === 0 ? "가게 이름" : `${startIndex + entries.length + 1}차 가게 이름`}

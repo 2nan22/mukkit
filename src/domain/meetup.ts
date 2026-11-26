@@ -60,15 +60,38 @@ export function planAreaShops(
 }
 
 // 지역 이유 — 참여자 예상 이동 시간 (5분 단위)
-export type AreaPerson = { id: string; nickname: string; isMe: boolean; minutes: number; return: number | null };
+// exact: 모든 구간을 대중교통(또는 가까워 걸어서)으로 잼 — 아니면 직선 어림 (86)
+export type AreaPerson = { id: string; nickname: string; isMe: boolean; minutes: number; return: number | null; exact?: boolean };
 const r5 = (m: number) => Math.round(m / 5) * 5;
+
+// 고르게 걸리는지 — 차이 10분 이하. 제목 · 공유 문구 · 막대를 이 한 곳 기준으로 (83, 기준이 갈라졌던 일)
+export function isEven(people: AreaPerson[]): boolean {
+  const mins = people.map((p) => p.minutes);
+  return Math.max(...mins) - Math.min(...mins) <= 10;
+}
+
+// 약속 화면 시간 카드 제목 — 결론만, 숫자는 막대가 맡는다 (83 디자인 검토, 토스 정산 · 위밋플레이스)
+export function timeHeadline(people: AreaPerson[]): string {
+  if (people.length === 0) return "";
+  const mins = people.map((p) => p.minutes);
+  const avg = mins.reduce((a, b) => a + b, 0) / mins.length;
+  if (isEven(people)) return `모두 ${r5(avg)}분쯤 걸려요`;
+  const far = people.reduce((a, b) => (b.minutes > a.minutes ? b : a));
+  if (people.length === 2) {
+    const near = people.find((p) => p !== far)!;
+    // 막대 숫자(5분 단위)끼리 뺀 값 — 제목과 막대가 어긋나지 않게
+    const diff = r5(far.minutes) - r5(near.minutes);
+    return far.isMe ? `내가 ${diff}분 더 걸려요` : `${far.nickname}님이 ${diff}분 더 걸려요`;
+  }
+  return far.isMe ? `내가 가장 멀어요, ${r5(far.minutes)}분쯤` : `가장 먼 ${far.nickname}님도 ${r5(far.minutes)}분쯤이에요`;
+}
 
 export function areaReason(people: AreaPerson[]): string {
   if (people.length === 0) return "";
   const mins = people.map((p) => p.minutes);
   const max = Math.max(...mins);
   const avg = mins.reduce((a, b) => a + b, 0) / mins.length;
-  if (max - Math.min(...mins) <= 10) return `${people.length === 2 ? "두 사람" : `${people.length}명`} 모두 ${r5(avg)}분쯤`;
+  if (isEven(people)) return `${people.length === 2 ? "두 사람" : `${people.length}명`} 모두 ${r5(avg)}분쯤`;
   const name = (p: AreaPerson) => (p.isMe ? "나" : `${p.nickname}님`);
   if (people.length === 2) {
     const [a, b] = [...people].sort((x, y) => Number(y.isMe) - Number(x.isMe));
@@ -109,7 +132,7 @@ export function endMinutesKst(endsAt: Date): number {
   return m < 4 * 60 ? m + 24 * 60 : m;
 }
 
-export type AreaScore = { name: string; lat: number; lng: number; people: AreaPerson[]; maxMinutes: number; avgMinutes: number; recent: number };
+export type AreaScore = { name: string; lat: number; lng: number; people: AreaPerson[]; maxMinutes: number; avgMinutes: number; recent: number; station?: string | null };
 export type RankedPerson = AreaPerson & { last: string | null; late: boolean };
 export type RankedArea = Omit<AreaScore, "people"> & { people: RankedPerson[]; lateCount: number };
 
@@ -126,4 +149,37 @@ export function rankAreas(areas: AreaScore[], endsAt: Date | null, limit = 3): R
     })
     .sort((a, b) => a.lateCount - b.lateCount || a.maxMinutes - b.maxMinutes || a.avgMinutes - b.avgMinutes || b.recent - a.recent)
     .slice(0, limit);
+}
+
+// '23:50' · '00:20' 정렬용 — 새벽 0 ~ 4시는 자정 넘긴 막차로 더 늦게
+export function lastOrder(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return (h < 4 ? h + 24 : h) * 60 + m;
+}
+
+// 이보다 일찍 끝나는 약속(점심 · 낮)에는 막차 줄을 띄우지 않는다 — 가장 이른 막차 어림(22:50)보다 두 시간 남짓 앞
+const NIGHT_FROM = 21 * 60;
+
+// 약속 화면 시간 카드의 막차 줄 (83 디자인 검토) — 끊기면 빨강 한 줄 + 근거, 아니면 가장 이른 막차 정보, 내 귀가지가 없으면 넣기로
+export type LastTrainLine = { late: boolean; title: string | null; detail: string | null; askMine: boolean };
+export function lastTrainLine(people: RankedPerson[], endsAt: Date | null): LastTrainLine | null {
+  const byLast = (list: RankedPerson[]) => [...list].filter((p) => p.last).sort((a, b) => lastOrder(a.last!) - lastOrder(b.last!));
+  const own = (p: RankedPerson) => (p.isMe ? "내" : `${p.nickname}님`);
+  const askMine = people.some((p) => p.isMe && !p.last);
+  const late = byLast(people.filter((p) => p.late));
+  if (late.length > 0) {
+    const who =
+      late.length === people.length ? "모두" : late.length === 1 ? own(late[0]) : late.length <= 3 ? [...late].sort((a, b) => Number(b.isMe) - Number(a.isMe)).map((p) => (p.isMe ? "나" : `${p.nickname}님`)).join(", ") : `${own(late[0])} 외 ${late.length - 1}명`;
+    const end = endsAt ? `, 약속 ${nightClock(clock(endMinutesKst(endsAt)))}까지` : "";
+    return { late: true, title: `약속이 끝나기 전에 ${who} 막차가 끊겨요`, detail: `${own(late[0])} 막차 ${nightClock(late[0].last!)}${end}`, askMine };
+  }
+  if (endsAt && endMinutesKst(endsAt) < NIGHT_FROM) return null;
+  const first = byLast(people)[0];
+  if (!first && !askMine) return null;
+  return {
+    late: false,
+    title: first ? `${nightClock(first.last!)}에는 나서야 해요` : null,
+    detail: first ? (first.isMe ? "내 기준" : `${first.nickname}님 기준`) : null,
+    askMine,
+  };
 }

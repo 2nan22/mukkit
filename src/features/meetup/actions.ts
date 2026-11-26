@@ -13,6 +13,9 @@ import { searchKakaoKeyword } from "@/features/search/kakaoLocal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getBlockedIds } from "@/features/safety/safety";
 import { notifyMeetup } from "./notify";
+import { fetchWalkRoute } from "./walkRoute";
+import { COURSE_MAX, courseKey } from "@/domain/course";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type Result = { error?: string };
 const FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
@@ -168,4 +171,68 @@ async function requireUser() {
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
   return { supabase, me };
+}
+
+const CourseInput = z.object({ meetupId: z.uuid(), placeIds: z.array(z.uuid()).max(COURSE_MAX), expected: z.string().max(200).nullable() });
+
+// 코스를 통째로 바꾼다 (84) — 담기 · 빼기 · 순서 바꾸기 모두. expected: 앱이 보던 순서(그 사이 남이 바꿨으면 거절)
+// 실제로 바뀌었을 때만 걷는 길을 한 번 받아 저장
+export async function setMeetupCourse(input: z.input<typeof CourseInput>): Promise<Result & { conflict?: boolean }> {
+  const parsed = CourseInput.safeParse(input);
+  if (!parsed.success) return { error: FAILED };
+  const { supabase } = await requireUser();
+  const { meetupId, placeIds, expected } = parsed.data;
+  const { data: changed, error } = await supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: placeIds, p_expected: expected });
+  if (error) {
+    if (error.code === "P0001") return { error: `코스는 ${COURSE_MAX}곳까지 담을 수 있어요` };
+    if (error.code === "P0002") return { error: "끝난 약속이에요" };
+    if (error.code === "P0003") {
+      revalidatePath(`/meet/${meetupId}`);
+      revalidatePath(`/meet/${meetupId}/course`);
+      return { error: "다른 분이 코스를 바꿨어요. 새로 불러왔어요.", conflict: true };
+    }
+    return { error: FAILED };
+  }
+  if (changed && placeIds.length >= 2) await saveWalkRoute(meetupId, courseKey(placeIds));
+  revalidatePath(`/meet/${meetupId}`);
+  revalidatePath(`/meet/${meetupId}/course`);
+  return {};
+}
+
+// 길은 서버가 받은 것만 서비스 키로 저장 — 저장 함수가 그 사이 코스가 또 바뀌었으면 쓰지 않는다. 받기 실패면 저장 안 함(화면은 직선 어림)
+async function saveWalkRoute(meetupId: string, key: string): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  if (!admin) return;
+  const { data } = await admin.from("meetup_course").select("place_id, places(lat, lng)").eq("meetup_id", meetupId).order("position");
+  const rows = (data ?? []) as unknown as { place_id: string; places: { lat: number; lng: number } | null }[];
+  const stops = rows.flatMap((r) => (r.places ? [{ id: r.place_id, lat: r.places.lat, lng: r.places.lng }] : []));
+  if (stops.length < 2 || courseKey(stops.map((s) => s.id)) !== key) return;
+  const route = await fetchWalkRoute(stops);
+  if (!route) return;
+  await admin.rpc("save_meetup_course_route", { p_meetup: meetupId, p_key: key, p_legs: route.legs, p_path: route.path });
+}
+
+const MeetPointInput = z.object({
+  meetupId: z.uuid(),
+  point: z
+    .object({ label: z.string().trim().min(1).max(40), lat: z.number().min(33).max(39), lng: z.number().min(124).max(132), area: z.string().max(40).nullable() })
+    .nullable(),
+});
+
+// 만날 곳 정하기 · 지우기 (86) — DB 함수가 참여자 · 진행 중 · 실제 지역 이름을 확인
+export async function setMeetPoint(input: z.input<typeof MeetPointInput>): Promise<Result> {
+  const parsed = MeetPointInput.safeParse(input);
+  if (!parsed.success) return { error: FAILED };
+  const { supabase } = await requireUser();
+  const { meetupId, point } = parsed.data;
+  const { error } = await supabase.rpc("set_meet_point", {
+    p_meetup: meetupId,
+    p_label: point?.label ?? null,
+    p_lat: point?.lat ?? null,
+    p_lng: point?.lng ?? null,
+    p_area: point?.area ?? null,
+  });
+  if (error) return { error: error.code === "P0002" ? "끝난 약속이에요" : FAILED };
+  revalidatePath(`/meet/${meetupId}`);
+  return {};
 }

@@ -10,9 +10,13 @@ import { meetWhen } from "@/domain/meetTime";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { CloseMeetup } from "@/features/meetup/CloseMeetup";
 import { InviteAnswer } from "@/features/meetup/InviteAnswer";
-import { getMeetupStatus, getMyPoints, planMeetup, type MeetupMember } from "@/features/meetup/meetup";
+import { getMeetPoint, getMeetupStatus, getMyPoints, planMeetup, type MeetupMember } from "@/features/meetup/meetup";
+import { refreshMeetupTransit } from "@/features/meetup/transit";
+import { after } from "next/server";
 import { MeetupRefresher } from "@/features/meetup/MeetupRefresher";
 import { MeetupResults } from "@/features/meetup/MeetupResults";
+import { CourseCard } from "@/features/meetup/CourseCard";
+import { getCourse } from "@/features/meetup/course";
 import { PointEditor } from "@/features/meetup/PointEditor";
 import { PushToggle } from "@/features/push/PushToggle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -121,7 +125,9 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
   const readyCount = status.members.filter((m) => m.ready).length;
   const others = status.members.filter((m) => !m.isMe);
   const ready = status.meReady && readyCount >= 2;
-  const plans = ready ? await planMeetup(supabase, me, status) : [];
+  const [plans, course, meet] = await Promise.all([ready ? planMeetup(supabase, me, status) : Promise.resolve([]), getCourse(supabase, meetupId), getMeetPoint(supabase, meetupId)]);
+  // 아직 안 잰 대중교통 구간만 화면을 그린 뒤 잰다 — 하루 상한 안에서 (86)
+  if (ready && status.status === "open" && plans.some((p) => p.people.some((x) => !x.exact))) after(() => refreshMeetupTransit(meetupId, plans.map((p) => p.name)).catch(() => 0));
   const title = others.length === 0 ? `${purpose} 약속` : others.length === 1 ? `${others[0].nickname}님과 ${purpose}` : `${others.length + 1}명 ${purpose}`;
   const canInvite = status.isHost && status.status === "open" && status.members.length < status.maxMembers;
 
@@ -139,6 +145,25 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
         <path d="M9 6l6 6-6 6" />
       </svg>
     </Link>
+  );
+
+  // 내 위치 — 출발 · 귀가 한 줄씩(한 줄에 둘이면 귀가가 잘림, 83) · 시간 카드 '귀가지 넣기'가 id 로 펼친다
+  const myPoints = (
+    <details id="my-points" className="group scroll-mt-20 rounded-[16px] bg-surface">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-3 px-4 py-3 text-meta">
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="text-caption text-muted">내 위치</span>
+          <dl className="grid min-w-0 grid-cols-[auto_1fr] gap-x-3 gap-y-1 group-open:hidden">
+            <dt className="text-muted">출발</dt>
+            <dd className="truncate text-ink-2">{label("origin") ?? <span className="text-subtle">안 넣었어요</span>}</dd>
+            <dt className="text-muted">귀가</dt>
+            <dd className="truncate text-ink-2">{label("return") ?? <span className="text-subtle">안 넣었어요</span>}</dd>
+          </dl>
+        </span>
+        <span className="flex h-11 shrink-0 items-center font-semibold text-ink group-open:hidden">바꾸기</span>
+      </summary>
+      <div className="flex flex-col gap-2 px-2 pb-2">{editors}</div>
+    </details>
   );
 
   return (
@@ -165,32 +190,19 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
 
       {(status.members.length > 1 || status.invitees.length > 0) && <Members members={status.members} invitees={status.invitees} />}
 
+      {/* 함께 정한 코스 — 담은 곳이 있으면 맨 위 (84) */}
+      {status.isMember && <CourseCard meetupId={status.id} course={course} editable={status.status === "open"} meet={meet} />}
+
       {ready ? (
         <>
-          <MeetupResults plans={plans} meetupUrl={`${origin}/meet/${status.id}`} waitingCount={status.members.length - readyCount} />
-          <details className="group rounded-[16px] bg-surface">
-            <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-meta">
-              <span className="truncate text-ink-2">
-                <span className="mr-2 text-muted">내 위치</span>출발 {label("origin") ?? "없음"}, 귀가 {label("return") ?? "없음"}
-              </span>
-              <span className="shrink-0 font-semibold text-ink group-open:hidden">바꾸기</span>
-            </summary>
-            <div className="flex flex-col gap-2 px-2 pb-2">{editors}</div>
-          </details>
+          <MeetupResults plans={plans} meetupUrl={`${origin}/meet/${status.id}`} waitingCount={status.members.length - readyCount} endsAt={status.endsAt} meetupId={status.id} course={course} meet={meet} />
+          {myPoints}
           {invite}
         </>
       ) : (
         <>
           {status.status !== "open" ? null : status.meReady ? (
-            <details className="group rounded-[16px] bg-surface">
-              <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-meta">
-                <span className="truncate text-ink-2">
-                  <span className="mr-2 text-muted">내 위치</span>출발 {label("origin") ?? "없음"}, 귀가 {label("return") ?? "없음"}
-                </span>
-                <span className="shrink-0 font-semibold text-ink group-open:hidden">바꾸기</span>
-              </summary>
-              <div className="flex flex-col gap-2 px-2 pb-2">{editors}</div>
-            </details>
+            myPoints
           ) : (
             // 출발지는 각자 넣는다 (67, 위밋플레이스) — 내 할 일을 가장 눈에 띄게
             <section className="flex flex-col gap-2 rounded-[16px] border border-line-strong p-4">
