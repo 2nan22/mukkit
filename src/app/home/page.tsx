@@ -126,7 +126,11 @@ async function HomeContent() {
     getMyHome(supabase, me),
     getThreeRanking(supabase, me),
     countMyTiers(supabase, me),
-    recapReady(supabase, me),
+    // 결산 철이면 알림함에도 한 줄 (해마다 한 번, 94)
+    recapReady(supabase, me).then(async (ok) => {
+      if (ok) await supabase.rpc("claim_recap_notice");
+      return ok;
+    }),
   ]);
   // 리스트 카드 썸네일 — 담긴 곳의 대표 사진 (내 사진 · 팔로잉)
   // 최근 저장한 곳 사진도 한 번에
@@ -162,7 +166,7 @@ async function HomeContent() {
           </Link>
         </section>
       )}
-      {showRecap && <RecapBanner year={recapYear()} className="mx-5" />}
+      {showRecap && <RecapBanner year={recapYear()} closable className="mx-5" />}
       <section className="mx-5 flex flex-col overflow-hidden rounded-[20px] bg-brand-soft">
         <Link
           href="/eat"

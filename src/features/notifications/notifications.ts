@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // 앱 안 알림함 — 받는 사람만 · 차단한 사이 · 볼 수 없게 된 평가 알림은 함수가 거른다
-export type NotificationKind = "comment" | "like" | "follow" | "meetup_invite" | "meetup_join" | "meetup_ready" | "meetup_cancel" | "meetup_course" | "visit_tag";
+export type NotificationKind = "comment" | "like" | "follow" | "meetup_invite" | "meetup_join" | "meetup_ready" | "meetup_cancel" | "meetup_course" | "visit_tag" | "recap";
 export type AppNotification = {
   id: string;
   kind: NotificationKind;
@@ -63,6 +63,8 @@ export function notificationHref(n: AppNotification): string {
       return n.meetupId ? `/meet/${n.meetupId}` : "/meet";
     case "visit_tag":
       return "/visits";
+    case "recap":
+      return "/my/recap";
   }
 }
 

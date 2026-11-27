@@ -8,8 +8,8 @@ import { CUISINE_LABEL } from "@/domain/cuisine";
 import { TIER_LABEL } from "@/domain/tier";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getMyStats, MIN_RATED, type MyStats } from "@/features/stats/myStats";
-import { recapReady, recapYear } from "@/features/recap/recap";
-import { RecapBanner } from "@/features/recap/RecapBanner";
+import { pastRecap, recapReady, recapYear } from "@/features/recap/recap";
+import { PastRecapLink, RecapBanner } from "@/features/recap/RecapBanner";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "내 기록 통계" };
@@ -31,7 +31,7 @@ async function Stats() {
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
-  const [s, showRecap] = await Promise.all([getMyStats(supabase, me), recapReady(supabase, me)]);
+  const [s, showRecap, past] = await Promise.all([getMyStats(supabase, me), recapReady(supabase, me), pastRecap(supabase, me)]);
   const enough = s.rated >= MIN_RATED;
 
   // 저장한 곳이 없으면 통계 대신 가져오기로
@@ -50,6 +50,7 @@ async function Stats() {
   return (
     <div className="flex flex-col gap-7 px-5 pt-2 pb-10">
       {showRecap && <RecapBanner year={recapYear()} />}
+      {past !== null && <PastRecapLink year={past} />}
       <section aria-label="요약" className="grid grid-cols-2 rounded-[16px] border border-line">
         {[
           ["저장", s.saved],
