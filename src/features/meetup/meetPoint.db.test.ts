@@ -20,7 +20,8 @@ describe.skipIf(!hasLocalDb)("만날 곳 · 대중교통 (로컬 DB)", () => {
     await host.supabase.from("meetups").update({ meet_label: "아무 글" }).eq("id", id);
     expect((await host.supabase.from("meetups").select("meet_label").eq("id", id).single()).data?.meet_label).toBe("을지로입구역");
 
-    await host.supabase.from("meetups").update({ status: "done" }).eq("id", id);
+    expect((await host.supabase.from("meetups").update({ status: "cancelled" }).eq("id", id)).error).not.toBeNull();
+    expect((await host.supabase.rpc("finish_meetup", { p_meetup: id })).error).toBeNull();
     expect((await set(host.supabase, "을지로", "다른 곳")).error?.code).toBe("P0002");
   }, 30_000);
 

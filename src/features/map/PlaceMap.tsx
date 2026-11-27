@@ -146,13 +146,13 @@ function foundElement(): HTMLElement {
   return el;
 }
 
-// 약속 만날 곳 — 검정 원 + 흰 깃발 (코스 목록 만날 곳 줄과 같은 깃발). 이름은 목록이 말해 줌 — 이름표는 가게 핀을 덮어서 뺌 (88-2)
+// 약속 만날 곳 — 검정 둥근 네모 + 흰 깃발 (가고 싶은 곳 흰 원 깃발 핀과 모양으로 구분, 91 검토) (코스 목록 만날 곳 줄과 같은 깃발). 이름은 목록이 말해 줌 — 이름표는 가게 핀을 덮어서 뺌 (88-2)
 function meetElement(label: string): HTMLElement {
   const el = document.createElement("span");
   el.setAttribute("role", "img");
   el.setAttribute("aria-label", `만날 곳 ${label}`);
   el.style.cssText =
-    "display:flex;align-items:center;justify-content:center;width:28px;height:28px;box-sizing:border-box;border-radius:50%;background:#17181c;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,.25);color:#ffffff;pointer-events:none";
+    "display:flex;align-items:center;justify-content:center;width:28px;height:28px;box-sizing:border-box;border-radius:8px;background:#17181c;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,.25);color:#ffffff;pointer-events:none";
   el.innerHTML =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M6 21V4h11l-2 4 2 4H6"/></svg>';
   return el;

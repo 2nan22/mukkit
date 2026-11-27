@@ -63,7 +63,7 @@ export function MeetPointCard({
           {shown ? (
             <span className="truncate text-body font-bold tracking-[-0.015em]">{shown.label}</span>
           ) : (
-            <span className="truncate text-body text-muted">동네가 정해졌다면 먼저 정해 두세요</span>
+            <span className="truncate text-body text-muted">동네가 정해졌다면 먼저 골라 두세요</span>
           )}
         </span>
         <button type="button" onClick={() => setOpen(true)} className="flex h-11 shrink-0 items-center px-1 text-meta font-semibold text-ink">
