@@ -20,7 +20,13 @@ type Result = { error?: string };
 const FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
 
 const CreateInput = z
-  .object({ purpose: z.enum(PURPOSES), startsAt: z.iso.datetime({ offset: true }).nullable(), endsAt: z.iso.datetime({ offset: true }).nullable() })
+  .object({
+    purpose: z.enum(PURPOSES),
+    startsAt: z.iso.datetime({ offset: true }).nullable(),
+    endsAt: z.iso.datetime({ offset: true }).nullable(),
+    // 정해 둔 만날 곳 (92) — 없으면 각자 출발지로 지역 추천
+    meet: z.object({ label: z.string().trim().min(1).max(40), lat: z.number().min(33).max(39), lng: z.number().min(124).max(132) }).nullable().optional(),
+  })
   .refine((v) => !v.startsAt || !v.endsAt || v.endsAt > v.startsAt, { message: "끝나는 시간이 시작보다 뒤여야 해요" })
   // 지난 시각으로는 만들지 않는다 — 화면을 오래 켜 둔 경우 (몇 분 여유)
   .refine((v) => !v.startsAt || new Date(v.startsAt).getTime() > Date.now() - 10 * 60_000, { message: "이미 지난 시각이에요. 다시 골라 주세요" });
@@ -35,6 +41,12 @@ export async function createMeetup(input: z.input<typeof CreateInput>): Promise<
     .select("id")
     .single();
   if (error || !data) return { error: FAILED };
+  const meet = parsed.data.meet;
+  if (meet) {
+    // 약속은 이미 만들어졌으니 실패해도 막지 않는다 — 약속 화면에서 다시 정할 수 있음
+    const { error: meetError } = await supabase.rpc("set_meet_point", { p_meetup: data.id, p_label: meet.label.slice(0, 40), p_lat: meet.lat, p_lng: meet.lng, p_area: null });
+    if (meetError) console.warn("[meetup] 만날 곳 저장 실패: code=%s", meetError.code);
+  }
   revalidatePath("/meet");
   // 만든 뒤 바로 초대 화면 (67)
   redirect(`/meet/${data.id}/invite?created=1`, RedirectType.replace);
