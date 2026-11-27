@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { PURPOSE_LABEL, PURPOSES, type Purpose } from "@/domain/meetup";
 import { createMeetup } from "./actions";
+import { findSpots, type Spot } from "@/features/eat/actions";
 import { DateCalendar, offsetToDate } from "./DateCalendar";
 import { PurposeIcon } from "./PurposeIcon";
 import { timeRange } from "@/domain/meetTime";
@@ -69,7 +70,9 @@ function toIso(dayOffset: number, minutes: number): string {
   return new Date(base + minutes * 60_000).toISOString();
 }
 
-type Step = "what" | "when" | "confirm";
+type Step = "what" | "when" | "where" | "confirm";
+// 만날 곳 (92) — 정해 두지 않으면 각자 출발지로 지역 추천
+type Where = { label: string; lat: number; lng: number } | null;
 
 // 새 약속 (67) — 한 화면에서 질문이 차례로: 답하면 위로 한 줄 요약으로 접히고 다음 질문이 올라온다 (토스 송금처럼)
 export function MeetupForm() {
@@ -82,6 +85,8 @@ export function MeetupForm() {
   const [start, setStart] = useState(init.start);
   const [end, setEnd] = useState(init.end);
   const [exact, setExact] = useState(false);
+  const [fixed, setFixed] = useState(false);
+  const [where, setWhere] = useState<Where>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -144,7 +149,7 @@ export function MeetupForm() {
       return setError("이미 지난 시각이에요. 다시 골라 주세요");
     }
     startTransition(async () => {
-      const res = await createMeetup({ purpose, startsAt: toIso(day, startAt), endsAt: toIso(day, endAt) });
+      const res = await createMeetup({ purpose, startsAt: toIso(day, startAt), endsAt: toIso(day, endAt), meet: fixed ? where : null });
       if (res?.error) setError(res.error);
     });
   }
@@ -156,7 +161,8 @@ export function MeetupForm() {
   return (
     <div className="flex flex-1 flex-col gap-4 px-5 pb-5">
       {step !== "what" && <Answered label="약속" value={PURPOSE_LABEL[purpose]} onChange={() => go("what")} />}
-      {step === "confirm" && <Answered label="언제" value={`${dayLabel(day)} ${timeRange(startAt, endAt)}`} onChange={() => go("when")} />}
+      {(step === "where" || step === "confirm") && <Answered label="언제" value={`${dayLabel(day)} ${timeRange(startAt, endAt)}`} onChange={() => go("when")} />}
+      {step === "confirm" && <Answered label="어디서" value={fixed && where ? where.label : "출발지 보고 정해요"} onChange={() => go("where")} />}
 
       {step === "what" && (
         <section key="what" className="meet-rise flex flex-col gap-4 pt-2">
@@ -241,15 +247,35 @@ export function MeetupForm() {
         </section>
       )}
 
+      {step === "where" && (
+        <section key="where" className="meet-rise flex flex-col gap-3 pt-2">
+          <h2 ref={heading} tabIndex={-1} className="text-[22px] font-bold tracking-tight outline-none">
+            어디서 만나요?
+          </h2>
+          <div role="radiogroup" aria-label="만날 곳" className="flex flex-col gap-1.5">
+            <button type="button" role="radio" aria-checked={!fixed} onClick={() => setFixed(false)} className={`min-h-15 items-start px-4 py-2.5 text-left ${cell(!fixed)}`}>
+              아직 안 정했어요
+              <span className={`text-caption font-normal ${!fixed ? "text-white/75" : "text-muted"}`}>각자 출발지를 넣으면 가운데 지역을 골라 드려요</span>
+            </button>
+            <button type="button" role="radio" aria-checked={fixed} onClick={() => setFixed(true)} className={`min-h-15 items-start px-4 py-2.5 text-left ${cell(fixed)}`}>
+              정해 둔 곳이 있어요
+              <span className={`text-caption font-normal ${fixed ? "text-white/75" : "text-muted"}`}>역이나 가게를 직접 골라요</span>
+            </button>
+          </div>
+          {fixed && <WherePicker value={where} onPick={setWhere} />}
+          <p className="text-meta text-muted">나중에 약속 화면에서 바꿀 수 있어요</p>
+        </section>
+      )}
+
       {step === "confirm" && (
         <section key="confirm" className="meet-rise flex flex-col gap-2 pt-4">
           <h2 ref={heading} tabIndex={-1} className="text-[22px] font-bold tracking-tight outline-none">
             이대로 만들까요?
           </h2>
           <p className="text-meta leading-normal text-muted">
-            만든 뒤 친구를 초대해요.
+            만든 뒤 친구를 초대해요
             <br />
-            각자 출발지를 넣으면 지역을 골라 드려요.
+            {fixed && where ? "만날 곳 근처 가게로 코스를 담을 수 있어요" : "각자 출발지를 넣으면 지역을 골라 드려요"}
           </p>
         </section>
       )}
@@ -267,13 +293,20 @@ export function MeetupForm() {
             {pending ? "만드는 중" : "약속 만들기"}
           </button>
         ) : (
-          <button type="button" onClick={() => go(step === "what" && !reached ? "when" : "confirm")} className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
+          <button
+            type="button"
+            onClick={() => {
+              if (step === "where" && fixed && !where) return setError("찾기를 누르고 한 곳을 골라 주세요");
+              setError(null);
+              go(reached ? "confirm" : step === "what" ? "when" : step === "when" ? "where" : "confirm");
+            }}
+            className="h-btn-l rounded-btn-l bg-brand text-[16px] font-bold text-white raised-brand">
             다음
           </button>
         )}
       </div>
       <span className="sr-only" aria-live="polite">
-        {step === "confirm" ? `${PURPOSE_LABEL[purpose]}, ${dayLabel(day)} ${timeRange(startAt, endAt)}` : ""}
+        {step === "confirm" ? `${PURPOSE_LABEL[purpose]}, ${dayLabel(day)} ${timeRange(startAt, endAt)}, ${fixed && where ? where.label : "출발지 보고 정해요"}` : ""}
       </span>
     </div>
   );
@@ -289,5 +322,86 @@ function Answered({ label, value, onChange }: { label: string; value: string; on
       </span>
       <span className="shrink-0 text-meta font-semibold text-ink-2 underline underline-offset-[3px]">바꾸기</span>
     </button>
+  );
+}
+
+// 정해 둔 만날 곳 찾기 (92) — 역 · 음식점 · 카페를 먼저, 5곳까지. 고르면 한 줄로 접고 '다시 찾기'
+const WHERE_GROUPS = ["SW8", "FD6", "CE7"];
+function WherePicker({ value, onPick }: { value: Where; onPick: (w: Where) => void }) {
+  const [query, setQuery] = useState("");
+  const [spots, setSpots] = useState<Spot[] | null>(null);
+  const [searching, start] = useTransition();
+  function search() {
+    const q = query.trim();
+    if (!q) return;
+    start(async () => {
+      const res = await findSpots(q);
+      const all = res.spots ?? [];
+      const good = all.filter((s) => WHERE_GROUPS.includes(s.group));
+      setSpots((good.length > 0 ? good : all).slice(0, 5));
+    });
+  }
+  if (value) {
+    return (
+      <div className="flex min-h-12 items-center justify-between gap-3 rounded-[12px] px-4 ring-[1.5px] ring-ink">
+        <b className="min-w-0 truncate text-body">{value.label}</b>
+        <button
+          type="button"
+          onClick={() => {
+            onPick(null);
+            setSpots(null);
+          }}
+          className="flex h-11 shrink-0 items-center text-meta font-semibold text-ink-2 underline underline-offset-[3px]"
+        >
+          다시 찾기
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          search();
+        }}
+        className="flex gap-2"
+      >
+        <input
+          type="search"
+          enterKeyHint="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="역, 동네, 가게 이름"
+          aria-label="만날 곳 찾기"
+          className="h-12 min-w-0 flex-1 rounded-[12px] border border-line-strong px-3.5 text-body outline-none focus:border-ink"
+        />
+        <button type="submit" disabled={searching} className="h-12 shrink-0 rounded-[12px] bg-surface px-4 text-body font-semibold text-ink disabled:opacity-60">
+          {searching ? "찾는 중" : "찾기"}
+        </button>
+      </form>
+      <p aria-live="polite" className={spots && spots.length === 0 ? "text-meta text-muted" : "sr-only"}>
+        {spots ? (spots.length === 0 ? "찾은 곳이 없어요. 다른 이름으로 찾아 보세요" : `${spots.length}곳을 찾았어요`) : ""}
+      </p>
+      {spots && spots.length > 0 && (
+        <div role="radiogroup" aria-label="찾은 곳" className="flex flex-col gap-1.5">
+          {spots.map((sp) => (
+            <button
+              key={sp.id}
+              type="button"
+              role="radio"
+              aria-checked={false}
+              onClick={() => onPick({ label: sp.name, lat: sp.lat, lng: sp.lng })}
+              className="flex min-h-14 flex-col justify-center gap-0.5 rounded-[12px] px-3.5 py-2 text-left ring-1 ring-line"
+            >
+              <span className="truncate text-body font-bold">{sp.name}</span>
+              {/* 역은 업종 원문('지하철,전철') 대신 주소만 */}
+              {sp.meta.length > 0 && <span className="truncate text-caption text-muted">{(sp.group === "SW8" ? sp.meta.slice(1) : sp.meta).join(", ")}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
