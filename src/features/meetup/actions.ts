@@ -12,7 +12,7 @@ import { NICKNAME_SETUP, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { searchKakaoKeyword } from "@/features/search/kakaoLocal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getBlockedIds } from "@/features/safety/safety";
-import { notifyMeetup, notifyMeetupCancelled } from "./notify";
+import { notifyCourseChanged, notifyMeetup, notifyMeetupCancelled } from "./notify";
 import { refreshCourseRoute } from "./courseRoute";
 import { COURSE_MAX } from "@/domain/course";
 
@@ -213,7 +213,7 @@ const CourseInput = z.object({ meetupId: z.uuid(), placeIds: z.array(z.uuid()).m
 export async function setMeetupCourse(input: z.input<typeof CourseInput>): Promise<Result & { conflict?: boolean }> {
   const parsed = CourseInput.safeParse(input);
   if (!parsed.success) return { error: FAILED };
-  const { supabase } = await requireUser();
+  const { supabase, me } = await requireUser();
   const { meetupId, placeIds, expected } = parsed.data;
   const { data: changed, error } = await supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: placeIds, p_expected: expected });
   if (error) {
@@ -227,7 +227,10 @@ export async function setMeetupCourse(input: z.input<typeof CourseInput>): Promi
     return { error: FAILED };
   }
   // 저장 한 번에 길 한 번 — 코스 화면은 '이 순서로 저장'을 눌렀을 때만 여기로 (88-3)
-  if (changed) await refreshCourseRoute(meetupId).catch(() => false);
+  if (changed) {
+    await refreshCourseRoute(meetupId).catch(() => false);
+    after(() => notifyCourseChanged(meetupId, me));
+  }
   revalidatePath(`/meet/${meetupId}`);
   revalidatePath(`/meet/${meetupId}/course`);
   return {};
