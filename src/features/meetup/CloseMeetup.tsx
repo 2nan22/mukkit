@@ -7,7 +7,7 @@ type Action = "done" | "cancel" | "leave";
 
 const COPY: Record<Action, { label: string; ask: string; body: string; ok: string }> = {
   done: { label: "약속 끝내기", ask: "약속을 끝낼까요?", body: "넣은 위치 기록을 바로 지우고, 어디서 만났는지 기록할 수 있어요.", ok: "끝내기" },
-  cancel: { label: "약속 취소", ask: "약속을 취소할까요?", body: "약속과 링크가 사라져요. 함께하던 분과 초대받은 분 목록에서도 없어져요.", ok: "취소하기" },
+  cancel: { label: "약속 취소", ask: "약속을 취소할까요?", body: "함께하는 분과 초대받은 분 모두에게서 약속이 사라져요.", ok: "약속 취소하기" },
   leave: { label: "약속 나가기", ask: "약속에서 나갈까요?", body: "내가 넣은 위치를 지우고 약속 목록에서 빠져요.", ok: "나가기" },
 };
 

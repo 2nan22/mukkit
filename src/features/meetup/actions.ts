@@ -92,10 +92,8 @@ export async function removeMeetupPoint(meetupId: string, kind: "origin" | "retu
 export async function closeMeetup(meetupId: string): Promise<Result> {
   if (!z.uuid().safeParse(meetupId).success) return { error: FAILED };
   const { supabase } = await requireUser();
-  const { error } = await supabase.from("meetups").update({ status: "done" }).eq("id", meetupId);
-  if (error) return { error: FAILED };
-  // 끝낸 약속의 위치는 바로 지운다 (새벽 정리 작업은 남은 것 정리용)
-  await supabase.from("meetup_points").delete().eq("meetup_id", meetupId);
+  const { error } = await supabase.rpc("finish_meetup", { p_meetup: meetupId });
+  if (error) return { error: error.code === "P0002" ? "이미 끝났거나 취소된 약속이에요" : FAILED };
   revalidatePath("/meet");
   redirect(`/meet/${meetupId}/visit`, RedirectType.replace);
 }
@@ -138,7 +136,7 @@ export async function respondInvite(meetupId: string, accept: boolean): Promise<
   if (!z.uuid().safeParse(meetupId).success) return { error: FAILED };
   const { supabase, me } = await requireUser();
   const { error } = await supabase.rpc("respond_meetup_invite", { p_meetup: meetupId, p_accept: accept });
-  if (error) return { error: error.code === "P0001" ? "정원이 다 찬 약속이에요" : FAILED };
+  if (error) return { error: error.code === "P0001" ? "정원이 다 찬 약속이에요" : error.code === "42501" ? "취소된 약속이에요" : FAILED };
   if (accept) after(() => notifyMeetup(meetupId, me, { kind: "joined" }));
   revalidatePath("/meet");
   if (!accept) redirect("/meet", RedirectType.replace);

@@ -47,7 +47,8 @@ async function MeetVisit({ params, searchParams }: { params: Promise<{ meetupId:
   const me = data?.claims?.sub;
   if (!me) redirect(SIGNED_OUT_HOME);
   const status = await getMeetupStatus(supabase, meetupId);
-  if (!status?.isMember) notFound();
+  if (!status) redirect(`/meet/${meetupId}`);
+  if (!status.isMember) notFound();
   const others = status.members.filter((m) => !m.isMe).map((m) => ({ id: m.id, nickname: m.nickname }));
   const [recorded, course] = await Promise.all([getMeetupVisits(supabase, me, meetupId), getCourse(supabase, meetupId)]);
   const back = `/meet/${meetupId}/visit`;

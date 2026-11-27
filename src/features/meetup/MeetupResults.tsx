@@ -108,7 +108,7 @@ export function MeetupResults({
     () =>
       plan?.shops.length
         ? plan.shops.filter((s) => !courseIds.includes(s.placeId)).map((s) => ({ id: s.placeId, lat: s.lat, lng: s.lng, tier: s.myTier ?? "unrated" }))
-        : plan
+        : plan && plan.people.length > 0
           ? [{ id: "area", lat: plan.lat, lng: plan.lng, tier: "wantToGo" as const }]
           : [],
     [plan, courseIds],
@@ -128,7 +128,8 @@ export function MeetupResults({
     plans.forEach((p, i) => {
       if (metersBetween(anchor, p) < metersBetween(anchor, plans[best])) best = i;
     });
-    return best;
+    // 어느 지역과도 3km 넘게 떨어졌으면 '코스 지역' 없음 — 먼 칩을 코스라 부르지 않게 (91 검토)
+    return plans[best] && metersBetween(anchor, plans[best]) <= 3000 ? best : -1;
   }, [anchor, draftStops.length, plans]);
   const awayFromCourse = courseArea >= 0 && courseArea !== active;
   const fitPins = useMemo(() => (awayFromCourse ? areaPins : null), [awayFromCourse, areaPins]);
@@ -160,6 +161,9 @@ export function MeetupResults({
   }
 
   const even = isEven(plan.people);
+  // 만날 곳 근처 칩 (91) — 사람별 시간이 없음(people 빈 배열). 그 칩뿐이면(출발지가 모이기 전) 지역 칩 · 시간 카드 없이 가게만
+  const solo = plan.people.length === 0;
+  const onlyMeet = plans.every((p) => p.people.length === 0);
   // 담은 곳 이름 — 지금 지역 가게 목록에 없으면(다른 지역에서 담음) 서버 코스에서
   const nameOf = (id: string) => plans.flatMap((p) => p.shops).find((s) => s.placeId === id)?.name ?? course.stops.find((s) => s.placeId === id)?.name ?? "";
   const courseNames = courseIds.map((id) => ({ name: nameOf(id) }));
@@ -171,7 +175,8 @@ export function MeetupResults({
   const stationOf = (p: AreaPlan): MeetOption => ({ key: `a${p.name}`, label: p.station ?? areaName(p.name), sub: `추천 지역 ${areaName(p.name)}`, lat: p.lat, lng: p.lng, area: p.name });
   const firstStop = course.stops[0];
   const meetOptions: MeetOption[] = [
-    ...plans.map(stationOf),
+    // 만날 곳 근처만 볼 때(91)는 그 칩이 내가 고른 곳이라 '추천 지역'으로 다시 권하지 않음
+    ...(plan.people.length === 0 ? [] : plans.map(stationOf)),
     ...(firstStop ? [{ key: `c${firstStop.placeId}`, label: firstStop.name, sub: "코스 1차 가게에서 바로", lat: firstStop.lat, lng: firstStop.lng, area: null }] : []),
   ];
 
@@ -211,6 +216,7 @@ export function MeetupResults({
           {course.stops.length > 0 && <CourseCard meetupId={meetupId} course={course} editable={editable} meet={meet} />}
         </>
       )}
+      {!onlyMeet && (<>
       <div className="flex flex-col gap-0.5 pt-3">
         <h2 className="text-section font-bold tracking-[-0.01em]">{plan.people.length === 2 ? "두 사람 모두" : "모두"} 가기 편한 곳</h2>
         {waitingCount > 0 && <span className="text-meta text-muted">아직 위치를 안 넣은 {waitingCount}명은 빼고 계산했어요</span>}
@@ -241,12 +247,17 @@ export function MeetupResults({
       </div>
 
       {/* 시간 카드 — 제목은 결론, 숫자는 막대, 빨강은 막차가 끊길 때 한 줄만 (83 디자인 검토) */}
+      {solo ? (
+        <p className="text-meta text-muted">먼저 정한 만날 곳 근처예요. 걸리는 시간은 다른 칩에서 볼 수 있어요</p>
+      ) : (
       <div className="flex flex-col gap-3 rounded-[16px] bg-surface p-4">
         <span className="text-[16px] font-bold tracking-[-0.015em] text-ink">{timeHeadline(plan.people)}</span>
         {!even && <TimeBars people={plan.people} />}
         <LastTrain people={plan.people} endsAt={endsAt} />
         <span className="text-caption text-subtle">{allExact ? "지하철, 버스 기준이에요. 막차는 어림이에요" : "일부는 거리로 어림한 시간이라 실제와 다를 수 있어요"}</span>
       </div>
+      )}
+      </>)}
 
       {/* 지도 하나 — 가게 목록 바로 위, 내리면 위에 붙어 따라온다 (89) */}
       <div className="sticky top-[env(safe-area-inset-top)] z-10 -mx-5 h-[26dvh] min-h-44 overflow-hidden border-b border-line bg-map-land">
@@ -283,22 +294,24 @@ export function MeetupResults({
       {plan.shops.length === 0 ? (
         // 빈 상태는 상자 없이 목록 자리에 (83) · 다른 지역 가게 링크는 뺌 — 만나는 곳이 바뀌는 줄 몰라 헷갈림 (83-2, 사용자), 지역은 위 칩에서
         <div className="mt-2 flex flex-col gap-1">
-          <h3 className="text-body font-bold tracking-[-0.01em]">{head} 가게</h3>
-          <p className="text-meta text-muted">같이 가는 분들이 평가한 곳이 아직 없어요</p>
-          <div className="flex flex-wrap gap-x-4 text-meta font-semibold text-ink">
-            <Link href={`/search?q=${encodeURIComponent(head)}`} className="flex h-11 items-center gap-0.5">
-              {head}에서 찾아보기
-              <Chevron />
-            </Link>
-          </div>
+          <h3 className="text-body font-bold tracking-[-0.01em]">{solo ? "만날 곳 근처 가게" : `${head} 가게`}</h3>
+          <p className="text-meta text-muted">{solo ? "근처에 평가한 곳이 아직 없어요" : "같이 가는 분들이 평가한 곳이 아직 없어요"}</p>
+          {(!solo || meet?.area) && (
+            <div className="flex flex-wrap gap-x-4 text-meta font-semibold text-ink">
+              <Link href={`/search?q=${encodeURIComponent(solo ? meet!.area! : head)}`} className="flex h-11 items-center gap-0.5">
+                {solo ? meet!.area : head}에서 찾아보기
+                <Chevron />
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex flex-col">
           <div className="flex items-baseline justify-between gap-2">
             <h3 className="text-body font-bold tracking-[-0.01em]">
-              {areaName(plan.name)} 가게 {plan.shops.length}곳
+              {solo ? "만날 곳 근처 가게" : `${areaName(plan.name)} 가게`} {plan.shops.length}곳
             </h3>
-            <span className="text-meta text-muted">같이 가는 분들 평가 순</span>
+            <span className="text-meta text-muted">{solo ? "평가 순" : "같이 가는 분들 평가 순"}</span>
           </div>
           {plan.recent >= 20 && <span className="text-meta text-muted">요즘 평가가 많은 동네예요</span>}
           <span className="pb-1" />
@@ -311,7 +324,7 @@ export function MeetupResults({
               name={s.name}
               cuisine={s.cuisine}
               tier={s.myTier}
-              meta={[CUISINE_LABEL[s.cuisine], `${areaName(plan.name).split(",")[0]}에서 ${km(s.distance)}`]}
+              meta={[CUISINE_LABEL[s.cuisine], `${solo ? "만날 곳" : areaName(plan.name).split(",")[0]}에서 ${km(s.distance)}`]}
               note={reasonLine(s.reasons)}
               action={<CourseToggle order={courseIds.indexOf(s.placeId)} name={s.name} onClick={() => toggleCourse(s.placeId)} />}
             />

@@ -43,15 +43,15 @@ export function MeetPointCard({
   viewing?: Option | null;
   suggested: Option | null;
   options: Option[];
-  onPickArea: (area: string) => void;
+  onPickArea?: (area: string) => void;
 }) {
   const [openSelf, setOpenSelf] = useState(false);
   const open = openProp ?? openSelf;
   const setOpen = (v: boolean) => (onOpenChange ? onOpenChange(v) : setOpenSelf(v));
   const [moving, startMove] = useTransition();
+  // 아직 정하지 않았고 권할 곳도 없으면(출발지가 모이기 전, 91) '정하기'만
   const shown = meet ? { label: meet.label } : suggested;
-  if (!shown) return null;
-  if (cardHidden) return open ? <MeetPointSheet meetupId={meetupId} current={meet} options={options} onClose={() => setOpen(false)} onPickArea={onPickArea} /> : null;
+  if (cardHidden) return open ? <MeetPointSheet meetupId={meetupId} current={meet} options={options} onClose={() => setOpen(false)} onPickArea={onPickArea ?? (() => undefined)} /> : null;
   return (
     <>
       <div className="flex items-center gap-3 rounded-[14px] border border-line px-3.5 py-3">
@@ -59,8 +59,12 @@ export function MeetPointCard({
           <FlagIcon />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-caption text-muted">{meet ? "만날 곳" : "추천 만날 곳"}</span>
-          <span className="truncate text-body font-bold tracking-[-0.015em]">{shown.label}</span>
+          <span className="text-caption text-muted">{meet ? "만날 곳" : shown ? "추천 만날 곳" : "만날 곳"}</span>
+          {shown ? (
+            <span className="truncate text-body font-bold tracking-[-0.015em]">{shown.label}</span>
+          ) : (
+            <span className="truncate text-body text-muted">동네가 정해졌다면 먼저 골라 두세요</span>
+          )}
         </span>
         <button type="button" onClick={() => setOpen(true)} className="flex h-11 shrink-0 items-center px-1 text-meta font-semibold text-ink">
           {meet ? "바꾸기" : "정하기"}
@@ -81,7 +85,7 @@ export function MeetPointCard({
           </button>
         </div>
       )}
-      {open && <MeetPointSheet meetupId={meetupId} current={meet} options={options} onClose={() => setOpen(false)} onPickArea={onPickArea} />}
+      {open && <MeetPointSheet meetupId={meetupId} current={meet} options={options} onClose={() => setOpen(false)} onPickArea={onPickArea ?? (() => undefined)} />}
     </>
   );
 }
