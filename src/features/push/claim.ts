@@ -10,7 +10,7 @@ type Claimed = { user_id: string; first_ready: boolean | null; point_kind: strin
 
 export async function claimFreshNotifications(
   admin: SupabaseClient,
-  kind: "follow" | "meetup_join" | "meetup_ready",
+  kind: "follow" | "meetup_join" | "meetup_ready" | "meetup_course",
   actorId: string,
   match: { user_id?: string; meetup_id?: string },
 ): Promise<Claimed[]> {

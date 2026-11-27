@@ -5,6 +5,9 @@ import { AppHeader } from "@/components/AppHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { honor } from "@/domain/honor";
+import { meetWhen } from "@/domain/meetTime";
+import { recapYear } from "@/features/recap/recap";
+import { BrandSymbol } from "@/components/brand/Wordmark";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getNotifications, groupNotifications, notificationHref, type GroupedNotification } from "@/features/notifications/notifications";
 import { MarkRead } from "@/features/notifications/MarkRead";
@@ -30,6 +33,9 @@ export default function NotificationsPage() {
 // 아래 회색 줄 — 장소 이름 또는 추천 지역 소식
 function sub(n: GroupedNotification): string {
   if (n.kind === "meetup_ready") return n.firstReady ? "추천 지역이 나왔어요" : "추천 지역이 바뀌었어요";
+  if (n.kind === "meetup_cancel") return n.meetupStartsAt ? `${meetWhen(n.meetupStartsAt, null)} 약속` : "";
+  if (n.kind === "meetup_course") return "약속 코스";
+  if (n.kind === "recap") return "올해 다닌 곳을 카드로 돌아봐요";
   return n.placeName ?? "";
 }
 
@@ -53,6 +59,12 @@ function message(n: GroupedNotification): string {
       return `${who}이 약속에 참여했어요`;
     case "meetup_ready":
       return `${who}이 ${n.pointKind === "return" ? "귀가지" : "출발지"}를 넣었어요`;
+    case "meetup_cancel":
+      return `${who}이 약속을 취소했어요`;
+    case "meetup_course":
+      return `${who}이 코스를 바꿨어요`;
+    case "recap":
+      return `${recapYear(new Date(n.createdAt))} 먹킷 결산이 나왔어요`;
     case "visit_tag":
       return `${who}이 함께 갔다고 남겼어요`;
   }
@@ -122,7 +134,13 @@ function Row({ n, followBack }: { n: GroupedNotification; followBack: boolean })
   return (
         <li className={`flex items-center pr-5 ${n.read ? "" : "bg-surface"}`}>
           <Link href={notificationHref(n)} className="flex min-h-16 min-w-0 flex-1 items-center gap-3 py-3 pr-3 pl-5">
-            <Avatar name={n.actorNickname} size={40} />
+            {n.kind === "recap" ? (
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#17181c]">
+                <BrandSymbol height={22} />
+              </span>
+            ) : (
+              <Avatar name={n.actorNickname} size={40} />
+            )}
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-body leading-snug text-pretty text-ink">{message(n)}</span>
               <MetaLine

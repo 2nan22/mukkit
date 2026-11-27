@@ -9,6 +9,8 @@ import type { Course, CourseStop } from "./course";
 import { CourseMap, MeetRow, courseShareText, legParts } from "./CourseMap";
 import type { MeetPoint } from "./meetup";
 import { useCourseDraft } from "./useCourseDraft";
+import { useLeaveGuard } from "@/lib/nav/leaveGuard";
+import { useLeave } from "@/lib/nav/useLeave";
 
 const noSubscribe = (onChange: () => void) => {
   queueMicrotask(onChange);
@@ -27,6 +29,10 @@ export function CourseEditor({ meetupId, course, meet = null, meetupUrl }: { mee
   const dragStart = useRef<{ y: number; mids: number[] } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [announce, setAnnounce] = useState("");
+  // 저장 안 한 순서가 있을 때 뒤로가기 — 아래 바에서 한 번 묻는다 (93)
+  const [asking, setAsking] = useState(false);
+  const guard = useLeaveGuard(draft.changed, () => setAsking(true));
+  const leave = useLeave(`/meet/${meetupId}`);
   // 키보드로 옮긴 줄의 ≡ 에 포커스를 돌려준다 — 아래로 옮기면 React 가 줄을 다시 끼워 포커스가 빠진다
   const focusId = useRef<string | null>(null);
   const list = useRef<HTMLOListElement>(null);
@@ -177,9 +183,29 @@ export function CourseEditor({ meetupId, course, meet = null, meetupUrl }: { mee
           {announce}
         </p>
       </section>
-      {stops.length > 0 && (
+      {(stops.length > 0 || draft.changed) && (
         <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex w-full max-w-[480px] flex-col gap-1.5 border-t border-line bg-white px-5 pt-2.5 pb-[calc(12px+env(safe-area-inset-bottom))]">
-          {draft.changed ? (
+          {draft.changed && asking ? (
+            <>
+              <span className="text-center text-body font-bold">저장하지 않고 나갈까요?</span>
+              <span className="text-center text-meta text-muted">바꾼 순서는 사라져요</span>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setAsking(false)} className="h-btn-m flex-1 rounded-btn-m bg-surface text-body font-semibold text-ink">
+                  계속 고치기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAsking(false);
+                    guard.leave(leave);
+                  }}
+                  className="h-btn-m flex-1 rounded-btn-m bg-ink text-body font-bold text-white raised"
+                >
+                  나가기
+                </button>
+              </div>
+            </>
+          ) : draft.changed ? (
             <>
               <span className="text-center text-caption text-subtle">저장하면 걷는 길을 다시 재요</span>
               <div className="flex gap-2">

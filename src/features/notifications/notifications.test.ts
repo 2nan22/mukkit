@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { groupNotifications, type AppNotification } from "./notifications";
 
 const base: Omit<AppNotification, "id" | "kind" | "actorId" | "createdAt"> = {
-  actorNickname: "a", ownerId: "me", placeId: "p1", placeName: "가게", meetupId: null, visitId: null, read: true, pointKind: null, firstReady: false,
+  actorNickname: "a", ownerId: "me", placeId: "p1", placeName: "가게", meetupId: null, visitId: null, read: true, pointKind: null, firstReady: false, meetupStartsAt: null,
 };
 const n = (id: string, kind: AppNotification["kind"], actorId: string, extra: Partial<AppNotification> = {}): AppNotification => ({ ...base, id, kind, actorId, createdAt: "2026-11-23T00:00:00Z", ...extra });
 
