@@ -29,7 +29,14 @@ export function MeetPointCard({
   suggested,
   options,
   onPickArea,
+  open: openProp,
+  onOpenChange,
+  cardHidden = false,
 }: {
+  // 바깥에서 여닫기 — 코스 카드 만날 곳 줄 '바꾸기' (89). cardHidden 이면 카드 없이 시트만
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  cardHidden?: boolean;
   meetupId: string;
   meet: MeetPoint | null;
   // 만날 곳과 다른 지역 칩을 보고 있을 때 그 지역 대표 역 — '여기로 바꾸기'
@@ -38,10 +45,13 @@ export function MeetPointCard({
   options: Option[];
   onPickArea: (area: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openSelf, setOpenSelf] = useState(false);
+  const open = openProp ?? openSelf;
+  const setOpen = (v: boolean) => (onOpenChange ? onOpenChange(v) : setOpenSelf(v));
   const [moving, startMove] = useTransition();
   const shown = meet ? { label: meet.label } : suggested;
   if (!shown) return null;
+  if (cardHidden) return open ? <MeetPointSheet meetupId={meetupId} current={meet} options={options} onClose={() => setOpen(false)} onPickArea={onPickArea} /> : null;
   return (
     <>
       <div className="flex items-center gap-3 rounded-[14px] border border-line px-3.5 py-3">
