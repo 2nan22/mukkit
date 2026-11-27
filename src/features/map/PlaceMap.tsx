@@ -543,6 +543,20 @@ export function PlaceMap({
     meCircle.current?.setOptions({ strokeOpacity: radius ? 0.4 : 0, fillOpacity: radius ? 0.12 : 0 });
   }, [ready, me]);
 
+  // 한 화면에 지도가 둘이면(약속 화면 코스 카드 + 추천 지역) next/script 는 먼저 붙은 쪽에만 onReady 를 준다 —
+  // 나머지는 SDK 가 올라왔는지 직접 보고 시작한다 (88-4, 추천 지역 지도가 젓가락 로딩에 멈추던 것)
+  useEffect(() => {
+    if (ready || !APP_KEY) return;
+    let left = 75;
+    const t = setInterval(() => {
+      if (window.kakao?.maps) {
+        clearInterval(t);
+        window.kakao.maps.load(() => setReady(true));
+      } else if (--left <= 0) clearInterval(t);
+    }, 200);
+    return () => clearInterval(t);
+  }, [ready]);
+
   if (!APP_KEY || failed) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 bg-map-land px-8 text-center">
