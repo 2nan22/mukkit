@@ -95,6 +95,16 @@ export async function planMeetup(supabase: SupabaseClient, me: string, status: M
   );
 }
 
+// 만날 곳 근처 (91, 사용자 '동네가 이미 잡혔을 수도') — 출발지가 모이기 전에도 만날 곳을 정하면 그 근처 가게로 코스를 담는다
+// 사람별 시간은 없음(people 빈 배열) — 화면이 시간 카드 · 지역 칩을 빼고 그린다
+export async function planAroundMeet(supabase: SupabaseClient, me: string, status: MeetupStatus, meet: MeetPoint): Promise<AreaPlan> {
+  const { pref } = await getMyTasteBasis(supabase, me);
+  const companions = status.members.filter((m) => !m.isMe).map((m) => ({ id: m.id, nickname: m.nickname }));
+  const candidates = await getEatCandidates(supabase, meet.lat, meet.lng, 1000).catch(() => []);
+  const at = { lat: meet.lat, lng: meet.lng };
+  return { name: meet.area ?? meet.label, lat: meet.lat, lng: meet.lng, people: [], maxMinutes: 0, avgMinutes: 0, recent: 0, station: meet.label, lateCount: 0, shops: planAreaShops(candidates, at, status.purpose, pref, companions) };
+}
+
 // 만날 곳 (86) — 참여자 모두에게 보임. 없으면 null (화면이 추천 지역 대표 역을 권함)
 export type MeetPoint = { label: string; lat: number; lng: number; area: string | null };
 export async function getMeetPoint(supabase: SupabaseClient, meetupId: string): Promise<MeetPoint | null> {

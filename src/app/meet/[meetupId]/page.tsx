@@ -10,11 +10,12 @@ import { meetWhen } from "@/domain/meetTime";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { CloseMeetup } from "@/features/meetup/CloseMeetup";
 import { InviteAnswer } from "@/features/meetup/InviteAnswer";
-import { getMeetPoint, getMeetupStatus, getMyPoints, planMeetup, type MeetupMember } from "@/features/meetup/meetup";
+import { getMeetPoint, getMeetupStatus, getMyPoints, planAroundMeet, planMeetup, type MeetupMember } from "@/features/meetup/meetup";
 import { refreshMeetupTransit } from "@/features/meetup/transit";
 import { after } from "next/server";
 import { MeetupRefresher } from "@/features/meetup/MeetupRefresher";
 import { MeetupResults } from "@/features/meetup/MeetupResults";
+import { MeetPointCard } from "@/features/meetup/MeetPointCard";
 import { CourseCard } from "@/features/meetup/CourseCard";
 import { getCourse } from "@/features/meetup/course";
 import { refreshCourseRoute } from "@/features/meetup/courseRoute";
@@ -126,7 +127,10 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
   const readyCount = status.members.filter((m) => m.ready).length;
   const others = status.members.filter((m) => !m.isMe);
   const ready = status.meReady && readyCount >= 2;
-  const [plans, course, meet] = await Promise.all([ready ? planMeetup(supabase, me, status) : Promise.resolve([]), getCourse(supabase, meetupId), getMeetPoint(supabase, meetupId)]);
+  const [ranked, course, meet] = await Promise.all([ready ? planMeetup(supabase, me, status) : Promise.resolve([]), getCourse(supabase, meetupId), getMeetPoint(supabase, meetupId)]);
+  // 출발지가 모이기 전이라도 만날 곳을 정했으면 그 근처 가게로 (91)
+  const aroundMeet = !ready && meet && status.status === "open" ? await planAroundMeet(supabase, me, status, meet) : null;
+  const plans = aroundMeet ? [aroundMeet] : ranked;
   // 아직 안 잰 대중교통 구간만 화면을 그린 뒤 잰다 — 하루 상한 안에서 (86)
   if (ready && status.status === "open" && plans.some((p) => p.people.some((x) => !x.exact))) after(() => refreshMeetupTransit(meetupId, plans.map((p) => p.name)).catch(() => 0));
   // 코스 길을 아직 못 받았거나 옛것이면(만날 곳을 바꿈 · 실패 뒤) 화면을 그린 뒤 받는다
@@ -171,7 +175,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
 
   return (
     // 추천이 나오면 아래에 제안하기가 고정되니 그만큼 비운다 (79)
-    <div className={`flex flex-col gap-7 px-5 ${ready && plans.length > 0 ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : "pb-10"}`}>
+    <div className={`flex flex-col gap-7 px-5 ${plans.length > 0 ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : "pb-10"}`}>
       <MeetupRefresher waiting={!ready && status.status === "open"} />
       <section className="flex flex-col gap-1">
         <h2 className="text-title font-bold tracking-[-0.02em]">{title}</h2>
@@ -194,7 +198,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
       {(status.members.length > 1 || status.invitees.length > 0) && <Members members={status.members} invitees={status.invitees} />}
 
       {/* 함께 정한 코스 — 추천이 나오기 전 · 끝난 약속은 여기, 추천이 있으면 결과 안 지도 위 (84 · 89) */}
-      {status.isMember && !(ready && plans.length > 0) && <CourseCard meetupId={status.id} course={course} editable={status.status === "open"} meet={meet} />}
+      {status.isMember && !(plans.length > 0) && <CourseCard meetupId={status.id} course={course} editable={status.status === "open"} meet={meet} />}
 
       {ready ? (
         <>
@@ -226,6 +230,22 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
               {editors}
             </section>
           )}
+          {/* 만날 곳 — 출발지 없이도 정할 수 있음. 정하면 근처 가게로 코스를 담는다 (91) */}
+          {status.status === "open" &&
+            (aroundMeet ? (
+              <MeetupResults
+                plans={plans}
+                meetupUrl={`${origin}/meet/${status.id}`}
+                waitingCount={0}
+                endsAt={status.endsAt}
+                meetupId={status.id}
+                course={course}
+                meet={meet}
+                editable
+              />
+            ) : (
+              <MeetPointCard meetupId={status.id} meet={null} suggested={null} options={[]} />
+            ))}
           {status.status === "open" && <section className="flex flex-col gap-0.5 rounded-[16px] border border-line p-4">
             <h3 className="text-body font-bold">추천 지역</h3>
             <span className="text-meta leading-normal text-muted">

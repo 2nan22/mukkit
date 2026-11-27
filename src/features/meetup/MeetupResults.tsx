@@ -160,6 +160,8 @@ export function MeetupResults({
   }
 
   const even = isEven(plan.people);
+  // 출발지가 모이기 전 만날 곳 근처만 (91) — 사람별 시간 · 지역 칩 없이 가게만
+  const solo = plan.people.length === 0;
   // 담은 곳 이름 — 지금 지역 가게 목록에 없으면(다른 지역에서 담음) 서버 코스에서
   const nameOf = (id: string) => plans.flatMap((p) => p.shops).find((s) => s.placeId === id)?.name ?? course.stops.find((s) => s.placeId === id)?.name ?? "";
   const courseNames = courseIds.map((id) => ({ name: nameOf(id) }));
@@ -211,6 +213,7 @@ export function MeetupResults({
           {course.stops.length > 0 && <CourseCard meetupId={meetupId} course={course} editable={editable} meet={meet} />}
         </>
       )}
+      {!solo && (<>
       <div className="flex flex-col gap-0.5 pt-3">
         <h2 className="text-section font-bold tracking-[-0.01em]">{plan.people.length === 2 ? "두 사람 모두" : "모두"} 가기 편한 곳</h2>
         {waitingCount > 0 && <span className="text-meta text-muted">아직 위치를 안 넣은 {waitingCount}명은 빼고 계산했어요</span>}
@@ -247,6 +250,7 @@ export function MeetupResults({
         <LastTrain people={plan.people} endsAt={endsAt} />
         <span className="text-caption text-subtle">{allExact ? "지하철, 버스 기준이에요. 막차는 어림이에요" : "일부는 거리로 어림한 시간이라 실제와 다를 수 있어요"}</span>
       </div>
+      </>)}
 
       {/* 지도 하나 — 가게 목록 바로 위, 내리면 위에 붙어 따라온다 (89) */}
       <div className="sticky top-[env(safe-area-inset-top)] z-10 -mx-5 h-[26dvh] min-h-44 overflow-hidden border-b border-line bg-map-land">
