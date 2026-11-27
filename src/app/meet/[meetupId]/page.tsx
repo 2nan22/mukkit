@@ -193,13 +193,23 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
 
       {(status.members.length > 1 || status.invitees.length > 0) && <Members members={status.members} invitees={status.invitees} />}
 
-      {/* 함께 정한 코스 — 담은 곳이 있으면 맨 위 (84) */}
-      {status.isMember && <CourseCard meetupId={status.id} course={course} editable={status.status === "open"} meet={meet} />}
+      {/* 함께 정한 코스 — 추천이 나오기 전 · 끝난 약속은 여기, 추천이 있으면 결과 안 지도 위 (84 · 89) */}
+      {status.isMember && !(ready && plans.length > 0) && <CourseCard meetupId={status.id} course={course} editable={status.status === "open"} meet={meet} />}
 
       {ready ? (
         <>
-          <MeetupResults plans={plans} meetupUrl={`${origin}/meet/${status.id}`} waitingCount={status.members.length - readyCount} endsAt={status.endsAt} meetupId={status.id} course={course} meet={meet} />
-          {myPoints}
+          <MeetupResults
+            plans={plans}
+            meetupUrl={`${origin}/meet/${status.id}`}
+            waitingCount={status.members.length - readyCount}
+            endsAt={status.endsAt}
+            meetupId={status.id}
+            course={course}
+            meet={meet}
+            before={plans.length > 0 ? myPoints : null}
+            editable={status.status === "open"}
+          />
+          {plans.length === 0 && myPoints}
           {invite}
         </>
       ) : (

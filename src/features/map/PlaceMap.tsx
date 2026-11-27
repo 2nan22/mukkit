@@ -252,7 +252,10 @@ export function PlaceMap({
   quiet = false,
   route = null,
   approach = null,
+  fitPins = null,
 }: {
+  // 맞출 핀 — 없으면 pins 전체와 코스 길. 있으면 이 핀들만 (약속 지도: 코스와 다른 지역을 볼 때, 89)
+  fitPins?: Pin[] | null;
   // 코스 길 [경도, 위도] — dashed 면 직선 어림(점선), 아니면 실제 걷는 길(실선) (84)
   route?: { path: [number, number][]; dashed: boolean } | null;
   // 만날 곳 › 1차 — 코스 길과 같은 주황, 흐린 점선 (88-2)
@@ -465,7 +468,7 @@ export function PlaceMap({
     const maps = window.kakao?.maps;
     if (!ready || !maps || !map.current || pins.length === 0) return;
     const m = map.current;
-    const key = [pins, top, right, bottom, left, refit, route];
+    const key = [pins, top, right, bottom, left, refit, route, fitPins];
     if (same(applied.current.fit, key)) return;
     applied.current.fit = key;
     requestAnimationFrame(() => {
@@ -479,19 +482,21 @@ export function PlaceMap({
         return;
       }
       fitted.current = true;
-      if (pins.length === 1 && !route) {
+      const list = fitPins && fitPins.length > 0 ? fitPins : pins;
+      const line = fitPins && fitPins.length > 0 ? null : route;
+      if (list.length === 1 && !line) {
         m.setLevel(SINGLE_LEVEL);
-        m.setCenter(new maps.LatLng(pins[0].lat, pins[0].lng));
+        m.setCenter(new maps.LatLng(list[0].lat, list[0].lng));
         return;
       }
       const bounds = new maps.LatLngBounds();
-      pins.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
+      list.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
       // 코스 길이 핀 바깥으로 돌아가도 다 보이게 (84)
-      route?.path.forEach(([x, y]) => bounds.extend(new maps.LatLng(y, x)));
+      line?.path.forEach(([x, y]) => bounds.extend(new maps.LatLng(y, x)));
       const [t, r, b, l] = fitPadding([top, right, bottom, left], el.current?.clientWidth ?? 0, el.current?.clientHeight ?? 0);
       m.setBounds(bounds, t, r, b, l);
     });
-  }, [ready, pins, top, right, bottom, left, refit, route]);
+  }, [ready, pins, top, right, bottom, left, refit, route, fitPins]);
 
   // 핀 맞춤보다 뒤에 돌도록 아래에 둔다 — 같은 프레임이면 이 위치가 이긴다
   useEffect(() => {

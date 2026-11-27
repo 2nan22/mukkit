@@ -8,10 +8,23 @@ import { meetLeg, walkMinutes } from "@/domain/course";
 import type { MeetPoint } from "./meetup";
 import { RouteButton } from "@/features/place/RouteButton";
 import type { Course } from "./course";
-import { CourseMap, MeetRow, legParts } from "./CourseMap";
+import { MeetRow, legParts } from "./CourseMap";
 
-// 약속 화면 코스 카드 (84) — 함께 정한 1차 › 2차 · 미니 지도 · 코스 고치기 · 1차 길찾기
-export function CourseCard({ meetupId, course, editable, meet = null }: { meetupId: string; course: Course; editable: boolean; meet?: MeetPoint | null }) {
+// 약속 화면 코스 카드 (84) — 함께 정한 1차 › 2차 · 코스 고치기 · 1차 길찾기
+// 지도는 약속 화면 아래 지도 하나에 (89) — 카드는 목록만. onChangeMeet: 만날 곳 줄 '바꾸기'
+export function CourseCard({
+  meetupId,
+  course,
+  editable,
+  meet = null,
+  onChangeMeet,
+}: {
+  meetupId: string;
+  course: Course;
+  editable: boolean;
+  meet?: MeetPoint | null;
+  onChangeMeet?: () => void;
+}) {
   const { stops, route } = course;
   if (stops.length === 0) return null;
   const first = stops[0];
@@ -24,11 +37,6 @@ export function CourseCard({ meetupId, course, editable, meet = null }: { meetup
   const totalEstimated = Boolean(route?.estimated || (meetSec && toFirst?.estimated));
   return (
     <section aria-label="약속 코스" className="overflow-hidden rounded-[16px] border border-line">
-      <div className="relative h-40">
-        <div className="absolute inset-0">
-          <CourseMap stops={stops} route={route} meet={meet} meetWalk={course.meetWalk} />
-        </div>
-      </div>
       <div className="flex flex-col gap-2.5 px-4 pt-3.5 pb-4">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-[16px] font-bold tracking-[-0.015em]">코스 {stops.length}곳</h2>
@@ -44,7 +52,18 @@ export function CourseCard({ meetupId, course, editable, meet = null }: { meetup
           {/* 만날 곳에서 1차까지 (86 · 88) */}
           {meet && toFirst && !meetAtFirst && (
             <li>
-              <MeetRow label={meet.label} leg={legParts(toFirst.leg.meters, toFirst.leg.seconds, toFirst.estimated)} iconCol="grid-cols-[2.25rem_1fr_auto] gap-2" />
+              <MeetRow
+                label={meet.label}
+                leg={legParts(toFirst.leg.meters, toFirst.leg.seconds, toFirst.estimated)}
+                iconCol="grid-cols-[2.25rem_1fr_auto] gap-2"
+                action={
+                  editable && onChangeMeet ? (
+                    <button type="button" onClick={onChangeMeet} aria-label="만날 곳 바꾸기" className="-my-2 flex h-11 items-center text-caption font-semibold text-ink">
+                      바꾸기
+                    </button>
+                  ) : undefined
+                }
+              />
             </li>
           )}
           {stops.map((s, i) => (
