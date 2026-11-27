@@ -8,7 +8,7 @@ import { meetLeg, walkMinutes } from "@/domain/course";
 import type { MeetPoint } from "./meetup";
 import { RouteButton } from "@/features/place/RouteButton";
 import type { Course } from "./course";
-import { CourseMap, legParts } from "./CourseMap";
+import { CourseMap, MeetRow, legParts } from "./CourseMap";
 
 // 약속 화면 코스 카드 (84) — 함께 정한 1차 › 2차 · 미니 지도 · 코스 고치기 · 1차 길찾기
 export function CourseCard({ meetupId, course, editable, meet = null }: { meetupId: string; course: Course; editable: boolean; meet?: MeetPoint | null }) {
@@ -26,7 +26,7 @@ export function CourseCard({ meetupId, course, editable, meet = null }: { meetup
     <section aria-label="약속 코스" className="overflow-hidden rounded-[16px] border border-line">
       <div className="relative h-40">
         <div className="absolute inset-0">
-          <CourseMap stops={stops} route={route} />
+          <CourseMap stops={stops} route={route} meet={meet} />
         </div>
       </div>
       <div className="flex flex-col gap-2.5 px-4 pt-3.5 pb-4">
@@ -43,22 +43,8 @@ export function CourseCard({ meetupId, course, editable, meet = null }: { meetup
         <ol className="flex flex-col">
           {/* 만날 곳에서 1차까지 (86 · 88) */}
           {meet && toFirst && !meetAtFirst && (
-            <li className="flex flex-col">
-              <div className="grid min-h-8 grid-cols-[2.25rem_1fr_auto] items-center gap-2">
-                <span aria-hidden="true" className="flex justify-center text-ink">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
-                    <path d="M6 21V4h11l-2 4 2 4H6" />
-                  </svg>
-                </span>
-                <span className="truncate text-[14px] font-semibold">{meet.label}</span>
-                <span className="text-caption text-subtle">만날 곳</span>
-              </div>
-              <div className="grid h-6 grid-cols-[2.25rem_1fr] items-center gap-2">
-                <span aria-hidden="true" className="flex justify-center">
-                  <span className="h-6 w-0.5 bg-[repeating-linear-gradient(#c8410b_0_3px,transparent_3px_6px)]" />
-                </span>
-                <MetaLine className="text-caption text-muted" items={legParts(toFirst.leg.meters, toFirst.leg.seconds, toFirst.estimated)} />
-              </div>
+            <li>
+              <MeetRow label={meet.label} leg={legParts(toFirst.leg.meters, toFirst.leg.seconds, toFirst.estimated)} iconCol="grid-cols-[2.25rem_1fr_auto] gap-2" />
             </li>
           )}
           {stops.map((s, i) => (
