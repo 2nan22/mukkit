@@ -14,6 +14,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getBlockedIds } from "@/features/safety/safety";
 import { notifyMeetup } from "./notify";
 import { fetchWalkRoute } from "./walkRoute";
+import { refreshMeetWalk } from "./meetWalk";
 import { COURSE_MAX, courseKey } from "@/domain/course";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -194,6 +195,8 @@ export async function setMeetupCourse(input: z.input<typeof CourseInput>): Promi
     return { error: FAILED };
   }
   if (changed && placeIds.length >= 2) await saveWalkRoute(meetupId, courseKey(placeIds));
+  // 1차가 바뀌었을 수 있음 — 만날 곳 › 1차 길도 (88)
+  if (changed) after(() => refreshMeetWalk(meetupId).catch(() => false));
   revalidatePath(`/meet/${meetupId}`);
   revalidatePath(`/meet/${meetupId}/course`);
   return {};
@@ -233,6 +236,8 @@ export async function setMeetPoint(input: z.input<typeof MeetPointInput>): Promi
     p_area: point?.area ?? null,
   });
   if (error) return { error: error.code === "P0002" ? "끝난 약속이에요" : FAILED };
+  // 응답을 기다리게 하지 않음 — 화면은 어림으로 먼저, 새로 불러올 때 실제 길 (MeetupRefresher)
+  if (point) after(() => refreshMeetWalk(meetupId).catch(() => false));
   revalidatePath(`/meet/${meetupId}`);
   return {};
 }

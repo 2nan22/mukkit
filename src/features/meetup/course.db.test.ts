@@ -87,4 +87,25 @@ describe.skipIf(!hasLocalDb)("약속 코스 (로컬 DB)", () => {
     expect((await testAdminClient().from("meetup_course_route").select("meetup_id").eq("meetup_id", meetupId)).data).toEqual([]);
     expect((await getCourse(host.supabase, meetupId)).route?.estimated).toBe(true);
   }, 30_000);
+
+  it("만날 곳 › 1차 길은 서버만 · 지금 만날 곳과 1차일 때만 저장 (88)", async () => {
+    const host = await signUpTestUser();
+    const { data: m } = await host.supabase.from("meetups").insert({ host_id: host.userId, purpose: "meal" }).select("id").single();
+    const meetupId = m!.id as string;
+    const [a, b] = await makePlaces(2);
+    await host.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [a, b] });
+    await host.supabase.rpc("set_meet_point", { p_meetup: meetupId, p_label: "역", p_lat: 37.55, p_lng: 126.99, p_area: null });
+    const admin = testAdminClient();
+    const save = (place: string, lat: number) =>
+      admin.rpc("save_meet_walk", { p_meetup: meetupId, p_place: place, p_lat: lat, p_lng: 126.99, p_meters: 1400, p_seconds: 1100 });
+    // 사용자는 못 부름
+    expect((await host.supabase.rpc("save_meet_walk", { p_meetup: meetupId, p_place: a, p_lat: 37.55, p_lng: 126.99, p_meters: 1, p_seconds: 1 })).error).not.toBeNull();
+    expect((await save(b, 37.55)).data).toBe(false);
+    expect((await save(a, 37.54)).data).toBe(false);
+    expect((await save(a, 37.55)).data).toBe(true);
+    expect((await getCourse(host.supabase, meetupId)).meetWalk).toEqual({ placeId: a, lat: 37.55, lng: 126.99, meters: 1400, seconds: 1100 });
+    // 다른 사람은 못 읽음
+    const other = await signUpTestUser();
+    expect((await getCourse(other.supabase, meetupId)).meetWalk).toBeNull();
+  }, 30_000);
 });

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { MetaLine } from "@/components/ui/MetaLine";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { googleRouteLink, kakaoRouteLink, naverRouteLink } from "@/domain/mapLinks";
-import { straightRoute, walkMinutes } from "@/domain/course";
+import { meetLeg, walkMinutes } from "@/domain/course";
 import type { MeetPoint } from "./meetup";
 import { RouteButton } from "@/features/place/RouteButton";
 import type { Course } from "./course";
@@ -15,10 +15,13 @@ export function CourseCard({ meetupId, course, editable, meet = null }: { meetup
   const { stops, route } = course;
   if (stops.length === 0) return null;
   const first = stops[0];
-  const total = route ? walkMinutes(route.legs.reduce((a, l) => a + l.seconds, 0)) : null;
-  // 만날 곳에서 1차까지 — 50m 안이면(1차 가게에서 바로 만남) 따로 줄을 두지 않고 1차 줄에 '만날 곳'
-  const toFirst = meet ? straightRoute([meet, first]).legs[0] : null;
-  const meetAtFirst = Boolean(toFirst && toFirst.meters < 65);
+  // 만날 곳에서 1차까지 — 가까우면(1차 가게에서 바로 만남) 따로 줄을 두지 않고 1차 줄에 '만날 곳'. 받아 둔 길이 있으면 실제 걷는 길 (88)
+  const toFirst = meetLeg(meet, first, course.meetWalk);
+  const meetAtFirst = Boolean(toFirst?.atFirst);
+  // '모두 걸어서'는 만날 곳 줄이 있으면 그 구간도 더한다 — 줄은 있는데 합계에 빠지면 헷갈림 (88 검토)
+  const meetSec = toFirst && !meetAtFirst ? toFirst.leg.seconds : 0;
+  const total = route || meetSec ? walkMinutes((route?.legs ?? []).reduce((a, l) => a + l.seconds, 0) + meetSec) : null;
+  const totalEstimated = Boolean(route?.estimated || (meetSec && toFirst?.estimated));
   return (
     <section aria-label="약속 코스" className="overflow-hidden rounded-[16px] border border-line">
       <div className="relative h-40">
@@ -31,14 +34,14 @@ export function CourseCard({ meetupId, course, editable, meet = null }: { meetup
           <h2 className="text-[16px] font-bold tracking-[-0.015em]">코스 {stops.length}곳</h2>
           {total !== null && (
             <span className="text-meta text-muted">
-              모두 걸어서 {route?.estimated ? "약 " : ""}
+              모두 걸어서 {totalEstimated ? "약 " : ""}
               {total}분
             </span>
           )}
         </div>
         {/* 오른쪽은 늘 업종, 걷는 시간은 두 줄 사이 점선 줄에 (코스 화면과 같은 말투, 84 검토) */}
         <ol className="flex flex-col">
-          {/* 만날 곳에서 1차까지 — 걸어서 어림 (86) */}
+          {/* 만날 곳에서 1차까지 (86 · 88) */}
           {meet && toFirst && !meetAtFirst && (
             <li className="flex flex-col">
               <div className="grid min-h-8 grid-cols-[2.25rem_1fr_auto] items-center gap-2">
@@ -54,7 +57,7 @@ export function CourseCard({ meetupId, course, editable, meet = null }: { meetup
                 <span aria-hidden="true" className="flex justify-center">
                   <span className="h-6 w-0.5 bg-[repeating-linear-gradient(#c8410b_0_3px,transparent_3px_6px)]" />
                 </span>
-                <MetaLine className="text-caption text-muted" items={legParts(toFirst.meters, toFirst.seconds, true)} />
+                <MetaLine className="text-caption text-muted" items={legParts(toFirst.leg.meters, toFirst.leg.seconds, toFirst.estimated)} />
               </div>
             </li>
           )}

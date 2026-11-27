@@ -21,6 +21,22 @@ export function straightRoute(stops: LatLng[]): CourseRoute {
   return { legs, path: stops.map((s) => [s.lng, s.lat]), estimated: true };
 }
 
+// 만날 곳 › 1차 (86 · 88) — 이만큼 가까우면(직선 어림 기준) 1차 가게에서 바로 만나는 것으로
+export const MEET_AT_FIRST_M = 65;
+// 서버가 받아 둔 만날 곳 › 1차 걷는 길 — 어느 만날 곳(좌표) · 어느 1차의 것인지 함께. meters null = 받기 실패
+export type MeetWalk = { placeId: string; lat: number; lng: number; meters: number | null; seconds: number | null };
+
+// 지금 만날 곳 · 1차에 맞는 받아 둔 길이 있으면 그것, 없으면 직선 어림(estimated)
+export function meetLeg(meet: LatLng | null, first: (LatLng & { placeId: string }) | undefined, saved: MeetWalk | null): { leg: Leg; estimated: boolean; atFirst: boolean } | null {
+  if (!meet || !first) return null;
+  const straight = straightRoute([meet, first]).legs[0];
+  if (straight.meters < MEET_AT_FIRST_M) return { leg: straight, estimated: true, atFirst: true };
+  if (saved && saved.placeId === first.placeId && saved.lat === meet.lat && saved.lng === meet.lng && saved.meters !== null && saved.seconds !== null) {
+    return { leg: { meters: saved.meters, seconds: saved.seconds }, estimated: false, atFirst: false };
+  }
+  return { leg: straight, estimated: true, atFirst: false };
+}
+
 // 코스 순서를 한 줄로 — 저장된 길이 지금 코스의 것인지 맞춰 볼 때
 export function courseKey(placeIds: string[]): string {
   return placeIds.join(",");
