@@ -238,7 +238,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
 
       {status.status === "open" && !ready && (status.invitees.length > 0 || others.length > 0 || status.meReady) && <PushToggle variant="strip" />}
 
-      <CloseMeetup meetupId={status.id} mode={ready ? "done" : status.isHost ? "cancel" : null} />
+      {status.status === "open" && status.isMember && <CloseMeetup meetupId={status.id} canDone={ready} role={status.isHost ? "host" : "member"} />}
     </div>
   );
 }
