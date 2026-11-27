@@ -42,6 +42,34 @@ describe.skipIf(!hasLocalDb)("약속 코스 (로컬 DB)", () => {
     expect((await getCourse(other.supabase, meetupId)).stops).toEqual([]);
   }, 30_000);
 
+  it("코스를 바꾸면 다른 참여자 알림함에 한 줄 — 다시 바꿔도 한 줄, 30분 안이면 푸시 건너뜀 (93)", async () => {
+    const host = await signUpTestUser();
+    const member = await signUpTestUser();
+    const admin = testAdminClient();
+    const { data: m } = await host.supabase.from("meetups").insert({ host_id: host.userId, purpose: "meal" }).select("id").single();
+    const meetupId = m!.id as string;
+    await admin.from("meetup_members").insert({ meetup_id: meetupId, user_id: member.userId });
+    const [a, b] = await makePlaces(2);
+    const rows = () => admin.from("notifications").select("user_id, actor_id, pushed_at").eq("meetup_id", meetupId).eq("kind", "meetup_course");
+
+    await host.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [a] });
+    let got = (await rows()).data!;
+    expect(got.map((r) => [r.user_id, r.actor_id])).toEqual([[member.userId, host.userId]]);
+    // 푸시 보냄 표시 뒤 다시 바꾸면 줄은 그대로 하나, 표시도 남음(푸시 건너뜀)
+    await admin.from("notifications").update({ pushed_at: new Date().toISOString() }).eq("meetup_id", meetupId).eq("kind", "meetup_course");
+    await member.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [a, b] });
+    got = (await rows()).data!;
+    expect(got.find((r) => r.user_id === host.userId)?.actor_id).toBe(member.userId);
+    await host.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [b, a] });
+    got = (await rows()).data!;
+    expect(got).toHaveLength(2);
+    expect(got.find((r) => r.user_id === member.userId)?.pushed_at).not.toBeNull();
+    // 바뀐 게 없으면 알림도 없음
+    await admin.from("notifications").delete().eq("meetup_id", meetupId);
+    await host.supabase.rpc("set_meetup_course", { p_meetup: meetupId, p_places: [b, a] });
+    expect((await rows()).data).toEqual([]);
+  }, 30_000);
+
   it("보던 순서와 다르면(남이 먼저 바꿈) 거절, 같은 순서면 바뀐 것 없음", async () => {
     const host = await signUpTestUser();
     const { data: m } = await host.supabase.from("meetups").insert({ host_id: host.userId, purpose: "meal" }).select("id").single();

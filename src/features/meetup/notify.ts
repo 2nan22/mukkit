@@ -51,3 +51,18 @@ export async function notifyMeetupCancelled(meetupId: string, actorId: string, t
   if (!actor) return;
   await sendPush(to, { title: "약속 취소", body: `${honor(actor.nickname as string)}이 약속을 취소했어요`, url: "/meet", tag: `meet-${meetupId}` }, "meetup");
 }
+
+// 코스 변경 (93) — 받는 사람은 DB 가 방금 만든 · 고친 줄. 같은 약속은 30분에 한 번만 울림(DB 가 pushed_at 을 남겨 둠)
+export async function notifyCourseChanged(meetupId: string, actorId: string): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  if (!admin) return;
+  const to = await claimFreshNotifications(admin, "meetup_course", actorId, { meetup_id: meetupId });
+  if (to.length === 0) return;
+  const { data: actor } = await admin.from("profiles").select("nickname").eq("id", actorId).maybeSingle();
+  if (!actor) return;
+  await sendPush(
+    to.map((r) => r.user_id),
+    { title: "코스가 바뀌었어요", body: `${honor(actor.nickname as string)}이 코스를 바꿨어요`, url: `/meet/${meetupId}`, tag: `meet-${meetupId}` },
+    "meetup",
+  );
+}
