@@ -7,7 +7,24 @@ import { MetaLine } from "@/components/ui/MetaLine";
 import type { CourseStop } from "./course";
 import type { MeetPoint } from "./meetup";
 
-// 코스 지도 — 번호 핀 · 길(실제 길은 실선, 직선 어림은 점선) (84) · 만날 곳 깃발 (88-2, 1차에서 바로 만나면 겹쳐서 뺌)
+// 코스 층 — 번호 핀 · 만날 곳 깃발 · 길(실제 길은 실선, 직선 어림은 점선). 코스 화면 지도와 약속 화면 지도가 같이 씀 (84 · 88 · 89)
+// 1차에서 바로 만나면(65m 안) 깃발은 겹쳐서 뺌
+export function useCourseLayers(stops: CourseStop[], route: CourseRoute | null, meet: MeetPoint | null, meetWalk: MeetWalk | null) {
+  const showMeet = Boolean(meet && meetLeg(meet, stops[0], null)?.atFirst === false);
+  const pins = useMemo(() => {
+    const course: Pin[] = stops.map((s, i) => ({ id: s.placeId, lat: s.lat, lng: s.lng, tier: "unrated" as const, order: i + 1 }));
+    return meet && showMeet ? [...course, { id: "meet", lat: meet.lat, lng: meet.lng, tier: "unrated" as const, kind: "meet" as const, label: meet.label }] : course;
+  }, [stops, meet, showMeet]);
+  const line = useMemo(() => (route ? { path: route.path, dashed: route.estimated } : null), [route]);
+  // 만날 곳에서 1차까지 — 받아 둔 길이면 코스 선(path)이 만날 곳부터 그려져 있음 (88-3). 아직이면 곧은 점선
+  const realMeet = meetLeg(meet, stops[0], meetWalk)?.estimated === false && route?.estimated === false;
+  const approach = useMemo<[number, number][] | null>(
+    () => (meet && showMeet && !realMeet && stops[0] ? [[meet.lng, meet.lat], [stops[0].lng, stops[0].lat]] : null),
+    [meet, showMeet, realMeet, stops],
+  );
+  return { pins, line, approach };
+}
+
 export function CourseMap({
   stops,
   route,
@@ -21,23 +38,13 @@ export function CourseMap({
   meetWalk?: MeetWalk | null;
   onSelect?: (placeId: string) => void;
 }) {
-  const showMeet = Boolean(meet && meetLeg(meet, stops[0], null)?.atFirst === false);
-  const pins = useMemo(() => {
-    const course: Pin[] = stops.map((s, i) => ({ id: s.placeId, lat: s.lat, lng: s.lng, tier: "unrated" as const, order: i + 1 }));
-    return meet && showMeet ? [...course, { id: "meet", lat: meet.lat, lng: meet.lng, tier: "unrated" as const, kind: "meet" as const, label: meet.label }] : course;
-  }, [stops, meet, showMeet]);
-  const line = useMemo(() => (route ? { path: route.path, dashed: route.estimated } : null), [route]);
-  // 만날 곳에서 1차까지 — 받아 둔 길이면 코스 선(path)이 만날 곳부터 그려져 있음 (88-3). 아직이면 곧은 점선
-  const realMeet = meetLeg(meet, stops[0], meetWalk)?.estimated === false && route?.estimated === false;
-  const approach = useMemo<[number, number][] | null>(
-    () => (meet && showMeet && !realMeet && stops[0] ? [[meet.lng, meet.lat], [stops[0].lng, stops[0].lat]] : null),
-    [meet, showMeet, realMeet, stops],
-  );
+  const { pins, line, approach } = useCourseLayers(stops, route, meet, meetWalk);
   return <PlaceMap pins={pins} route={line} approach={approach} selectedId={null} onSelect={(id) => onSelect?.(id)} padding={[40, 40, 40, 40]} quiet />;
 }
 
 // 만날 곳 줄 — 깃발 · 이름 · '만날 곳', 아래 1차까지 걷는 구간 (코스 카드 · 코스 화면 공통, 86 · 88-2)
-export function MeetRow({ label, leg, iconCol }: { label: string; leg: string[]; iconCol: string }) {
+// action: 오른쪽 '바꾸기' 같은 버튼 — 있으면 '만날 곳'은 이름 옆 작은 글씨로 (89)
+export function MeetRow({ label, leg, iconCol, action }: { label: string; leg: string[]; iconCol: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-col">
       <div className={`grid min-h-8 ${iconCol} items-center`}>
@@ -46,8 +53,20 @@ export function MeetRow({ label, leg, iconCol }: { label: string; leg: string[];
             <path d="M6 21V4h11l-2 4 2 4H6" />
           </svg>
         </span>
-        <span className="truncate text-[14px] font-semibold">{label}</span>
-        <span className="text-caption text-subtle">만날 곳</span>
+        {action ? (
+          <>
+            <span className="flex min-w-0 items-baseline gap-1.5">
+              <span className="truncate text-[14px] font-semibold">{label}</span>
+              <span className="shrink-0 text-caption text-subtle">만날 곳</span>
+            </span>
+            {action}
+          </>
+        ) : (
+          <>
+            <span className="truncate text-[14px] font-semibold">{label}</span>
+            <span className="text-caption text-subtle">만날 곳</span>
+          </>
+        )}
       </div>
       <div className={`grid h-6 ${iconCol} items-center`}>
         <span aria-hidden="true" className="flex justify-center">

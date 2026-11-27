@@ -41,7 +41,7 @@ function Row({ m, timeOnly }: { m: MeetupListItem; timeOnly: boolean }) {
       <Link href={`/meet/${m.id}`} className="flex min-h-16 items-center gap-3 border-b border-line py-2.5">
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="row-title truncate text-body font-semibold">{title(m)}</span>
-          <MetaLine items={[when, m.status !== "open" && (m.status === "done" ? "끝남" : "취소"), m.invited && "수락 기다리는 중"]} />
+          <MetaLine items={[when, m.status === "done" && "끝남", m.invited && "수락 기다리는 중"]} />
         </span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-subtle" aria-hidden="true">
           <path d="M9 5l7 7-7 7" />

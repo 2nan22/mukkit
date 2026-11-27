@@ -40,7 +40,8 @@ async function MeetCourse({ params }: { params: Promise<{ meetupId: string }> })
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims?.sub) redirect(SIGNED_OUT_HOME);
   const [status, course, meet] = await Promise.all([getMeetupStatus(supabase, meetupId), getCourse(supabase, meetupId), getMeetPoint(supabase, meetupId)]);
-  if (!status?.isMember) notFound();
+  if (!status) redirect(`/meet/${meetupId}`);
+  if (!status.isMember) notFound();
   if (status.status !== "open") redirect(`/meet/${meetupId}`);
   if (course.stale) after(() => refreshCourseRoute(meetupId).catch(() => false));
   const h = await headers();

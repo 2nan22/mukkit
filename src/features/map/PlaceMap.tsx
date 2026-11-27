@@ -146,13 +146,13 @@ function foundElement(): HTMLElement {
   return el;
 }
 
-// 약속 만날 곳 — 검정 원 + 흰 깃발 (코스 목록 만날 곳 줄과 같은 깃발). 이름은 목록이 말해 줌 — 이름표는 가게 핀을 덮어서 뺌 (88-2)
+// 약속 만날 곳 — 검정 둥근 네모 + 흰 깃발 (가고 싶은 곳 흰 원 깃발 핀과 모양으로 구분, 91 검토) (코스 목록 만날 곳 줄과 같은 깃발). 이름은 목록이 말해 줌 — 이름표는 가게 핀을 덮어서 뺌 (88-2)
 function meetElement(label: string): HTMLElement {
   const el = document.createElement("span");
   el.setAttribute("role", "img");
   el.setAttribute("aria-label", `만날 곳 ${label}`);
   el.style.cssText =
-    "display:flex;align-items:center;justify-content:center;width:28px;height:28px;box-sizing:border-box;border-radius:50%;background:#17181c;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,.25);color:#ffffff;pointer-events:none";
+    "display:flex;align-items:center;justify-content:center;width:28px;height:28px;box-sizing:border-box;border-radius:8px;background:#17181c;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,.25);color:#ffffff;pointer-events:none";
   el.innerHTML =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M6 21V4h11l-2 4 2 4H6"/></svg>';
   return el;
@@ -252,7 +252,10 @@ export function PlaceMap({
   quiet = false,
   route = null,
   approach = null,
+  fitPins = null,
 }: {
+  // 맞출 핀 — 없으면 pins 전체와 코스 길. 있으면 이 핀들만 (약속 지도: 코스와 다른 지역을 볼 때, 89)
+  fitPins?: Pin[] | null;
   // 코스 길 [경도, 위도] — dashed 면 직선 어림(점선), 아니면 실제 걷는 길(실선) (84)
   route?: { path: [number, number][]; dashed: boolean } | null;
   // 만날 곳 › 1차 — 코스 길과 같은 주황, 흐린 점선 (88-2)
@@ -465,7 +468,7 @@ export function PlaceMap({
     const maps = window.kakao?.maps;
     if (!ready || !maps || !map.current || pins.length === 0) return;
     const m = map.current;
-    const key = [pins, top, right, bottom, left, refit, route];
+    const key = [pins, top, right, bottom, left, refit, route, fitPins];
     if (same(applied.current.fit, key)) return;
     applied.current.fit = key;
     requestAnimationFrame(() => {
@@ -479,19 +482,21 @@ export function PlaceMap({
         return;
       }
       fitted.current = true;
-      if (pins.length === 1 && !route) {
+      const list = fitPins && fitPins.length > 0 ? fitPins : pins;
+      const line = fitPins && fitPins.length > 0 ? null : route;
+      if (list.length === 1 && !line) {
         m.setLevel(SINGLE_LEVEL);
-        m.setCenter(new maps.LatLng(pins[0].lat, pins[0].lng));
+        m.setCenter(new maps.LatLng(list[0].lat, list[0].lng));
         return;
       }
       const bounds = new maps.LatLngBounds();
-      pins.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
+      list.forEach((p) => bounds.extend(new maps.LatLng(p.lat, p.lng)));
       // 코스 길이 핀 바깥으로 돌아가도 다 보이게 (84)
-      route?.path.forEach(([x, y]) => bounds.extend(new maps.LatLng(y, x)));
+      line?.path.forEach(([x, y]) => bounds.extend(new maps.LatLng(y, x)));
       const [t, r, b, l] = fitPadding([top, right, bottom, left], el.current?.clientWidth ?? 0, el.current?.clientHeight ?? 0);
       m.setBounds(bounds, t, r, b, l);
     });
-  }, [ready, pins, top, right, bottom, left, refit, route]);
+  }, [ready, pins, top, right, bottom, left, refit, route, fitPins]);
 
   // 핀 맞춤보다 뒤에 돌도록 아래에 둔다 — 같은 프레임이면 이 위치가 이긴다
   useEffect(() => {
@@ -542,6 +547,20 @@ export function PlaceMap({
     }
     meCircle.current?.setOptions({ strokeOpacity: radius ? 0.4 : 0, fillOpacity: radius ? 0.12 : 0 });
   }, [ready, me]);
+
+  // 한 화면에 지도가 둘이면(약속 화면 코스 카드 + 추천 지역) next/script 는 먼저 붙은 쪽에만 onReady 를 준다 —
+  // 나머지는 SDK 가 올라왔는지 직접 보고 시작한다 (88-4, 추천 지역 지도가 젓가락 로딩에 멈추던 것)
+  useEffect(() => {
+    if (ready || !APP_KEY) return;
+    let left = 75;
+    const t = setInterval(() => {
+      if (window.kakao?.maps) {
+        clearInterval(t);
+        window.kakao.maps.load(() => setReady(true));
+      } else if (--left <= 0) clearInterval(t);
+    }, 200);
+    return () => clearInterval(t);
+  }, [ready]);
 
   if (!APP_KEY || failed) {
     return (
