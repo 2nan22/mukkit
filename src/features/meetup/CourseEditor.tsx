@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { MetaLine } from "@/components/ui/MetaLine";
 import { CUISINE_LABEL } from "@/domain/cuisine";
-import { walkMinutes } from "@/domain/course";
+import { meetLeg, walkMinutes } from "@/domain/course";
 import type { Course, CourseStop } from "./course";
-import { CourseMap, courseShareText, legParts } from "./CourseMap";
+import { CourseMap, MeetRow, courseShareText, legParts } from "./CourseMap";
+import type { MeetPoint } from "./meetup";
 import { useCourseDraft } from "./useCourseDraft";
 
 const noSubscribe = (onChange: () => void) => {
@@ -15,7 +16,7 @@ const noSubscribe = (onChange: () => void) => {
 };
 
 // 코스 화면 (84) — 번호 핀 · 길, 1차 › 2차 목록, ≡ 끌어서(화살표 키) 순서 바꾸기 · 빼기, 아래 이 코스로 제안하기
-export function CourseEditor({ meetupId, course, meetupUrl }: { meetupId: string; course: Course; meetupUrl: string }) {
+export function CourseEditor({ meetupId, course, meet = null, meetupUrl }: { meetupId: string; course: Course; meet?: MeetPoint | null; meetupUrl: string }) {
   const draft = useCourseDraft(meetupId, course.stops.map((s) => s.placeId));
   const byId = new Map(course.stops.map((s) => [s.placeId, s]));
   const stops = draft.ids.flatMap((id) => (byId.get(id) ? [byId.get(id)!] : []));
@@ -58,30 +59,41 @@ export function CourseEditor({ meetupId, course, meetupUrl }: { meetupId: string
     }
   }
 
-  const total = route ? route.legs.reduce((a, l) => a + l.seconds, 0) : 0;
+  // 만날 곳 › 1차 — 약속 화면 코스 카드와 같은 줄 · 같은 합계 (88-2, 1차를 바꾸면 그 자리에서 어림)
+  const toFirst = meetLeg(meet, stops[0], course.meetWalk);
+  const meetSec = toFirst && !toFirst.atFirst ? toFirst.leg.seconds : 0;
+  const total = (route ? route.legs.reduce((a, l) => a + l.seconds, 0) : 0) + meetSec;
+  const showTotal = Boolean(route || (meetSec && stops.length === 1));
+  const totalEstimated = Boolean(route?.estimated || (meetSec && toFirst?.estimated));
 
   return (
     <div className="flex flex-col pb-[calc(7rem+env(safe-area-inset-bottom))]">
       {stops.length > 0 && (
         <div className="relative h-[36dvh] min-h-56 overflow-hidden">
           <div className="absolute inset-0">
-            <CourseMap stops={stops} route={route} />
+            <CourseMap stops={stops} route={route} meet={meet} />
           </div>
         </div>
       )}
       <section className="flex flex-col px-5 pt-5">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-section font-bold tracking-[-0.02em]">코스 {stops.length}곳</h2>
-          {route && (
+          {showTotal && (
             <span className="text-meta text-muted">
-              모두 걸어서 {route.estimated ? "약 " : ""}
+              모두 걸어서 {totalEstimated ? "약 " : ""}
               {walkMinutes(total)}분
             </span>
           )}
         </div>
         {stops.length > 1 && <span className="pt-1 text-caption text-subtle">끌거나 화살표 키로 순서를 바꿀 수 있어요</span>}
         {stops.length === 0 && <p className="pt-2 text-meta text-muted">아직 담은 가게가 없어요. 약속 화면 가게 목록에서 코스에 담아 보세요.</p>}
-        <ol ref={list} className="flex flex-col pt-3">
+        {/* 만날 곳은 끌 수 없어 목록(ol) 밖 — 끌기 자리 계산이 ol 줄만 보게 */}
+        {meet && toFirst && !toFirst.atFirst && (
+          <div className="pt-3">
+            <MeetRow label={meet.label} leg={legParts(toFirst.leg.meters, toFirst.leg.seconds, toFirst.estimated)} iconCol="grid-cols-[1.75rem_1fr_auto] gap-3" />
+          </div>
+        )}
+        <ol ref={list} className={`flex flex-col ${meet && toFirst && !toFirst.atFirst ? "" : "pt-3"}`}>
           {stops.map((s, i) => (
             <StopRow
               key={s.placeId}
