@@ -1,22 +1,38 @@
 "use client";
 
 import { useMemo } from "react";
-import { meetLeg, metersLabel, walkMinutes, type CourseRoute } from "@/domain/course";
+import { meetLeg, metersLabel, walkMinutes, type CourseRoute, type MeetWalk } from "@/domain/course";
 import { PlaceMap, type Pin } from "@/features/map/PlaceMap";
 import { MetaLine } from "@/components/ui/MetaLine";
 import type { CourseStop } from "./course";
 import type { MeetPoint } from "./meetup";
 
 // 코스 지도 — 번호 핀 · 길(실제 길은 실선, 직선 어림은 점선) (84) · 만날 곳 깃발 (88-2, 1차에서 바로 만나면 겹쳐서 뺌)
-export function CourseMap({ stops, route, meet = null, onSelect }: { stops: CourseStop[]; route: CourseRoute | null; meet?: MeetPoint | null; onSelect?: (placeId: string) => void }) {
+export function CourseMap({
+  stops,
+  route,
+  meet = null,
+  meetWalk = null,
+  onSelect,
+}: {
+  stops: CourseStop[];
+  route: CourseRoute | null;
+  meet?: MeetPoint | null;
+  meetWalk?: MeetWalk | null;
+  onSelect?: (placeId: string) => void;
+}) {
   const showMeet = Boolean(meet && meetLeg(meet, stops[0], null)?.atFirst === false);
   const pins = useMemo(() => {
     const course: Pin[] = stops.map((s, i) => ({ id: s.placeId, lat: s.lat, lng: s.lng, tier: "unrated" as const, order: i + 1 }));
     return meet && showMeet ? [...course, { id: "meet", lat: meet.lat, lng: meet.lng, tier: "unrated" as const, kind: "meet" as const, label: meet.label }] : course;
   }, [stops, meet, showMeet]);
   const line = useMemo(() => (route ? { path: route.path, dashed: route.estimated } : null), [route]);
-  // 만날 곳에서 1차까지 — 받아 둔 길 모양은 없어 곧은 점선 (목록 줄과 같은 뜻)
-  const approach = useMemo<[number, number][] | null>(() => (meet && showMeet && stops[0] ? [[meet.lng, meet.lat], [stops[0].lng, stops[0].lat]] : null), [meet, showMeet, stops]);
+  // 만날 곳에서 1차까지 — 받아 둔 길이면 코스 선(path)이 만날 곳부터 그려져 있음 (88-3). 아직이면 곧은 점선
+  const realMeet = meetLeg(meet, stops[0], meetWalk)?.estimated === false && route?.estimated === false;
+  const approach = useMemo<[number, number][] | null>(
+    () => (meet && showMeet && !realMeet && stops[0] ? [[meet.lng, meet.lat], [stops[0].lng, stops[0].lat]] : null),
+    [meet, showMeet, realMeet, stops],
+  );
   return <PlaceMap pins={pins} route={line} approach={approach} selectedId={null} onSelect={(id) => onSelect?.(id)} padding={[40, 40, 40, 40]} quiet />;
 }
 

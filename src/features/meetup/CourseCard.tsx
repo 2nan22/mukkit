@@ -26,7 +26,7 @@ export function CourseCard({ meetupId, course, editable, meet = null }: { meetup
     <section aria-label="약속 코스" className="overflow-hidden rounded-[16px] border border-line">
       <div className="relative h-40">
         <div className="absolute inset-0">
-          <CourseMap stops={stops} route={route} meet={meet} />
+          <CourseMap stops={stops} route={route} meet={meet} meetWalk={course.meetWalk} />
         </div>
       </div>
       <div className="flex flex-col gap-2.5 px-4 pt-3.5 pb-4">
