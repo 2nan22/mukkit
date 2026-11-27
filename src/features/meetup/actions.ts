@@ -13,9 +13,8 @@ import { searchKakaoKeyword } from "@/features/search/kakaoLocal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getBlockedIds } from "@/features/safety/safety";
 import { notifyMeetup } from "./notify";
-import { fetchWalkRoute } from "./walkRoute";
-import { COURSE_MAX, courseKey } from "@/domain/course";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { refreshCourseRoute } from "./courseRoute";
+import { COURSE_MAX } from "@/domain/course";
 
 type Result = { error?: string };
 const FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
@@ -193,23 +192,11 @@ export async function setMeetupCourse(input: z.input<typeof CourseInput>): Promi
     }
     return { error: FAILED };
   }
-  if (changed && placeIds.length >= 2) await saveWalkRoute(meetupId, courseKey(placeIds));
+  // 저장 한 번에 길 한 번 — 코스 화면은 '이 순서로 저장'을 눌렀을 때만 여기로 (88-3)
+  if (changed) await refreshCourseRoute(meetupId).catch(() => false);
   revalidatePath(`/meet/${meetupId}`);
   revalidatePath(`/meet/${meetupId}/course`);
   return {};
-}
-
-// 길은 서버가 받은 것만 서비스 키로 저장 — 저장 함수가 그 사이 코스가 또 바뀌었으면 쓰지 않는다. 받기 실패면 저장 안 함(화면은 직선 어림)
-async function saveWalkRoute(meetupId: string, key: string): Promise<void> {
-  const admin = createSupabaseAdminClient();
-  if (!admin) return;
-  const { data } = await admin.from("meetup_course").select("place_id, places(lat, lng)").eq("meetup_id", meetupId).order("position");
-  const rows = (data ?? []) as unknown as { place_id: string; places: { lat: number; lng: number } | null }[];
-  const stops = rows.flatMap((r) => (r.places ? [{ id: r.place_id, lat: r.places.lat, lng: r.places.lng }] : []));
-  if (stops.length < 2 || courseKey(stops.map((s) => s.id)) !== key) return;
-  const route = await fetchWalkRoute(stops);
-  if (!route) return;
-  await admin.rpc("save_meetup_course_route", { p_meetup: meetupId, p_key: key, p_legs: route.legs, p_path: route.path });
 }
 
 const MeetPointInput = z.object({
@@ -233,6 +220,8 @@ export async function setMeetPoint(input: z.input<typeof MeetPointInput>): Promi
     p_area: point?.area ?? null,
   });
   if (error) return { error: error.code === "P0002" ? "끝난 약속이에요" : FAILED };
+  // 응답을 기다리게 하지 않음 — 화면은 어림으로 먼저, 새로 불러올 때 실제 길 (MeetupRefresher)
+  if (point) after(() => refreshCourseRoute(meetupId).catch(() => false));
   revalidatePath(`/meet/${meetupId}`);
   return {};
 }

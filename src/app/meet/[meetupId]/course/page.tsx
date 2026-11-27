@@ -5,8 +5,10 @@ import { AppHeader } from "@/components/AppHeader";
 import { PageLoader } from "@/components/ui/EatingLoader";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { getCourse } from "@/features/meetup/course";
+import { refreshCourseRoute } from "@/features/meetup/courseRoute";
+import { after } from "next/server";
 import { CourseEditor } from "@/features/meetup/CourseEditor";
-import { getMeetupStatus } from "@/features/meetup/meetup";
+import { getMeetupStatus, getMeetPoint } from "@/features/meetup/meetup";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "코스" };
@@ -37,10 +39,11 @@ async function MeetCourse({ params }: { params: Promise<{ meetupId: string }> })
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims?.sub) redirect(SIGNED_OUT_HOME);
-  const [status, course] = await Promise.all([getMeetupStatus(supabase, meetupId), getCourse(supabase, meetupId)]);
+  const [status, course, meet] = await Promise.all([getMeetupStatus(supabase, meetupId), getCourse(supabase, meetupId), getMeetPoint(supabase, meetupId)]);
   if (!status?.isMember) notFound();
   if (status.status !== "open") redirect(`/meet/${meetupId}`);
+  if (course.stale) after(() => refreshCourseRoute(meetupId).catch(() => false));
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
-  return <CourseEditor meetupId={meetupId} course={course} meetupUrl={`${origin}/meet/${meetupId}`} />;
+  return <CourseEditor meetupId={meetupId} course={course} meet={meet} meetupUrl={`${origin}/meet/${meetupId}`} />;
 }

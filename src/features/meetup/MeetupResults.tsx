@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { PlaceRow } from "@/components/ui/PlaceRow";
 import { CUISINE_LABEL } from "@/domain/cuisine";
 import { areaReason, isEven, lastTrainLine, timeHeadline, type RankedPerson } from "@/domain/meetup";
-import { PlaceMap } from "@/features/map/PlaceMap";
+import { PlaceMap, type Pin } from "@/features/map/PlaceMap";
+import { metersBetween } from "@/domain/listSort";
 import type { AreaPlan, MeetPoint } from "./meetup";
 import { MeetPointCard, type MeetOption } from "./MeetPointCard";
 import { COURSE_MAX } from "@/domain/course";
@@ -81,15 +82,16 @@ export function MeetupResults({
   const draft = useCourseDraft(meetupId, course.stops.map((s) => s.placeId));
   const courseIds = draft.ids;
   // 평가 안 한 가게는 중립 핀, 가게가 없으면 지역 가운데만 · 코스에 담은 곳은 번호 핀
-  const pins = useMemo(
-    () =>
-      plan?.shops.length
-        ? plan.shops.map((s) => ({ id: s.placeId, lat: s.lat, lng: s.lng, tier: s.myTier ?? "unrated", order: courseIds.includes(s.placeId) ? courseIds.indexOf(s.placeId) + 1 : undefined }))
-        : plan
-          ? [{ id: "area", lat: plan.lat, lng: plan.lng, tier: "wantToGo" as const }]
-          : [],
-    [plan, courseIds],
-  );
+  const pins = useMemo(() => {
+    const base: Pin[] = plan?.shops.length
+      ? plan.shops.map((s) => ({ id: s.placeId, lat: s.lat, lng: s.lng, tier: s.myTier ?? "unrated", order: courseIds.includes(s.placeId) ? courseIds.indexOf(s.placeId) + 1 : undefined }))
+      : plan
+        ? [{ id: "area", lat: plan.lat, lng: plan.lng, tier: "wantToGo" as const }]
+        : [];
+    // 만날 곳 깃발 — 지금 보는 지역의 만날 곳일 때만 (다른 지역이면 지도가 멀리 넓어짐, 88-2)
+    const here = meet && plan && (meet.area === plan.name || (!meet.area && metersBetween(meet, plan) < 3000));
+    return here ? [...base, { id: "meet", lat: meet.lat, lng: meet.lng, tier: "unrated" as const, kind: "meet" as const, label: meet.label }] : base;
+  }, [plan, courseIds, meet]);
 
   function toggleCourse(placeId: string) {
     const adding = !courseIds.includes(placeId);

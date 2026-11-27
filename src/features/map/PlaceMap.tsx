@@ -83,7 +83,8 @@ declare global {
 
 // color: 리스트로 보기 — 리스트 색 핀(등급 숫자는 그대로) · text 는 그 색 위 글자색 · null 은 어느 리스트에도 없음(흰 빈 핀)
 // order: 코스 순서 번호(1부터) — 등급 대신 주황 번호 핀 (84)
-export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found"; color?: { bg: string; text: string } | null; order?: number };
+// kind meet: 약속 만날 곳 — 검정 원 깃발, label 은 읽어 주기용 · 누를 수 없음 (88-2)
+export type Pin = { id: string; lat: number; lng: number; tier: Tier; kind?: "found" | "meet"; label?: string; color?: { bg: string; text: string } | null; order?: number };
 export type MyLocation = { lat: number; lng: number; accuracy: number };
 // 배열의 칸이 모두 같은 값(같은 참조)인지
 function same(a: unknown[] | undefined, b: unknown[]): boolean {
@@ -144,6 +145,21 @@ function foundElement(): HTMLElement {
   el.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#ffffff"></span>';
   return el;
 }
+
+// 약속 만날 곳 — 검정 원 + 흰 깃발 (코스 목록 만날 곳 줄과 같은 깃발). 이름은 목록이 말해 줌 — 이름표는 가게 핀을 덮어서 뺌 (88-2)
+function meetElement(label: string): HTMLElement {
+  const el = document.createElement("span");
+  el.setAttribute("role", "img");
+  el.setAttribute("aria-label", `만날 곳 ${label}`);
+  el.style.cssText =
+    "display:flex;align-items:center;justify-content:center;width:28px;height:28px;box-sizing:border-box;border-radius:50%;background:#17181c;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,.25);color:#ffffff;pointer-events:none";
+  el.innerHTML =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M6 21V4h11l-2 4 2 4H6"/></svg>';
+  return el;
+}
+
+// 누를 수 없고 묶지 않는 핀 — 검색한 가게 · 만날 곳
+const isStatic = (p: Pin) => p.kind === "found" || p.kind === "meet";
 
 const NUMBER: Partial<Record<Tier, string>> = { three: "3", two: "2", one: "1" };
 
@@ -235,9 +251,12 @@ export function PlaceMap({
   centerOn = null,
   quiet = false,
   route = null,
+  approach = null,
 }: {
   // 코스 길 [경도, 위도] — dashed 면 직선 어림(점선), 아니면 실제 걷는 길(실선) (84)
   route?: { path: [number, number][]; dashed: boolean } | null;
+  // 만날 곳 › 1차 — 코스 길과 같은 주황, 흐린 점선 (88-2)
+  approach?: [number, number][] | null;
   // 타일이 깔릴 때까지 가운데 로딩을 띄우지 않는다 — 홈 미리보기처럼 작은 지도
   quiet?: boolean;
   // 이 핀을 보이는 칸 가운데로 옮긴다(확대는 그대로) — 접힌 카드를 넘길 때. n 이 바뀌면 같은 핀도 다시
@@ -273,6 +292,7 @@ export function PlaceMap({
   const meCircle = useRef<KakaoCircle | null>(null);
   const clusterer = useRef<KakaoClusterer | null>(null);
   const routeLine = useRef<KakaoPolyline | null>(null);
+  const approachLine = useRef<KakaoPolyline | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   // 마지막으로 지도에 반영한 값 — 다른 화면에 갔다 뒤로 돌아오면(화면이 숨었다 다시 보임) 효과가 다시 돌아도
@@ -333,17 +353,17 @@ export function PlaceMap({
       const selected = p.id === selectedRef.current || p.id === highlightRef.current;
       const overlay = new maps.CustomOverlay({
         position: new maps.LatLng(p.lat, p.lng),
-        content: p.kind === "found" ? foundElement() : pinContent(p, selected, () => onSelectRef.current(p.id)),
-        map: useCluster && p.kind !== "found" ? undefined : m,
+        content: p.kind === "found" ? foundElement() : p.kind === "meet" ? meetElement(p.label ?? "") : pinContent(p, selected, () => onSelectRef.current(p.id)),
+        map: useCluster && !isStatic(p) ? undefined : m,
         xAnchor: 0.5,
         yAnchor: 0.5,
-        zIndex: p.kind === "found" ? 1000 : pinZ(p, selected),
-        clickable: p.kind !== "found",
+        zIndex: p.kind === "found" ? 1000 : p.kind === "meet" ? 900 : pinZ(p, selected),
+        clickable: !isStatic(p),
       });
       next.set(p.id, { overlay, pin: p });
     }
     overlays.current = next;
-    if (useCluster) clusterer.current?.addMarkers([...next.values()].filter((v) => v.pin.kind !== "found").map((v) => v.overlay));
+    if (useCluster) clusterer.current?.addMarkers([...next.values()].filter((v) => !isStatic(v.pin)).map((v) => v.overlay));
   }, [ready, pins, cluster]);
 
   // 코스 길 — 바뀔 때만 다시 긋는다. 핀 아래에 깔리게 (Polyline 은 오버레이보다 아래 층)
@@ -363,6 +383,22 @@ export function PlaceMap({
     });
   }, [ready, route]);
 
+  useEffect(() => {
+    const maps = window.kakao?.maps;
+    if (!ready || !maps || !map.current) return;
+    approachLine.current?.setMap(null);
+    approachLine.current = null;
+    if (!approach || approach.length < 2) return;
+    approachLine.current = new maps.Polyline({
+      path: approach.map(([x, y]) => new maps.LatLng(y, x)),
+      strokeWeight: 4,
+      strokeColor: COURSE_COLOR,
+      strokeOpacity: 0.5,
+      strokeStyle: "shortdash",
+      map: map.current,
+    });
+  }, [ready, approach]);
+
   // 고른 핀 표시 — 이전 · 새 핀 두 개만 바꾼다
   useEffect(() => {
     const prev = selectedRef.current;
@@ -370,7 +406,7 @@ export function PlaceMap({
     if (!ready || prev === selectedId) return;
     for (const id of [prev, selectedId]) {
       const hit = id ? overlays.current.get(id) : undefined;
-      if (!hit || hit.pin.kind === "found") continue;
+      if (!hit || isStatic(hit.pin)) continue;
       const on = id === selectedId;
       hit.overlay.setContent(pinContent(hit.pin, on, () => onSelectRef.current(hit.pin.id)));
       hit.overlay.setZIndex(pinZ(hit.pin, on));
@@ -384,7 +420,7 @@ export function PlaceMap({
     if (!ready || prev === highlightId) return;
     for (const id of [prev, highlightId]) {
       const hit = id ? overlays.current.get(id) : undefined;
-      if (!hit || hit.pin.kind === "found" || id === selectedRef.current) continue;
+      if (!hit || isStatic(hit.pin) || id === selectedRef.current) continue;
       const on = id === highlightId;
       hit.overlay.setContent(pinContent(hit.pin, on, () => onSelectRef.current(hit.pin.id)));
       hit.overlay.setZIndex(pinZ(hit.pin, on));
