@@ -42,3 +42,12 @@ export async function notifyMeetup(meetupId: string, actorId: string, event: Eve
     "meetup",
   );
 }
+
+// 약속 취소 (90) — 약속은 이미 지워져 링크는 약속 목록으로. 받는 사람은 취소 직전 참여자 · 대기 중 초대(만든 사람 빼고)
+export async function notifyMeetupCancelled(meetupId: string, actorId: string, to: string[]): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  if (!admin || to.length === 0) return;
+  const { data: actor } = await admin.from("profiles").select("nickname").eq("id", actorId).maybeSingle();
+  if (!actor) return;
+  await sendPush(to, { title: "약속 취소", body: `${honor(actor.nickname as string)}이 약속을 취소했어요`, url: "/meet", tag: `meet-${meetupId}` }, "meetup");
+}

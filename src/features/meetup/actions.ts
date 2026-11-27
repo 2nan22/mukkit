@@ -12,7 +12,7 @@ import { NICKNAME_SETUP, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { searchKakaoKeyword } from "@/features/search/kakaoLocal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getBlockedIds } from "@/features/safety/safety";
-import { notifyMeetup } from "./notify";
+import { notifyMeetup, notifyMeetupCancelled } from "./notify";
 import { refreshCourseRoute } from "./courseRoute";
 import { COURSE_MAX } from "@/domain/course";
 
@@ -88,16 +88,40 @@ export async function removeMeetupPoint(meetupId: string, kind: "origin" | "retu
   return {};
 }
 
-export async function closeMeetup(meetupId: string, status: "done" | "cancelled"): Promise<Result> {
+// 약속 끝내기 — 함께하는 사람 누구나. 위치는 바로 지우고 어디서 만났는지 기록하러
+export async function closeMeetup(meetupId: string): Promise<Result> {
   if (!z.uuid().safeParse(meetupId).success) return { error: FAILED };
   const { supabase } = await requireUser();
-  const { error } = await supabase.from("meetups").update({ status }).eq("id", meetupId);
+  const { error } = await supabase.from("meetups").update({ status: "done" }).eq("id", meetupId);
   if (error) return { error: FAILED };
   // 끝낸 약속의 위치는 바로 지운다 (새벽 정리 작업은 남은 것 정리용)
   await supabase.from("meetup_points").delete().eq("meetup_id", meetupId);
   revalidatePath("/meet");
-  // 끝낸 약속은 어디서 만났는지 기록하러
-  redirect(status === "done" ? `/meet/${meetupId}/visit` : "/meet", RedirectType.replace);
+  redirect(`/meet/${meetupId}/visit`, RedirectType.replace);
+}
+
+// 약속 취소 — 만든 사람만, 약속을 지운다(초대 · 참여 · 위치 · 코스 · 알림 함께, 90). 함께하던 사람 · 초대받은 사람에게 푸시
+export async function cancelMeetup(meetupId: string): Promise<Result> {
+  if (!z.uuid().safeParse(meetupId).success) return { error: FAILED };
+  const { supabase, me } = await requireUser();
+  const { data, error } = await supabase.rpc("cancel_meetup", { p_meetup: meetupId });
+  if (error) return { error: error.code === "P0002" ? "이미 끝난 약속이에요" : FAILED };
+  const to = ((data ?? []) as string[]).filter(Boolean);
+  if (to.length > 0) after(() => notifyMeetupCancelled(meetupId, me, to));
+  revalidatePath("/meet");
+  revalidatePath("/home");
+  redirect("/meet", RedirectType.replace);
+}
+
+// 약속 나가기 — 함께하던 사람(만든 사람 말고). 내 참여 · 위치만 지운다 (90)
+export async function leaveMeetup(meetupId: string): Promise<Result> {
+  if (!z.uuid().safeParse(meetupId).success) return { error: FAILED };
+  const { supabase } = await requireUser();
+  const { error } = await supabase.rpc("leave_meetup", { p_meetup: meetupId });
+  if (error) return { error: error.code === "P0002" ? "이미 끝난 약속이에요" : FAILED };
+  revalidatePath("/meet");
+  revalidatePath("/home");
+  redirect("/meet", RedirectType.replace);
 }
 
 export async function inviteUser(meetupId: string, userId: string): Promise<Result> {
