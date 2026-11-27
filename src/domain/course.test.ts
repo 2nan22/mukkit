@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { metersLabel, parseWalkRoute, straightRoute, thinPath, walkMinutes } from "./course";
+import { metersLabel, parseWalkRoute, straightRoute, thinPath, walkMinutes, meetLeg } from "./course";
 
 describe("straightRoute", () => {
   it("구간마다 직선 × 1.3 · 분당 70m", () => {
@@ -46,5 +46,24 @@ describe("표시", () => {
     expect(walkMinutes(540)).toBe(9);
     expect(metersLabel(654)).toBe("650m");
     expect(metersLabel(1530)).toBe("1.5km");
+  });
+});
+
+describe("meetLeg (88)", () => {
+  const meet = { lat: 37.566, lng: 126.982 };
+  const first = { placeId: "p1", lat: 37.5695, lng: 126.982 };
+  it("받아 둔 길이 지금 만날 곳 · 1차의 것이면 실제 길", () => {
+    const r = meetLeg(meet, first, { placeId: "p1", lat: 37.566, lng: 126.982, meters: 520, seconds: 420 });
+    expect(r).toEqual({ leg: { meters: 520, seconds: 420 }, estimated: false, atFirst: false });
+  });
+  it("1차나 만날 곳이 바뀌었거나 실패면 직선 어림", () => {
+    expect(meetLeg(meet, first, { placeId: "p2", lat: 37.566, lng: 126.982, meters: 520, seconds: 420 })?.estimated).toBe(true);
+    expect(meetLeg(meet, first, { placeId: "p1", lat: 37.5, lng: 126.982, meters: 520, seconds: 420 })?.estimated).toBe(true);
+    expect(meetLeg(meet, first, { placeId: "p1", lat: 37.566, lng: 126.982, meters: null, seconds: null })?.estimated).toBe(true);
+  });
+  it("아주 가까우면 1차에서 바로 만남 · 없으면 null", () => {
+    expect(meetLeg(meet, { placeId: "p1", ...meet }, null)?.atFirst).toBe(true);
+    expect(meetLeg(null, first, null)).toBeNull();
+    expect(meetLeg(meet, undefined, null)).toBeNull();
   });
 });

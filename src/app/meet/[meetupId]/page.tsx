@@ -17,6 +17,8 @@ import { MeetupRefresher } from "@/features/meetup/MeetupRefresher";
 import { MeetupResults } from "@/features/meetup/MeetupResults";
 import { CourseCard } from "@/features/meetup/CourseCard";
 import { getCourse } from "@/features/meetup/course";
+import { refreshMeetWalk } from "@/features/meetup/meetWalk";
+import { meetLeg } from "@/domain/course";
 import { PointEditor } from "@/features/meetup/PointEditor";
 import { PushToggle } from "@/features/push/PushToggle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -128,6 +130,9 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
   const [plans, course, meet] = await Promise.all([ready ? planMeetup(supabase, me, status) : Promise.resolve([]), getCourse(supabase, meetupId), getMeetPoint(supabase, meetupId)]);
   // 아직 안 잰 대중교통 구간만 화면을 그린 뒤 잰다 — 하루 상한 안에서 (86)
   if (ready && status.status === "open" && plans.some((p) => p.people.some((x) => !x.exact))) after(() => refreshMeetupTransit(meetupId, plans.map((p) => p.name)).catch(() => 0));
+  // 만날 곳 › 1차 길을 아직 못 받았으면(88 전에 정한 만날 곳 · 실패 뒤) 화면을 그린 뒤 받는다
+  const toFirst = meetLeg(meet, course.stops[0], course.meetWalk);
+  if (status.status === "open" && toFirst?.estimated && !toFirst.atFirst) after(() => refreshMeetWalk(meetupId).catch(() => false));
   const title = others.length === 0 ? `${purpose} 약속` : others.length === 1 ? `${others[0].nickname}님과 ${purpose}` : `${others.length + 1}명 ${purpose}`;
   const canInvite = status.isHost && status.status === "open" && status.members.length < status.maxMembers;
 
