@@ -111,6 +111,7 @@ function saveLastView(view: string, v: Focus) {
 export function MapView({
   places: allPlaces,
   initialTiers = [],
+  remember = true,
   at = null,
   view = "mine",
   following = 0,
@@ -118,6 +119,8 @@ export function MapView({
 }: {
   places: MapPlace[];
   initialTiers?: Tier[];
+  // 마지막 자리를 읽고 쓸지 — 리스트 하나만 볼 때는 그 리스트에 맞춰 열고 내 지도 자리도 덮지 않는다 (96-4 QA)
+  remember?: boolean;
   at?: { lat: number; lng: number } | null;
   view?: "mine" | "following";
   following?: number;
@@ -165,7 +168,7 @@ export function MapView({
   // 팔로잉 지도는 누군가 그 등급을 줬으면 해당 (핀 색은 가장 높은 등급)
   const tierMatch = (p: MapPlace, ts: Tier[]) => ts.length === 0 || (p.raters ? p.raters.some((r) => ts.includes(r.tier)) : ts.includes(p.tier));
   // 리스트 하나만 볼 때는 전체 맞춤, 아니면 위치 · 많이 저장한 지역에서 시작
-  const [focus, setFocus] = useState<Focus | null>(() => (at ? { ...at, level: HERE_LEVEL } : (readLastView(view) ?? (places.length > 30 ? busiestArea(places) : null))));
+  const [focus, setFocus] = useState<Focus | null>(() => (at ? { ...at, level: HERE_LEVEL } : ((remember ? readLastView(view) : null) ?? (places.length > 30 ? busiestArea(places) : null))));
   const [locating, setLocating] = useState(false);
   const [me, setMe] = useState<MyLocation | null>(null);
   // 내 위치가 지도 가운데일 때만 버튼을 파랗게 — 지도를 손으로 옮기면 해제
@@ -399,7 +402,7 @@ export function MapView({
           onSelect={(id) => (id === FOUND_PIN ? undefined : (setFound(null), setSelectedId(id)))}
           zoomRef={zoomRef}
           onViewChange={(v) => {
-            saveLastView(view, { lat: v.center.lat, lng: v.center.lng, level: v.level });
+            if (remember) saveLastView(view, { lat: v.center.lat, lng: v.center.lng, level: v.level });
             if (Date.now() < holdViewUntil.current) return;
             setViewport({ ...v, bottomCover: snap === "peek" ? (sheetRef.current?.offsetHeight ?? 0) : PEEK_COVER_PX });
           }}
