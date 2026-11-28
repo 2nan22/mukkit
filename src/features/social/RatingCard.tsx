@@ -46,7 +46,7 @@ export function RatingCard({
   return (
     // 피드 B안 (81, 사용자 결정 2026-11-27) — 사람 줄 › 사진 위 가게 이름 · 숟가락 › 한 줄 평가 › 반응
     // 사람 이름과 가게 이름이 섞여 보이지 않게 사람은 머리 줄, 가게는 사진 위(사진 없으면 회색 가게 칸)
-    <TapToPlace placeId={rating.placeId} className="-mx-5 flex flex-col gap-2.5 border-b border-line px-5 pt-3 pb-1">
+    <TapToPlace placeId={rating.placeId} className="-mx-5 flex flex-col gap-3 border-b border-line px-5 pt-6 pb-4">
       <div className="flex h-8 items-center gap-2">
         {showOwner && (
           <Link href={`/u/${rating.ownerId}`} className="flex min-w-0 items-center gap-2">

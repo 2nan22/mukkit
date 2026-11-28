@@ -89,6 +89,24 @@ function busiestArea(places: MapPlace[]): Focus | null {
   return { lat: top.reduce((n, p) => n + p.lat, 0) / top.length, lng: top.reduce((n, p) => n + p.lng, 0) / top.length, level: AREA_LEVEL };
 }
 
+// 마지막으로 보던 자리 — 다른 화면을 여럿 오가면 숨겨 둔 지도 화면이 버려져 새로 그려진다.
+// 그때 처음 자리(많이 저장한 지역)로 튀지 않게 이 탭 동안 기억한다 (95)
+const lastViewKey = (view: string) => `mk-map-last:${view}`;
+function readLastView(view: string): Focus | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = JSON.parse(sessionStorage.getItem(lastViewKey(view)) ?? "null") as Focus | null;
+    return v && Number.isFinite(v.lat) && Number.isFinite(v.lng) && Number.isFinite(v.level) ? v : null;
+  } catch {
+    return null;
+  }
+}
+function saveLastView(view: string, v: Focus) {
+  try {
+    sessionStorage.setItem(lastViewKey(view), JSON.stringify(v));
+  } catch {}
+}
+
 // view: mine 내 장소 · following 팔로우하는 사람이 평가한 곳 (following: 팔로우 수 — 빈 화면 안내)
 export function MapView({
   places: allPlaces,
@@ -147,7 +165,7 @@ export function MapView({
   // 팔로잉 지도는 누군가 그 등급을 줬으면 해당 (핀 색은 가장 높은 등급)
   const tierMatch = (p: MapPlace, ts: Tier[]) => ts.length === 0 || (p.raters ? p.raters.some((r) => ts.includes(r.tier)) : ts.includes(p.tier));
   // 리스트 하나만 볼 때는 전체 맞춤, 아니면 위치 · 많이 저장한 지역에서 시작
-  const [focus, setFocus] = useState<Focus | null>(() => (at ? { ...at, level: HERE_LEVEL } : places.length > 30 ? busiestArea(places) : null));
+  const [focus, setFocus] = useState<Focus | null>(() => (at ? { ...at, level: HERE_LEVEL } : (readLastView(view) ?? (places.length > 30 ? busiestArea(places) : null))));
   const [locating, setLocating] = useState(false);
   const [me, setMe] = useState<MyLocation | null>(null);
   // 내 위치가 지도 가운데일 때만 버튼을 파랗게 — 지도를 손으로 옮기면 해제
@@ -381,6 +399,7 @@ export function MapView({
           onSelect={(id) => (id === FOUND_PIN ? undefined : (setFound(null), setSelectedId(id)))}
           zoomRef={zoomRef}
           onViewChange={(v) => {
+            saveLastView(view, { lat: v.center.lat, lng: v.center.lng, level: v.level });
             if (Date.now() < holdViewUntil.current) return;
             setViewport({ ...v, bottomCover: snap === "peek" ? (sheetRef.current?.offsetHeight ?? 0) : PEEK_COVER_PX });
           }}
