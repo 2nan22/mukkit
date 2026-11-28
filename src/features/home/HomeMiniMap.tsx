@@ -15,6 +15,7 @@ const noop = () => {};
 // 홈 내 지도 — 실제 카카오맵 미리보기. 화면에 들어올 때만 지도를 띄우고(SDK · 쿼터 아끼기),
 // inert 로 만지거나 포커스가 들어가지 않게 — 카드 전체를 덮은 링크가 지도 탭으로
 // 처음 보이는 곳: 위치 권한을 이미 줬고 둘레 3km 에 내 장소가 있으면 지금 위치, 아니면 장소가 가장 많이 모인 동네 (50)
+// 홈 데이터가 새로 오면(새로 고침 · 오가기) 핀 배열이 바뀌어도 전체로 다시 맞추지 않는다 — refit hidden (96-3)
 // 지도 위에 보이는 동네 이름(좁으면 구 · 동, 넓으면 구), 아래 숫자는 지도에 보이는 범위 기준 — 그 전엔 전체 (65)
 export function HomeMapCard({ points, total }: { points: HomePoint[]; total: ViewCounts }) {
   const box = useRef<HTMLDivElement>(null);
@@ -84,7 +85,7 @@ export function HomeMapCard({ points, total }: { points: HomePoint[]; total: Vie
   return (
     <div className="relative mx-5 flex flex-col overflow-hidden rounded-[16px] border border-line">
       <div ref={box} inert aria-hidden="true" className="relative isolate h-[132px] w-full bg-map-land">
-        {seen && <PlaceMap pins={pins} selectedId={null} onSelect={noop} padding={PADDING} cluster focus={focus} me={me} quiet onViewChange={onView} />}
+        {seen && <PlaceMap pins={pins} selectedId={null} onSelect={noop} padding={PADDING} cluster focus={focus} refit="hidden" me={me} quiet onViewChange={onView} />}
         {place && (
           <span className="absolute top-2.5 left-2.5 z-10 flex h-7 items-center gap-1 rounded-full bg-white/95 px-2.5 text-meta font-semibold text-ink shadow-float">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={me ? "text-me" : "text-muted"}>
