@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fetchAll } from "@/lib/supabase/fetchAll";
 import type { Cuisine } from "@/domain/cuisine";
 import { tierFromDb, type Tier } from "@/domain/tier";
 import { getBlockedIds } from "@/features/safety/safety";
@@ -198,14 +197,6 @@ export async function getBio(supabase: SupabaseClient, id: string): Promise<stri
 }
 
 export type RecentList = { id: string; name: string; ownerNickname: string; count: number; points: { placeId: string; cuisine: Cuisine; lat: number; lng: number; tier: string | null }[]; saves?: number };
-
-export async function getMyWantToGoPoints(supabase: SupabaseClient, me: string): Promise<{ lat: number; lng: number }[]> {
-  const { data, error } = await fetchAll((from, to) =>
-    supabase.from("user_places").select("places(lat, lng)").eq("user_id", me).eq("tier", "want_to_go").order("place_id").range(from, to),
-  );
-  if (error) throw new SocialError("want_to_go", error.code);
-  return (data as unknown as { places: { lat: number; lng: number } | null }[]).flatMap((r) => (r.places ? [r.places] : []));
-}
 
 // 요즘 많이 저장된 공개 리스트 — 최근 30일 저장 수 › 전체 저장 수 › 최근 고친 순
 export async function getPopularPublicLists(supabase: SupabaseClient, limit = 4, offset = 0): Promise<RecentList[]> {

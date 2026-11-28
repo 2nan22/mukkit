@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { respondInvite } from "./actions";
 
 // 받은 초대 — 수락하면 위치를 넣고 함께 정하기
-export function InviteAnswer({ meetupId, hostNickname, purposeLabel, when }: { meetupId: string; hostNickname: string; purposeLabel: string; when: string }) {
+export function InviteAnswer({ meetupId, title = null, hostNickname, purposeLabel, when }: { meetupId: string; title?: string | null; hostNickname: string; purposeLabel: string; when: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -19,8 +19,9 @@ export function InviteAnswer({ meetupId, hostNickname, purposeLabel, when }: { m
   return (
     <section className="flex flex-col gap-3 rounded-[16px] bg-brand-soft p-5">
       <span className="text-[18px] font-bold leading-snug">
-        {hostNickname}님이 {purposeLabel} 약속에 초대했어요
+        {title ? `${hostNickname}님이 초대했어요` : `${hostNickname}님이 ${purposeLabel} 약속에 초대했어요`}
       </span>
+      {title && <span className="text-body font-semibold break-keep">{title}</span>}
       <span className="text-meta text-ink-2">{when}</span>
       <span className="text-meta leading-normal text-ink-2">참여하면 출발지를 넣고 모두 오가기 편한 곳을 함께 봐요. 위치는 다른 분에게 보이지 않아요.</span>
       {error && (

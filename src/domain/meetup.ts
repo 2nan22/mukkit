@@ -2,6 +2,14 @@ import type { Cuisine } from "./cuisine";
 import { scoreCandidate, type Candidate, type Scored } from "./eatScore";
 
 // 약속 목적 — 음식 종류마다 얼마나 어울리는지 (1 잘 맞음 · 0.5 무난 · 그 아래는 거의 안 맞음)
+// 약속 이름 (96) — 비우면 목적 · 함께하는 사람으로 짓는다
+export const MEETUP_TITLE_MAX = 30;
+export function cleanMeetupTitle(raw: string | null | undefined): string | null {
+  // 폭 없는 공백은 지우고, 글자 단위로 자른다 (이모지 반쪽이 남지 않게)
+  const t = Array.from((raw ?? "").replace(/[\u200B-\u200D\u2060\uFEFF]/g, "").replace(/\s+/g, " ").trim()).slice(0, MEETUP_TITLE_MAX).join("").trim();
+  return t || null;
+}
+
 export const PURPOSES = ["meal", "team", "date", "drinks", "cafe"] as const;
 export type Purpose = (typeof PURPOSES)[number];
 

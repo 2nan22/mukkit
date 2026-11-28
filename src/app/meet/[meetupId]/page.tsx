@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { PURPOSE_LABEL } from "@/domain/meetup";
+import { MeetupTitle } from "@/features/meetup/MeetupTitle";
 import { meetWhen } from "@/domain/meetTime";
 import { SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { CloseMeetup } from "@/features/meetup/CloseMeetup";
@@ -127,7 +128,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
   if (!status.isMember && status.isInvitee) {
     return (
       <div className="flex flex-col gap-6 px-5 pb-10">
-        <InviteAnswer meetupId={status.id} hostNickname={status.hostNickname} purposeLabel={purpose} when={meetWhen(status.startsAt, status.endsAt)} />
+        <InviteAnswer meetupId={status.id} title={status.title} hostNickname={status.hostNickname} purposeLabel={purpose} when={meetWhen(status.startsAt, status.endsAt)} />
       </div>
     );
   }
@@ -192,7 +193,7 @@ async function Meet({ params }: { params: Promise<{ meetupId: string }> }) {
     <div className={`flex flex-col gap-7 px-5 ${plans.length > 0 ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : "pb-10"}`}>
       <MeetupRefresher waiting={!ready && status.status === "open"} every={aroundMeet ? 45_000 : 15_000} />
       <section className="flex flex-col gap-1">
-        <h2 className="text-title font-bold tracking-[-0.02em]">{title}</h2>
+        <MeetupTitle meetupId={status.id} title={status.title} fallback={title} editable={status.isMember} />
         <span className="text-meta text-muted">{meetWhen(status.startsAt, status.endsAt)}</span>
         {others.length === 0 && status.invitees.length === 0 && <span className="text-meta text-muted">함께할 분을 기다리는 중이에요</span>}
       </section>

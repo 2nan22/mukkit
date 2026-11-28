@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { PURPOSE_LABEL, PURPOSES, type Purpose } from "@/domain/meetup";
+import { MEETUP_TITLE_MAX, PURPOSE_LABEL, PURPOSES, type Purpose } from "@/domain/meetup";
 import { createMeetup } from "./actions";
 import { findSpots, type Spot } from "@/features/eat/actions";
 import { DateCalendar, offsetToDate } from "./DateCalendar";
@@ -87,6 +87,8 @@ export function MeetupForm() {
   const [exact, setExact] = useState(false);
   const [fixed, setFixed] = useState(false);
   const [where, setWhere] = useState<Where>(null);
+  // 약속 이름 (선택, 96) — 비우면 약속 화면이 목적 · 함께하는 사람으로 짓는다
+  const [title, setTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -149,7 +151,7 @@ export function MeetupForm() {
       return setError("이미 지난 시각이에요. 다시 골라 주세요");
     }
     startTransition(async () => {
-      const res = await createMeetup({ purpose, startsAt: toIso(day, startAt), endsAt: toIso(day, endAt), meet: fixed ? where : null });
+      const res = await createMeetup({ purpose, title: title || null, startsAt: toIso(day, startAt), endsAt: toIso(day, endAt), meet: fixed ? where : null });
       if (res?.error) setError(res.error);
     });
   }
@@ -277,6 +279,17 @@ export function MeetupForm() {
             <br />
             {fixed && where ? "만날 곳 근처 가게로 코스를 담을 수 있어요" : "각자 출발지를 넣으면 지역을 골라 드려요"}
           </p>
+          <label className="mt-3 flex flex-col gap-1.5">
+            <span className="text-meta font-semibold text-ink-2">약속 이름 (안 써도 돼요)</span>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={MEETUP_TITLE_MAX}
+              placeholder="예: 금요일 팀 회식"
+              enterKeyHint="done"
+              className={select}
+            />
+          </label>
         </section>
       )}
 
