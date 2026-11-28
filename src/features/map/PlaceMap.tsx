@@ -103,7 +103,7 @@ export function regionName(lat: number, lng: number): Promise<{ gu: string; dong
   });
 }
 
-export type MapViewport = { south: number; west: number; north: number; east: number; center: { lat: number; lng: number }; height: number };
+export type MapViewport = { south: number; west: number; north: number; east: number; center: { lat: number; lng: number }; level: number; height: number };
 
 const APP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const SEOUL = { lat: 37.5665, lng: 126.978 };
@@ -329,7 +329,7 @@ export function PlaceMap({
         const sw = b.getSouthWest();
         const ne = b.getNorthEast();
         const c = m0.getCenter();
-        onViewRef.current?.({ south: sw.getLat(), west: sw.getLng(), north: ne.getLat(), east: ne.getLng(), center: { lat: c.getLat(), lng: c.getLng() }, height: el.current?.clientHeight ?? 0 });
+        onViewRef.current?.({ south: sw.getLat(), west: sw.getLng(), north: ne.getLat(), east: ne.getLng(), center: { lat: c.getLat(), lng: c.getLng() }, level: m0.getLevel(), height: el.current?.clientHeight ?? 0 });
       });
     }
     const m = map.current;
