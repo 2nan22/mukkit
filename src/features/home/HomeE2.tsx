@@ -18,7 +18,6 @@ const FRESH_MS = 72 * 3600_000;
 export function PeopleRow({ ratings, now }: { ratings: SharedRating[]; now: number }) {
   const seen = new Set<string>();
   const people = ratings.filter((r) => (seen.has(r.ownerId) ? false : (seen.add(r.ownerId), true))).slice(0, 12);
-  if (people.length === 0) return null;
   return (
     <ul aria-label="팔로잉 새 평가" className="relative flex gap-3 overflow-x-auto px-5 pt-1 pb-1 [scrollbar-width:none]">
       {people.map((r) => {

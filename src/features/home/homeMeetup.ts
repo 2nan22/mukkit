@@ -77,7 +77,7 @@ export function homeTiles({ meetup, wantToGo, empty, now = Date.now() }: { meetu
       href: `/meet/${n.id}`,
       icon: "calendar",
       title: n.title ?? (when ? `${when.day} ${when.part} 약속` : `${PURPOSE_LABEL[n.purpose]} 약속`),
-      sub: `${when ? (n.title ? `${when.day} ${when.part} ${when.clock}` : when.clock) : "시간 미정"}, ${others > 0 ? `${others}명과 함께` : "함께할 분 기다리는 중"}`,
+      sub: `${when ? (n.title ? `${when.day} ${when.part} ${when.clock}` : when.clock) : "시간 미정"}, ${others > 0 ? `${others}명과 함께` : "아직 혼자예요"}`,
       primary: false,
     };
   } else {

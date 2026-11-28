@@ -20,7 +20,7 @@ describe("homeTiles", () => {
     const next = { id: "m2", title: null, purpose: "meal" as const, startsAt: "2026-11-29T10:00:00Z", people: 3 };
     expect(homeTiles({ meetup: { ...none, next }, wantToGo: 0, empty: false, now })[1]).toMatchObject({ title: "내일 저녁 약속", sub: "7:00, 2명과 함께" });
     expect(homeTiles({ meetup: { ...none, next: { ...next, title: "팀 회식" } }, wantToGo: 0, empty: false, now })[1]).toMatchObject({ title: "팀 회식", sub: "내일 저녁 7:00, 2명과 함께" });
-    expect(homeTiles({ meetup: { ...none, next: { ...next, startsAt: null, people: 1 } }, wantToGo: 0, empty: false, now })[1]).toMatchObject({ title: "식사 약속", sub: "시간 미정, 함께할 분 기다리는 중" });
+    expect(homeTiles({ meetup: { ...none, next: { ...next, startsAt: null, people: 1 } }, wantToGo: 0, empty: false, now })[1]).toMatchObject({ title: "식사 약속", sub: "시간 미정, 아직 혼자예요" });
   });
   it("저장 0곳이면 두 칸 모두 테두리 — 가져오기 카드가 주황", () => {
     const tiles = homeTiles({ meetup: { ...none, invites: { count: 1, meetupId: "m1", host: "민지" } }, wantToGo: 0, empty: true, now });
