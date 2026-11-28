@@ -6,7 +6,7 @@ import { scoreCandidate, type Candidate, type Scored } from "./eatScore";
 export const MEETUP_TITLE_MAX = 30;
 export function cleanMeetupTitle(raw: string | null | undefined): string | null {
   // 폭 없는 공백은 지우고, 글자 단위로 자른다 (이모지 반쪽이 남지 않게)
-  const t = Array.from((raw ?? "").replace(/[\u200B-\u200D\u2060\uFEFF]/g, "").replace(/\s+/g, " ").trim()).slice(0, MEETUP_TITLE_MAX).join("").trim();
+  const t = Array.from((raw ?? "").replace(/[\u200B\u200C\u2060\uFEFF]/g, "").replace(/\s+/g, " ").trim()).slice(0, MEETUP_TITLE_MAX).join("").trim();
   return t || null;
 }
 

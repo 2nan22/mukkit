@@ -58,5 +58,5 @@ async function MapLoader({ searchParams }: { searchParams: Promise<{ tier?: stri
   const [lat, lng] = typeof at === "string" ? at.split(",").map(Number) : [];
   const atPoint = Number.isFinite(lat) && Number.isFinite(lng) && lat > 33 && lat < 39 && lng > 124 && lng < 132 ? { lat, lng } : null;
   // 주소(리스트 · 위치 · 등급)가 바뀌면 새 화면으로 — 같은 화면을 재사용하면 처음 위치가 다시 정해지지 않아 리스트 자리에 머문다
-  return <MapView key={`mine:${typeof list === "string" ? list : ""}:${typeof at === "string" ? at : ""}:${typeof tier === "string" ? tier : ""}`} places={places} initialTiers={initialTiers} at={only ? null : atPoint} lists={only ? [] : lists} />;
+  return <MapView key={`mine:${typeof list === "string" ? list : ""}:${typeof at === "string" ? at : ""}:${typeof tier === "string" ? tier : ""}`} places={places} initialTiers={initialTiers} remember={!only} at={only ? null : atPoint} lists={only ? [] : lists} />;
 }
