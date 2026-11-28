@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { redirect, RedirectType } from "next/navigation";
 import { z } from "zod";
-import { PURPOSES } from "@/domain/meetup";
+import { cleanMeetupTitle, MEETUP_TITLE_MAX, PURPOSES } from "@/domain/meetup";
 import { NICKNAME_SETUP, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { searchKakaoKeyword } from "@/features/search/kakaoLocal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -22,6 +22,7 @@ const FAILED = "저장하지 못했어요. 다시 시도해 주세요.";
 const CreateInput = z
   .object({
     purpose: z.enum(PURPOSES),
+    title: z.string().max(MEETUP_TITLE_MAX * 2).nullable().optional(),
     startsAt: z.iso.datetime({ offset: true }).nullable(),
     endsAt: z.iso.datetime({ offset: true }).nullable(),
     // 정해 둔 만날 곳 (92) — 없으면 각자 출발지로 지역 추천
@@ -37,7 +38,7 @@ export async function createMeetup(input: z.input<typeof CreateInput>): Promise<
   const { supabase, me } = await requireUser();
   const { data, error } = await supabase
     .from("meetups")
-    .insert({ host_id: me, purpose: parsed.data.purpose, starts_at: parsed.data.startsAt, ends_at: parsed.data.endsAt })
+    .insert({ host_id: me, title: cleanMeetupTitle(parsed.data.title), purpose: parsed.data.purpose, starts_at: parsed.data.startsAt, ends_at: parsed.data.endsAt })
     .select("id")
     .single();
   if (error || !data) return { error: FAILED };
@@ -50,6 +51,20 @@ export async function createMeetup(input: z.input<typeof CreateInput>): Promise<
   revalidatePath("/meet");
   // 만든 뒤 바로 초대 화면 (67)
   redirect(`/meet/${data.id}/invite?created=1`, RedirectType.replace);
+}
+
+// 약속 이름 바꾸기 — 참여자 누구나 · 비우면 자동 이름으로 (96)
+const RenameInput = z.object({ meetupId: z.uuid(), title: z.string().max(MEETUP_TITLE_MAX * 2) });
+export async function renameMeetup(meetupId: string, title: string): Promise<Result> {
+  const parsed = RenameInput.safeParse({ meetupId, title });
+  if (!parsed.success) return { error: FAILED };
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase.from("meetups").update({ title: cleanMeetupTitle(parsed.data.title) }).eq("id", meetupId).select("id");
+  if (error || !data?.length) return { error: FAILED };
+  revalidatePath(`/meet/${meetupId}`);
+  revalidatePath("/meet");
+  revalidatePath("/home");
+  return {};
 }
 
 export async function joinMeetup(token: string): Promise<Result> {
