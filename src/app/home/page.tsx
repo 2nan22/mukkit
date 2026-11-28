@@ -11,11 +11,16 @@ import { ListSkeleton } from "@/components/ui/Skeleton";
 import { BottomNav } from "@/components/BottomNav";
 import { NICKNAME_SETUP, SESSION_ENDED, SIGNED_OUT_HOME } from "@/features/auth/paths";
 import { needsAgreement } from "@/features/legal/legal";
-import { ActionTiles, MatchRow, MyRecordLine, PeopleRow, RatingTile, WaitLine } from "@/features/home/HomeE2";
+import { ActionTiles, MatchRow, PeopleRow, RatingTile, WaitLine } from "@/features/home/HomeE2";
+import { RecentLists, SimilarPeople } from "@/features/home/HomeSections";
+import { MyMap, RankTop, RecentSaved } from "@/features/home/MyHomeSections";
+import { getMyHome } from "@/features/home/myHome";
+import { getPlaceCovers } from "@/features/place/covers";
+import { getThreeRanking } from "@/features/rank/rank";
 import { getHomeMeetup, homeTiles } from "@/features/home/homeMeetup";
 import { countMyTiers } from "@/features/lists/lists";
 import { dateLabel } from "@/features/social/RatingCard";
-import { getFeed, getFollowCounts, getTasteMatches } from "@/features/social/social";
+import { getFeed, getFollowCounts, getPopularPublicLists, getTasteMatches } from "@/features/social/social";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // 홈 E2 (96) — 얼굴 줄 › 큰 평가 › 뭐 먹지 · 약속 두 칸 › 기다리는 일 › 새 평가 더 › 내 기록 (49 를 바꿈)
@@ -74,7 +79,7 @@ async function HomeContent() {
   if (!me) redirect(SIGNED_OUT_HOME);
   const requestNow = new Date(feedAsOf()).getTime();
   // 프로필 확인과 화면 데이터를 한 번에 — 차례로 기다리지 않게 (리다이렉트면 결과는 버린다)
-  const [profile, feed, matches, counts, { count: visitTags }, meetup, tiers, showRecap] = await Promise.all([
+  const [profile, feed, matches, counts, { count: visitTags }, meetup, tiers, showRecap, home, ranking, lists] = await Promise.all([
     getMyProfileFlags(supabase),
     getFeed(supabase),
     getTasteMatches(supabase, 10),
@@ -87,7 +92,15 @@ async function HomeContent() {
       if (ok) await supabase.rpc("claim_recap_notice");
       return ok;
     }),
+    // 아래 둘러볼 거리 (96-2, 사용자 '많이 심심해졌다') — 내 지도 · 최근 저장 · 순위 · 비슷한 사람 · 많이 저장된 리스트
+    getMyHome(supabase, me),
+    getThreeRanking(supabase, me),
+    getPopularPublicLists(supabase, 4),
   ]);
+  // 리스트 카드 · 최근 저장한 곳 사진 — 한 번에
+  const covers = Object.fromEntries(
+    [...(await getPlaceCovers(supabase, [...lists.flatMap((l) => l.points.map((p) => p.placeId)), ...home.recent.map((p) => p.placeId)]))].map(([id, c]) => [id, c.url]),
+  );
   // 프로필이 없으면 지워진 계정의 로그인이 남은 것 — 반복 대신 로그아웃
   if (!profile) redirect(SESSION_ENDED);
   if (!profile.nickname_set_at) redirect(`${NICKNAME_SETUP}?next=/home`);
@@ -139,7 +152,11 @@ async function HomeContent() {
           </Link>
         </section>
       )}
-      <MyRecordLine saved={saved} three={tiers.three ?? 0} wantToGo={tiers.want_to_go ?? 0} />
+      {!empty && <MyMap home={home} tiers={tiers} />}
+      <RecentSaved home={home} covers={covers} />
+      <RankTop ranked={ranking.ranked} unranked={ranking.unranked.length} />
+      {counts.following > 0 && <SimilarPeople matches={matches} />}
+      <RecentLists lists={lists} covers={covers} />
     </>
   );
 }

@@ -38,6 +38,7 @@ export function PeopleRow({ ratings, now }: { ratings: SharedRating[]; now: numb
           </li>
         );
       })}
+      <FindPeople />
     </ul>
   );
 }
@@ -60,17 +61,7 @@ export function MatchRow({ matches }: { matches: TasteMatch[] }) {
             </Link>
           </li>
         ))}
-        <li className="shrink-0">
-          <Link href="/people" className="flex w-16 flex-col items-center gap-1">
-            <span className="flex size-16 items-center justify-center rounded-full border-2 border-dashed border-line-strong text-muted">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="7" />
-                <path d="M20 20l-4-4" />
-              </svg>
-            </span>
-            <span className="text-caption font-semibold">사람 찾기</span>
-          </Link>
-        </li>
+        <FindPeople />
       </ul>
     </section>
   );
@@ -215,20 +206,19 @@ export function WaitLine({ visitTags, unrated }: { visitTags: number; unrated: n
   );
 }
 
-// 내 기록 한 줄 — 지도 탭으로
-export function MyRecordLine({ saved, three, wantToGo }: { saved: number; three: number; wantToGo: number }) {
-  if (saved === 0) return null;
+// 얼굴 줄 끝 — 사람 찾기 (점선 동그라미)
+function FindPeople() {
   return (
-    <Link href="/map" className="mx-5 flex items-center gap-3 border-t border-line pt-4">
-      <span aria-hidden="true" className="flex size-14 shrink-0 items-center justify-center rounded-[16px] bg-map-land text-muted">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14" />
-        </svg>
-      </span>
-      <span className="flex min-w-0 flex-col gap-1">
-        <span className="text-[15px] font-bold tracking-[-0.015em]">내 기록</span>
-        <MetaLine items={[`저장 ${saved}곳`, three > 0 ? `3숟가락 ${three}곳` : null, wantToGo > 0 ? `가고 싶은 곳 ${wantToGo}곳` : null]} />
-      </span>
-    </Link>
+    <li className="shrink-0">
+      <Link href="/people" className="flex w-16 flex-col items-center gap-1">
+        <span className="flex size-16 items-center justify-center rounded-full border-2 border-dashed border-line-strong text-muted">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-4-4" />
+          </svg>
+        </span>
+        <span className="text-caption font-semibold">사람 찾기</span>
+      </Link>
+    </li>
   );
 }
