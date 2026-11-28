@@ -21,7 +21,7 @@ export default function InvitePage({ params }: PageProps<"/m/[token]">) {
   );
 }
 
-type InviteRow = { meetup_id: string; host_nickname: string; purpose: Purpose; status: string; starts_at: string | null; ends_at: string | null; member_count: number; joined: boolean; is_host: boolean; full: boolean };
+type InviteRow = { meetup_id: string; host_nickname: string; purpose: Purpose; status: string; starts_at: string | null; ends_at: string | null; member_count: number; joined: boolean; is_host: boolean; full: boolean; title: string | null };
 
 async function Invite({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -50,8 +50,9 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
         <h1 className="text-title font-bold leading-snug tracking-tight">
           {invite.host_nickname}님이
           <br />
-          {PURPOSE_LABEL[invite.purpose]} 약속에 초대했어요
+          {invite.title ? "약속에 초대했어요" : `${PURPOSE_LABEL[invite.purpose]} 약속에 초대했어요`}
         </h1>
+        {invite.title && <p className="text-body font-semibold break-keep">{invite.title}</p>}
         {when && <p className="text-body text-ink-2">{when}</p>}
         {invite.member_count > 1 && <p className="text-meta text-muted">지금 {invite.member_count}명 참여 중</p>}
         <ol className="mt-3 flex flex-col gap-2.5 rounded-[16px] bg-surface p-4 text-meta leading-normal text-ink-2">

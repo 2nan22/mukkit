@@ -24,6 +24,7 @@ function fmt(iso: string, o: Intl.DateTimeFormatOptions): string {
 
 function title(m: MeetupListItem): string {
   const purpose = PURPOSE_LABEL[m.purpose];
+  if (m.title) return m.invited ? `${m.hostNickname}님의 초대, ${m.title}` : m.title;
   if (m.invited) return `${m.hostNickname}님의 ${purpose} 초대`;
   if (m.others.length === 0) return `함께할 분을 기다리는 ${purpose}`;
   const who = m.others.length === 1 ? `${m.others[0]}님과` : `${m.others[0]}님 외 ${m.others.length - 1}명과`;

@@ -6,6 +6,8 @@ import { getEatCandidates, getMyTasteBasis } from "@/features/eat/eat";
 export type MeetupMember = { id: string; nickname: string; isHost: boolean; isMe: boolean; ready: boolean };
 export type MeetupStatus = {
   id: string;
+  // 약속 이름 — 없으면 화면이 짓는다 (96)
+  title: string | null;
   purpose: Purpose;
   status: "open" | "done" | "cancelled";
   inviteToken: string | null;
@@ -22,13 +24,13 @@ export type MeetupStatus = {
   invitees: { id: string; nickname: string }[];
 };
 export type MyPoint = { kind: "origin" | "return"; label: string };
-export type MeetupListItem = { id: string; purpose: Purpose; status: string; startsAt: string | null; hostNickname: string; others: string[]; invited: boolean };
+export type MeetupListItem = { id: string; title: string | null; purpose: Purpose; status: string; startsAt: string | null; hostNickname: string; others: string[]; invited: boolean };
 export type AreaPlan = RankedArea & { shops: Scored[] };
 
 type StatusRow = {
   meetup_id: string; purpose: Purpose; status: MeetupStatus["status"]; invite_token: string | null; expires_at: string;
   starts_at: string | null; ends_at: string | null; max_members: number; is_host: boolean; is_member: boolean; is_invitee: boolean;
-  host_nickname: string; me_ready: boolean; members: MeetupMember[]; invitees: { id: string; nickname: string }[];
+  host_nickname: string; me_ready: boolean; members: MeetupMember[]; invitees: { id: string; nickname: string }[]; title: string | null;
 };
 
 export async function getMeetupStatus(supabase: SupabaseClient, id: string): Promise<MeetupStatus | null> {
@@ -36,7 +38,7 @@ export async function getMeetupStatus(supabase: SupabaseClient, id: string): Pro
   if (error || !data?.[0]) return null;
   const r = data[0] as StatusRow;
   return {
-    id: r.meetup_id, purpose: r.purpose, status: r.status, inviteToken: r.invite_token, expiresAt: r.expires_at,
+    id: r.meetup_id, title: r.title ?? null, purpose: r.purpose, status: r.status, inviteToken: r.invite_token, expiresAt: r.expires_at,
     startsAt: r.starts_at, endsAt: r.ends_at, maxMembers: r.max_members, isHost: r.is_host, isMember: r.is_member,
     isInvitee: r.is_invitee, hostNickname: r.host_nickname, meReady: r.me_ready, members: r.members, invitees: r.invitees,
   };
@@ -47,12 +49,12 @@ export async function getMyPoints(supabase: SupabaseClient, meetupId: string): P
   return (data ?? []) as MyPoint[];
 }
 
-type ListRow = { id: string; purpose: Purpose; status: string; starts_at: string | null; host_id: string; host: { nickname: string } | null };
+type ListRow = { id: string; title: string | null; purpose: Purpose; status: string; starts_at: string | null; host_id: string; host: { nickname: string } | null };
 
 export async function getMyMeetups(supabase: SupabaseClient, me: string): Promise<MeetupListItem[]> {
   const { data } = await supabase
     .from("meetups")
-    .select("id, purpose, status, starts_at, host_id, host:profiles!meetups_host_id_fkey(nickname)")
+    .select("id, title, purpose, status, starts_at, host_id, host:profiles!meetups_host_id_fkey(nickname)")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(30);
@@ -70,7 +72,7 @@ export async function getMyMeetups(supabase: SupabaseClient, me: string): Promis
   }
   const invited = new Set(((invites ?? []) as { meetup_id: string }[]).map((i) => i.meetup_id));
   return rows.map((r) => ({
-    id: r.id, purpose: r.purpose, status: r.status, startsAt: r.starts_at,
+    id: r.id, title: r.title, purpose: r.purpose, status: r.status, startsAt: r.starts_at,
     hostNickname: r.host?.nickname ?? "", others: byMeetup.get(r.id) ?? [], invited: invited.has(r.id),
   }));
 }

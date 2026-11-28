@@ -50,3 +50,14 @@ export function meetWhen(startsAt: string | null, endsAt: string | null, now = D
   const end = mins(e) + (e.getUTCDate() !== s.getUTCDate() ? 24 * 60 : 0);
   return `${head} ${timeRange(start, end)}`;
 }
+
+// 홈 약속 칸처럼 짧게 (96) — { day: '내일' | '12월 3일(수)', part: '저녁', clock: '7:00' } · 시간 미정이면 null
+export function meetShort(startsAt: string | null, now = Date.now()): { day: string; part: string; clock: string } | null {
+  if (!startsAt) return null;
+  const s = new Date(new Date(startsAt).getTime() + KST);
+  const t = new Date(now + KST);
+  const diff = Math.floor(s.getTime() / 86_400_000) - Math.floor(t.getTime() / 86_400_000);
+  const m = s.getUTCHours() * 60 + s.getUTCMinutes();
+  const day = diff >= 0 && diff < NEAR.length ? NEAR[diff] : `${s.getUTCMonth() + 1}월 ${s.getUTCDate()}일(${WEEK[s.getUTCDay()]})`;
+  return { day, part: partOfDay(m), clock: clock(m) };
+}

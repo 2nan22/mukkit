@@ -55,7 +55,7 @@ async function Invite({ params, searchParams }: { params: Promise<{ meetupId: st
               </svg>
             </span>
             <h1 className="pt-1 text-[22px] font-bold tracking-tight">약속을 만들었어요</h1>
-            <MetaLine items={[meetWhen(status.startsAt, status.endsAt), purpose]} />
+            <MetaLine items={[meetWhen(status.startsAt, status.endsAt), status.title ?? purpose]} />
           </section>
         )}
         <section className="flex flex-col gap-2">
@@ -66,7 +66,7 @@ async function Invite({ params, searchParams }: { params: Promise<{ meetupId: st
         </section>
         <div className="flex-1" />
         <div className="sticky bottom-0 flex flex-col gap-1 bg-white pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-          <KakaoInvite url={`${origin}/m/${status.inviteToken}`} title={`${purpose} 약속`} />
+          <KakaoInvite url={`${origin}/m/${status.inviteToken}`} title={status.title ?? `${purpose} 약속`} />
           <Link href={back} replace className="flex h-11 items-center justify-center text-meta text-muted">
             {created ? "나중에 할게요" : "약속으로 돌아가기"}
           </Link>
